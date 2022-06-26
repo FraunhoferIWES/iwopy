@@ -1,0 +1,242 @@
+import numpy as np
+from abc import ABCMeta, abstractmethod
+
+from iwopy.core.base import Base
+
+class Function(Base, metaclass=ABCMeta):
+    """
+    Abstract base class for functions
+    that calculate scalars based on a problem.
+
+    Parameters
+    ----------
+    name: str
+        The function name
+    vnames_int : list of str, optional
+        The integer variable names. Useful for mapping
+        problem variables to function variables
+    vnames_float : list of str, optional
+        The float variable names. Useful for mapping
+        problem variables to function variables
+    cnames : list of str, optional
+        The names of the components
+
+    Attributes
+    ----------
+    problem: iwopy.Problem
+        The underlying optimization problem
+
+    """
+
+    def __init__(
+            self, 
+            problem, 
+            name, 
+            vnames_int=None, 
+            vnames_float=None,
+            cnames=None
+        ):
+        super().__init__(name)
+        self.problem  = problem
+        self._vnamesi = vnames_int
+        self._vnamesf = vnames_float
+        self._cnamesf = cnames
+
+    @abstractmethod
+    def n_components(self):
+        """
+        Returns the number of components of the
+        function.
+
+        Returns
+        -------
+        int:
+            The number of components.
+
+        """
+        pass
+
+    @property
+    def component_names(self):
+        """
+        The names of the components
+
+        Returns
+        -------
+        names : list of str
+            The component names
+
+        """
+        if self._cnames is None:
+            if self.n_components() > 1:
+                self._cnames = [f"{self.name}_{ci}" for ci in range(self.n_components)]
+            else:
+                self._cnames = [self.name]
+            
+        return self._cnames
+
+    @property
+    def var_names_int(self):
+        """
+        The names of the integer variables
+
+        Returns
+        -------
+        names : list of str
+            The integer variable names
+
+        """
+        if self._vnamesi is None:
+            self._vnamesi = self.problem.var_names_int()
+
+        return self._vnamesi
+
+    @property
+    def n_vars_int(self):
+        """
+        The number of int variables
+
+        Returns
+        -------
+        n : int
+            The number of int variables
+            
+        """
+        return len(self.var_names_int)
+
+    @property
+    def var_names_float(self):
+        """
+        The names of the float variables
+
+        Returns
+        -------
+        names : list of str
+            The float variable names
+
+        """
+        if self._vnamesf is None:
+            self._vnamesf = self.problem.var_names_float()
+
+        return self._vnamesf
+
+    @property
+    def n_vars_float(self):
+        """
+        The number of float variables
+
+        Returns
+        -------
+        n : int
+            The number of float variables
+            
+        """
+        return len(self.var_names_float)
+
+    def calc_individual(self, vars_int, vars_float, problem_results):
+        """
+        Calculate values for a single individual of the 
+        underlying problem.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values, shape: (n_vars_int,)
+        vars_float : np.array
+            The float variable values, shape: (n_vars_float,)
+        problem_results : Any
+            The results of the variable application 
+            to the problem  
+
+        Returns
+        -------
+        values : np.array
+            The component values, shape: (n_components,)    
+
+        """
+        raise NotImplementedError(f"Not implemented for class {type(self).__name__}")
+
+    def calc_population(self, vars_int, vars_float, problem_results):
+        """
+        Calculate values for all individuals of a population.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values, shape: (n_pop, n_vars_int)
+        vars_float : np.array
+            The float variable values, shape: (n_pop, n_vars_float)
+        problem_results : Any
+            The results of the variable application 
+            to the problem  
+
+        Returns
+        -------
+        values : np.array
+            The component values, shape: (n_pop, n_components,) 
+
+        """
+
+        if problem_results is not None:
+            raise NotImplementedError(f"Not implemented for class {type(self).__name__}, results type {type(problem_results).__name__}")
+
+        # prepare:
+        n_pop = vars_float.shape[0] if vars_float is not None and len(vars_float.shape) \
+                    else vars_int.shape[0]
+        vals = np.full((n_pop, self.n_components()), np.nan, dtype=np.float64)
+
+        # loop over individuals:
+        for i in range(n_pop):
+            vals[i] = self.calc_individual(vars_int[i], vars_float[i], None)
+        
+        return vals
+
+    def finalize_individual(self, vars_int, vars_float, problem_results, verbosity=1):
+        """
+        Finalization, given the champion data.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The optimal integer variable values, shape: (n_vars_int,)
+        vars_float : np.array
+            The optimal float variable values, shape: (n_vars_float,)
+        problem_results : Any
+            The results of the variable application 
+            to the problem  
+        verbosity : int
+            The verbosity level, 0 = silent
+
+        Returns
+        -------
+        values : np.array
+            The component values, shape: (n_components,)    
+
+        """
+        return self.calc_individual(vars_int, vars_float, problem_results)
+
+    def finalize_population(self, vars_int, vars_float, problem_results, verbosity=1):
+        """
+        Finalization, given the final population data.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values of the final
+            generation, shape: (n_pop, n_vars_int)
+        vars_float : np.array
+            The float variable values of the final
+            generation, shape: (n_pop, n_vars_float)
+        problem_results : Any
+            The results of the variable application 
+            to the problem  
+        verbosity : int
+            The verbosity level, 0 = silent
+
+        Returns
+        -------
+        values : np.array
+            The component values, shape: (n_pop, n_components) 
+
+        """
+        return self.calc_population(vars_int, vars_float, problem_results)
