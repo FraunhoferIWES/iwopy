@@ -14,25 +14,31 @@ class Problem(Base, metaclass=ABCMeta):
 
     Attributes
     ----------
-    objs: list:iwopy.ObjFunction
-        The objective functions
-    cons: list:iwopy.OptConstraint
-        The constraints
-    var_values_int : numpy.ndarray
-        Integer array with variable values,
-        shape: (n_vars_int,)
-    var_values_float : numpy.ndarray
-        Float array with variable values,
-        shape: (n_vars_float,)
+    objs : list of tuple
+        Tuples with three entries: 0 = iwopy.Objective, 
+        the objective function, 1 = list of int, the indices
+        of the integer variables on which the objective
+        depends, 2 = list of int, same for float variables
+    cons : list of tuple
+        Tuples with three entries: 0 = iwopy.Constraint, 
+        the constraint function, 1 = list of int, the indices
+        of the integer variables on which the constraint
+        depends, 2 = list of int, same for float variables
+    osizes : list of int
+        The number of compenents of the
+        objectives
+    csizes : list of int
+        The number of compenents of the
+        constraints
 
     """
 
     def __init__(self, name):
         super().__init__(name)
-        self.objs = []
-        self.cons = []
-        self.var_values_int   = None
-        self.var_values_float = None
+        self.objs   = []
+        self.cons   = []
+        self.osizes = []
+        self.csizes = []
     
     def var_names_int(self):
         """
@@ -95,6 +101,110 @@ class Problem(Base, metaclass=ABCMeta):
         """
         return None
 
+    def add_objective(
+            self, 
+            objective, 
+            varmap_int={},
+            varmap_float={}
+        ):
+        """
+        Add an objective to the problem.
+
+        Parameters
+        ----------
+        objective : iwopy.Objective
+            The objective
+        varmap_int : dict, optional
+            Mapping from objective int variables to
+            problem int variables. Key: str or int, 
+            value: str or int
+        varmap_float : dict, optional
+            Mapping from objective float variables to
+            problem float variables. Key: str or int, 
+            value: str or int
+
+        """
+        varsi = []
+        for i, v in enumerate(objective.var_names_int):
+            w = varmap_int.get(i, varmap_int.get(v, v))
+            if isinstance(w, int):
+                j = w
+            elif w in self.var_names_int():
+                j = self.var_names_int().index(j)
+            else:
+                raise KeyError(f"Problem '{self.name}', objective '{objective.name}': Objective variable '{v}' mapped onto int problem variable '{w}', which is not in the int vars list {self.var_names_int()}")
+            if j not in range(self.n_vars_int):
+                raise ValueError(f"Problem '{self.name}', objective '{objective.name}': Objective variable '{v}' mapped onto problem int variable index '{j}', which exceeds existing {self.n_vars_int} int vars")
+            varsi.append(j)
+
+        varsf = []
+        for i, v in enumerate(objective.var_names_float):
+            w = varmap_float.get(i, varmap_float.get(v, v))
+            if isinstance(w, int):
+                j = w
+            elif w in self.var_names_float():
+                j = self.var_names_float().index(j)
+            else:
+                raise KeyError(f"Problem '{self.name}', objective '{objective.name}': Objective variable '{v}' mapped onto float problem variable '{w}', which is not in the float vars list {self.var_names_float()}")
+            if j not in range(self.n_vars_float):
+                raise ValueError(f"Problem '{self.name}', objective '{objective.name}': Objective variable '{v}' mapped onto problem float variable index '{j}', which exceeds existing {self.n_vars_float} float vars")
+            varsf.append(j)
+        
+        self.objs.append((objective, varsi, varsf))
+        self.osizes.append(objective.n_components())
+
+    def add_constraint(
+            self, 
+            constraint, 
+            varmap_int={},
+            varmap_float={}
+        ):
+        """
+        Add a constraint to the problem.
+
+        Parameters
+        ----------
+        constraint : iwopy.Constraint
+            The constraint
+        varmap_int : dict, optional
+            Mapping from constraint int variables to
+            problem int variables. Key: str or int, 
+            value: str or int
+        varmap_float : dict, optional
+            Mapping from constraint float variables to
+            problem float variables. Key: str or int, 
+            value: str or int
+
+        """
+        varsi = []
+        for i, v in enumerate(constraint.var_names_int):
+            w = varmap_int.get(i, varmap_int.get(v, v))
+            if isinstance(w, int):
+                j = w
+            elif w in self.var_names_int():
+                j = self.var_names_int().index(j)
+            else:
+                raise KeyError(f"Problem '{self.name}', constraint '{constraint.name}': Objective variable '{v}' mapped onto int problem variable '{w}', which is not in the int vars list {self.var_names_int()}")
+            if j not in range(self.n_vars_int):
+                raise ValueError(f"Problem '{self.name}', constraint '{constraint.name}': Objective variable '{v}' mapped onto problem int variable index '{j}', which exceeds existing {self.n_vars_int} int vars")
+            varsi.append(j)
+
+        varsf = []
+        for i, v in enumerate(constraint.var_names_float):
+            w = varmap_float.get(i, varmap_float.get(v, v))
+            if isinstance(w, int):
+                j = w
+            elif w in self.var_names_float():
+                j = self.var_names_float().index(j)
+            else:
+                raise KeyError(f"Problem '{self.name}', constraint '{constraint.name}': Objective variable '{v}' mapped onto float problem variable '{w}', which is not in the float vars list {self.var_names_float()}")
+            if j not in range(self.n_vars_float):
+                raise ValueError(f"Problem '{self.name}', constraint '{constraint.name}': Objective variable '{v}' mapped onto problem float variable index '{j}', which exceeds existing {self.n_vars_float} float vars")
+            varsf.append(j)
+        
+        self.objs.append((constraint, varsi, varsf))
+        self.csizes.append(constraint.n_components())
+
     @property
     def n_vars_float(self):
         """
@@ -107,6 +217,36 @@ class Problem(Base, metaclass=ABCMeta):
             
         """
         return len(self.var_names_float())
+
+    @property
+    def n_objectives(self):
+        """
+        The total number of objectives,
+        i.e., the sum of all components
+
+        Returns
+        -------
+        n_obj : int
+            The total number of objective
+            functions
+
+        """
+        return sum(self.osizes)
+
+    @property
+    def n_constraints(self):
+        """
+        The total number of constraints,
+        i.e., the sum of all components
+
+        Returns
+        -------
+        n_con : int
+            The total number of constraint
+            functions
+
+        """
+        return sum(self.csizes)
 
     def initialize(self, verbosity=0):
         """
@@ -121,19 +261,319 @@ class Problem(Base, metaclass=ABCMeta):
         if verbosity:
             s = f"Problem '{self.name}' ({type(self).__name__}): Initializing"
             print(s)
-            print("-"*len(s))
+            L = len(s)
+            print("-"*L)
         
         n_int   = self.n_vars_int()
         n_float = self.n_vars_float()
+        if verbosity:
+            print(f"  n_vars_int   : {n_int}")
+            print(f"  n_vars_float : {n_float}")
+            print("-"*L)
 
         if verbosity:
-            print(f"  n_vars_int  : {n_int}")
-            print(f"  n_vars_float: {n_float}")
+            print(f"  n_objectives : {len(self.objs)}")
+            print(f"  n_obj_cmptns : {self.n_objectives}")
+            print("-"*L)
+            print(f"  n_constraints: {len(self.cons)}")
+            print(f"  n_con_cmptns : {self.n_constraints}")
+            print("-"*L)
 
-        self.var_values_int = np.zeros(n_int, dtype=np.int32)
-        self.var_values_int[:] = self.initial_values_int()
+        if self.n_objectives() == 0:
+            raise ValueError("Problem initialized without added objectives.")
 
-        self.var_values_float = np.zeros(n_float, dtype=np.float64)
-        self.var_values_float[:] = self.initial_values_float()
+        self._maximize = np.zeros(self.n_objectives, dtype=np.bool)
+
+        i0 = 0
+        for f in self.objs:
+            if not f.initialized:
+                f.initialize(verbosity)
+            i1 = i0 + f.n_components()
+            self._maximize[i0:i1] = np.array(f.maximize(), dtype=np.bool)
+            i0 = i1
+
+        for c in self.cons:
+            if not c.initialized:
+                c.initialize(verbosity)
 
         super().initialize(verbosity)
+
+    def apply_individual(self, vars_int, vars_float):
+        """
+        Apply new variables to the problem.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values, shape: (n_vars_int,)
+        vars_float : np.array
+            The float variable values, shape: (n_vars_float,)
+        
+        Returns
+        -------
+        problem_results : Any
+            The results of the variable application 
+            to the problem  
+
+        """
+        return None
+
+    def apply_population(self, vars_int, vars_float):
+        """
+        Apply new variables to the problem, 
+        for a whole population.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values, shape: (n_pop, n_vars_int)
+        vars_float : np.array
+            The float variable values, shape: (n_pop, n_vars_float)
+        
+        Returns
+        -------
+        problem_results : Any
+            The results of the variable application 
+            to the problem  
+
+        """
+        return None
+
+    def evaluate_individual(self, vars_int, vars_float):
+        """
+        Evaluate a single individual of the problem.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values, shape: (n_vars_int,)
+        vars_float : np.array
+            The float variable values, shape: (n_vars_float,)
+        
+        Returns
+        -------
+        problem_results : Any
+            The results of the variable application 
+            to the problem  
+        objs : np.array
+            The objective function values, shape: (n_objectives,)
+        con : np.array
+            The constraints values, shape: (n_constraints,)    
+
+        """
+        objs = np.full(self.n_objectives, np.nan, dtype=np.float64)
+        cons = np.full(self.n_constraints, np.nan, dtype=np.float64)
+
+        results = self.apply_individual(vars_int, vars_float)
+
+        i0 = 0
+        for f in self.objs:
+            i1 = i0 + f.n_components()
+            objs[i0:i1] = f.calc_individual(vars_int, vars_float, results)
+            i0 = i1
+
+        objs[self._maximize] *= -1
+
+        i0 = 0
+        for c in self.cons:
+            i1 = i0 + c.n_components()
+            cons[i0:i1] = c.calc_individual(vars_int, vars_float, results)
+            i0 = i1
+        
+        return results, objs, cons
+
+    def evaluate_population(self, vars_int, vars_float):
+        """
+        Evaluate all individuals of a population.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values, shape: (n_pop, n_vars_int)
+        vars_float : np.array
+            The float variable values, shape: (n_pop, n_vars_float)
+        
+        Returns
+        -------
+        problem_results : Any
+            The results of the variable application 
+            to the problem  
+        objs : np.array
+            The objective function values, shape: (n_pop, n_objectives)
+        cons : np.array
+            The constraints values, shape: (n_pop, n_constraints)    
+
+        """
+
+        n_pop = vars_float.shape[0] if vars_float is not None and len(vars_float.shape) \
+                    else vars_int.shape[0]
+        objs = np.full((n_pop, self.n_objectives), np.nan, dtype=np.float64)
+        cons = np.full((n_pop, self.n_constraints), np.nan, dtype=np.float64)
+
+        results = self.apply_population(vars_int, vars_float)
+
+        i0 = 0
+        for f in self.objs:
+            i1 = i0 + f.n_components()
+            objs[:, i0:i1] = f.calc_population(vars_int, vars_float, results)
+            i0 = i1
+        
+        objs[:, self._maximize] *= -1
+
+        i0 = 0
+        for c in self.cons:
+            i1 = i0 + c.n_components()
+            cons[:, i0:i1] = c.calc_population(vars_int, vars_float, results)
+            i0 = i1
+
+        return results, objs, cons
+
+    def check_constraints_individual(self, constraint_values, verbosity=0):
+        """
+        Check if the constraints are fullfilled for the
+        given individual.
+
+        Parameters
+        ----------
+        constraint_values : np.array
+            The constraint values, shape: (n_components,)
+        verbosity : int
+            The verbosity level, 0 = silent
+
+        Returns
+        -------
+        values : np.array
+            The boolean result, shape: (n_components,)    
+
+        """
+        val = constraint_values
+        out = np.zeros(self.n_constraints, dtype=np.bool)
+
+        i0 = 0
+        for c in self.cons:
+            i1 = i0 + c.n_components()
+            out[i0:i1] = c.check_individual(val[i0:i1], verbosity)
+            i0 = i1
+
+        return out
+
+    def check_constraints_population(self, constraint_values, verbosity=0):
+        """
+        Check if the constraints are fullfilled for the
+        given population.
+
+        Parameters
+        ----------
+        constraint_values : np.array
+            The constraint values, shape: (n_pop, n_components)
+        verbosity : int
+            The verbosity level, 0 = silent
+
+        Returns
+        -------
+        values : np.array
+            The boolean result, shape: (n_pop, n_components)    
+
+        """
+        val   = constraint_values
+        n_pop = val.shape[0]
+        out   = np.zeros((n_pop, self.n_constraints()), dtype=np.bool)
+
+        i0 = 0
+        for c in self.cons:
+            i1 = i0 + c.n_components()
+            out[:, i0:i1] = c.check_population(val[:, i0:i1], verbosity)
+            i0 = i1
+
+        return out
+
+    def finalize_individual(self, vars_int, vars_float, verbosity=1):
+        """
+        Finalization, given the champion data.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The optimal integer variable values, shape: (n_vars_int,)
+        vars_float : np.array
+            The optimal float variable values, shape: (n_vars_float,)
+        verbosity : int
+            The verbosity level, 0 = silent
+
+        Returns
+        -------
+        problem_results : Any
+            The results of the variable application 
+            to the problem  
+        objs : np.array
+            The objective function values, shape: (n_objectives,)
+        cons : np.array
+            The constraints values, shape: (n_constraints,)    
+
+        """
+        objs = np.zeros(self.n_objectives, dtype=np.float64)
+        cons = np.zeros(self.n_constraints, dtype=np.float64)
+
+        results = self.apply_individual(vars_int, vars_float)
+
+        i0 = 0
+        for f in self.objs:
+            i1 = i0 + f.n_components()
+            objs[i0:i1] = f.finalize_individual(vars_int, vars_float, results, verbosity)
+            i0 = i1
+
+        i0 = 0
+        for c in self.cons:
+            i1 = i0 + c.n_components()
+            cons[i0:i1] = c.finalize_individual(vars_int, vars_float, results, verbosity)
+            i0 = i1
+        
+        return results, objs, cons
+
+    def finalize_population(self, vars_int, vars_float, verbosity=0):
+        """
+        Finalization, given the final population data.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values of the final
+            generation, shape: (n_pop, n_vars_int)
+        vars_float : np.array
+            The float variable values of the final
+            generation, shape: (n_pop, n_vars_float)
+        verbosity : int
+            The verbosity level, 0 = silent
+
+
+        Returns
+        -------
+        problem_results : Any
+            The results of the variable application 
+            to the problem  
+        objs : np.array
+            The final objective function values, shape: (n_pop, n_components) 
+        cons : np.array
+            The final constraint values, shape: (n_pop, n_constraints) 
+
+        """
+        n_pop = vars_float.shape[0] if vars_float is not None and len(vars_float.shape) \
+                    else vars_int.shape[0]
+        objs = np.full((n_pop, self.n_objectives), np.nan, dtype=np.float)
+        cons = np.full((n_pop, self.n_constraints), np.nan, dtype=np.float)
+
+        results = self.apply_population(vars_int, vars_float)
+
+        i0 = 0
+        for f in self.objs:
+            i1 = i0 + f.n_components()
+            objs[:, i0:i1] = f.finalize_population(vars_int, vars_float, results, verbosity)
+            i0 = i1
+
+        i0 = 0
+        for c in self.cons:
+            i1 = i0 + c.n_components()
+            cons[:, i0:i1] = c.finalize_population(vars_int, vars_float, results, verbosity)
+            i0 = i1
+
+        return results, objs, cons

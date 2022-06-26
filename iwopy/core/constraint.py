@@ -37,7 +37,7 @@ class Constraint(Function):
         """
         Returns the bounds for all components.
 
-        Express non-existing bounds using np.inf.
+        Non-existing bounds are expressed by np.inf.
 
         Returns
         -------
