@@ -545,7 +545,6 @@ class Problem(Base, metaclass=ABCMeta):
         verbosity : int
             The verbosity level, 0 = silent
 
-
         Returns
         -------
         problem_results : Any
