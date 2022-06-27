@@ -166,7 +166,7 @@ class FiniteDiff:
         del pres, cvars
         
         # prepare gradients:
-        gradients = np.zeros((n_cmpnts, n_pvars), dtype=np.float64)
+        gradients = np.zeros((n_pvars, n_cmpnts), dtype=np.float64)
         if results0 is None:
             res0 = cres[0]
             cres = cres[1:]
@@ -178,5 +178,5 @@ class FiniteDiff:
             i0 = 0
             for f in funcs:
                 i1 = i0 + f[0].n_components()
-                TODO
+                gradients[:, i0:i1][f[1]] = ( cres[:, f[1]] - res0[])
                 i0 = i1
