@@ -115,7 +115,6 @@ class FiniteDiff:
         n_cmpnts  = sum([f[0].n_components() for f in funcs]) 
         n_vars    = len(vars)
         n_pvars   = problem.n_vars_float
-        gradients = np.full((n_cmpnts, n_pvars), np.nan, dtype=np.float64)
 
         # plan calculation for order 1:
         if order == 1 or order == -1:
@@ -143,5 +142,41 @@ class FiniteDiff:
                 cvars[i0 + 2 * vi][vi]     += sgn * d
                 cvars[i0 + 2 * vi + 1][vi] -= sgn * d
 
-        TODO
+        # run calculation, by individuals:
+        cres = np.full((n_pop, n_cmpnts), np.nan, dtype=np.float64)
+        if not pop:
+            for n, pvars in enumerate(cvars):
+                pres = problem.apply_individual(pvars0_int, pvars)
+                i0 = 0
+                for f in funcs:
+                    i1 = i0 + f[0].n_components()
+                    cres[n, i0:i1] = f[0].calc_individual(pvars0_int, pvars, pres)
+                    i0 = i1
+            
+        # run calculation, by population:
+        else:
+            pres = problem.apply_population(pvars0_int, cvars)
+            i0 = 0
+            for f in funcs:
+                i1 = i0 + f[0].n_components()
+                cres[:, i0:i1] = f[0].calc_population(pvars0_int, pvars, pres)
+                i0 = i1
         
+        # cleanup:
+        del pres, cvars
+        
+        # prepare gradients:
+        gradients = np.zeros((n_cmpnts, n_pvars), dtype=np.float64)
+        if results0 is None:
+            res0 = cres[0]
+            cres = cres[1:]
+        else:
+            res0 = results0
+
+        # calc gradient order 1:
+        if order == 1:
+            i0 = 0
+            for f in funcs:
+                i1 = i0 + f[0].n_components()
+                TODO
+                i0 = i1
