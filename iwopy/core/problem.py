@@ -1,5 +1,5 @@
 import numpy as np
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 
 from iwopy.core.base import Base
 
