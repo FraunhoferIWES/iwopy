@@ -4,8 +4,8 @@ from iwopy.core import Problem
 
 class SimpleProblem(Problem):
     """
-    A simple problem which simply
-    pipes variables to its objectives and constraints.
+    A simple problem which simply pipes variables to its 
+    objectives and constraints.
 
     Parameters
     ----------
