@@ -109,12 +109,14 @@ class FiniteDiff:
         vars = set()
         for f in funcs:
             vars.update(f[1])
+        vars = sorted(list(vars))
+        f2v  = [[j for j, v in enumerate(vars) if v in f[1]] for f in funcs]
 
         # prepare:
-        n_funcs   = len(funcs)
-        n_cmpnts  = sum([f[0].n_components() for f in funcs]) 
-        n_vars    = len(vars)
-        n_pvars   = problem.n_vars_float
+        n_funcs  = len(funcs)
+        n_cmpnts = sum([f[0].n_components() for f in funcs]) 
+        n_pvars  = problem.n_vars_float
+        n_vars   = len(vars)
 
         # plan calculation for order 1:
         if order == 1 or order == -1:
@@ -125,22 +127,28 @@ class FiniteDiff:
             cvars[:] = pvars0_float[None, :]
             sgn      = 1 if order > 0 else -1
             
+            deltas = []
             for vi in vars:
                 d = self._find_delta(problem, vi)
                 cvars[i0 + vi][vi] += sgn * d
+                deltas.append(d)
 
         # plan calculation for order 2:
         if order == 2:
 
-            i0       = 0 if results0 is not None else 1
-            n_pop    = 2 * n_vars + i0
+            n_pop    = 2 * n_vars
             cvars    = np.zeros((n_pop, n_pvars), dtype=np.float64)
             cvars[:] = pvars0_float[None, :]
             
+            deltas = []
             for vi in vars:
                 d = self._find_delta(problem, vi)
-                cvars[i0 + 2 * vi][vi]     += sgn * d
-                cvars[i0 + 2 * vi + 1][vi] -= sgn * d
+                cvars[2 * vi][vi]     += d
+                cvars[2 * vi + 1][vi] -= d
+                deltas.append(d)
+            
+        else:
+            raise ValueError(f"Only orders 1, -1, 2 are implemented, got {order}")
 
         # run calculation, by individuals:
         cres = np.full((n_pop, n_cmpnts), np.nan, dtype=np.float64)
@@ -166,17 +174,28 @@ class FiniteDiff:
         del pres, cvars
         
         # prepare gradients:
-        gradients = np.zeros((n_pvars, n_cmpnts), dtype=np.float64)
+        gradients = []
         if results0 is None:
             res0 = cres[0]
-            cres = cres[1:]
+            if order == 1 or order == -1:
+                cres = cres[1:]
         else:
             res0 = results0
 
         # calc gradient order 1:
-        if order == 1:
+        if order == 1 or order == -1:
             i0 = 0
-            for f in funcs:
+            for fi, f in enumerate(funcs):
                 i1 = i0 + f[0].n_components()
-                gradients[:, i0:i1][f[1]] = ( cres[:, f[1]] - res0[])
+                g  = sgn * ( cres[:, i0:i1][f2v[fi]] - res0[None, i0:i1] ) / deltas[f2v[fi]]
+                gradients.append(g)
+                i0 = i1
+
+        # calc gradient order 2:
+        elif order == 2:
+            i0 = 0
+            for fi, f in enumerate(funcs):
+                i1 = i0 + f[0].n_components()
+                g  = ( cres[1::2, i0:i1][f2v[fi]] - cres[::2, i0:i1][f2v[fi]] ) / ( 2 * deltas[f2v[fi]] )
+                gradients.append(g)
                 i0 = i1
