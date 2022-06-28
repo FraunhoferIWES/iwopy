@@ -199,3 +199,5 @@ class FiniteDiff:
                 g  = ( cres[1::2, i0:i1][f2v[fi]] - cres[::2, i0:i1][f2v[fi]] ) / ( 2 * deltas[f2v[fi]] )
                 gradients.append(g)
                 i0 = i1
+        
+        return gradients
