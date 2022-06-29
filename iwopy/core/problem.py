@@ -1,3 +1,4 @@
+from iwopy.core.finite_diff import FiniteDiff
 import numpy as np
 from abc import ABCMeta
 
@@ -11,6 +12,13 @@ class Problem(Base, metaclass=ABCMeta):
     ----------
     name: str
         The problem's name
+    deltas : dict or float, optional
+        The finite different step sizes.
+        If float, application to all variables.
+        If dict, key: variable name str or parts
+        of variable name str or variable index
+        in problem's float variables. 
+        Value: float, the step size
 
     Attributes
     ----------
@@ -30,15 +38,20 @@ class Problem(Base, metaclass=ABCMeta):
     csizes : list of int
         The number of compenents of the
         constraints
+    fd : iwopy.core.FiniteDiff
+        The finite difference object, or None
 
     """
 
-    def __init__(self, name):
+    def __init__(self, name, deltas=None):
         super().__init__(name)
+
         self.objs   = []
         self.cons   = []
         self.osizes = []
         self.csizes = []
+
+        self.fd = None if deltas is None else FiniteDiff(deltas)
     
     def var_names_int(self):
         """
@@ -101,6 +114,19 @@ class Problem(Base, metaclass=ABCMeta):
         """
         return None
 
+    @property
+    def n_vars_float(self):
+        """
+        The number of float variables
+
+        Returns
+        -------
+        n : int
+            The number of float variables
+            
+        """
+        return len(self.var_names_float())
+
     def add_objective(
             self, 
             objective, 
@@ -152,6 +178,20 @@ class Problem(Base, metaclass=ABCMeta):
         
         self.objs.append((objective, varsi, varsf))
         self.osizes.append(objective.n_components())
+    
+    @property
+    def objs_names(self):
+        """
+        The names of the objectives (not components)
+
+        Returns
+        -------
+        names : list of str
+            The names of the objectives 
+            (not components)
+
+        """
+        return [o.name for o in self.objs]
 
     def add_constraint(
             self, 
@@ -206,17 +246,18 @@ class Problem(Base, metaclass=ABCMeta):
         self.csizes.append(constraint.n_components())
 
     @property
-    def n_vars_float(self):
+    def cons_names(self):
         """
-        The number of float variables
+        The names of the constraints (not components)
 
         Returns
         -------
-        n : int
-            The number of float variables
-            
+        names : list of str
+            The names of the constraints 
+            (not components)
+
         """
-        return len(self.var_names_float())
+        return [c.name for c in self.cons]
 
     @property
     def n_objectives(self):
@@ -247,6 +288,64 @@ class Problem(Base, metaclass=ABCMeta):
 
         """
         return sum(self.csizes)
+
+    def calc_gradients(self, objs=None, cons=None, **kwargs):
+        """
+        Calculate gradients from finite differences.
+
+        Parameters
+        ----------
+        objs : list of int or str, optional
+            The objectives to be differentiated
+            (all components), or None for all
+        cons : list of int or str, optional
+            The constraints to be differentiated
+            (all components), or None for all
+        kwargs: dict, optional
+            Additional parameters forwarded to
+            the `calc_gradients` function of the
+            `iwopy.FiniteDiff` object
+
+        Returns
+        -------
+        gradients : numpy.ndarray
+            The gradients, shape: (n_funcs_cmpnts, n_problem_vars_float)
+
+        """
+
+        funcs = []
+
+        if objs is not None:
+            for ob in objs:
+                if isinstance(ob, int):
+                    o = self.objs[ob]
+                elif isinstance(ob, str):
+                    if ob in self.objs_names:
+                        o = self.objs[self.objs_names.index(ob)]
+                    else:
+                        raise KeyError(f"Problem '{self.name}': Objective '{ob}' not found in list {self.objs_names}")
+                else:
+                    raise ValueError(f"Problem '{self.name}': Objective '{ob}' not int or str type")
+            funcs.append((o[0], o[2]))
+        else:
+            funcs += [(o[0], o[2]) for o in self.objs]
+
+        if cons is not None:
+            for co in cons:
+                if isinstance(co, int):
+                    c = self.cons[co]
+                elif isinstance(co, str):
+                    if co in self.cons_names:
+                        c = self.cons[self.cons_names.index(co)]
+                    else:
+                        raise KeyError(f"Problem '{self.name}': Constraint '{co}' not found in list {self.cons_names}")
+                else:
+                    raise ValueError(f"Problem '{self.name}': Constraint '{co}' not int or str type")
+            funcs.append((c[0], c[2]))
+        else:
+            funcs += [(c[0], c[2]) for c in self.cons]
+
+        return self.fd.calc_gradients(funcs=funcs, **kwargs)
 
     def initialize(self, verbosity=0):
         """

@@ -34,4 +34,50 @@ class SimpleProblem(Problem):
         elif float_vars is not None:
             self._fvars = {v: np.nan for v in float_vars}
 
-    TODO
+    def var_names_int(self):
+        """
+        The names of integer variables.
+
+        Returns
+        -------
+        names : list of str
+            The names of the integer variables
+
+        """
+        return list(self._ivars.keys())
+
+    def initial_values_int(self):
+        """
+        The initial values of the integer variables.
+
+        Returns
+        -------
+        values : numpy.ndarray
+            Initial int values, shape: (n_vars_int,)
+
+        """
+        return np.array(list(self._ivars.values()), dtype=np.int32)
+
+    def var_names_float(self):
+        """
+        The names of float variables.
+
+        Returns
+        -------
+        names : list of str
+            The names of the float variables
+
+        """
+        return list(self._fvars.keys())
+
+    def initial_values_float(self):
+        """
+        The initial values of the float variables.
+
+        Returns
+        -------
+        values : numpy.ndarray
+            Initial float values, shape: (n_vars_float,)
+
+        """
+        return np.array(list(self._fvars.values()), dtype=np.float64)
