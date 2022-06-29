@@ -156,7 +156,7 @@ class Problem(Base, metaclass=ABCMeta):
             if isinstance(w, int):
                 j = w
             elif w in self.var_names_int():
-                j = self.var_names_int().index(j)
+                j = self.var_names_int().index(w)
             else:
                 raise KeyError(f"Problem '{self.name}', objective '{objective.name}': Objective variable '{v}' mapped onto int problem variable '{w}', which is not in the int vars list {self.var_names_int()}")
             if j not in range(self.n_vars_int):
@@ -169,7 +169,7 @@ class Problem(Base, metaclass=ABCMeta):
             if isinstance(w, int):
                 j = w
             elif w in self.var_names_float():
-                j = self.var_names_float().index(j)
+                j = self.var_names_float().index(w)
             else:
                 raise KeyError(f"Problem '{self.name}', objective '{objective.name}': Objective variable '{v}' mapped onto float problem variable '{w}', which is not in the float vars list {self.var_names_float()}")
             if j not in range(self.n_vars_float):

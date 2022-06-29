@@ -33,36 +33,36 @@ class FiniteDiff:
         """
         Helper function for extracting delta data
         """
-        for vi in vars:
-            if isinstance(self.deltas, dict):
-                if vi in self.deltas:
-                    d = self.deltas[vi]
-                else:
-                    v = problem.var_names_float()[vi]
-                    if v in self.deltas:
-                        d = self.deltas[v]
-                    else:
-                        d = None
-                        for k in self.deltas.keys():
-                            for w in problem.var_names_float():
-                                if k in w:
-                                    d = self.deltas[w]
-                                    break
-                            if d is not None:
-                                break
-                        if d is None:
-                            raise KeyError(f"Missing matching pattern for variable '{v}' or index {vi} in deltas, found {sorted(list(self.deltas.keys()))}")
+        if isinstance(self.deltas, dict):
+            if vi in self.deltas:
+                d = self.deltas[vi]
             else:
-                d = self.deltas
+                v = problem.var_names_float()[vi]
+                if v in self.deltas:
+                    d = self.deltas[v]
+                else:
+                    d = None
+                    for k in self.deltas.keys():
+                        for w in problem.var_names_float():
+                            if k in w:
+                                d = self.deltas[w]
+                                break
+                        if d is not None:
+                            break
+                    if d is None:
+                        raise KeyError(f"Missing matching pattern for variable '{v}' or index {vi} in deltas, found {sorted(list(self.deltas.keys()))}")
+        else:
+            d = self.deltas
+
         return d
 
     def calc_gradients(
             self,
             funcs,
-            pvars0_int, 
             pvars0_float,  
-            order, 
             pop, 
+            order=1, 
+            pvars0_int=[], 
             results0=None
         ):
         """
@@ -77,18 +77,18 @@ class FiniteDiff:
             differentiated (all components). Second 
             entry: list of int, the problem float variables 
             on which the function depends.
-        pvars0_int : numpy.ndarray
-            The evaluation problem function int variables,
-            shape: (n_problem_vars_int,)
         pvars0_float : numpy.ndarray
             The evaluation problem function float variables,
             shape: (n_problem_vars_float,)
-        order : int
-            The order of the gradient, either -1 (backward),
-            1 (forward) or 2
         pop : bool
             Flag for simulataneous calculation using 
             populations
+        order : int
+            The order of the gradient, either -1 (backward),
+            1 (forward) or 2
+        pvars0_int : numpy.ndarray
+            The evaluation problem function int variables,
+            shape: (n_problem_vars_int,)
         results0 : numpy.ndarray, optional
             The functions result values at pvars0
             variables, shape: (n_funcs_cmpnts,)
@@ -99,8 +99,15 @@ class FiniteDiff:
             The gradients, shape: (n_funcs_cmpnts, n_problem_vars_float)
 
         """
+        # prepare:
+        problem      = funcs[0][0].problem
+        n_funcs      = len(funcs)
+        n_cmpnts     = sum([f[0].n_components() for f in funcs]) 
+        n_pvars      = problem.n_vars_float
+        pvars0_int   = np.array(pvars0_int, dtype=np.int32)
+        pvars0_float = np.array(pvars0_float, dtype=np.float64)
+
         # check problems:
-        problem = funcs[0][0].problem
         for fi in range(1, n_funcs):
             if funcs[fi][0].problem is not problem:
                 raise ValueError(f"Functions '{funcs[0][0].name}' and '{funcs[fi][0].name}' have different underlying problems: '{problem.name}' vs. '{funcs[fi][0].problem.name}'")
@@ -109,14 +116,9 @@ class FiniteDiff:
         vars = set()
         for f in funcs:
             vars.update(f[1])
-        vars = sorted(list(vars))
-        f2v  = [[j for j, v in enumerate(vars) if v in f[1]] for f in funcs]
-
-        # prepare:
-        n_funcs  = len(funcs)
-        n_cmpnts = sum([f[0].n_components() for f in funcs]) 
-        n_pvars  = problem.n_vars_float
-        n_vars   = len(vars)
+        vars   = sorted(list(vars))
+        n_vars = len(vars)
+        f2v    = [[j for j, v in enumerate(vars) if v in f[1]] for f in funcs]
 
         # plan calculation for order 1:
         if order == 1 or order == -1:
@@ -132,9 +134,10 @@ class FiniteDiff:
                 d = self._find_delta(problem, vi)
                 cvars[i0 + vi][vi] += sgn * d
                 deltas.append(d)
+            deltas = np.array(deltas, dtype=np.float64)
 
         # plan calculation for order 2:
-        if order == 2:
+        elif order == 2:
 
             n_pop    = 2 * n_vars
             cvars    = np.zeros((n_pop, n_pvars), dtype=np.float64)
@@ -143,9 +146,10 @@ class FiniteDiff:
             deltas = []
             for vi in vars:
                 d = self._find_delta(problem, vi)
-                cvars[2 * vi][vi]     += d
-                cvars[2 * vi + 1][vi] -= d
+                cvars[2 * vi][vi]     -= d
+                cvars[2 * vi + 1][vi] += d
                 deltas.append(d)
+            deltas = np.array(deltas, dtype=np.float64)
             
         else:
             raise ValueError(f"Only orders 1, -1, 2 are implemented, got {order}")
@@ -172,7 +176,7 @@ class FiniteDiff:
         
         # cleanup:
         del pres, cvars
-        
+
         # prepare gradients:
         gradients = []
         if results0 is None:
@@ -187,7 +191,7 @@ class FiniteDiff:
             i0 = 0
             for fi, f in enumerate(funcs):
                 i1 = i0 + f[0].n_components()
-                g  = sgn * ( cres[:, i0:i1][f2v[fi]] - res0[None, i0:i1] ) / deltas[f2v[fi]]
+                g  = sgn * ( cres[:, i0:i1][f2v[fi]] - res0[None, i0:i1] ) / deltas[f2v[fi]][:, None]
                 gradients.append(g)
                 i0 = i1
 
@@ -196,7 +200,7 @@ class FiniteDiff:
             i0 = 0
             for fi, f in enumerate(funcs):
                 i1 = i0 + f[0].n_components()
-                g  = ( cres[1::2, i0:i1][f2v[fi]] - cres[::2, i0:i1][f2v[fi]] ) / ( 2 * deltas[f2v[fi]] )
+                g  = ( cres[1::2, i0:i1][f2v[fi]] - cres[::2, i0:i1][f2v[fi]] ) / ( 2 * deltas[f2v[fi]][:, None] )
                 gradients.append(g)
                 i0 = i1
         
