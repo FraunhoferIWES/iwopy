@@ -171,7 +171,7 @@ class FiniteDiff:
             i0 = 0
             for f in funcs:
                 i1 = i0 + f[0].n_components()
-                cres[:, i0:i1] = f[0].calc_population(pvars0_int, pvars, pres)
+                cres[:, i0:i1] = f[0].calc_population(pvars0_int, cvars, pres)
                 i0 = i1
         
         # cleanup:

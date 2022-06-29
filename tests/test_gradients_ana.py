@@ -18,7 +18,13 @@ class Obj1(iwopy.Objective):
     def calc_individual(self, vars_int, vars_float, problem_results):
         x, y = vars_float
         return [x**2 + 2 * np.sin(3*y) - y * x]
-    
+
+    def calc_population(self, vars_int, vars_float, problem_results):
+        x, y = vars_float[:, 0], vars_float[:, 1]
+        def f(x, y):
+            return x**2 + 2 * np.sin(3*y) - y * x
+        return f(x, y)[:, None]
+        
     def ana_grad(self, pvars0_float):
         x, y = pvars0_float
         return np.array([[2*x - y], [6 * np.cos(3*y) - x]])
@@ -34,11 +40,11 @@ class Test(unittest.TestCase):
         if self.verbosity:
             print(*args)
     
-    def _calc(self, p, f, p0, o, lim):
+    def _calc(self, p, f, p0, o, lim, pop):
 
         self.print("p0 =",p0)
 
-        g  = p.calc_gradients(pvars0_float=p0, pop=False, order=o)
+        g  = p.calc_gradients(pvars0_float=p0, pop=pop, order=o)
         self.print("g =", g)
 
         a = [f.ana_grad(p0)]
@@ -49,7 +55,7 @@ class Test(unittest.TestCase):
 
         assert(np.max(d) < lim)
 
-    def test_o1_individual(self):
+    def test_o1_indi(self):
 
         self.print("\n\nTEST order 1 INDI")
 
@@ -58,9 +64,9 @@ class Test(unittest.TestCase):
         p.add_objective(f)
 
         for p0 in np.random.uniform(-2., 2., (1000, 2)):
-            self._calc(p, f, p0, 1, 0.01)
+            self._calc(p, f, p0, 1, 0.01, False)
 
-    def test_om1_individual(self):
+    def test_om1_indi(self):
 
         self.print("\n\nTEST order -1 INDI")
 
@@ -69,9 +75,9 @@ class Test(unittest.TestCase):
         p.add_objective(f)
 
         for p0 in np.random.uniform(-2., 2., (1000, 2)):
-            self._calc(p, f, p0, -1, 0.01)
+            self._calc(p, f, p0, -1, 0.01, False)
         
-    def test_o2_individual(self):
+    def test_o2_indi(self):
 
         self.print("\n\nTEST order 1 INDI")
 
@@ -80,7 +86,40 @@ class Test(unittest.TestCase):
         p.add_objective(f)
 
         for p0 in np.random.uniform(-2., 2., (1000, 2)):
-            self._calc(p, f, p0, 2, 0.01)
+            self._calc(p, f, p0, 2, 0.01, False)
+
+    def test_o1_pop(self):
+
+        self.print("\n\nTEST order 1 POP")
+
+        p = iwopy.SimpleProblem("test", float_vars=["x", "y"], deltas=0.001)
+        f = Obj1(p, "f")
+        p.add_objective(f)
+
+        for p0 in np.random.uniform(-2., 2., (1000, 2)):
+            self._calc(p, f, p0, 1, 0.01, True)
+
+    def test_om1_pop(self):
+
+        self.print("\n\nTEST order -1 POP")
+
+        p = iwopy.SimpleProblem("test", float_vars=["x", "y"], deltas=0.001)
+        f = Obj1(p, "f")
+        p.add_objective(f)
+
+        for p0 in np.random.uniform(-2., 2., (1000, 2)):
+            self._calc(p, f, p0, -1, 0.01, True)
+        
+    def test_o2_pop(self):
+
+        self.print("\n\nTEST order 1 POP")
+
+        p = iwopy.SimpleProblem("test", float_vars=["x", "y"], deltas=0.001)
+        f = Obj1(p, "f")
+        p.add_objective(f)
+
+        for p0 in np.random.uniform(-2., 2., (1000, 2)):
+            self._calc(p, f, p0, 2, 0.01, True)
 
 if __name__ == '__main__':
     unittest.main()
