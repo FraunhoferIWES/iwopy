@@ -1,13 +1,16 @@
 from abc import abstractmethod
 
-from iwopy.core.function import Function
+from .function import OptFunction
 
-class Objective(Function):
+
+class Objective(OptFunction):
     """
     Abstract base class for objective functions.
 
     Parameters
     ----------
+    problem: iwopy.Problem
+        The underlying optimization problem
     name: str
         The function name
     vnames_int : list of str, optional
@@ -21,17 +24,9 @@ class Objective(Function):
 
     """
 
-    def __init__(
-            self, 
-            problem, 
-            name, 
-            vnames_int=None, 
-            vnames_float=None,
-            cnames=None
-        ):
-        super().__init__(problem, name, vnames_int, 
-                            vnames_float, cnames)
-    
+    def __init__(self, problem, name, vnames_int=None, vnames_float=None, cnames=None):
+        super().__init__(problem, name, vnames_int, vnames_float, cnames)
+
     @abstractmethod
     def maximize(self):
         """

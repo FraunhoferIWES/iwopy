@@ -1,15 +1,18 @@
 import numpy as np
 from abc import ABCMeta, abstractmethod
 
-from iwopy.core.base import Base
+from .base import Base
 
-class Function(Base, metaclass=ABCMeta):
+
+class OptFunction(Base, metaclass=ABCMeta):
     """
     Abstract base class for functions
     that calculate scalars based on a problem.
 
     Parameters
     ----------
+    problem: iwopy.Problem
+        The underlying optimization problem
     name: str
         The function name
     vnames_int : list of str, optional
@@ -33,14 +36,14 @@ class Function(Base, metaclass=ABCMeta):
             problem, 
             name, 
             vnames_int=None, 
-            vnames_float=None,
+            vnames_float=None, 
             cnames=None
         ):
         super().__init__(name)
         self.problem  = problem
         self._vnamesi = vnames_int
         self._vnamesf = vnames_float
-        self._cnamesf = cnames
+        self._cnames  = cnames
 
     @abstractmethod
     def n_components(self):
@@ -72,7 +75,7 @@ class Function(Base, metaclass=ABCMeta):
                 self._cnames = [f"{self.name}_{ci}" for ci in range(self.n_components)]
             else:
                 self._cnames = [self.name]
-            
+
         return self._cnames
 
     @property
@@ -100,7 +103,7 @@ class Function(Base, metaclass=ABCMeta):
         -------
         n : int
             The number of int variables
-            
+
         """
         return len(self.var_names_int)
 
@@ -129,13 +132,13 @@ class Function(Base, metaclass=ABCMeta):
         -------
         n : int
             The number of float variables
-            
+
         """
         return len(self.var_names_float)
 
     def calc_individual(self, vars_int, vars_float, problem_results):
         """
-        Calculate values for a single individual of the 
+        Calculate values for a single individual of the
         underlying problem.
 
         Parameters
@@ -145,13 +148,13 @@ class Function(Base, metaclass=ABCMeta):
         vars_float : np.array
             The float variable values, shape: (n_vars_float,)
         problem_results : Any
-            The results of the variable application 
-            to the problem  
+            The results of the variable application
+            to the problem
 
         Returns
         -------
         values : np.array
-            The component values, shape: (n_components,)    
+            The component values, shape: (n_components,)
 
         """
         raise NotImplementedError(f"Not implemented for class {type(self).__name__}")
@@ -167,28 +170,33 @@ class Function(Base, metaclass=ABCMeta):
         vars_float : np.array
             The float variable values, shape: (n_pop, n_vars_float)
         problem_results : Any
-            The results of the variable application 
-            to the problem  
+            The results of the variable application
+            to the problem
 
         Returns
         -------
         values : np.array
-            The component values, shape: (n_pop, n_components,) 
+            The component values, shape: (n_pop, n_components,)
 
         """
 
         if problem_results is not None:
-            raise NotImplementedError(f"Not implemented for class {type(self).__name__}, results type {type(problem_results).__name__}")
+            raise NotImplementedError(
+                f"Not implemented for class {type(self).__name__}, results type {type(problem_results).__name__}"
+            )
 
         # prepare:
-        n_pop = vars_float.shape[0] if vars_float is not None and len(vars_float.shape) \
-                    else vars_int.shape[0]
+        n_pop = (
+            vars_float.shape[0]
+            if vars_float is not None and len(vars_float.shape)
+            else vars_int.shape[0]
+        )
         vals = np.full((n_pop, self.n_components()), np.nan, dtype=np.float64)
 
         # loop over individuals:
         for i in range(n_pop):
             vals[i] = self.calc_individual(vars_int[i], vars_float[i], None)
-        
+
         return vals
 
     def finalize_individual(self, vars_int, vars_float, problem_results, verbosity=1):
@@ -202,15 +210,15 @@ class Function(Base, metaclass=ABCMeta):
         vars_float : np.array
             The optimal float variable values, shape: (n_vars_float,)
         problem_results : Any
-            The results of the variable application 
-            to the problem  
+            The results of the variable application
+            to the problem
         verbosity : int
             The verbosity level, 0 = silent
 
         Returns
         -------
         values : np.array
-            The component values, shape: (n_components,)    
+            The component values, shape: (n_components,)
 
         """
         return self.calc_individual(vars_int, vars_float, problem_results)
@@ -228,15 +236,41 @@ class Function(Base, metaclass=ABCMeta):
             The float variable values of the final
             generation, shape: (n_pop, n_vars_float)
         problem_results : Any
-            The results of the variable application 
-            to the problem  
+            The results of the variable application
+            to the problem
         verbosity : int
             The verbosity level, 0 = silent
 
         Returns
         -------
         values : np.array
-            The component values, shape: (n_pop, n_components) 
+            The component values, shape: (n_pop, n_components)
 
         """
         return self.calc_population(vars_int, vars_float, problem_results)
+
+    def ana_deriv(self, vars_int, vars_float, var, components=None):
+        """
+        Calculates the analytic derivative, if possible.
+
+        Otherwise np.nan values are returned instead.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values, shape: (n_vars_int,)
+        vars_float : np.array
+            The float variable values, shape: (n_vars_float,)
+        var : int
+            The index of the differentiation float variable
+        components : list of int
+            The selected components, or None for all
+
+        Returns
+        -------
+        deriv : numpy.ndarray
+            The derivative values, shape: (n_sel_components,)
+
+        """
+        n_cmpnts = len(components) if components is not None else self.n_components()
+        return np.full(n_cmpnts, np.nan, dtype=np.float64)

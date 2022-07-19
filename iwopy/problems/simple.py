@@ -2,9 +2,10 @@ import numpy as np
 
 from iwopy.core import Problem
 
+
 class SimpleProblem(Problem):
     """
-    A simple problem which simply pipes variables to its 
+    A simple problem which simply pipes variables to its
     objectives and constraints.
 
     Parameters
@@ -24,8 +25,10 @@ class SimpleProblem(Problem):
         super().__init__(name, **kwargs)
 
         if int_vars is None and float_vars is None:
-            raise KeyError(f"Problem '{self.name}': No variables defined, please specify 'int_vars' and/or 'float_vars'")
-    
+            raise KeyError(
+                f"Problem '{self.name}': No variables defined, please specify 'int_vars' and/or 'float_vars'"
+            )
+
         if isinstance(int_vars, dict):
             self._ivars = int_vars
         elif int_vars is not None:

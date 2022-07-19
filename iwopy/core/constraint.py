@@ -1,14 +1,17 @@
 import numpy as np
 
-from iwopy.core.function import Function
+from .function import OptFunction
 
-class Constraint(Function):
+
+class Constraint(OptFunction):
     """
-    Abstract base class for optimization 
+    Abstract base class for optimization
     constraints.
 
     Parameters
     ----------
+    problem: iwopy.Problem
+        The underlying optimization problem
     name: str
         The function name
     vnames_int : list of str, optional
@@ -22,17 +25,9 @@ class Constraint(Function):
 
     """
 
-    def __init__(
-            self, 
-            problem, 
-            name, 
-            vnames_int=None, 
-            vnames_float=None,
-            cnames=None
-        ):
-        super().__init__(problem, name, vnames_int, 
-                            vnames_float, cnames)
-    
+    def __init__(self, problem, name, vnames_int=None, vnames_float=None, cnames=None):
+        super().__init__(problem, name, vnames_int, vnames_float, cnames)
+
     def get_bounds(self):
         """
         Returns the bounds for all components.
@@ -47,8 +42,9 @@ class Constraint(Function):
             The upper bounds, shape: (n_components,)
 
         """
-        return  np.full(self.n_components(), -np.inf, dtype=np.float64), \
-                np.zeros(self.n_components(), dtype=np.float64)
+        return np.full(self.n_components(), -np.inf, dtype=np.float64), np.zeros(
+            self.n_components(), dtype=np.float64
+        )
 
     def check_individual(self, constraint_values, verbosity=0):
         """
@@ -65,13 +61,13 @@ class Constraint(Function):
         Returns
         -------
         values : np.array
-            The boolean result, shape: (n_components,)    
+            The boolean result, shape: (n_components,)
 
         """
-        vals   = constraint_values
+        vals = constraint_values
         mi, ma = self.get_bounds()
-        out    = ( vals >= mi ) & ( vals <= ma )
-        
+        out = (vals >= mi) & (vals <= ma)
+
         if verbosity:
             cnames = self.names()
             for ci in range(self.n_components()):
@@ -96,18 +92,18 @@ class Constraint(Function):
         Returns
         -------
         values : np.array
-            The boolean result, shape: (n_pop, n_components)    
+            The boolean result, shape: (n_pop, n_components)
 
         """
-        vals   = constraint_values
+        vals = constraint_values
         mi, ma = self.get_bounds()
-        
-        out = ( vals >= mi[None, :] ) & ( vals <= ma[None, :] )
+
+        out = (vals >= mi[None, :]) & (vals <= ma[None, :])
 
         if verbosity:
             cnames = self.names()
             for ci in range(self.n_components()):
                 suc = "OK" if np.all(out[ci]) else "FAILED"
                 print(f"Constraint {cnames[ci]:<20} {suc}")
-        
+
         return out

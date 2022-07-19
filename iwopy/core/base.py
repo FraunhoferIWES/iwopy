@@ -27,7 +27,7 @@ class Base:
         -------
         bool:
             True if initialization has been done
-        
+
         """
         return self._initialized
 
