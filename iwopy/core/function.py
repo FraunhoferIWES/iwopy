@@ -59,6 +59,30 @@ class OptFunction(Base, metaclass=ABCMeta):
         """
         pass
 
+    def initialize(self, verbosity=0):
+        """
+        Initialize the object.
+
+        Parameters
+        ----------
+        verbosity : int
+            The verbosity level, 0 = silent
+
+        """
+        if self._cnames is None:
+            if self.n_components() > 1:
+                self._cnames = [f"{self.name}_{ci}" for ci in range(self.n_components)]
+            else:
+                self._cnames = [self.name]
+
+        if self._vnamesi is None:
+            self._vnamesi = self.problem.var_names_int()
+
+        if self._vnamesf is None:
+            self._vnamesf = self.problem.var_names_float()
+            
+        super().initialize(verbosity)
+
     @property
     def component_names(self):
         """
@@ -70,12 +94,6 @@ class OptFunction(Base, metaclass=ABCMeta):
             The component names
 
         """
-        if self._cnames is None:
-            if self.n_components() > 1:
-                self._cnames = [f"{self.name}_{ci}" for ci in range(self.n_components)]
-            else:
-                self._cnames = [self.name]
-
         return self._cnames
 
     @property
@@ -89,9 +107,6 @@ class OptFunction(Base, metaclass=ABCMeta):
             The integer variable names
 
         """
-        if self._vnamesi is None:
-            self._vnamesi = self.problem.var_names_int()
-
         return self._vnamesi
 
     @property
@@ -118,9 +133,6 @@ class OptFunction(Base, metaclass=ABCMeta):
             The float variable names
 
         """
-        if self._vnamesf is None:
-            self._vnamesf = self.problem.var_names_float()
-
         return self._vnamesf
 
     @property
