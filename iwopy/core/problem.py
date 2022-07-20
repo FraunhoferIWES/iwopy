@@ -119,7 +119,6 @@ class Problem(Base, metaclass=ABCMeta):
         """
         Helper function for adding entries to problem varmap
         """
-
         fnms = list(f.var_names_int) if vtype == "int" else list(f.var_names_float)
         if varmap is None:
             varmap = {vi: vi for vi in range(len(fnms))}
@@ -165,7 +164,7 @@ class Problem(Base, metaclass=ABCMeta):
             else:
                 vmap[fv] = pv
 
-    def add_objective(self, objective, varmap_int=None, varmap_float=None):
+    def add_objective(self, objective, varmap_int=None, varmap_float=None, verbosity=0):
         """
         Add an objective to the problem.
 
@@ -181,13 +180,17 @@ class Problem(Base, metaclass=ABCMeta):
             Mapping from objective variables to
             problem variables. Key: str or int,
             value: str or int
+        verbosity : int
+            The verbosity level, 0 = silent
 
         """
+        if not objective.initialized:
+            objective.initialize(verbosity)
         self._add_to_varmap("int", objective, "objective", varmap_int)
         self._add_to_varmap("float", objective, "objective", varmap_float)
         self.objs.append(objective)
 
-    def add_constraint(self, constraint, varmap_int=None, varmap_float=None):
+    def add_constraint(self, constraint, varmap_int=None, varmap_float=None, verbosity=0):
         """
         Add a constraint to the problem.
 
@@ -203,8 +206,12 @@ class Problem(Base, metaclass=ABCMeta):
             Mapping from objective variables to
             problem variables. Key: str or int,
             value: str or int
+        verbosity : int
+            The verbosity level, 0 = silent
 
         """
+        if not constraint.initialized:
+            constraint.initialize(verbosity)
         self._add_to_varmap("int", constraint, "constraint", varmap_int)
         self._add_to_varmap("float", constraint, "constraint", varmap_float)
         self.cons.append(constraint)
@@ -227,31 +234,32 @@ class Problem(Base, metaclass=ABCMeta):
 
             pv = None
             for fvm, pvm in vmap.items():
-                if isinstance(fvm, int) and fvm == fvi:
-                    pv = pvm
-                    break
+                if isinstance(fvm, int):
+                    if fvm == fvi:
+                        pv = pvm
+                        break
                 elif fnmatch.fnmatch(fv, fvm):
                     pv = pvm
                     break
 
             if pv is None:
                 raise KeyError(
-                    f"Problem '{self.name}': {vtype} variable '{fvi}: {fv}' of function '{f.name}' unmatched in varmap {sorted(list(vmap.keys()))}"
+                    f"Problem '{self.name}': {vtype} variable '{fvi}: {fv}' of function '{func.name}' unmatched in varmap {sorted(list(vmap.keys()))}"
                 )
             elif isinstance(pv, str):
-                pvl = fnmatch.filter(pnms)
+                pvl = fnmatch.filter(pnms, pv)
                 if not len(pvl):
                     raise KeyError(
-                        f"Problem '{self.name}': {vtype} variable '{fv}' of function '{f.name}' mapped to '{pv}', but no match within problem {vtype} variables {sorted(pnms)}"
+                        f"Problem '{self.name}': {vtype} variable '{fv}' of function '{func.name}' mapped to '{pv}', but no match within problem {vtype} variables {sorted(pnms)}"
                     )
                 elif len(pvl) > 1:
                     raise KeyError(
-                        f"Problem '{self.name}': {vtype} variable '{fv}' of function '{f.name}' mapped to '{pv}', found multiple matches within problem {vtype} variables {sorted(pvl)}"
+                        f"Problem '{self.name}': {vtype} variable '{fv}' of function '{func.name}' mapped to '{pv}', found multiple matches within problem {vtype} variables {sorted(pvl)}"
                     )
                 pv = pnms.index(pvl[0])
             elif not isinstance(pv, int) or (pv < 0 or pv > len(pnms)):
                 raise ValueError(
-                    f"Problem '{self.name}': {vtype} variable '{fv}' of function '{f.name}' mapped to illegal variable index {pv} for {len(pnms)} available {vtype} variables in problem"
+                    f"Problem '{self.name}': {vtype} variable '{fv}' of function '{func.name}' mapped to illegal variable index {pv} for {len(pnms)} available {vtype} variables in problem"
                 )
 
             if verbosity:
@@ -309,7 +317,7 @@ class Problem(Base, metaclass=ABCMeta):
         return self.cons.n_components()
 
     def calc_gradients(
-        self, ivars, fvars, varsi, varsf, func, vrs, vmap, components, verbosity=0
+        self, ivars, fvars, varsi, varsf, func, vrs, components, verbosity=0
     ):
         """
         The actual gradient calculation.
@@ -336,10 +344,6 @@ class Problem(Base, metaclass=ABCMeta):
         vrs : list of int
             The float variable indices wrt which the
             derivatives are to be calculated
-        vmap : dict, optional
-            Mapping from function variables to problem variables.
-            Keys: function name, Values: dict with mapping from
-            str (or int) to str (or int).
         components : list of int
             The selected components of func, or None for all
         verbosity : int
@@ -356,11 +360,11 @@ class Problem(Base, metaclass=ABCMeta):
         gradients = np.full((func.n_components(), n_vars), np.nan, dtype=np.float64)
         for vi, v in enumerate(vrs):
             if v in fvars:
-                gradients[:vi] = func.ana_deriv(
+                gradients[:, vi] = func.ana_deriv(
                     varsi, varsf, fvars.index(v), components
                 )
             else:
-                gradients[:vi] = 0
+                gradients[:, vi] = 0
 
         return gradients
 
@@ -370,7 +374,8 @@ class Problem(Base, metaclass=ABCMeta):
         vars_float,
         func=None,
         vars=None,
-        varmap=None,
+        varmap_int=None,
+        varmap_float=None,
         components=None,
         verbosity=0,
     ):
@@ -398,11 +403,14 @@ class Problem(Base, metaclass=ABCMeta):
             The float variables wrt which the
             derivatives are to be calculated, or
             None for all
-        varmap : dict, optional
-            Mapping from function variables to problem variables.
-            Keys: function name, Values: dict with mapping from
-            str (or int) to str (or int). This updates the varmap
-            of the problem.
+        varmap_int: dict
+            Mapping from function variables to
+            problem variables. Key: str or int,
+            value: str or int
+        varmap_float: dict
+            Mapping from function variables to
+            problem variables. Key: str or int,
+            value: str or int
         components : list of int
             The selected components of func, or None for all
         verbosity : int
@@ -428,11 +436,15 @@ class Problem(Base, metaclass=ABCMeta):
                 f"Problem '{self.name}': Attempt to calculate gradient for function '{func.name}' which is linked to different problem '{func.problem.name}'"
             )
 
-        # update varmap:
-        if varmap is None:
-            vmap = self.varmap
+        # update varmaps:
+        if varmap_int is None:
+            vmapi = self.varmap_int
         else:
-            vmap = deepcopy(self.varmap).update(varmap)
+            vmapi = deepcopy(self.varmap_int).update(varmap_int)
+        if varmap_float is None:
+            vmapf = self.varmap_float
+        else:
+            vmapf = deepcopy(self.varmap_float).update(varmap_float)
 
         # find differentiation variables:
         if vars is None:
@@ -442,17 +454,17 @@ class Problem(Base, metaclass=ABCMeta):
             vrs = [vnms.index(v) if isinstance(v, str) else int(v) for v in vars]
 
         # calculate gradients:
-        ivars = self._resolve_varmap(func, "int", vmap, verbosity)
-        fvars = self._resolve_varmap(func, "float", vmap, verbosity)
-        varsi = vars_int[ivars]
-        varsf = vars_float[fvars]
+        ivars = self._resolve_varmap(func, "int", vmapi, verbosity)
+        fvars = self._resolve_varmap(func, "float", vmapf, verbosity)
+        varsi = vars_int[ivars] if len(vars_int) else np.array([])
+        varsf = vars_float[fvars]  if len(vars_float) else np.array([])
         gradients = self.calc_gradients(
-            ivars, fvars, varsi, varsf, func, vrs, vmap, components, verbosity
+            ivars, fvars, varsi, varsf, func, vrs, components, verbosity
         )
 
         return gradients
 
-    def initialize(self, verbosity=0):
+    def initialize(self, verbosity=1):
         """
         Initialize the problem.
 
@@ -462,43 +474,42 @@ class Problem(Base, metaclass=ABCMeta):
             The verbosity level, 0 = silent
 
         """
+
+        if not self.objs.initialized:
+            self.objs.initialize(verbosity)
+        if not self.cons.initialized:
+            self.cons.initialize(verbosity)
+
         if verbosity:
             s = f"Problem '{self.name}' ({type(self).__name__}): Initializing"
             print(s)
             L = len(s)
             print("-" * L)
 
-        n_int = self.n_vars_int()
-        n_float = self.n_vars_float()
+        n_int = self.n_vars_int
+        n_float = self.n_vars_float
         if verbosity:
             print(f"  n_vars_int   : {n_int}")
             print(f"  n_vars_float : {n_float}")
             print("-" * L)
 
         if verbosity:
-            print(f"  n_objectives : {len(self.objs)}")
+            print(f"  n_objectives : {self.objs.n_functions}")
             print(f"  n_obj_cmptns : {self.n_objectives}")
             print("-" * L)
-            print(f"  n_constraints: {len(self.cons)}")
+            print(f"  n_constraints: {self.cons.n_functions}")
             print(f"  n_con_cmptns : {self.n_constraints}")
             print("-" * L)
 
-        if self.n_objectives() == 0:
+        if self.n_objectives == 0:
             raise ValueError("Problem initialized without added objectives.")
 
-        self._maximize = np.zeros(self.n_objectives, dtype=np.bool)
-
+        self._maximize = np.zeros(self.n_objectives, dtype=bool)
         i0 = 0
-        for f in self.objs:
-            if not f.initialized:
-                f.initialize(verbosity)
+        for f in self.objs.functions:
             i1 = i0 + f.n_components()
-            self._maximize[i0:i1] = np.array(f.maximize(), dtype=np.bool)
+            self._maximize[i0:i1] = np.array(f.maximize(), dtype=bool)
             i0 = i1
-
-        for c in self.cons:
-            if not c.initialized:
-                c.initialize(verbosity)
 
         super().initialize(verbosity)
 

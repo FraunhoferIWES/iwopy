@@ -108,9 +108,10 @@ class OptFunctionList(OptFunction):
         self._vnamesf = list(dict.fromkeys(self._vnamesf))
 
         def getv(vnames, fvnames):
+            if not len(fvnames):
+                 return []
             l = [vnames.index(v) for v in fvnames]
-            s = np.s_[l[0] : l[-1]]
-            return s if list(s) == l else l
+            return np.s_[l[0] : l[-1]] if list(range(l[0], l[1])) == l else l
 
         self.func_vars_int = [
             getv(self._vnamesi, f.var_names_int) for f in self.functions
@@ -371,7 +372,7 @@ class OptFunctionList(OptFunction):
                 vi = list(self.func_vars_float[fi]).index(var)
                 try:
                     deriv[c0:c1] = f.ana_deriv(
-                        self, varsi, varsf, vi, components=cmpnts[fi]
+                        varsi, varsf, vi, components=cmpnts[fi]
                     )
                 except NotImplementedError:
                     ecount += 1

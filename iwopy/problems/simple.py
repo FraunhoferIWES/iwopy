@@ -16,13 +16,11 @@ class SimpleProblem(Problem):
     float_vars : dict or array-like
         The float variables, either dict with name str
         to initial value mapping, or list of variable names
-    kwargs: dict, optional
-        Additional parameters passed to `iwopy.Problem`
 
     """
 
-    def __init__(self, name, int_vars=None, float_vars=None, **kwargs):
-        super().__init__(name, **kwargs)
+    def __init__(self, name, int_vars=None, float_vars=None):
+        super().__init__(name)
 
         if int_vars is None and float_vars is None:
             raise KeyError(
