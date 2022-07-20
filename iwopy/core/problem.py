@@ -1,6 +1,7 @@
 import numpy as np
+import fnmatch
 from abc import ABCMeta
-from fnmatch import fnmatch
+from copy import deepcopy
 
 from .base import Base
 from .function_list import OptFunctionList
@@ -21,16 +22,14 @@ class Problem(Base, metaclass=ABCMeta):
         The objective functions
     cons : iwopy.core.OptFunctionList
         The constraints
-    varmap_int : dict
-        Mapping from function int variables to
-        problem int variables. Keys: function name,
-        Values: dict with mapping from str (or int)
-        to str (or int)
-    varmap_float : dict
-        Mapping from function float variables to
-        problem float variables. Keys: function name,
-        Values: dict with mapping from str (or int)
-        to str (or int)
+    varmap_int: dict
+        Mapping from function variables to
+        problem variables. Key: str or int,
+        value: str or int
+    varmap_float: dict
+        Mapping from function variables to
+        problem variables. Key: str or int,
+        value: str or int
 
     """
 
@@ -116,7 +115,57 @@ class Problem(Base, metaclass=ABCMeta):
         """
         return len(self.var_names_float())
 
-    def add_objective(self, objective, varmap_int={}, varmap_float={}):
+    def _add_to_varmap(self, vtype, f, ftype, varmap):
+        """
+        Helper function for adding entries to problem varmap
+        """
+
+        fnms = list(f.var_names_int) if vtype == "int" else list(f.var_names_float)
+        if varmap is None:
+            varmap = {vi: vi for vi in range(len(fnms))}
+
+        vmap = self.varmap_int if vtype == "int" else self.varmap_float
+        pnms = (
+            list(self.var_names_int())
+            if vtype == "int"
+            else list(self.var_names_float())
+        )
+        for fv, pv in varmap.items():
+
+            if isinstance(fv, str):
+                fvl = fnmatch.filter(fnms, fv)
+                if len(fvl) != 1:
+                    raise KeyError(
+                        f"Problem '{self.name}': varmap_{vtype} variable '{fv}' of {ftype} '{f.name}' not uniquely matched among {ftype} variables, found {fvl}"
+                    )
+                else:
+                    fv = fvl[0]
+            elif not isinstance(fv, int):
+                raise ValueError(
+                    f"Problem '{self.name}': varmap_{vtype} variable '{fv}' of {ftype} '{f.name}' is neither str nor int"
+                )
+
+            if fv in vmap:
+                if pv != vmap[fv]:
+                    raise ValueError(
+                        f"Problem '{self.name}': Mismatch in varmap_{vtype} for {ftype} '{f.name}', found '{fv} --> {pv}', expected '{fv} --> {vmap[fv]}'"
+                    )
+            elif isinstance(pv, str):
+                pvl = fnmatch.filter(pnms, pv)
+                if len(pvl) != 1:
+                    raise ValueError(
+                        f"Problem '{self.name}': Require unique match of {vtype} variable '{fv}' of {ftype} '{f.name}' to problem variables, found {pvl} for pattern '{pv}'"
+                    )
+                else:
+                    vmap[fv] = pvl[0]
+            elif not isinstance(fv, int):
+                raise ValueError(
+                    f"Problem '{self.name}': varmap_{vtype} target variable in '{fv} --> {pv}' of {ftype} '{f.name}' is neither str nor int"
+                )
+            else:
+                vmap[fv] = pv
+
+    def add_objective(self, objective, varmap_int=None, varmap_float=None):
         """
         Add an objective to the problem.
 
@@ -124,25 +173,21 @@ class Problem(Base, metaclass=ABCMeta):
         ----------
         objective : iwopy.Objective
             The objective
-        varmap_int : dict, optional
-            Mapping from objective int variables to
-            problem int variables. Key: str or int,
+        varmap_int: dict, optional
+            Mapping from objective variables to
+            problem variables. Key: str or int,
             value: str or int
-        varmap_float : dict, optional
-            Mapping from objective float variables to
-            problem float variables. Key: str or int,
+        varmap_float: dict, optional
+            Mapping from objective variables to
+            problem variables. Key: str or int,
             value: str or int
 
         """
-
-        if objective.name in self.varmap_float:
-            raise KeyError(f"Problem '{self.name}': Cannot add objective '{objective.name}', since a function with that name has already been added before")
-        self.varmap_int[objective.name] = varmap_int
-        self.varmap_float[objective.name] = varmap_float
-
+        self._add_to_varmap("int", objective, "objective", varmap_int)
+        self._add_to_varmap("float", objective, "objective", varmap_float)
         self.objs.append(objective)
 
-    def add_constraint(self, constraint, varmap_int={}, varmap_float={}):
+    def add_constraint(self, constraint, varmap_int=None, varmap_float=None):
         """
         Add a constraint to the problem.
 
@@ -150,23 +195,71 @@ class Problem(Base, metaclass=ABCMeta):
         ----------
         constraint : iwopy.Constraint
             The constraint
-        varmap_int : dict, optional
-            Mapping from constraint int variables to
-            problem int variables. Key: str or int,
+        varmap_int: dict, optional
+            Mapping from objective variables to
+            problem variables. Key: str or int,
             value: str or int
-        varmap_float : dict, optional
-            Mapping from constraint float variables to
-            problem float variables. Key: str or int,
+        varmap_float: dict, optional
+            Mapping from objective variables to
+            problem variables. Key: str or int,
             value: str or int
 
         """
-
-        if constraint.name in self.varmap_float:
-            raise KeyError(f"Problem '{self.name}': Cannot add constraint '{constraint.name}', since a function with that name has already been added before")
-        self.varmap_int[constraint.name] = varmap_int
-        self.varmap_float[constraint.name] = varmap_float
-
+        self._add_to_varmap("int", constraint, "constraint", varmap_int)
+        self._add_to_varmap("float", constraint, "constraint", varmap_float)
         self.cons.append(constraint)
+
+    def _resolve_varmap(self, func, vtype, vmap, verbosity=0):
+        """
+        Helper function for mapping str entries to int in varmap
+        """
+
+        fvars = []
+        fnms = (
+            list(func.var_names_int) if vtype == "int" else list(func.var_names_float)
+        )
+        pnms = (
+            list(self.var_names_int())
+            if vtype == "int"
+            else list(self.var_names_float())
+        )
+        for fvi, fv in enumerate(fnms):
+
+            pv = None
+            for fvm, pvm in vmap.items():
+                if isinstance(fvm, int) and fvm == fvi:
+                    pv = pvm
+                    break
+                elif fnmatch.fnmatch(fv, fvm):
+                    pv = pvm
+                    break
+
+            if pv is None:
+                raise KeyError(
+                    f"Problem '{self.name}': {vtype} variable '{fvi}: {fv}' of function '{f.name}' unmatched in varmap {sorted(list(vmap.keys()))}"
+                )
+            elif isinstance(pv, str):
+                pvl = fnmatch.filter(pnms)
+                if not len(pvl):
+                    raise KeyError(
+                        f"Problem '{self.name}': {vtype} variable '{fv}' of function '{f.name}' mapped to '{pv}', but no match within problem {vtype} variables {sorted(pnms)}"
+                    )
+                elif len(pvl) > 1:
+                    raise KeyError(
+                        f"Problem '{self.name}': {vtype} variable '{fv}' of function '{f.name}' mapped to '{pv}', found multiple matches within problem {vtype} variables {sorted(pvl)}"
+                    )
+                pv = pnms.index(pvl[0])
+            elif not isinstance(pv, int) or (pv < 0 or pv > len(pnms)):
+                raise ValueError(
+                    f"Problem '{self.name}': {vtype} variable '{fv}' of function '{f.name}' mapped to illegal variable index {pv} for {len(pnms)} available {vtype} variables in problem"
+                )
+
+            if verbosity:
+                print(f"  {vtype} fvar {fvi}: {fv} --> {vtype} pvar {pv}: {pnms[pv]}")
+
+            fvars.append(pv)
+
+        return fvars
 
     def initialize(self, verbosity=0):
         """
@@ -181,82 +274,7 @@ class Problem(Base, metaclass=ABCMeta):
         self.objs.initialize(verbosity)
         self.cons.initialize(verbosity)
 
-        onms = [f.name for f in self.objs.functions]
-        cnms = [f.name for f in self.cons.functions]
-        pnmsi = list(self.var_names_int())
-        pnmsf = list(self.var_names_float())
-
-        # resolve int variable mappings:
-        vmapi = {}
-        for fname, vmap in self.varmap_int.items():
-
-            if fname in onms:
-                f = self.objs.functions[onms.index(fname)]
-            elif fname in cnms:
-                f = self.cons.functions[cnms.index(fname)]
-            else:
-                raise KeyError(f"Problem '{self.name}': Function '{fname}' from varmap_int not found in problem")
-            if verbosity and f.n_vars_int:
-                print(f"Problem '{self.name}', function '{f.name}': Mapping integer variables")
-
-            vmapi[f.name] = {}
-            for fvi, fv in enumerate(f.var_names_int):
-                pv = None
-                for fvm, pvm in vmap.items():
-                    if isinstance(fvm, int) and fvm == fvi:
-                        pv = pvm
-                        break
-                    elif fnmatch(fv, fvm):
-                        pv = pvm
-                        break
-                if pv is None:
-                    raise KeyError(f"Problem '{self.name}': Int variable '{fvi}: {fv}' of function '{f.name}' unmatched in varmap_int {sorted(list(vmap.keys()))}")           
-                elif isinstance(pv, str):
-                    if pv not in pnmsi:
-                        raise KeyError(f"Problem '{self.name}': Int variable '{fv}' of function '{f.name}' mapped to '{pv}', but not found in problem int variables {sorted(pnmsi)}")
-                    pv = pnmsi.index(pv)
-                elif not isinstance(pv, int) or (pv < 0 or pv > len(pnmsi)):
-                    raise ValueError(f"Problem '{self.name}': Int variable '{fv}' of function '{f.name}' mapped to illegal variable index {pv} for {len(pnmsi)} available int variables in problem")
-                if verbosity:
-                    print(f"  fvar {fvi}: {fv} --> pvar {pv}: {pnmsi[pv]}")
-                vmapi[f.name][fvi] = pv
-        self.varmap_int = vmapi
-            
-        # resolve float variable mappings:
-        vmapf = {}
-        for fname, vmap in self.varmap_float.items():
-
-            if fname in onms:
-                f = self.objs.functions[onms.index(fname)]
-            elif fname in cnms:
-                f = self.cons.functions[cnms.index(fname)]
-            else:
-                raise KeyError(f"Problem '{self.name}': Function '{fname}' from varmap_float not found in problem")
-            if verbosity and f.n_vars_float:
-                print(f"Problem '{self.name}', function '{f.name}': Mapping float variables")
-
-            vmapf[f.name] = {}
-            for fvi, fv in enumerate(f.var_names_float):
-                pv = None
-                for fvm, pvm in vmap.items():
-                    if isinstance(fvm, int) and fvm == fvi:
-                        pv = pvm
-                        break
-                    elif fnmatch(fv, fvm):
-                        pv = pvm
-                        break
-                if pv is None:
-                    raise KeyError(f"Problem '{self.name}': FLoat variable '{fvi}: {fv}' of function '{f.name}' unmatched in varmap_float {sorted(list(vmap.keys()))}")           
-                elif isinstance(pv, str):
-                    if pv not in pnmsf:
-                        raise KeyError(f"Problem '{self.name}': Float variable '{fv}' of function '{f.name}' mapped to '{pv}', but not found in problem float variables {sorted(pnmsf)}")
-                    pv = pnmsf.index(pv)
-                elif not isinstance(pv, int) or (pv < 0 or pv > len(pnmsf)):
-                    raise ValueError(f"Problem '{self.name}': Float variable '{fv}' of function '{f.name}' mapped to illegal variable index {pv} for {len(pnmsf)} available float variables in problem")
-                if verbosity:
-                    print(f"  fvar {fvi}: {fv} --> pvar {pv}: {pnmsf[pv]}")
-                vmapf[f.name][fvi] = pv
-        self.varmap_float = vmapf
+        self.varmap = self.resolve_varmap(self.varmap, verbosity)
 
         super().initialize(verbosity)
 
@@ -290,99 +308,149 @@ class Problem(Base, metaclass=ABCMeta):
         """
         return self.cons.n_components()
 
-    def calc_gradients(self, func=None, vars=None):
+    def calc_gradients(
+        self, ivars, fvars, varsi, varsf, func, vrs, vmap, components, verbosity=0
+    ):
         """
-        Calculate gradients of a function that is linked to the
-        problem.
+        The actual gradient calculation.
 
-        Usually the function is a `iwopy.core.OptFunctionList`
-        object that contains objectives and/or constraints.
+        Can be overloaded in derived classes, the base class only considers
+        analytic derivatives.
 
         Parameters
         ----------
+        ivars : list of int
+            The indices of the int variables in the problem resulting
+            from the varmap mapping
+        fvars : list of int
+            The indices of the float variables in the problem resulting
+            from the varmap mapping
+        varsi : np.array
+            The integer variable values, shape: (n_func_vars_int,)
+        varsf : np.array
+            The float variable values, shape: (n_vfunc_ars_float,)
         func : iwopy.core.OptFunctionList, optional
             The functions to be differentiated, or None
-            for a list of all objectives and all constraints 
+            for a list of all objectives and all constraints
             (in that order)
-        vars : list of int or str, optional
-            The float variables for wrt which the
-            derivatives are to be calculated, or 
-            None for all
-        varmap_int : dict, optional
-            Mapping from func int variables to
-            problem int variables. Key: str or int,
-            value: str or int. Updates the stored varmap.
-        varmap_float : dict, optional
-            Mapping from func float variables to
-            problem float variables. Key: str or int,
-            value: str or int. Updates the stored varmap.
+        vrs : list of int
+            The float variable indices wrt which the
+            derivatives are to be calculated
+        vmap : dict, optional
+            Mapping from function variables to problem variables.
+            Keys: function name, Values: dict with mapping from
+            str (or int) to str (or int).
+        components : list of int
+            The selected components of func, or None for all
+        verbosity : int
+            The verbosity level, 0 = silent
 
         Returns
         -------
         gradients : numpy.ndarray
-            The gradients of the functio, 
-            list element shapes: (n_obj_cmpnts, n_vars)
+            The gradients of the functions, shape:
+            (n_func_cmpnts, n_vars)
 
         """
-        TODO
+        n_vars = len(vrs)
+        gradients = np.full((func.n_components(), n_vars), np.nan, dtype=np.float64)
+        for vi, v in enumerate(vrs):
+            if v in fvars:
+                gradients[:vi] = func.ana_deriv(
+                    varsi, varsf, fvars.index(v), components
+                )
+            else:
+                gradients[:vi] = 0
+
+        return gradients
+
+    def get_gradients(
+        self,
+        vars_int,
+        vars_float,
+        func=None,
+        vars=None,
+        varmap=None,
+        components=None,
+        verbosity=0,
+    ):
+        """
+        Obtain gradients of a function that is linked to the
+        problem.
+
+        The func object typically is a `iwopy.core.OptFunctionList`
+        object that contains a selection of objectives and/or constraints
+        that were previously added to this problem. By default all
+        objectives and constraints (and all their components) are
+        being considered.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values, shape: (n_vars_int,)
+        vars_float : np.array
+            The float variable values, shape: (n_vars_float,)
+        func : iwopy.core.OptFunctionList, optional
+            The functions to be differentiated, or None
+            for a list of all objectives and all constraints
+            (in that order)
+        vars : list of int or str, optional
+            The float variables wrt which the
+            derivatives are to be calculated, or
+            None for all
+        varmap : dict, optional
+            Mapping from function variables to problem variables.
+            Keys: function name, Values: dict with mapping from
+            str (or int) to str (or int). This updates the varmap
+            of the problem.
+        components : list of int
+            The selected components of func, or None for all
+        verbosity : int
+            The verbosity level, 0 = silent
+
+        Returns
+        -------
+        gradients : numpy.ndarray
+            The gradients of the functions, shape:
+            (n_func_cmpnts, n_vars)
+
+        """
+        # set and check func:
+        if func is None:
+            func = OptFunctionList(self, "objs_cons")
+            for f in self.objs.functions:
+                func.append(f)
+            for f in self.cons.functions:
+                func.append(f)
+            func.initialize(verbosity=0)
         if func.problem is not self:
-            raise ValueError(f"Problem '{self.name}': Attempt to calculate gradient for function '{func.name}' which is linked to different problem '{func.problem.name}'")
+            raise ValueError(
+                f"Problem '{self.name}': Attempt to calculate gradient for function '{func.name}' which is linked to different problem '{func.problem.name}'"
+            )
+
+        # update varmap:
+        if varmap is None:
+            vmap = self.varmap
+        else:
+            vmap = deepcopy(self.varmap).update(varmap)
 
         # find differentiation variables:
         if vars is None:
             vrs = list(range(self.n_vars_float))
         else:
             vnms = list(self.var_names_float())
-            vrs  = [vnms.index(v) if isinstance(v, str) else int(v) for v in vars]
-        n_vars = len(vrs)
+            vrs = [vnms.index(v) if isinstance(v, str) else int(v) for v in vars]
 
-        # map integer variables:
+        # calculate gradients:
+        ivars = self._resolve_varmap(func, "int", vmap, verbosity)
+        fvars = self._resolve_varmap(func, "float", vmap, verbosity)
+        varsi = vars_int[ivars]
+        varsf = vars_float[fvars]
+        gradients = self.calc_gradients(
+            ivars, fvars, varsi, varsf, func, vrs, vmap, components, verbosity
+        )
 
-
-
-        """
-        funcs = []
-
-        if objs is not None:
-            for ob in objs:
-                if isinstance(ob, int):
-                    o = self.objs[ob]
-                elif isinstance(ob, str):
-                    if ob in self.objs_names:
-                        o = self.objs[self.objs_names.index(ob)]
-                    else:
-                        raise KeyError(
-                            f"Problem '{self.name}': Objective '{ob}' not found in list {self.objs_names}"
-                        )
-                else:
-                    raise ValueError(
-                        f"Problem '{self.name}': Objective '{ob}' not int or str type"
-                    )
-            funcs.append((o[0], o[2]))
-        else:
-            funcs += [(o[0], o[2]) for o in self.objs]
-
-        if cons is not None:
-            for co in cons:
-                if isinstance(co, int):
-                    c = self.cons[co]
-                elif isinstance(co, str):
-                    if co in self.cons_names:
-                        c = self.cons[self.cons_names.index(co)]
-                    else:
-                        raise KeyError(
-                            f"Problem '{self.name}': Constraint '{co}' not found in list {self.cons_names}"
-                        )
-                else:
-                    raise ValueError(
-                        f"Problem '{self.name}': Constraint '{co}' not int or str type"
-                    )
-            funcs.append((c[0], c[2]))
-        else:
-            funcs += [(c[0], c[2]) for c in self.cons]
-
-        return self.fd.calc_gradients(funcs=funcs, **kwargs)
-        """
+        return gradients
 
     def initialize(self, verbosity=0):
         """

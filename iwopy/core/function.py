@@ -31,19 +31,12 @@ class OptFunction(Base, metaclass=ABCMeta):
 
     """
 
-    def __init__(
-            self, 
-            problem, 
-            name, 
-            vnames_int=None, 
-            vnames_float=None, 
-            cnames=None
-        ):
+    def __init__(self, problem, name, vnames_int=None, vnames_float=None, cnames=None):
         super().__init__(name)
-        self.problem  = problem
+        self.problem = problem
         self._vnamesi = vnames_int
         self._vnamesf = vnames_float
-        self._cnames  = cnames
+        self._cnames = cnames
 
     @abstractmethod
     def n_components(self):
@@ -121,7 +114,7 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         """
         return len(self.var_names_int)
-    
+
     def pvars2fvars_int(self, pvars, varmap):
         """
         Map problem variables to function variables
@@ -135,17 +128,19 @@ class OptFunction(Base, metaclass=ABCMeta):
             problem int variables. Keys: function name,
             Values: dict with mapping from str (or int)
             to str (or int)
-        
+
         Returns
         -------
         fvars : list of int
             The function variable indices
-        
+
         """
         if not self.name in varmap:
-            raise KeyError(f"Function '{self.name}': No match in varmap keys for this function, {sorted(list(varmap.keys()))}")
+            raise KeyError(
+                f"Function '{self.name}': No match in varmap keys for this function, {sorted(list(varmap.keys()))}"
+            )
         vmap = varmap[self.name]
-        
+
         vnms = list(self.var_names_int)
         pnms = list(self.problem.var_names_int())
         geti = lambda v, nms: nms.index(v) if isinstance(v, str) else int(v)
@@ -160,50 +155,7 @@ class OptFunction(Base, metaclass=ABCMeta):
                 qv = pnms[pv]
                 fv = vmap.get(qv, qv)
             fvars.append(geti(fv, vnms))
-        
-        return fvars
 
-    def pvars2fvars_float(self, pvars, varmap):
-        """
-        Map problem variables to function variables
-
-        Parameters
-        ----------
-        pvars : list of str or int
-            The problem variables to be mapped
-        varmap : dict
-            Mapping from function float variables to
-            problem float variables. Keys: function name,
-            Values: dict with mapping from str (or int)
-            to str (or int)
-        
-        Returns
-        -------
-        fvars : list of int
-            The function variable indices
-        
-        """
-        TODO - STILL NEEDED?
-        
-        if not self.name in varmap:
-            raise KeyError(f"Function '{self.name}': No match in varmap keys for this function, {sorted(list(varmap.keys()))}")
-        vmap = varmap[self.name]
-        
-        vnms = list(self.var_names_float)
-        pnms = list(self.problem.var_names_float())
-        geti = lambda v, nms: nms.index(v) if isinstance(v, str) else int(v)
-        fvars = []
-        for pv in pvars:
-            if pv in vmap:
-                fv = vmap[pv]
-            elif isinstance(pv, str):
-                qv = geti(pv, pnms)
-                fv = vmap.get(qv, pv)
-            else:
-                qv = pnms[pv]
-                fv = vmap.get(qv, qv)
-            fvars.append(geti(fv, vnms))
-        
         return fvars
 
     @property
@@ -349,8 +301,6 @@ class OptFunction(Base, metaclass=ABCMeta):
         """
         Calculates the analytic derivative, if possible.
 
-        Otherwise np.nan values are returned instead.
-
         Parameters
         ----------
         vars_int : np.array
@@ -368,5 +318,6 @@ class OptFunction(Base, metaclass=ABCMeta):
             The derivative values, shape: (n_sel_components,)
 
         """
-        n_cmpnts = len(components) if components is not None else self.n_components()
-        return np.full(n_cmpnts, np.nan, dtype=np.float64)
+        raise NotImplementedError(
+            f"Function '{self.name}': Analytic derivatives not implemented. Maybe wrap the problem '{self.problem.name}' into 'DiscretizeRegGrid'?"
+        )

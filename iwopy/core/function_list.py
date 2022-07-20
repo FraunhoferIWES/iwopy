@@ -1,5 +1,7 @@
 import numpy as np
+
 from .function import OptFunction
+
 
 class OptFunctionList(OptFunction):
     """
@@ -17,7 +19,7 @@ class OptFunctionList(OptFunction):
         The underlying optimization problem
     name: str
         The function name
-    
+
     Attributes
     ----------
     func_vars_int : list of lists of int
@@ -31,11 +33,7 @@ class OptFunctionList(OptFunction):
 
     """
 
-    def __init__(
-            self, 
-            problem, 
-            name
-        ):
+    def __init__(self, problem, name):
         super().__init__(problem, name)
 
         self._functions = []
@@ -43,7 +41,7 @@ class OptFunctionList(OptFunction):
         self.func_vars_int = []
         self.func_vars_float = []
         self.sizes = []
-    
+
     def append(self, function):
         """
         Adds a function to the list.
@@ -54,9 +52,13 @@ class OptFunctionList(OptFunction):
             The function
 
         """
+        if function.problem is not self.problem:
+            raise ValueError(
+                f"FunctionList '{self.name}': Cannot add function '{function.name}' since problems don't match. Expected '{self.problem.name}', found '{function.problem.name}'"
+            )
         self._functions.append(function)
         self._cnames += list(function.component_names)
-    
+
     @property
     def functions(self):
         """
@@ -107,11 +109,15 @@ class OptFunctionList(OptFunction):
 
         def getv(vnames, fvnames):
             l = [vnames.index(v) for v in fvnames]
-            s = np.s_[l[0]:l[-1]]
+            s = np.s_[l[0] : l[-1]]
             return s if list(s) == l else l
 
-        self.func_vars_int = [getv(self._vnamesi, f.var_names_int) for f in self.functions]
-        self.func_vars_float = [getv(self._vnamesf, f.var_names_float) for f in self.functions]
+        self.func_vars_int = [
+            getv(self._vnamesi, f.var_names_int) for f in self.functions
+        ]
+        self.func_vars_float = [
+            getv(self._vnamesf, f.var_names_float) for f in self.functions
+        ]
 
         super().initialize(verbosity)
 
@@ -127,17 +133,17 @@ class OptFunctionList(OptFunction):
 
         """
         return sum(self.sizes)
-    
+
     def split_individual(self, data):
         """
-        Splits result values or other data into 
+        Splits result values or other data into
         individual function data.
 
         Parameters
         ----------
         data : numpy.ndarray
             The data, shape: (n_components,)
-        
+
         Returns
         -------
         fdata : list of numpy.ndarray
@@ -155,20 +161,20 @@ class OptFunctionList(OptFunction):
 
     def split_population(self, data):
         """
-        Splits result values or other data into 
+        Splits result values or other data into
         individual function data.
 
         Parameters
         ----------
         data : numpy.ndarray
             The data, shape: (n_pop, n_components)
-        
+
         Returns
         -------
         fdata : list of numpy.ndarray
             The data for each function, list entry
             shapes: (n_pop, n_func_components)
-            
+
         """
         out = []
         i0 = 0
@@ -273,7 +279,9 @@ class OptFunctionList(OptFunction):
             i1 = i0 + self.sizes[fi]
             varsi = vars_int[self.func_vars_int[fi]]
             varsf = vars_float[self.func_vars_float[fi]]
-            values[i0:i1] = f.finalize_individual(self, varsi, varsf, problem_results, verbosity)
+            values[i0:i1] = f.finalize_individual(
+                self, varsi, varsf, problem_results, verbosity
+            )
             i0 = i1
 
         return values
@@ -310,7 +318,9 @@ class OptFunctionList(OptFunction):
             i1 = i0 + self.sizes[fi]
             varsi = vars_int[:, self.func_vars_int[fi]]
             varsf = vars_float[:, self.func_vars_float[fi]]
-            values[:, i0:i1] = f.finalize_population(self, varsi, varsf, problem_results, verbosity)
+            values[:, i0:i1] = f.finalize_population(
+                self, varsi, varsf, problem_results, verbosity
+            )
             i0 = i1
 
         return values
@@ -318,8 +328,6 @@ class OptFunctionList(OptFunction):
     def ana_deriv(self, vars_int, vars_float, var, components=None):
         """
         Calculates the analytic derivative, if possible.
-
-        Otherwise np.nan values are returned instead.
 
         Parameters
         ----------
@@ -353,6 +361,7 @@ class OptFunctionList(OptFunction):
 
         i0 = 0
         c0 = 0
+        ecount = 0
         for fi, f in enumerate(self.functions):
             i1 = i0 + self.sizes[fi]
             c1 = c0 + len(cmpnts[fi])
@@ -360,8 +369,18 @@ class OptFunctionList(OptFunction):
                 varsi = vars_int[self.func_vars_int[fi]]
                 varsf = vars_float[self.func_vars_float[fi]]
                 vi = list(self.func_vars_float[fi]).index(var)
-                deriv[c0:c1] = f.ana_deriv(self, varsi, varsf, vi, components=cmpnts[fi])
+                try:
+                    deriv[c0:c1] = f.ana_deriv(
+                        self, varsi, varsf, vi, components=cmpnts[fi]
+                    )
+                except NotImplementedError:
+                    ecount += 1
             i0 = i1
             c0 = c1
+
+        if ecount == self.n_functions:
+            raise NotImplementedError(
+                f"Function '{self.name}': Analytic derivatives not implemented. Maybe wrap the problem '{self.problem.name}' into 'DiscretizeRegGrid'?"
+            )
 
         return deriv
