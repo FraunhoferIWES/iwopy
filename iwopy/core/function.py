@@ -80,7 +80,7 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         if self._vnamesf is None:
             self._vnamesf = self.problem.var_names_float()
-            
+
         super().initialize(verbosity)
 
     @property
@@ -121,6 +121,90 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         """
         return len(self.var_names_int)
+    
+    def pvars2fvars_int(self, pvars, varmap):
+        """
+        Map problem variables to function variables
+
+        Parameters
+        ----------
+        pvars : list of str or int
+            The problem variables to be mapped
+        varmap : dict
+            Mapping from function int variables to
+            problem int variables. Keys: function name,
+            Values: dict with mapping from str (or int)
+            to str (or int)
+        
+        Returns
+        -------
+        fvars : list of int
+            The function variable indices
+        
+        """
+        if not self.name in varmap:
+            raise KeyError(f"Function '{self.name}': No match in varmap keys for this function, {sorted(list(varmap.keys()))}")
+        vmap = varmap[self.name]
+        
+        vnms = list(self.var_names_int)
+        pnms = list(self.problem.var_names_int())
+        geti = lambda v, nms: nms.index(v) if isinstance(v, str) else int(v)
+        fvars = []
+        for pv in pvars:
+            if pv in vmap:
+                fv = vmap[pv]
+            elif isinstance(pv, str):
+                qv = geti(pv, pnms)
+                fv = vmap.get(qv, pv)
+            else:
+                qv = pnms[pv]
+                fv = vmap.get(qv, qv)
+            fvars.append(geti(fv, vnms))
+        
+        return fvars
+
+    def pvars2fvars_float(self, pvars, varmap):
+        """
+        Map problem variables to function variables
+
+        Parameters
+        ----------
+        pvars : list of str or int
+            The problem variables to be mapped
+        varmap : dict
+            Mapping from function float variables to
+            problem float variables. Keys: function name,
+            Values: dict with mapping from str (or int)
+            to str (or int)
+        
+        Returns
+        -------
+        fvars : list of int
+            The function variable indices
+        
+        """
+        TODO - STILL NEEDED?
+        
+        if not self.name in varmap:
+            raise KeyError(f"Function '{self.name}': No match in varmap keys for this function, {sorted(list(varmap.keys()))}")
+        vmap = varmap[self.name]
+        
+        vnms = list(self.var_names_float)
+        pnms = list(self.problem.var_names_float())
+        geti = lambda v, nms: nms.index(v) if isinstance(v, str) else int(v)
+        fvars = []
+        for pv in pvars:
+            if pv in vmap:
+                fv = vmap[pv]
+            elif isinstance(pv, str):
+                qv = geti(pv, pnms)
+                fv = vmap.get(qv, pv)
+            else:
+                qv = pnms[pv]
+                fv = vmap.get(qv, qv)
+            fvars.append(geti(fv, vnms))
+        
+        return fvars
 
     @property
     def var_names_float(self):
