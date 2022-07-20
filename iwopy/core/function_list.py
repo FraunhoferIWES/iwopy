@@ -109,7 +109,7 @@ class OptFunctionList(OptFunction):
 
         def getv(vnames, fvnames):
             if not len(fvnames):
-                 return []
+                return []
             l = [vnames.index(v) for v in fvnames]
             return np.s_[l[0] : l[-1]] if list(range(l[0], l[1])) == l else l
 
@@ -371,9 +371,7 @@ class OptFunctionList(OptFunction):
                 varsf = vars_float[self.func_vars_float[fi]]
                 vi = list(self.func_vars_float[fi]).index(var)
                 try:
-                    deriv[c0:c1] = f.ana_deriv(
-                        varsi, varsf, vi, components=cmpnts[fi]
-                    )
+                    deriv[c0:c1] = f.ana_deriv(varsi, varsf, vi, components=cmpnts[fi])
                 except NotImplementedError:
                     ecount += 1
             i0 = i1

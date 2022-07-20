@@ -190,7 +190,9 @@ class Problem(Base, metaclass=ABCMeta):
         self._add_to_varmap("float", objective, "objective", varmap_float)
         self.objs.append(objective)
 
-    def add_constraint(self, constraint, varmap_int=None, varmap_float=None, verbosity=0):
+    def add_constraint(
+        self, constraint, varmap_int=None, varmap_float=None, verbosity=0
+    ):
         """
         Add a constraint to the problem.
 
@@ -218,7 +220,7 @@ class Problem(Base, metaclass=ABCMeta):
 
     def _resolve_varmap(self, func, vtype, vmap, verbosity=0):
         """
-        Helper function for mapping str entries to int in varmap
+        Helper function that evaluates the varmap for a given function
         """
 
         fvars = []
@@ -457,7 +459,7 @@ class Problem(Base, metaclass=ABCMeta):
         ivars = self._resolve_varmap(func, "int", vmapi, verbosity)
         fvars = self._resolve_varmap(func, "float", vmapf, verbosity)
         varsi = vars_int[ivars] if len(vars_int) else np.array([])
-        varsf = vars_float[fvars]  if len(vars_float) else np.array([])
+        varsf = vars_float[fvars] if len(vars_float) else np.array([])
         gradients = self.calc_gradients(
             ivars, fvars, varsi, varsf, func, vrs, components, verbosity
         )

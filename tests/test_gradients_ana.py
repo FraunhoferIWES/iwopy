@@ -25,13 +25,13 @@ class Obj1(iwopy.Objective):
     def ana_grad(self, pvars0_float):
         x, y = pvars0_float
         return np.array([2 * x - y, 6 * np.cos(3 * y) - x])
-    
+
     def ana_deriv(self, vars_int, vars_float, var, components=None):
         grad = self.ana_grad(vars_float)
         return grad[var]
 
-class Test:
 
+class Test:
     def _calc(self, p, f, p0, o, lim, pop):
 
         print("p0 =", p0)
@@ -65,7 +65,7 @@ class Test:
 
         p = iwopy.SimpleProblem("test", float_vars=["x", "y"])
         f = Obj1(p, "f")
-        p.add_objective(f, varmap_float={0:0, 1:1})
+        p.add_objective(f, varmap_float={0: 0, 1: 1})
         p.initialize()
 
         for p0 in np.random.uniform(-2.0, 2.0, (100, 2)):
@@ -118,6 +118,7 @@ class Test:
 
         for p0 in np.random.uniform(-2.0, 2.0, (100, 2)):
             self._calc(p, f, p0, 2, 0.01, True)
+
 
 if __name__ == "__main__":
 
