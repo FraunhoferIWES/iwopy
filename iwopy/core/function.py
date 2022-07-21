@@ -1,4 +1,5 @@
 import numpy as np
+import fnmatch
 from abc import ABCMeta, abstractmethod
 
 from .base import Base
@@ -31,12 +32,36 @@ class OptFunction(Base, metaclass=ABCMeta):
 
     """
 
-    def __init__(self, problem, name, vnames_int=None, vnames_float=None, cnames=None):
+    def __init__(
+            self, 
+            problem, 
+            name, 
+            n_vars_int=None, 
+            n_vars_float=None, 
+            vnames_int=None, 
+            vnames_float=None, 
+            cnames=None
+        ):
         super().__init__(name)
+
         self.problem = problem
         self._vnamesi = vnames_int
         self._vnamesf = vnames_float
         self._cnames = cnames
+
+        if n_vars_int is not None:
+            if vnames_int is not None:
+                if len(vnames_int) != n_vars_int:
+                    raise ValueError(f"Problem '{self.name}': Mismatch between n_vars_int = {n_vars_int} and vnames_int = {vnames_int}, length {len(vnames_int)}")
+            else:
+                self._vnamesi = [f"{name}_n{i}" for i in range(n_vars_int)]
+
+        if n_vars_float is not None:
+            if vnames_float is not None:
+                if len(vnames_float) != n_vars_float:
+                    raise ValueError(f"Problem '{self.name}': Mismatch between n_vars_float = {n_vars_float} and vnames_float = {vnames_float}, length {len(vnames_float)}")
+            else:
+                self._vnamesf = [f"{name}_x{i}" for i in range(n_vars_float)]
 
     @abstractmethod
     def n_components(self):
@@ -64,15 +89,15 @@ class OptFunction(Base, metaclass=ABCMeta):
         """
         if self._cnames is None:
             if self.n_components() > 1:
-                self._cnames = [f"{self.name}_{ci}" for ci in range(self.n_components)]
+                self._cnames = [f"{self.name}_{ci}" for ci in range(self.n_components())]
             else:
                 self._cnames = [self.name]
 
         if self._vnamesi is None:
-            self._vnamesi = self.problem.var_names_int()
+            self._vnamesi = list(self.problem.var_names_int())
 
         if self._vnamesf is None:
-            self._vnamesf = self.problem.var_names_float()
+            self._vnamesf = list(self.problem.var_names_float())
 
         super().initialize(verbosity)
 
@@ -115,49 +140,6 @@ class OptFunction(Base, metaclass=ABCMeta):
         """
         return len(self.var_names_int)
 
-    def pvars2fvars_int(self, pvars, varmap):
-        """
-        Map problem variables to function variables
-
-        Parameters
-        ----------
-        pvars : list of str or int
-            The problem variables to be mapped
-        varmap : dict
-            Mapping from function int variables to
-            problem int variables. Keys: function name,
-            Values: dict with mapping from str (or int)
-            to str (or int)
-
-        Returns
-        -------
-        fvars : list of int
-            The function variable indices
-
-        """
-        if not self.name in varmap:
-            raise KeyError(
-                f"Function '{self.name}': No match in varmap keys for this function, {sorted(list(varmap.keys()))}"
-            )
-        vmap = varmap[self.name]
-
-        vnms = list(self.var_names_int)
-        pnms = list(self.problem.var_names_int())
-        geti = lambda v, nms: nms.index(v) if isinstance(v, str) else int(v)
-        fvars = []
-        for pv in pvars:
-            if pv in vmap:
-                fv = vmap[pv]
-            elif isinstance(pv, str):
-                qv = geti(pv, pnms)
-                fv = vmap.get(qv, pv)
-            else:
-                qv = pnms[pv]
-                fv = vmap.get(qv, qv)
-            fvars.append(geti(fv, vnms))
-
-        return fvars
-
     @property
     def var_names_float(self):
         """
@@ -183,6 +165,64 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         """
         return len(self.var_names_float)
+
+    def _rename_vars(self, varmap, target, vtype):
+        """
+        Helper function for variable renaming
+        """
+        for ov, nv in varmap.items():
+            if isinstance(ov, str):
+                ovl = fnmatch.filter(target, ov)
+                if not len(ovl):
+                    raise KeyError(
+                        f"Function '{self.name}': Cannot apply renaming '{ov} --> {nv}', since '{ov}' not found in {vtype} variables {target}"
+                    )
+                elif len(ovl) > 1:
+                    raise KeyError(
+                        f"Function '{self.name}': Cannot apply renaming '{ov} --> {nv}', since more than one match found in {vtype} variables: {ovl}"
+                    )
+                oi = target.index(ovl[0])
+            elif isinstance(ov, int):
+                oi = ov
+                if oi < 0 or oi >= len(target):
+                    raise ValueError(
+                        f"Function '{self.name}': Renaming rule '{ov} --> {nv}' cannot be applied for {len(target)} {vtype} variables {target}"
+                    )
+            else:
+                raise TypeError(
+                    f"Function '{self.name}': Unacceptable source type '{type(ov)}' in renaming rule '{ov} --> {nv}', expecting str or int"
+                )
+            if not isinstance(nv, str):
+                raise TypeError(
+                    f"Function '{self.name}': Unacceptable target type '{type(nv)}' in renaming rule '{ov} --> {nv}', expecting str"
+                )
+            target[oi] = nv
+
+    def rename_vars_int(self, varmap):
+        """
+        Rename integer variables.
+
+        Parameters
+        ----------
+        varmap : dict
+            The name mapping. Key: old name str,
+            Value: new name str
+
+        """
+        self._rename_vars(varmap, self._vnamesi, "int")
+
+    def rename_vars_float(self, varmap):
+        """
+        Rename float variables.
+
+        Parameters
+        ----------
+        varmap : dict
+            The name mapping. Key: old name str,
+            Value: new name str
+
+        """
+        self._rename_vars(varmap, self._vnamesf, "float")
 
     def calc_individual(self, vars_int, vars_float, problem_results):
         """

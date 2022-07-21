@@ -7,26 +7,7 @@ class Constraint(OptFunction):
     """
     Abstract base class for optimization
     constraints.
-
-    Parameters
-    ----------
-    problem: iwopy.Problem
-        The underlying optimization problem
-    name: str
-        The function name
-    vnames_int : list of str, optional
-        The integer variable names. Useful for mapping
-        problem variables to function variables
-    vnames_float : list of str, optional
-        The float variable names. Useful for mapping
-        problem variables to function variables
-    cnames : list of str, optional
-        The names of the components
-
     """
-
-    def __init__(self, problem, name, vnames_int=None, vnames_float=None, cnames=None):
-        super().__init__(problem, name, vnames_int, vnames_float, cnames)
 
     def get_bounds(self):
         """
@@ -69,7 +50,7 @@ class Constraint(OptFunction):
         out = (vals >= mi) & (vals <= ma)
 
         if verbosity:
-            cnames = self.names()
+            cnames = self.component_names
             for ci in range(self.n_components()):
                 val = f"{cnames[ci]} = {vals[ci]:.3f}"
                 suc = "OK" if out[ci] else "FAILED"
@@ -97,11 +78,13 @@ class Constraint(OptFunction):
         """
         vals = constraint_values
         mi, ma = self.get_bounds()
+        mi = np.array(mi, dtype=np.float64)
+        ma = np.array(ma, dtype=np.float64)
 
         out = (vals >= mi[None, :]) & (vals <= ma[None, :])
 
         if verbosity:
-            cnames = self.names()
+            cnames = self.component_names
             for ci in range(self.n_components()):
                 suc = "OK" if np.all(out[ci]) else "FAILED"
                 print(f"Constraint {cnames[ci]:<20} {suc}")

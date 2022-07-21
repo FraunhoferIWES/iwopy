@@ -111,7 +111,7 @@ class OptFunctionList(OptFunction):
             if not len(fvnames):
                 return []
             l = [vnames.index(v) for v in fvnames]
-            return np.s_[l[0] : l[-1]] if list(range(l[0], l[1])) == l else l
+            return np.s_[l[0] : l[-1]] if list(range(l[0], l[-1])) == l else l
 
         self.func_vars_int = [
             getv(self._vnamesi, f.var_names_int) for f in self.functions
@@ -213,7 +213,7 @@ class OptFunctionList(OptFunction):
             i1 = i0 + self.sizes[fi]
             varsi = vars_int[self.func_vars_int[fi]]
             varsf = vars_float[self.func_vars_float[fi]]
-            values[i0:i1] = f.calc_individual(self, varsi, varsf, problem_results)
+            values[i0:i1] = f.calc_individual(varsi, varsf, problem_results)
             i0 = i1
 
         return values
@@ -246,7 +246,7 @@ class OptFunctionList(OptFunction):
             i1 = i0 + self.sizes[fi]
             varsi = vars_int[:, self.func_vars_int[fi]]
             varsf = vars_float[:, self.func_vars_float[fi]]
-            values[:, i0:i1] = f.calc_population(self, varsi, varsf, problem_results)
+            values[:, i0:i1] = f.calc_population(varsi, varsf, problem_results)
             i0 = i1
 
         return values
@@ -281,7 +281,7 @@ class OptFunctionList(OptFunction):
             varsi = vars_int[self.func_vars_int[fi]]
             varsf = vars_float[self.func_vars_float[fi]]
             values[i0:i1] = f.finalize_individual(
-                self, varsi, varsf, problem_results, verbosity
+                varsi, varsf, problem_results, verbosity
             )
             i0 = i1
 
@@ -320,7 +320,7 @@ class OptFunctionList(OptFunction):
             varsi = vars_int[:, self.func_vars_int[fi]]
             varsf = vars_float[:, self.func_vars_float[fi]]
             values[:, i0:i1] = f.finalize_population(
-                self, varsi, varsf, problem_results, verbosity
+                varsi, varsf, problem_results, verbosity
             )
             i0 = i1
 

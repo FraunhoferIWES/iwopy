@@ -22,14 +22,6 @@ class Problem(Base, metaclass=ABCMeta):
         The objective functions
     cons : iwopy.core.OptFunctionList
         The constraints
-    varmap_int: dict
-        Mapping from function variables to
-        problem variables. Key: str or int,
-        value: str or int
-    varmap_float: dict
-        Mapping from function variables to
-        problem variables. Key: str or int,
-        value: str or int
 
     """
 
@@ -38,8 +30,6 @@ class Problem(Base, metaclass=ABCMeta):
 
         self.objs = OptFunctionList(self, "objs")
         self.cons = OptFunctionList(self, "cons")
-        self.varmap_int = {}
-        self.varmap_float = {}
 
     def var_names_int(self):
         """
@@ -115,54 +105,49 @@ class Problem(Base, metaclass=ABCMeta):
         """
         return len(self.var_names_float())
 
-    def _add_to_varmap(self, vtype, f, ftype, varmap):
+    def _apply_varmap(self, vtype, f, ftype, varmap):
         """
-        Helper function for adding entries to problem varmap
+        Helper function for mapping function variables
+        to problem variables
         """
-        fnms = list(f.var_names_int) if vtype == "int" else list(f.var_names_float)
         if varmap is None:
-            varmap = {vi: vi for vi in range(len(fnms))}
+            return
 
-        vmap = self.varmap_int if vtype == "int" else self.varmap_float
         pnms = (
             list(self.var_names_int())
             if vtype == "int"
             else list(self.var_names_float())
         )
+
+        vmap = {}
         for fv, pv in varmap.items():
-
-            if isinstance(fv, str):
-                fvl = fnmatch.filter(fnms, fv)
-                if len(fvl) != 1:
-                    raise KeyError(
-                        f"Problem '{self.name}': varmap_{vtype} variable '{fv}' of {ftype} '{f.name}' not uniquely matched among {ftype} variables, found {fvl}"
-                    )
-                else:
-                    fv = fvl[0]
-            elif not isinstance(fv, int):
-                raise ValueError(
-                    f"Problem '{self.name}': varmap_{vtype} variable '{fv}' of {ftype} '{f.name}' is neither str nor int"
-                )
-
-            if fv in vmap:
-                if pv != vmap[fv]:
-                    raise ValueError(
-                        f"Problem '{self.name}': Mismatch in varmap_{vtype} for {ftype} '{f.name}', found '{fv} --> {pv}', expected '{fv} --> {vmap[fv]}'"
-                    )
-            elif isinstance(pv, str):
+            if isinstance(pv, str):
                 pvl = fnmatch.filter(pnms, pv)
-                if len(pvl) != 1:
+                if len(pvl) == 0:
+                    raise ValueError(
+                        f"Problem '{self.name}': {vtype} varmap rule '{fv} --> {pv}' failed for {ftype} '{f.name}', pattern '{pv}' not found among problem {vtype} variables {pnms}"
+                    )
+                elif len(pvl) > 1:
                     raise ValueError(
                         f"Problem '{self.name}': Require unique match of {vtype} variable '{fv}' of {ftype} '{f.name}' to problem variables, found {pvl} for pattern '{pv}'"
                     )
                 else:
                     vmap[fv] = pvl[0]
-            elif not isinstance(fv, int):
+            elif isinstance(pv, int):
+                if pv < 0 or pv >= len(pnms):
+                    raise ValueError(
+                        f"Problem '{self.name}': varmap rule '{fv} --> {pv}' cannot be applied for {len(pnms)} {vtype} variables {pnms}"
+                    )
+                vmap[fv] = pnms[pv]
+            else:
                 raise ValueError(
                     f"Problem '{self.name}': varmap_{vtype} target variable in '{fv} --> {pv}' of {ftype} '{f.name}' is neither str nor int"
                 )
-            else:
-                vmap[fv] = pv
+
+        if vtype == "int":
+            f.rename_vars_int(vmap)
+        else:
+            f.rename_vars_float(vmap)
 
     def add_objective(self, objective, varmap_int=None, varmap_float=None, verbosity=0):
         """
@@ -186,8 +171,8 @@ class Problem(Base, metaclass=ABCMeta):
         """
         if not objective.initialized:
             objective.initialize(verbosity)
-        self._add_to_varmap("int", objective, "objective", varmap_int)
-        self._add_to_varmap("float", objective, "objective", varmap_float)
+        self._apply_varmap("int", objective, "objective", varmap_int)
+        self._apply_varmap("float", objective, "objective", varmap_float)
         self.objs.append(objective)
 
     def add_constraint(
@@ -214,62 +199,9 @@ class Problem(Base, metaclass=ABCMeta):
         """
         if not constraint.initialized:
             constraint.initialize(verbosity)
-        self._add_to_varmap("int", constraint, "constraint", varmap_int)
-        self._add_to_varmap("float", constraint, "constraint", varmap_float)
+        self._apply_varmap("int", constraint, "constraint", varmap_int)
+        self._apply_varmap("float", constraint, "constraint", varmap_float)
         self.cons.append(constraint)
-
-    def _resolve_varmap(self, func, vtype, vmap, verbosity=0):
-        """
-        Helper function that evaluates the varmap for a given function
-        """
-
-        fvars = []
-        fnms = (
-            list(func.var_names_int) if vtype == "int" else list(func.var_names_float)
-        )
-        pnms = (
-            list(self.var_names_int())
-            if vtype == "int"
-            else list(self.var_names_float())
-        )
-        for fvi, fv in enumerate(fnms):
-
-            pv = None
-            for fvm, pvm in vmap.items():
-                if isinstance(fvm, int):
-                    if fvm == fvi:
-                        pv = pvm
-                        break
-                elif fnmatch.fnmatch(fv, fvm):
-                    pv = pvm
-                    break
-
-            if pv is None:
-                raise KeyError(
-                    f"Problem '{self.name}': {vtype} variable '{fvi}: {fv}' of function '{func.name}' unmatched in varmap {sorted(list(vmap.keys()))}"
-                )
-            elif isinstance(pv, str):
-                pvl = fnmatch.filter(pnms, pv)
-                if not len(pvl):
-                    raise KeyError(
-                        f"Problem '{self.name}': {vtype} variable '{fv}' of function '{func.name}' mapped to '{pv}', but no match within problem {vtype} variables {sorted(pnms)}"
-                    )
-                elif len(pvl) > 1:
-                    raise KeyError(
-                        f"Problem '{self.name}': {vtype} variable '{fv}' of function '{func.name}' mapped to '{pv}', found multiple matches within problem {vtype} variables {sorted(pvl)}"
-                    )
-                pv = pnms.index(pvl[0])
-            elif not isinstance(pv, int) or (pv < 0 or pv > len(pnms)):
-                raise ValueError(
-                    f"Problem '{self.name}': {vtype} variable '{fv}' of function '{func.name}' mapped to illegal variable index {pv} for {len(pnms)} available {vtype} variables in problem"
-                )
-
-            if verbosity:
-                print(f"  {vtype} fvar {fvi}: {fv} --> {vtype} pvar {pv}: {pnms[pv]}")
-
-            fvars.append(pv)
-
-        return fvars
 
     def initialize(self, verbosity=0):
         """
@@ -370,14 +302,43 @@ class Problem(Base, metaclass=ABCMeta):
 
         return gradients
 
+    def _find_vars(self, vars_int, vars_float, func, ret_inds=False):
+        """
+        Helper function for reducing problem variables
+        to function variables
+        """
+        vnmsi = list(self.var_names_int())
+        vnmsf = list(self.var_names_float())
+        ivars = []
+        for v in func.var_names_int:
+            if v not in vnmsi:
+                raise ValueError(f"Problem '{self.name}': int variable '{v}' of function '{func.name}' not among int problem variables {vnmsi}")
+            ivars.append(vnmsi.index(v))
+        fvars = []
+        for v in func.var_names_float:
+            if v not in vnmsf:
+                raise ValueError(f"Problem '{self.name}': float variable '{v}' of function '{func.name}' not among float problem variables {vnmsf}")
+            fvars.append(vnmsf.index(v))
+
+        if len(vars_float.shape) == 1:
+            varsi = vars_int[ivars] if len(vars_int) else np.array([], dtype=np.float64)
+            varsf = vars_float[fvars] if len(vars_float) else np.array([], dtype=np.float64)
+        else:
+            n_pop = vars_float.shape[0]
+            varsi = vars_int[:, ivars] if len(vars_int) else np.zeros((n_pop, 0), dtype=np.float64)
+            varsf = vars_float[:, fvars] if len(vars_float) else np.zeros((n_pop, 0), dtype=np.float64)
+
+        if ret_inds:
+            return varsi, varsf, ivars, fvars
+        else:
+            return varsi, varsf
+
     def get_gradients(
         self,
         vars_int,
         vars_float,
         func=None,
         vars=None,
-        varmap_int=None,
-        varmap_float=None,
         components=None,
         verbosity=0,
     ):
@@ -405,14 +366,6 @@ class Problem(Base, metaclass=ABCMeta):
             The float variables wrt which the
             derivatives are to be calculated, or
             None for all
-        varmap_int: dict
-            Mapping from function variables to
-            problem variables. Key: str or int,
-            value: str or int
-        varmap_float: dict
-            Mapping from function variables to
-            problem variables. Key: str or int,
-            value: str or int
         components : list of int
             The selected components of func, or None for all
         verbosity : int
@@ -432,34 +385,33 @@ class Problem(Base, metaclass=ABCMeta):
                 func.append(f)
             for f in self.cons.functions:
                 func.append(f)
-            func.initialize(verbosity=0)
         if func.problem is not self:
             raise ValueError(
                 f"Problem '{self.name}': Attempt to calculate gradient for function '{func.name}' which is linked to different problem '{func.problem.name}'"
             )
-
-        # update varmaps:
-        if varmap_int is None:
-            vmapi = self.varmap_int
-        else:
-            vmapi = deepcopy(self.varmap_int).update(varmap_int)
-        if varmap_float is None:
-            vmapf = self.varmap_float
-        else:
-            vmapf = deepcopy(self.varmap_float).update(varmap_float)
+        if not func.initialized:
+            func.initialize(verbosity=(0 if verbosity < 2 else verbosity - 1))
+        
+        # find function variables:
+        varsi, varsf, ivars, fvars = self._find_vars(vars_int, vars_float, func, ret_inds=True)
 
         # find differentiation variables:
+        vnmsf = list(self.var_names_float())
         if vars is None:
-            vrs = list(range(self.n_vars_float))
+            vars = vnmsf
         else:
-            vnms = list(self.var_names_float())
-            vrs = [vnms.index(v) if isinstance(v, str) else int(v) for v in vars]
+            vars = []
+            for v in vars:
+                if v < 0 or v > len(vnmsf):
+                    raise ValueError(f"Problem '{self.name}': Variable index {v} exceeds problem float variables, count = {len(vnmsf)}")
+        vrs = []
+        hvnmsf = np.array(vnmsf)[fvars].tolist()
+        for v in vars:
+            if v not in hvnmsf:
+                raise ValueError(f"Problem '{self.name}': Selected gradient variable '{v}' not in function variables '{hvnmsf}'")
+            vrs.append(hvnmsf.index(v))
 
         # calculate gradients:
-        ivars = self._resolve_varmap(func, "int", vmapi, verbosity)
-        fvars = self._resolve_varmap(func, "float", vmapf, verbosity)
-        varsi = vars_int[ivars] if len(vars_int) else np.array([])
-        varsf = vars_float[fvars] if len(vars_float) else np.array([])
         gradients = self.calc_gradients(
             ivars, fvars, varsi, varsf, func, vrs, components, verbosity
         )
@@ -578,24 +530,13 @@ class Problem(Base, metaclass=ABCMeta):
             The constraints values, shape: (n_constraints,)
 
         """
-        objs = np.full(self.n_objectives, np.nan, dtype=np.float64)
-        cons = np.full(self.n_constraints, np.nan, dtype=np.float64)
-
         results = self.apply_individual(vars_int, vars_float)
 
-        i0 = 0
-        for f in self.objs:
-            i1 = i0 + f.n_components()
-            objs[i0:i1] = f.calc_individual(vars_int, vars_float, results)
-            i0 = i1
+        varsi, varsf = self._find_vars(vars_int, vars_float, self.objs)
+        objs = self.objs.calc_individual(varsi, varsf, results)
 
-        objs[self._maximize] *= -1
-
-        i0 = 0
-        for c in self.cons:
-            i1 = i0 + c.n_components()
-            cons[i0:i1] = c.calc_individual(vars_int, vars_float, results)
-            i0 = i1
+        varsi, varsf = self._find_vars(vars_int, vars_float, self.cons)
+        cons = self.cons.calc_individual(varsi, varsf, results)
 
         return results, objs, cons
 
@@ -621,30 +562,13 @@ class Problem(Base, metaclass=ABCMeta):
             The constraints values, shape: (n_pop, n_constraints)
 
         """
-
-        n_pop = (
-            vars_float.shape[0]
-            if vars_float is not None and len(vars_float.shape)
-            else vars_int.shape[0]
-        )
-        objs = np.full((n_pop, self.n_objectives), np.nan, dtype=np.float64)
-        cons = np.full((n_pop, self.n_constraints), np.nan, dtype=np.float64)
-
         results = self.apply_population(vars_int, vars_float)
 
-        i0 = 0
-        for f in self.objs:
-            i1 = i0 + f.n_components()
-            objs[:, i0:i1] = f.calc_population(vars_int, vars_float, results)
-            i0 = i1
+        varsi, varsf = self._find_vars(vars_int, vars_float, self.objs)
+        objs = self.objs.calc_population(varsi, varsf, results)
 
-        objs[:, self._maximize] *= -1
-
-        i0 = 0
-        for c in self.cons:
-            i1 = i0 + c.n_components()
-            cons[:, i0:i1] = c.calc_population(vars_int, vars_float, results)
-            i0 = i1
+        varsi, varsf = self._find_vars(vars_int, vars_float, self.cons)
+        cons = self.cons.calc_population(varsi, varsf, results)
 
         return results, objs, cons
 
@@ -667,10 +591,10 @@ class Problem(Base, metaclass=ABCMeta):
 
         """
         val = constraint_values
-        out = np.zeros(self.n_constraints, dtype=np.bool)
+        out = np.zeros(self.n_constraints, dtype=bool)
 
         i0 = 0
-        for c in self.cons:
+        for c in self.cons.functions:
             i1 = i0 + c.n_components()
             out[i0:i1] = c.check_individual(val[i0:i1], verbosity)
             i0 = i1
@@ -697,10 +621,10 @@ class Problem(Base, metaclass=ABCMeta):
         """
         val = constraint_values
         n_pop = val.shape[0]
-        out = np.zeros((n_pop, self.n_constraints()), dtype=np.bool)
+        out = np.zeros((n_pop, self.n_constraints), dtype=bool)
 
         i0 = 0
-        for c in self.cons:
+        for c in self.cons.functions:
             i1 = i0 + c.n_components()
             out[:, i0:i1] = c.check_population(val[:, i0:i1], verbosity)
             i0 = i1
@@ -731,26 +655,13 @@ class Problem(Base, metaclass=ABCMeta):
             The constraints values, shape: (n_constraints,)
 
         """
-        objs = np.zeros(self.n_objectives, dtype=np.float64)
-        cons = np.zeros(self.n_constraints, dtype=np.float64)
-
         results = self.apply_individual(vars_int, vars_float)
 
-        i0 = 0
-        for f in self.objs:
-            i1 = i0 + f.n_components()
-            objs[i0:i1] = f.finalize_individual(
-                vars_int, vars_float, results, verbosity
-            )
-            i0 = i1
+        varsi, varsf = self._find_vars(vars_int, vars_float, self.objs)
+        objs = self.objs.finalize_individual(varsi, varsf, results, verbosity)
 
-        i0 = 0
-        for c in self.cons:
-            i1 = i0 + c.n_components()
-            cons[i0:i1] = c.finalize_individual(
-                vars_int, vars_float, results, verbosity
-            )
-            i0 = i1
+        varsi, varsf = self._find_vars(vars_int, vars_float, self.cons)
+        cons = self.cons.finalize_individual(varsi, varsf, results, verbosity)
 
         return results, objs, cons
 
@@ -780,30 +691,12 @@ class Problem(Base, metaclass=ABCMeta):
             The final constraint values, shape: (n_pop, n_constraints)
 
         """
-        n_pop = (
-            vars_float.shape[0]
-            if vars_float is not None and len(vars_float.shape)
-            else vars_int.shape[0]
-        )
-        objs = np.full((n_pop, self.n_objectives), np.nan, dtype=np.float)
-        cons = np.full((n_pop, self.n_constraints), np.nan, dtype=np.float)
-
         results = self.apply_population(vars_int, vars_float)
 
-        i0 = 0
-        for f in self.objs:
-            i1 = i0 + f.n_components()
-            objs[:, i0:i1] = f.finalize_population(
-                vars_int, vars_float, results, verbosity
-            )
-            i0 = i1
+        varsi, varsf = self._find_vars(vars_int, vars_float, self.objs)
+        objs = self.objs.finalize_population(varsi, varsf, results, verbosity)
 
-        i0 = 0
-        for c in self.cons:
-            i1 = i0 + c.n_components()
-            cons[:, i0:i1] = c.finalize_population(
-                vars_int, vars_float, results, verbosity
-            )
-            i0 = i1
+        varsi, varsf = self._find_vars(vars_int, vars_float, self.cons)
+        cons = self.cons.finalize_population(varsi, varsf, results, verbosity)
 
         return results, objs, cons
