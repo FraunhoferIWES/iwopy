@@ -52,6 +52,9 @@ class OptFunctionList(OptFunction):
             The function
 
         """
+        if self.initialized:
+            raise ValueError(f"FunctionList '{self.name}': Attempt to add function '{function.name}' after initialization")
+
         if function.problem is not self.problem:
             raise ValueError(
                 f"FunctionList '{self.name}': Cannot add function '{function.name}' since problems don't match. Expected '{self.problem.name}', found '{function.problem.name}'"
@@ -330,6 +333,8 @@ class OptFunctionList(OptFunction):
         """
         Calculates the analytic derivative, if possible.
 
+        Use `numpy.nan` if analytic derivatives cannot be calculated.
+
         Parameters
         ----------
         vars_int : np.array
@@ -362,7 +367,6 @@ class OptFunctionList(OptFunction):
 
         i0 = 0
         c0 = 0
-        ecount = 0
         for fi, f in enumerate(self.functions):
             i1 = i0 + self.sizes[fi]
             c1 = c0 + len(cmpnts[fi])
@@ -370,16 +374,8 @@ class OptFunctionList(OptFunction):
                 varsi = vars_int[self.func_vars_int[fi]]
                 varsf = vars_float[self.func_vars_float[fi]]
                 vi = list(self.func_vars_float[fi]).index(var)
-                try:
-                    deriv[c0:c1] = f.ana_deriv(varsi, varsf, vi, components=cmpnts[fi])
-                except NotImplementedError:
-                    ecount += 1
+                deriv[c0:c1] = f.ana_deriv(varsi, varsf, vi, components=cmpnts[fi])
             i0 = i1
             c0 = c1
-
-        if ecount == self.n_functions:
-            raise NotImplementedError(
-                f"Function '{self.name}': Analytic derivatives not implemented. Maybe wrap the problem '{self.problem.name}' into 'DiscretizeRegGrid'?"
-            )
 
         return deriv

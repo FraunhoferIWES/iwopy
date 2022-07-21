@@ -25,6 +25,8 @@ class Problem(Base, metaclass=ABCMeta):
 
     """
 
+    INT_INF = 999999
+
     def __init__(self, name):
         super().__init__(name)
 
@@ -54,6 +56,34 @@ class Problem(Base, metaclass=ABCMeta):
 
         """
         return 0
+
+    def min_values_int(self):
+        """
+        The minimal values of the integer variables.
+
+        Use -self.INT_INF for unbounded.
+
+        Returns
+        -------
+        values : numpy.ndarray
+            Minimal int values, shape: (n_vars_int,)
+
+        """
+        return -self.INT_INF
+
+    def max_values_int(self):
+        """
+        The maximal values of the integer variables.
+
+        Use self.INT_INF for unbounded.
+
+        Returns
+        -------
+        values : numpy.ndarray
+            Maximal int values, shape: (n_vars_int,)
+
+        """
+        return self.INT_INF
 
     @property
     def n_vars_int(self):
@@ -91,6 +121,34 @@ class Problem(Base, metaclass=ABCMeta):
 
         """
         return None
+
+    def min_values_float(self):
+        """
+        The minimal values of the float variables.
+
+        Use -numpy.inf for unbounded.
+
+        Returns
+        -------
+        values : numpy.ndarray
+            Minimal float values, shape: (n_vars_float,)
+
+        """
+        return -np.inf
+
+    def max_values_float(self):
+        """
+        The maximal values of the float variables.
+
+        Use numpy.inf for unbounded.
+
+        Returns
+        -------
+        values : numpy.ndarray
+            Maximal float values, shape: (n_vars_float,)
+
+        """
+        return np.inf
 
     @property
     def n_vars_float(self):
@@ -202,23 +260,6 @@ class Problem(Base, metaclass=ABCMeta):
         self._apply_varmap("int", constraint, "constraint", varmap_int)
         self._apply_varmap("float", constraint, "constraint", varmap_float)
         self.cons.append(constraint)
-
-    def initialize(self, verbosity=0):
-        """
-        Initialize the object.
-
-        Parameters
-        ----------
-        verbosity : int
-            The verbosity level, 0 = silent
-
-        """
-        self.objs.initialize(verbosity)
-        self.cons.initialize(verbosity)
-
-        self.varmap = self.resolve_varmap(self.varmap, verbosity)
-
-        super().initialize(verbosity)
 
     @property
     def n_objectives(self):
@@ -435,6 +476,12 @@ class Problem(Base, metaclass=ABCMeta):
         gradients = self.calc_gradients(
             ivars, fvars, varsi, varsf, func, vrs, components, verbosity
         )
+
+        # check success:
+        nog = np.where(np.isnan(gradients))[1]
+        if len(nog):
+            nvrs = np.array(vars)[nog].tolist()
+            raise ValueError(f"Problem '{self.name}': Failed to calculate derivatives for variables {nvrs}. Maybe wrap this problem into DiscretizeRegGrid?")
 
         return gradients
 

@@ -357,6 +357,8 @@ class OptFunction(Base, metaclass=ABCMeta):
         """
         Calculates the analytic derivative, if possible.
 
+        Use `numpy.nan` if analytic derivatives cannot be calculated.
+
         Parameters
         ----------
         vars_int : np.array
@@ -374,6 +376,5 @@ class OptFunction(Base, metaclass=ABCMeta):
             The derivative values, shape: (n_sel_components,)
 
         """
-        raise NotImplementedError(
-            f"Function '{self.name}': Analytic derivatives not implemented. Maybe wrap the problem '{self.problem.name}' into 'DiscretizeRegGrid'?"
-        )
+        n_cmpnts = len(components) if components is not None else self.n_components()
+        return np.full(n_cmpnts, np.nan, dtype=np.float64)
