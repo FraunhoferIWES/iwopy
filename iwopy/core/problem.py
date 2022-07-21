@@ -312,21 +312,35 @@ class Problem(Base, metaclass=ABCMeta):
         ivars = []
         for v in func.var_names_int:
             if v not in vnmsi:
-                raise ValueError(f"Problem '{self.name}': int variable '{v}' of function '{func.name}' not among int problem variables {vnmsi}")
+                raise ValueError(
+                    f"Problem '{self.name}': int variable '{v}' of function '{func.name}' not among int problem variables {vnmsi}"
+                )
             ivars.append(vnmsi.index(v))
         fvars = []
         for v in func.var_names_float:
             if v not in vnmsf:
-                raise ValueError(f"Problem '{self.name}': float variable '{v}' of function '{func.name}' not among float problem variables {vnmsf}")
+                raise ValueError(
+                    f"Problem '{self.name}': float variable '{v}' of function '{func.name}' not among float problem variables {vnmsf}"
+                )
             fvars.append(vnmsf.index(v))
 
         if len(vars_float.shape) == 1:
             varsi = vars_int[ivars] if len(vars_int) else np.array([], dtype=np.float64)
-            varsf = vars_float[fvars] if len(vars_float) else np.array([], dtype=np.float64)
+            varsf = (
+                vars_float[fvars] if len(vars_float) else np.array([], dtype=np.float64)
+            )
         else:
             n_pop = vars_float.shape[0]
-            varsi = vars_int[:, ivars] if len(vars_int) else np.zeros((n_pop, 0), dtype=np.float64)
-            varsf = vars_float[:, fvars] if len(vars_float) else np.zeros((n_pop, 0), dtype=np.float64)
+            varsi = (
+                vars_int[:, ivars]
+                if len(vars_int)
+                else np.zeros((n_pop, 0), dtype=np.float64)
+            )
+            varsf = (
+                vars_float[:, fvars]
+                if len(vars_float)
+                else np.zeros((n_pop, 0), dtype=np.float64)
+            )
 
         if ret_inds:
             return varsi, varsf, ivars, fvars
@@ -391,9 +405,11 @@ class Problem(Base, metaclass=ABCMeta):
             )
         if not func.initialized:
             func.initialize(verbosity=(0 if verbosity < 2 else verbosity - 1))
-        
+
         # find function variables:
-        varsi, varsf, ivars, fvars = self._find_vars(vars_int, vars_float, func, ret_inds=True)
+        varsi, varsf, ivars, fvars = self._find_vars(
+            vars_int, vars_float, func, ret_inds=True
+        )
 
         # find differentiation variables:
         vnmsf = list(self.var_names_float())
@@ -403,12 +419,16 @@ class Problem(Base, metaclass=ABCMeta):
             vars = []
             for v in vars:
                 if v < 0 or v > len(vnmsf):
-                    raise ValueError(f"Problem '{self.name}': Variable index {v} exceeds problem float variables, count = {len(vnmsf)}")
+                    raise ValueError(
+                        f"Problem '{self.name}': Variable index {v} exceeds problem float variables, count = {len(vnmsf)}"
+                    )
         vrs = []
         hvnmsf = np.array(vnmsf)[fvars].tolist()
         for v in vars:
             if v not in hvnmsf:
-                raise ValueError(f"Problem '{self.name}': Selected gradient variable '{v}' not in function variables '{hvnmsf}'")
+                raise ValueError(
+                    f"Problem '{self.name}': Selected gradient variable '{v}' not in function variables '{hvnmsf}'"
+                )
             vrs.append(hvnmsf.index(v))
 
         # calculate gradients:

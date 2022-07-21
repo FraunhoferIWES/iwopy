@@ -18,11 +18,11 @@ class OptFunction(Base, metaclass=ABCMeta):
         The function name
     n_vars_int : int, optional
         The number of integer variables. If not specified
-        it is assumed that the function depends on all 
+        it is assumed that the function depends on all
         problem int variables
     n_vars_float : int, optional
         The number of float variables. If not specified
-        it is assumed that the function depends on all 
+        it is assumed that the function depends on all
         problem float variables
     vnames_int : list of str, optional
         The integer variable names. Useful for mapping
@@ -43,15 +43,15 @@ class OptFunction(Base, metaclass=ABCMeta):
     """
 
     def __init__(
-            self, 
-            problem, 
-            name, 
-            n_vars_int=None, 
-            n_vars_float=None, 
-            vnames_int=None, 
-            vnames_float=None, 
-            cnames=None
-        ):
+        self,
+        problem,
+        name,
+        n_vars_int=None,
+        n_vars_float=None,
+        vnames_int=None,
+        vnames_float=None,
+        cnames=None,
+    ):
         super().__init__(name)
 
         self.problem = problem
@@ -62,14 +62,18 @@ class OptFunction(Base, metaclass=ABCMeta):
         if n_vars_int is not None:
             if vnames_int is not None:
                 if len(vnames_int) != n_vars_int:
-                    raise ValueError(f"Problem '{self.name}': Mismatch between n_vars_int = {n_vars_int} and vnames_int = {vnames_int}, length {len(vnames_int)}")
+                    raise ValueError(
+                        f"Problem '{self.name}': Mismatch between n_vars_int = {n_vars_int} and vnames_int = {vnames_int}, length {len(vnames_int)}"
+                    )
             else:
                 self._vnamesi = [f"{name}_n{i}" for i in range(n_vars_int)]
 
         if n_vars_float is not None:
             if vnames_float is not None:
                 if len(vnames_float) != n_vars_float:
-                    raise ValueError(f"Problem '{self.name}': Mismatch between n_vars_float = {n_vars_float} and vnames_float = {vnames_float}, length {len(vnames_float)}")
+                    raise ValueError(
+                        f"Problem '{self.name}': Mismatch between n_vars_float = {n_vars_float} and vnames_float = {vnames_float}, length {len(vnames_float)}"
+                    )
             else:
                 self._vnamesf = [f"{name}_x{i}" for i in range(n_vars_float)]
 
@@ -99,7 +103,9 @@ class OptFunction(Base, metaclass=ABCMeta):
         """
         if self._cnames is None:
             if self.n_components() > 1:
-                self._cnames = [f"{self.name}_{ci}" for ci in range(self.n_components())]
+                self._cnames = [
+                    f"{self.name}_{ci}" for ci in range(self.n_components())
+                ]
             else:
                 self._cnames = [self.name]
 

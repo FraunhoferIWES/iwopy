@@ -4,7 +4,6 @@ import iwopy
 
 
 class Obj1(iwopy.Objective):
-
     def __init__(self, problem, name):
         super().__init__(problem, name, n_vars_int=1, n_vars_float=2)
 
@@ -28,8 +27,8 @@ class Obj1(iwopy.Objective):
         x, y = vars_float[:, 0], vars_float[:, 1]
         return np.column_stack(self.f(a, x, y))
 
-class Con1(iwopy.Constraint):
 
+class Con1(iwopy.Constraint):
     def __init__(self, problem, name):
         super().__init__(problem, name, n_vars_int=2, n_vars_float=3)
 
@@ -38,7 +37,7 @@ class Con1(iwopy.Constraint):
 
     def get_bounds(self):
         return [-2099], [-2000]
-    
+
     @classmethod
     def f(cls, n, a, x, k, p):
         return n + a - x + k - p
@@ -53,20 +52,33 @@ class Con1(iwopy.Constraint):
         x, k, p = vars_float[:, 0], vars_float[:, 1], vars_float[:, 2]
         return self.f(n, a, x, k, p)[:, None]
 
-class Test:
 
+class Test:
     def test_indi(self):
 
         print("\n\nTEST INDI")
 
-        problem = iwopy.SimpleProblem("test", int_vars=["A", "N"], float_vars=["X", "Y", "K", "P"])
-        problem.add_objective(Obj1(problem, "f"), varmap_int={0: "A"}, varmap_float={0: "X", 1: "Y"})
-        problem.add_constraint(Con1(problem, "g"), varmap_int={0: "N", 1: "A"}, varmap_float={0: "X", 1: "K", 2: "P"})
+        problem = iwopy.SimpleProblem(
+            "test", int_vars=["A", "N"], float_vars=["X", "Y", "K", "P"]
+        )
+        problem.add_objective(
+            Obj1(problem, "f"), varmap_int={0: "A"}, varmap_float={0: "X", 1: "Y"}
+        )
+        problem.add_constraint(
+            Con1(problem, "g"),
+            varmap_int={0: "N", 1: "A"},
+            varmap_float={0: "X", 1: "K", 2: "P"},
+        )
         problem.initialize(verbosity=1)
 
         N = 100
         ivars = np.c_[np.arange(N), -np.arange(N)]
-        fvars = np.c_[1000 + np.arange(N), 2000 + np.arange(N), 3000 + np.arange(N), 4000 + np.arange(N)]
+        fvars = np.c_[
+            1000 + np.arange(N),
+            2000 + np.arange(N),
+            3000 + np.arange(N),
+            4000 + np.arange(N),
+        ]
         for n in range(N):
 
             varsi = ivars[n]
@@ -86,21 +98,36 @@ class Test:
 
         print("\n\nTEST POP")
 
-        problem = iwopy.SimpleProblem("test", int_vars=["A", "N"], float_vars=["X", "Y", "K", "P"])
-        problem.add_objective(Obj1(problem, "f"), varmap_int={0: "A"}, varmap_float={0: "X", 1: "Y"})
-        problem.add_constraint(Con1(problem, "g"), varmap_int={0: "N", 1: "A"}, varmap_float={0: "X", 1: "K", 2: "P"})
+        problem = iwopy.SimpleProblem(
+            "test", int_vars=["A", "N"], float_vars=["X", "Y", "K", "P"]
+        )
+        problem.add_objective(
+            Obj1(problem, "f"), varmap_int={0: "A"}, varmap_float={0: "X", 1: "Y"}
+        )
+        problem.add_constraint(
+            Con1(problem, "g"),
+            varmap_int={0: "N", 1: "A"},
+            varmap_float={0: "X", 1: "K", 2: "P"},
+        )
         problem.initialize(verbosity=1)
 
         N = 100
         varsi = np.c_[np.arange(N), -np.arange(N)]
-        varsf = np.c_[1000 + np.arange(N), 2000 + np.arange(N), 3000 + np.arange(N), 4000 + np.arange(N)]
+        varsf = np.c_[
+            1000 + np.arange(N),
+            2000 + np.arange(N),
+            3000 + np.arange(N),
+            4000 + np.arange(N),
+        ]
 
         __, ovals, cvals = problem.evaluate_population(varsi, varsf)
 
         ovals_direct = np.column_stack(Obj1.f(varsi[:, 0], varsf[:, 0], varsf[:, 1]))
         assert np.all(ovals == ovals_direct)
 
-        cvals_direct = Con1.f(varsi[:, 1], varsi[:, 0], varsf[:, 0], varsf[:, 2], varsf[:, 3])[:, None]
+        cvals_direct = Con1.f(
+            varsi[:, 1], varsi[:, 0], varsf[:, 0], varsf[:, 2], varsf[:, 3]
+        )[:, None]
         assert np.all(cvals == cvals_direct)
 
         assert np.all(problem.check_constraints_population(cvals))
