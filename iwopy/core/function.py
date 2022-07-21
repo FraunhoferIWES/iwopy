@@ -16,12 +16,22 @@ class OptFunction(Base, metaclass=ABCMeta):
         The underlying optimization problem
     name: str
         The function name
+    n_vars_int : int, optional
+        The number of integer variables. If not specified
+        it is assumed that the function depends on all 
+        problem int variables
+    n_vars_float : int, optional
+        The number of float variables. If not specified
+        it is assumed that the function depends on all 
+        problem float variables
     vnames_int : list of str, optional
         The integer variable names. Useful for mapping
-        problem variables to function variables
+        function variables to problem variables, otherwise
+        map by integer or default name
     vnames_float : list of str, optional
         The float variable names. Useful for mapping
-        problem variables to function variables
+        function variables to problem variables, otherwise
+        map by integer or default name
     cnames : list of str, optional
         The names of the components
 
