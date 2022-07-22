@@ -291,58 +291,6 @@ class Problem(Base, metaclass=ABCMeta):
         """
         return self.cons.n_components()
 
-    def calc_gradients(
-        self, ivars, fvars, varsi, varsf, func, vrs, components, verbosity=0
-    ):
-        """
-        The actual gradient calculation.
-
-        Can be overloaded in derived classes, the base class only considers
-        analytic derivatives.
-
-        Parameters
-        ----------
-        ivars : list of int
-            The indices of the int variables in the problem resulting
-            from the varmap mapping
-        fvars : list of int
-            The indices of the float variables in the problem resulting
-            from the varmap mapping
-        varsi : np.array
-            The integer variable values, shape: (n_func_vars_int,)
-        varsf : np.array
-            The float variable values, shape: (n_vfunc_ars_float,)
-        func : iwopy.core.OptFunctionList, optional
-            The functions to be differentiated, or None
-            for a list of all objectives and all constraints
-            (in that order)
-        vrs : list of int
-            The float variable indices wrt which the
-            derivatives are to be calculated
-        components : list of int
-            The selected components of func, or None for all
-        verbosity : int
-            The verbosity level, 0 = silent
-
-        Returns
-        -------
-        gradients : numpy.ndarray
-            The gradients of the functions, shape:
-            (n_func_cmpnts, n_vars)
-
-        """
-        n_vars = len(vrs)
-        gradients = np.full((func.n_components(), n_vars), np.nan, dtype=np.float64)
-        for vi, v in enumerate(vrs):
-            if v in fvars:
-                gradients[:, vi] = func.ana_deriv(
-                    varsi, varsf, fvars.index(v), components
-                )
-            else:
-                gradients[:, vi] = 0
-
-        return gradients
-
     def _find_vars(self, vars_int, vars_float, func, ret_inds=False):
         """
         Helper function for reducing problem variables
@@ -384,9 +332,62 @@ class Problem(Base, metaclass=ABCMeta):
             )
 
         if ret_inds:
-            return varsi, varsf, ivars, fvars
+            return ivars, fvars
         else:
             return varsi, varsf
+
+    def calc_gradients(
+        self, vars_int, vars_float, func, ivars, fvars, vrs, components, verbosity=0
+    ):
+        """
+        The actual gradient calculation.
+
+        Can be overloaded in derived classes, the base class only considers
+        analytic derivatives.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values, shape: (n_vars_int,)
+        vars_float : np.array
+            The float variable values, shape: (n_vars_float,)
+        func : iwopy.core.OptFunctionList, optional
+            The functions to be differentiated, or None
+            for a list of all objectives and all constraints
+            (in that order)
+        ivars : list of int
+            The indices of the function int variables in the problem
+        fvars : list of int
+            The indices of the function float variables in the problem
+        vrs : list of int
+            The function float variable indices wrt which the
+            derivatives are to be calculated
+        components : list of int
+            The selected components of func, or None for all
+        verbosity : int
+            The verbosity level, 0 = silent
+
+        Returns
+        -------
+        gradients : numpy.ndarray
+            The gradients of the functions, shape:
+            (n_func_cmpnts, n_vars)
+
+        """
+        n_vars = len(vrs)
+        varsi = vars_int[ivars] if len(vars_int) else np.array([])
+        varsf = vars_float[fvars] if len(vars_float) else np.array([])
+
+        gradients = np.full((func.n_components(), n_vars), np.nan, dtype=np.float64)
+        for vi, v in enumerate(vrs):
+            if v in fvars:
+                gradients[:, vi] = func.ana_deriv(
+                    varsi, varsf, fvars.index(v), components
+                )
+            else:
+                gradients[:, vi] = 0
+
+        return gradients
 
     def get_gradients(
         self,
@@ -396,6 +397,7 @@ class Problem(Base, metaclass=ABCMeta):
         vars=None,
         components=None,
         verbosity=0,
+        **kwargs
     ):
         """
         Obtain gradients of a function that is linked to the
@@ -425,6 +427,8 @@ class Problem(Base, metaclass=ABCMeta):
             The selected components of func, or None for all
         verbosity : int
             The verbosity level, 0 = silent
+        kwargs : dict, optional
+            Additional arguments forwarded to `calc_gradients`
 
         Returns
         -------
@@ -448,33 +452,49 @@ class Problem(Base, metaclass=ABCMeta):
             func.initialize(verbosity=(0 if verbosity < 2 else verbosity - 1))
 
         # find function variables:
-        varsi, varsf, ivars, fvars = self._find_vars(
+        ivars, fvars = self._find_vars(
             vars_int, vars_float, func, ret_inds=True
         )
 
-        # find differentiation variables:
+        # find names of differentiation variables:
         vnmsf = list(self.var_names_float())
         if vars is None:
             vars = vnmsf
         else:
-            vars = []
+            tvars = []
             for v in vars:
-                if v < 0 or v > len(vnmsf):
-                    raise ValueError(
-                        f"Problem '{self.name}': Variable index {v} exceeds problem float variables, count = {len(vnmsf)}"
-                    )
+                if isinstance(v, int):
+                    if v < 0 or v > len(vnmsf):
+                        raise ValueError(
+                            f"Problem '{self.name}': Variable index {v} exceeds problem float variables, count = {len(vnmsf)}"
+                        )
+                    tvars.append(vnmsf[v])     
+                elif isinstance(v, str):
+                    vl = fnmatch.filter(vnmsf, v)
+                    if not len(vl):
+                        raise ValueError(f"Problem '{self.name}': No match for variable pattern '{v}' among problem float variable {vnmsf}")
+                    tvars += vl
+                else:
+                    raise TypeError(f"Problem '{self.name}': Illegal type '{type(v)}', expecting str or int")
+            vars = tvars
+        
+        # find variable indices among function float variables:
         vrs = []
         hvnmsf = np.array(vnmsf)[fvars].tolist()
         for v in vars:
             if v not in hvnmsf:
                 raise ValueError(
-                    f"Problem '{self.name}': Selected gradient variable '{v}' not in function variables '{hvnmsf}'"
+                    f"Problem '{self.name}': Selected gradient variable '{v}' not in function variables '{hvnmsf}' for function '{func.name}'"
                 )
             vrs.append(hvnmsf.index(v))
+        
+        # update components:
+        if components is None:
+            components = np.arange(func.n_components())
 
         # calculate gradients:
         gradients = self.calc_gradients(
-            ivars, fvars, varsi, varsf, func, vrs, components, verbosity
+            vars_int, vars_float, func, ivars, fvars, vrs, components, verbosity, **kwargs
         )
 
         # check success:
