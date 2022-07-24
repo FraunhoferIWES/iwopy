@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 
-class GhostGrid:
+class LightRegGrid:
     """
     A lightweight regular grid in n dimensions,
     without points storage.
@@ -86,6 +86,8 @@ class GhostGrid:
         else:
             o = self.origin[subgrid]
             d = self.deltas[subgrid]
+            if len(p) != len(subgrid):
+                p = p[subgrid]
             return o + ( (p - o) // d ) * d
 
     def get_corners(self, pts, subgrid=None):
@@ -112,6 +114,8 @@ class GhostGrid:
         else:
             o = self.origin[subgrid][None, :]
             d = self.deltas[subgrid][None, :]
+            if pts.shape[1] != len(subgrid):
+                pts = pts[:, subgrid]
         return o + ( (pts - o) // d ) * d
 
     def get_cell(self, p, subgrid=None):
@@ -172,7 +176,7 @@ class GhostGrid:
         
         return cells
         
-    def interpolation_coeffs_point(self, p, subgrid=None, cell=None, **kwargs):
+    def interpolation_coeffs_point(self, p, subgrid=None, **kwargs):
         """
         Get the interpolation coefficients for
         a point.
@@ -184,8 +188,6 @@ class GhostGrid:
         subgrid : list of int, optional
             The subgrid dimensions, shape: (n_p_dims,)
             or None for all
-        cell : numpy.ndarray, optional
-            The cell, if already known. Shape: (n_p_dims, 2)
         kwargs : dict, optional
             Additional parameters for `RegularGridInterpolator`
         
@@ -199,8 +201,7 @@ class GhostGrid:
             shape: (n_p_dims,)
 
         """
-        if cell is None:
-            cell = self.get_cell(p, subgrid)
+        cell = self.get_cell(p, subgrid)
         
         cdata = np.zeros_like(cell)
         cdata[:, 1] = 1.
@@ -211,7 +212,7 @@ class GhostGrid:
 
         return cell, interp(p)
 
-    def interpolation_coeffs_points(self, pts, subgrid=None, cells=None, **kwargs):
+    def interpolation_coeffs_points(self, pts, subgrid=None, **kwargs):
         """
         Get the interpolation coefficients for
         a set of points.
@@ -223,8 +224,6 @@ class GhostGrid:
         subgrid : list of int, optional
             The subgrid dimensions, shape: (n_p_dims,)
             or None for all
-        cells : numpy.ndarray, optional
-            The cells, if known. Shape: (n_pts, n_p_dims, 2)
         kwargs : dict, optional
             Additional parameters for `RegularGridInterpolator`
         
@@ -238,16 +237,18 @@ class GhostGrid:
             shape: (n_pts, n_p_dims)
 
         """
-        if cells is None:
-            cells = self.get_cells(pts, subgrid)
+        if pts.shape[1] != len(subgrid):
+            pts = pts[:, subgrid]
 
-        ocell = np.zeros_like(cells[0])
-        ocell[:, 1] = 1.
-        opts = (pts - cells[:, :, 0]) / (cells[:, :, 1] - cells[:, :, 0])
+        cells = self.get_cells(pts, subgrid)
+        ocell = self.get_cell(self._origin, subgrid)
+        opts = pts - cells[:, :, 0]
 
-        TODO
-
-        cdata = np.meshgrid(*ocell, indexing="ij")
+        cdata = np.zeros_like(ocell)
+        cdata[:, 1] = 1.
+        cdata = np.meshgrid(*cdata, indexing="ij")
         cdata = np.stack(cdata, axis=-1)
 
         interp = RegularGridInterpolator(ocell, cdata, **kwargs)
+
+        return cells, interp(opts)
