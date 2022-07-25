@@ -269,7 +269,7 @@ class LightRegGrid:
         gpts = np.stack(np.meshgrid(*cell, indexing="ij"), axis=-1)
         gpts = gpts.reshape(2**n_dims, n_dims)
 
-        sel = coeffs < 1.0e-14
+        sel = np.abs(coeffs) < 1.0e-14
         if np.any(sel):
             gpts = gpts[~sel]
             coeffs = coeffs[~sel]
@@ -353,7 +353,7 @@ class LightRegGrid:
         ipts = np.stack(np.meshgrid(*ocell, indexing="ij"), axis=-1)
         ipts = ipts.reshape(2**n_dims, n_dims)
 
-        sel = np.all(coeffs < 1.0e-14, axis=0)
+        sel = np.all(np.abs(coeffs) < 1.0e-14, axis=0)
         if np.any(sel):
             ipts = ipts[~sel]
             coeffs = coeffs[:, ~sel]
