@@ -397,7 +397,7 @@ class Problem(Base, metaclass=ABCMeta):
         vars=None,
         components=None,
         verbosity=0,
-        **kwargs
+        **kwargs,
     ):
         """
         Obtain gradients of a function that is linked to the
@@ -452,9 +452,7 @@ class Problem(Base, metaclass=ABCMeta):
             func.initialize(verbosity=(0 if verbosity < 2 else verbosity - 1))
 
         # find function variables:
-        ivars, fvars = self._find_vars(
-            vars_int, vars_float, func, ret_inds=True
-        )
+        ivars, fvars = self._find_vars(vars_int, vars_float, func, ret_inds=True)
 
         # find names of differentiation variables:
         vnmsf = list(self.var_names_float())
@@ -468,16 +466,20 @@ class Problem(Base, metaclass=ABCMeta):
                         raise ValueError(
                             f"Problem '{self.name}': Variable index {v} exceeds problem float variables, count = {len(vnmsf)}"
                         )
-                    tvars.append(vnmsf[v])     
+                    tvars.append(vnmsf[v])
                 elif isinstance(v, str):
                     vl = fnmatch.filter(vnmsf, v)
                     if not len(vl):
-                        raise ValueError(f"Problem '{self.name}': No match for variable pattern '{v}' among problem float variable {vnmsf}")
+                        raise ValueError(
+                            f"Problem '{self.name}': No match for variable pattern '{v}' among problem float variable {vnmsf}"
+                        )
                     tvars += vl
                 else:
-                    raise TypeError(f"Problem '{self.name}': Illegal type '{type(v)}', expecting str or int")
+                    raise TypeError(
+                        f"Problem '{self.name}': Illegal type '{type(v)}', expecting str or int"
+                    )
             vars = tvars
-        
+
         # find variable indices among function float variables:
         vrs = []
         hvnmsf = np.array(vnmsf)[fvars].tolist()
@@ -487,21 +489,31 @@ class Problem(Base, metaclass=ABCMeta):
                     f"Problem '{self.name}': Selected gradient variable '{v}' not in function variables '{hvnmsf}' for function '{func.name}'"
                 )
             vrs.append(hvnmsf.index(v))
-        
+
         # update components:
         if components is None:
             components = np.arange(func.n_components())
 
         # calculate gradients:
         gradients = self.calc_gradients(
-            vars_int, vars_float, func, ivars, fvars, vrs, components, verbosity, **kwargs
+            vars_int,
+            vars_float,
+            func,
+            ivars,
+            fvars,
+            vrs,
+            components,
+            verbosity,
+            **kwargs,
         )
 
         # check success:
         nog = np.where(np.isnan(gradients))[1]
         if len(nog):
             nvrs = np.array(vars)[nog].tolist()
-            raise ValueError(f"Problem '{self.name}': Failed to calculate derivatives for variables {nvrs}. Maybe wrap this problem into DiscretizeRegGrid?")
+            raise ValueError(
+                f"Problem '{self.name}': Failed to calculate derivatives for variables {nvrs}. Maybe wrap this problem into DiscretizeRegGrid?"
+            )
 
         return gradients
 

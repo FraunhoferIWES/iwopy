@@ -20,15 +20,15 @@ class SimpleProblem(Problem):
     """
 
     def __init__(
-            self, 
-            name, 
-            int_vars=None, 
-            float_vars=None, 
-            min_int_vars=None, 
-            max_int_vars=None, 
-            min_float_vars=None, 
-            max_float_vars=None
-        ):
+        self,
+        name,
+        int_vars=None,
+        float_vars=None,
+        min_int_vars=None,
+        max_int_vars=None,
+        min_float_vars=None,
+        max_float_vars=None,
+    ):
         super().__init__(name)
 
         if int_vars is None and float_vars is None:
@@ -114,7 +114,9 @@ class SimpleProblem(Problem):
             Minimal int values, shape: (n_vars_int,)
 
         """
-        return np.array([self._ivars_min[v] for v in self.var_names_int()], dtype=np.int32)
+        return np.array(
+            [self._ivars_min[v] for v in self.var_names_int()], dtype=np.int32
+        )
 
     def max_values_int(self):
         """
@@ -128,7 +130,9 @@ class SimpleProblem(Problem):
             Maximal int values, shape: (n_vars_int,)
 
         """
-        return np.array([self._ivars_max[v] for v in self.var_names_int()], dtype=np.int32)
+        return np.array(
+            [self._ivars_max[v] for v in self.var_names_int()], dtype=np.int32
+        )
 
     def var_names_float(self):
         """
@@ -166,7 +170,9 @@ class SimpleProblem(Problem):
             Minimal float values, shape: (n_vars_float,)
 
         """
-        return np.array([self._fvars_min[v] for v in self.var_names_float()], dtype=np.float64)
+        return np.array(
+            [self._fvars_min[v] for v in self.var_names_float()], dtype=np.float64
+        )
 
     def max_values_float(self):
         """
@@ -180,4 +186,6 @@ class SimpleProblem(Problem):
             Maximal float values, shape: (n_vars_float,)
 
         """
-        return np.array([self._fvars_max[v] for v in self.var_names_float()], dtype=np.float64)
+        return np.array(
+            [self._fvars_max[v] for v in self.var_names_float()], dtype=np.float64
+        )

@@ -2,6 +2,7 @@ import numpy as np
 
 from .problem_wrapper import ProblemWrapper
 
+
 class DiscretizeRegGrid(ProblemWrapper):
     """
     A wrapper that provides finite distance
@@ -22,9 +23,9 @@ class DiscretizeRegGrid(ProblemWrapper):
         a global integer order for all variables.
         1 = forward, -1 = backward, 2 = centre
     fd_bounds_order : dict or int
-        Finite difference order of boundary points. 
-        Either a dict with key: variable name str, 
-        value: order int, or a global integer order 
+        Finite difference order of boundary points.
+        Either a dict with key: variable name str,
+        value: order int, or a global integer order
         for all variables. Default is same as fd_order
 
     Attributes
@@ -35,10 +36,10 @@ class DiscretizeRegGrid(ProblemWrapper):
         The step sizes. Key: variable name str,
         Value: step size.
     order : dict
-        Finite difference order. Key: variable name 
+        Finite difference order. Key: variable name
         str, value: 1 = forward, -1 = backward, 2 = centre
     orderb : dict or int
-        Finite difference order of boundary points. 
+        Finite difference order of boundary points.
         Key: variable name str, value: order int
 
     """
@@ -54,8 +55,10 @@ class DiscretizeRegGrid(ProblemWrapper):
             self.order = fd_order
             for v in deltas.keys():
                 if v not in self.order:
-                    raise KeyError(f"Problem '{self.name}': Missing fd_order entry for variable '{v}'")
-        
+                    raise KeyError(
+                        f"Problem '{self.name}': Missing fd_order entry for variable '{v}'"
+                    )
+
         if fd_bounds_order is None:
             self.orderb = {v: abs(o) for v, o in self.order.items()}
         elif isinstance(fd_bounds_order, int):
@@ -64,7 +67,9 @@ class DiscretizeRegGrid(ProblemWrapper):
             self.orderb = fd_bounds_order
             for v in deltas.keys():
                 if v not in self.orderb:
-                    raise KeyError(f"Problem '{self.name}': Missing fd_bounds_order entry for variable '{v}'")
+                    raise KeyError(
+                        f"Problem '{self.name}': Missing fd_bounds_order entry for variable '{v}'"
+                    )
 
     def initialize(self, verbosity=0):
         """
@@ -96,8 +101,10 @@ class DiscretizeRegGrid(ProblemWrapper):
         for v, d in self.deltas.items():
 
             if v not in vnms:
-                raise KeyError(f"Problem '{self.name}': Variable '{v}' given in deltas, but not found in problem float variables {vnms}")
-            
+                raise KeyError(
+                    f"Problem '{self.name}': Variable '{v}' given in deltas, but not found in problem float variables {vnms}"
+                )
+
             vi = vnms.index(v)
             vmin = vmins[vi]
             vmax = vmaxs[vi]
@@ -105,7 +112,7 @@ class DiscretizeRegGrid(ProblemWrapper):
             self._order.append(self.order[v])
             self._orderb.append(self.orderb[v])
             if np.isinf(vmin) and np.isinf(vmax):
-                self._origin.append(0.)
+                self._origin.append(0.0)
                 self._delta.append(d)
                 self._nsteps.append(None)
             elif np.isinf(vmin):
@@ -120,19 +127,19 @@ class DiscretizeRegGrid(ProblemWrapper):
                 self._origin.append(vmin)
                 self._nsteps.append(int((vmax - vmin) / d))
                 self._delta.append((vmax - vmin) / self._nsteps[-1])
-            
+
             if verbosity:
                 s = f"    Variable {v}: p0 = {self._origin[-1]:.3e}, d = {self._delta[-1]:.3e}, n = {self._nsteps[-1]}, o = {self.order[v]}, ob = {self.orderb[v]}"
                 print(s)
         if verbosity:
-            print("-"*len(s))
+            print("-" * len(s))
 
         self._origin = np.array(self._origin, dtype=np.float64)
         self._delta = np.array(self._delta, dtype=np.float64)
-        self._nsteps = np.array(self._nsteps, dtype=np.int)
-        self._order = np.array(self._order, dtype=np.int)
-        self._orderb = np.array(self._orderb, dtype=np.int)
-    
+        self._nsteps = np.array(self._nsteps, dtype=np.int32)
+        self._order = np.array(self._order, dtype=np.int32)
+        self._orderb = np.array(self._orderb, dtype=np.int32)
+
     def get_grid_corner(self, p, subgrid=None):
         """
         Get the lower-left grid corner of a point in varaible space.
@@ -144,7 +151,7 @@ class DiscretizeRegGrid(ProblemWrapper):
         subgrid : list of int, optional
             The variable space dimensions, shape: (n_gvars,)
             or None for all
-        
+
         Returns
         -------
         p0 : numpy.ndarray
@@ -152,11 +159,11 @@ class DiscretizeRegGrid(ProblemWrapper):
 
         """
         if subgrid is None:
-            return self._origin + ( (p - self._origin) // self._delta ) * self._delta
+            return self._origin + ((p - self._origin) // self._delta) * self._delta
         else:
             o = self._origin[subgrid]
             d = self._delta[subgrid]
-            return o + ( (p - o) // d ) * d
+            return o + ((p - o) // d) * d
 
     def get_grid_corners(self, pts, subgrid=None):
         """
@@ -169,7 +176,7 @@ class DiscretizeRegGrid(ProblemWrapper):
         subgrid : list of int, optional
             The variable space dimensions, shape: (n_gvars,)
             or None for all
-        
+
         Returns
         -------
         p0 : numpy.ndarray
@@ -182,7 +189,7 @@ class DiscretizeRegGrid(ProblemWrapper):
         else:
             o = self._origin[subgrid][None, :]
             d = self._delta[subgrid][None, :]
-        return o + ( (pts - o) // d ) * d
+        return o + ((pts - o) // d) * d
 
     def get_grid_cell(self, p, subgrid=None):
         """
@@ -196,7 +203,7 @@ class DiscretizeRegGrid(ProblemWrapper):
         subgrid : list of int, optional
             The variable space dimensions, shape: (n_gvars,)
             or None for all
-        
+
         Returns
         -------
         cell : numpy.ndarray
@@ -214,11 +221,8 @@ class DiscretizeRegGrid(ProblemWrapper):
 
         d = self._delta[subgrid] if subgrid is not None else self._delta
         a = np.array([])
-        
-        return cell, np.all(p == p0)
-        
 
-        
+        return cell, np.all(p == p0)
 
     def get_grad_plan(self, vars_float, vars, origin, delta, nsteps, order, orderb):
         """
@@ -239,9 +243,9 @@ class DiscretizeRegGrid(ProblemWrapper):
         order : numpy.ndarray
             The finite difference order, shape: (n_vars,)
         orderb : numpy.ndarray
-            The finite difference order of boundary points, 
+            The finite difference order of boundary points,
             shape: (n_vars,)
-        
+
         Returns
         -------
         plan : numpy.ndarray
@@ -250,7 +254,6 @@ class DiscretizeRegGrid(ProblemWrapper):
 
         """
         TODO
-
 
     def calc_gradients(
         self, vars_int, vars_float, func, ivars, fvars, vrs, components, verbosity=0
@@ -291,10 +294,12 @@ class DiscretizeRegGrid(ProblemWrapper):
 
         """
         # get analytic gradient results:
-        gradients = super().calc_gradients(vars_int, vars_float, func, ivars, fvars, vrs, components, verbosity)
+        gradients = super().calc_gradients(
+            vars_int, vars_float, func, ivars, fvars, vrs, components, verbosity
+        )
 
         # find variables and components of unsolved gradients:
-        gnan  = np.isnan(gradients)
+        gnan = np.isnan(gradients)
         gvars = np.where(np.any(gnan, axis=0))[0]
         gvars = [vi for vi in gvars if vi in self._vinds]
         pvars = np.array(fvars)[gvars]
@@ -313,6 +318,8 @@ class DiscretizeRegGrid(ProblemWrapper):
         orderb = self._orderb[linds]
 
         # get calculation plan:
-        plan = self.get_grad_plan(vars_float, gvars, origin, delta, nsteps, order, orderb)
+        plan = self.get_grad_plan(
+            vars_float, gvars, origin, delta, nsteps, order, orderb
+        )
 
         return gradients

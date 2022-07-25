@@ -2,6 +2,7 @@ import numpy as np
 
 from iwopy.core.problem import Problem
 
+
 class ProblemWrapper(Problem):
     """
     Generic abstract problem wrapper class.
@@ -140,7 +141,7 @@ class ProblemWrapper(Problem):
         """
         if not self.base_problem.initialized:
             self.base_problem.initialize(verbosity)
-        
+
         self.objs = self.base_problem.objs
         self.cons = self.base_problem.cons
 

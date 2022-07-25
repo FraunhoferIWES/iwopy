@@ -47,8 +47,12 @@ class Test:
 
         print("\n\nTEST order 1 INDI")
 
-        p = iwopy.SimpleProblem("test", float_vars=["x", "y"], 
-                min_float_vars={"x": 1, "y": -5}, max_float_vars={"x": 10, "y": 5})
+        p = iwopy.SimpleProblem(
+            "test",
+            float_vars=["x", "y"],
+            min_float_vars={"x": 1, "y": -5},
+            max_float_vars={"x": 10, "y": 5},
+        )
         f = Obj1(p, "f")
         p.add_objective(f, varmap_float={"x": "x", "y": "y"})
 

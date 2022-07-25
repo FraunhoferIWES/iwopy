@@ -53,7 +53,9 @@ class OptFunctionList(OptFunction):
 
         """
         if self.initialized:
-            raise ValueError(f"FunctionList '{self.name}': Attempt to add function '{function.name}' after initialization")
+            raise ValueError(
+                f"FunctionList '{self.name}': Attempt to add function '{function.name}' after initialization"
+            )
 
         if function.problem is not self.problem:
             raise ValueError(
