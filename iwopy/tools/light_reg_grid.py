@@ -330,7 +330,7 @@ class LightRegGrid:
             The grid points relevant for interpolation,
             shape: (n_pts, n_gpts, n_sdims)
         coeffs : numpy.ndarray
-            The interpolation coefficients, shape: (n_pts, n_ipts)
+            The interpolation coefficients, shape: (n_pts, n_gpts)
 
         """
         if subgrid is not None and pts.shape[1] != len(subgrid):
