@@ -91,6 +91,80 @@ class LightRegGrid:
         """
         return len(self.origin)
 
+    def gp2i(self, gp):
+        """
+        Get the lower-left grid corner indices of a point.
+
+        Parameters
+        ----------
+        gp : numpy.ndarray
+            The point, shape: (n_dims,)
+
+        Returns
+        -------
+        inds : numpy.ndarray
+            The lower-left grid corner point indices, shape: (n_dims,)
+
+        """
+        return ((gp - self.origin) // self.deltas).astype(np.int32)
+
+    def i2gp(self, i):
+        """
+        Translates grid point index to grid point.
+
+        Parameters
+        ----------
+        i : int 
+            The grid point index
+        
+        Returns
+        -------
+        gp : numpy.ndarray
+            The grid point, shape: (n_dims,)
+
+        """
+        return self.origin + i * self.deltas
+
+    def gpts2inds(self, gpts):
+        """
+        Get the lower-left grid corner indices of points.
+
+        Parameters
+        ----------
+        gpts : numpy.ndarray
+            The grid points, shape: (n_gpts, n_dims)
+
+        Returns
+        -------
+        inds : numpy.ndarray
+            The lower-left grid corner indices, 
+            shape: (n_gpts, n_dims)
+
+        """
+        o = self.origin[None, :]
+        d = self.deltas[None, :]
+        return ((gpts - o) // d).astype(np.int32)
+    
+    def inds2gpts(self, inds):
+        """
+        Translates grid point indices to grid points.
+
+        Parameters
+        ----------
+        inds : array-like
+            The integer grid point indices, shape: 
+            (n_gpts, dims)
+        
+        Returns
+        -------
+        gpts : numpy.ndarray
+            The grid points, shape: (n_gpts, n_dims)
+
+        """
+        o = self.origin[None, :]
+        d = self.deltas[None, :]
+        return o + inds * d
+
     def get_corner(self, p):
         """
         Get the lower-left grid corner of a point.
@@ -204,7 +278,7 @@ class LightRegGrid:
         Returns
         -------
         gpts : numpy.ndarray
-            The grid points relevant for interpolation,
+            The grid points relevant for coeffs,
             shape: (n_gpts, n_dims)
         coeffs : numpy.ndarray
             The interpolation coefficients, shape: (n_gpts,)
@@ -279,10 +353,11 @@ class LightRegGrid:
         Returns
         -------
         gpts : numpy.ndarray
-            The grid points relevant for interpolation,
+            The grid points relevant for coeffs,
             shape: (n_pts, n_gpts, n_dims)
         coeffs : numpy.ndarray
-            The interpolation coefficients, shape: (n_pts, n_gpts)
+            The interpolation coefficients, shape: 
+            (n_pts, n_gpts)
 
         """
         cells = self.get_cells(pts)
@@ -307,3 +382,81 @@ class LightRegGrid:
         gpts = p0[:, None] + ipts[None, :]
 
         return gpts, coeffs
+
+    def grad_coeffs_gridpoints(self, inds, vars=None, order=2, orderb=1):
+        """
+        Calculates the gradient coefficients at grid points.
+
+        Parameters
+        ----------
+        inds : numpy.ndarray
+            The integer grid point indices, shape: 
+            (n_inds, n_dims)
+        vars : array-like of int, optional
+            The variables wrt which to differentiate,
+            default is all, shape: (n_vars,)
+        order : int
+            The finite difference order,
+            1 = forward, -1 = backward, 2 = centre
+        orderb : int
+            The finite difference order at boundary points
+        
+        Returns
+        -------
+        gpts : numpy.ndarray
+            The grid points relevant for coeffs,
+            shape: (n_inds, n_vars, n_dpts, n_dims)
+        coeffs : numpy.ndarray
+            The gradient coefficients, shape: 
+            (n_inds, n_vars, n_dpts)
+        
+        """
+        # prepare:
+        ipts = self.inds2gpts(inds)
+        vars = np.arange(self.n_dims, dtype=np.int32) if vars is None else np.array(vars, dtype=np.int32)
+        n_vars = len(vars)
+        n_inds = len(inds)
+
+        # check indices:
+        chk = (inds < 0) | (inds > self.n_points[None, :])
+        if np.any(chk):
+            chk = np.any(chk, axis=1)
+            print("GSIZE:", self.n_steps.tolist())
+            raise ValueError(f"Found {np.sum(chk)} indices out of grid bounds: {inds[chk]}")
+        
+        # find number of finite difference points n_dpts:
+        if order not in [-1, 1, 2]:
+            raise NotImplementedError(f"Choice 'order = {order}' is not supported, please choose: -1 (backward), 1 (forward), 2 (centre)")
+        if orderb not in [1, 2]:
+            raise NotImplementedError(f"Choice 'orderb = {orderb}' is not supported, please choose: 1 or 2")
+        sel_bleft = inds == 0
+        sel_bright = inds == self.n_points[None, :]
+        n_dpts = 2
+        if np.any(sel_bleft | sel_bright):
+            if orderb == 2:
+                n_dpts = 3
+            s_centre = ~(sel_bleft | sel_bright)
+        else:
+            s_centre = np.s_[:]
+
+        # initialize output:
+        gpts = np.full((n_inds, self.n_dims, n_dpts, self.n_dims), np.nan, dtype=np.float64)
+        coeffs = np.zeros((n_inds, self.n_dims, n_dpts), dtype=np.float64)
+
+        # coeffs for left boundary points:
+        if np.any(sel_bleft):
+
+            seli = np.any(sel_bleft, axis=1)
+            vrs = np.where(sel_bleft)[1]
+
+            if orderb == 1:
+                gpts[:, :, 0][sel_bleft] = ipts[seli]
+
+
+        # resize:
+        if n_vars < self.n_dims:
+            gpts = gpts[:, vars]
+            coeffs = coeffs[:, vars]
+
+        return gpts, coeffs
+        
