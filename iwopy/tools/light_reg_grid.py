@@ -106,7 +106,7 @@ class LightRegGrid:
             The lower-left grid corner point indices, shape: (n_dims,)
 
         """
-        return ((gp - self.origin) // self.deltas).astype(np.int32)
+        return ((gp - self.origin) / self.deltas).astype(np.int32)
 
     def i2gp(self, i):
         """
@@ -143,7 +143,7 @@ class LightRegGrid:
         """
         o = self.origin[None, :]
         d = self.deltas[None, :]
-        return ((gpts - o) // d).astype(np.int32)
+        return ((gpts - o) / d).astype(np.int32)
     
     def inds2gpts(self, inds):
         """
@@ -180,7 +180,8 @@ class LightRegGrid:
             The lower-left grid corner point, shape: (n_dims,)
 
         """
-        return self.origin + ((p - self.origin) // self.deltas) * self.deltas
+        i = self.gp2i(p)
+        return self.origin + i * self.deltas
 
     def get_corners(self, pts):
         """
@@ -199,7 +200,8 @@ class LightRegGrid:
         """
         o = self.origin[None, :]
         d = self.deltas[None, :]
-        return o + ((pts - o) // d) * d
+        i = self.gpts2inds(pts)
+        return o + i * d
 
     def get_cell(self, p):
         """
@@ -383,18 +385,18 @@ class LightRegGrid:
 
         return gpts, coeffs
 
-    def grad_coeffs_gridpoints(self, inds, vars=None, order=2, orderb=1):
+    def deriv_coeffs_gridpoints(self, inds, var, order=2, orderb=1):
         """
-        Calculates the gradient coefficients at grid points.
+        Calculates the derivative coefficients at grid points.
 
         Parameters
         ----------
         inds : numpy.ndarray
             The integer grid point indices, shape: 
             (n_inds, n_dims)
-        vars : array-like of int, optional
-            The variables wrt which to differentiate,
-            default is all, shape: (n_vars,)
+        var : int
+            The dimension representing the variable
+            wrt which to differentiate
         order : int
             The finite difference order,
             1 = forward, -1 = backward, 2 = centre
@@ -405,58 +407,176 @@ class LightRegGrid:
         -------
         gpts : numpy.ndarray
             The grid points relevant for coeffs,
-            shape: (n_inds, n_vars, n_dpts, n_dims)
+            shape: (n_inds, n_gpts, n_dims)
         coeffs : numpy.ndarray
             The gradient coefficients, shape: 
-            (n_inds, n_vars, n_dpts)
+            (n_inds, n_gpts)
         
         """
-        # prepare:
-        ipts = self.inds2gpts(inds)
-        vars = np.arange(self.n_dims, dtype=np.int32) if vars is None else np.array(vars, dtype=np.int32)
-        n_vars = len(vars)
-        n_inds = len(inds)
-
         # check indices:
+        if var < 0 or var > self.n_dims:
+            raise ValueError(f"Variable choice '{var}' exceeds dimensions, n_dims = {self.n_dims}")
         chk = (inds < 0) | (inds > self.n_points[None, :])
         if np.any(chk):
             chk = np.any(chk, axis=1)
             print("GSIZE:", self.n_steps.tolist())
             raise ValueError(f"Found {np.sum(chk)} indices out of grid bounds: {inds[chk]}")
-        
-        # find number of finite difference points n_dpts:
-        if order not in [-1, 1, 2]:
-            raise NotImplementedError(f"Choice 'order = {order}' is not supported, please choose: -1 (backward), 1 (forward), 2 (centre)")
-        if orderb not in [1, 2]:
-            raise NotImplementedError(f"Choice 'orderb = {orderb}' is not supported, please choose: 1 or 2")
-        sel_bleft = inds == 0
-        sel_bright = inds == self.n_points[None, :]
-        n_dpts = 2
+        ipts = self.inds2gpts(inds)
+        n_inds = len(inds)
+
+        # find number of finite difference points n_gpts:
+        sel_bleft = inds[:, var] == 0
+        sel_bright = inds[:, var] == self.n_points[var]
+        n_gpts = 2
         if np.any(sel_bleft | sel_bright):
             if orderb == 2:
-                n_dpts = 3
+                n_gpts = 3
             s_centre = ~(sel_bleft | sel_bright)
         else:
             s_centre = np.s_[:]
 
         # initialize output:
-        gpts = np.full((n_inds, self.n_dims, n_dpts, self.n_dims), np.nan, dtype=np.float64)
-        coeffs = np.zeros((n_inds, self.n_dims, n_dpts), dtype=np.float64)
+        gpts = np.zeros((n_inds, n_gpts, self.n_dims), dtype=np.float64)
+        coeffs = np.zeros((n_inds, n_gpts), dtype=np.float64)
+        gpts[:] = self.origin[None, None, :]
 
         # coeffs for left boundary points:
         if np.any(sel_bleft):
 
-            seli = np.any(sel_bleft, axis=1)
-            vrs = np.where(sel_bleft)[1]
+            if orderb == 1:
+                gpts[:, 0][sel_bleft] = ipts[sel_bleft]
+                coeffs[:, 0][sel_bleft] = -1.
+
+                gpts[:, 1][sel_bleft] = ipts[sel_bleft]
+                gpts[:, 1, var][sel_bleft] += self.deltas[var]
+                coeffs[:, 1][sel_bleft] = 1.
+
+            elif orderb == 2:
+                gpts[:, 0][sel_bleft] = ipts[sel_bleft]
+                coeffs[:, 0][sel_bleft] = -1.5
+
+                gpts[:, 1][sel_bleft] = ipts[sel_bleft]
+                gpts[:, 1, var][sel_bleft] += self.deltas[var]
+                coeffs[:, 1][sel_bleft] = 2.
+
+                gpts[:, 2][sel_bleft] = ipts[sel_bleft]
+                gpts[:, 2, var][sel_bleft] += 2 * self.deltas[var]
+                coeffs[:, 2][sel_bleft] = -0.5
+
+            else:
+                raise NotImplementedError(f"Choice 'orderb = {orderb}' is not supported, please choose: 1 or 2")
+
+        # coeffs for right boundary points:
+        if np.any(sel_bright):
 
             if orderb == 1:
-                gpts[:, :, 0][sel_bleft] = ipts[seli]
+                gpts[:, 0][sel_bright] = ipts[sel_bright]
+                coeffs[:, 0][sel_bright] = 1.
 
+                gpts[:, 1][sel_bright] = ipts[sel_bright]
+                gpts[:, 1, var][sel_bright] -= self.deltas[var]
+                coeffs[:, 1][sel_bright] = -1.
 
-        # resize:
-        if n_vars < self.n_dims:
-            gpts = gpts[:, vars]
-            coeffs = coeffs[:, vars]
+            elif orderb == 2:
+                gpts[:, 0][sel_bright] = ipts[sel_bright]
+                coeffs[:, 0][sel_bright] = 1.5
+
+                gpts[:, 1][sel_bright] = ipts[sel_bright]
+                gpts[:, 1, var][sel_bright] -= self.deltas[var]
+                coeffs[:, 1][sel_bright] = -2.
+
+                gpts[:, 2][sel_bright] = ipts[sel_bright]
+                gpts[:, 2, var][sel_bright] -= 2 * self.deltas[var]
+                coeffs[:, 2][sel_bright] = 0.5
+                
+            else:
+                raise NotImplementedError(f"Choice 'orderb = {orderb}' is not supported, please choose: 1 or 2")
+
+        # coeffs for central points:
+        if not np.all(sel_bleft | sel_bright):
+
+            if order == 1:
+                gpts[:, 0][s_centre] = ipts[s_centre]
+                gpts[:, 0, var][s_centre] += self.deltas[var]
+                coeffs[:, 0][s_centre] = 1.
+
+                gpts[:, 1][s_centre] = ipts[s_centre]
+                coeffs[:, 1][s_centre] = -1.
+
+            elif order == -1:
+                gpts[:, 0][s_centre] = ipts[s_centre]
+                coeffs[:, 0][s_centre] = 1.
+
+                gpts[:, 1][s_centre] = ipts[s_centre]
+                gpts[:, 1, var][s_centre] -= self.deltas[var]
+                coeffs[:, 1][s_centre] = -1.
+
+            elif order == 2:
+                gpts[:, 0][s_centre] = ipts[s_centre]
+                gpts[:, 0, var][s_centre] += self.deltas[var]
+                coeffs[:, 0][s_centre] = 0.5
+
+                gpts[:, 1][s_centre] = ipts[s_centre]
+                gpts[:, 1, var][s_centre] -= self.deltas[var]
+                coeffs[:, 1][s_centre] = -0.5
+
+            else:
+                raise NotImplementedError(f"Choice 'order = {order}' is not supported, please choose: -1 (backward), 1 (forward), 2 (centre)")
+
+        return gpts, coeffs / self.deltas[var]
+
+    def grad_coeffs_gridpoints(self, inds, vars, order=2, orderb=1):
+        """
+        Calculates the gradient coefficients at grid points.
+
+        Parameters
+        ----------
+        inds : numpy.ndarray
+            The integer grid point indices, shape: 
+            (n_inds, n_dims)
+        vars : list of int, optional
+            The dimensions representing the variables
+            wrt which to differentiate, shape: (n_vars,).
+            Default is all dimensions
+        order : int
+            The finite difference order,
+            1 = forward, -1 = backward, 2 = centre
+        orderb : int
+            The finite difference order at boundary points
+        
+        Returns
+        -------
+        gpts : numpy.ndarray
+            The grid points relevant for coeffs,
+            shape: (n_inds, n_vars, n_gpts, n_dims)
+        coeffs : numpy.ndarray
+            The gradient coefficients, shape: 
+            (n_inds, n_vars, n_gpts)
+        
+        """
+        if vars is None:
+            vars = np.arange(self.n_dims)
+        n_vars = len(vars)
+
+        gpts = None
+        coeffs = None
+        for vi, v in enumerate(vars):
+
+            hg, hc = self.deriv_coeffs_gridpoints(inds, v, order, orderb)
+
+            if gpts is None:
+                n_inds, n_gpts = hc.shape
+                gpts = np.full((n_inds, n_vars, n_gpts, self.n_dims), np.nan, dtype=np.float64)
+                coeffs = np.zeros((n_inds, n_vars, n_gpts), dtype=np.float64)
+
+            gpts[:, vi] = hg
+            coeffs[:, vi] = hc
+
+            del hg, hc
+        
+        sel = np.all(coeffs == 0., axis=(0, 1))
+        if np.any(sel):
+            gpts = gpts[:, :, ~sel]
+            coeffs = coeffs[:, :, ~sel]
 
         return gpts, coeffs
-        
