@@ -129,7 +129,7 @@ class DiscretizeRegGrid(ProblemWrapper):
 
         self.grid = LightRegGrid(origin, deltas, nsteps)
         if verbosity:
-            self.grid.print_info(0)
+            self.grid.print_info(4)
             print(self._hline)
 
         self._order = np.array(self._order, dtype=np.int32)
