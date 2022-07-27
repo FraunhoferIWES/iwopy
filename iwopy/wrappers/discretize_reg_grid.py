@@ -136,15 +136,16 @@ class DiscretizeRegGrid(ProblemWrapper):
         self._orderb = np.array(self._orderb, dtype=np.int32)
 
     def calc_gradients(
-        self, 
-        vars_int, 
-        vars_float, 
-        func, 
-        ivars, 
-        fvars, 
-        vrs, 
-        components, 
-        verbosity=0
+        self,
+        vars_int,
+        vars_float,
+        func,
+        ivars,
+        fvars,
+        vrs,
+        components,
+        pop=False,
+        verbosity=0,
     ):
         """
         The actual gradient calculation.
@@ -171,6 +172,8 @@ class DiscretizeRegGrid(ProblemWrapper):
             derivatives are to be calculated
         components : list of int
             The selected components of func, or None for all
+        pop : bool
+            Flag for vectorizing calculations via population
         verbosity : int
             The verbosity level, 0 = silent
 
@@ -203,6 +206,6 @@ class DiscretizeRegGrid(ProblemWrapper):
         order = self._order[ivars]
         orderb = self._orderb[ivars]
         gpts, coeffs = self.grid.grad_coeffs(varsf, gvars, order, orderb)
-        print("HERE",gpts.shape,coeffs.shape)
+        print("HERE", gpts.shape, coeffs.shape)
         quit()
         return gradients

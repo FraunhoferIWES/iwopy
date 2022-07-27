@@ -337,15 +337,16 @@ class Problem(Base, metaclass=ABCMeta):
             return varsi, varsf
 
     def calc_gradients(
-        self, 
-        vars_int, 
-        vars_float, 
-        func, 
-        ivars, 
-        fvars, 
-        vrs, 
-        components, 
-        verbosity=0
+        self,
+        vars_int,
+        vars_float,
+        func,
+        ivars,
+        fvars,
+        vrs,
+        components,
+        pop=False,
+        verbosity=0,
     ):
         """
         The actual gradient calculation.
@@ -372,6 +373,8 @@ class Problem(Base, metaclass=ABCMeta):
             derivatives are to be calculated
         components : list of int
             The selected components of func, or None for all
+        pop : bool
+            Flag for vectorizing calculations via population
         verbosity : int
             The verbosity level, 0 = silent
 
@@ -405,6 +408,7 @@ class Problem(Base, metaclass=ABCMeta):
         vars=None,
         components=None,
         verbosity=0,
+        pop=False,
         **kwargs,
     ):
         """
@@ -435,6 +439,8 @@ class Problem(Base, metaclass=ABCMeta):
             The selected components of func, or None for all
         verbosity : int
             The verbosity level, 0 = silent
+        pop : bool
+            Flag for vectorizing calculations via population
         kwargs : dict, optional
             Additional arguments forwarded to `calc_gradients`
 
@@ -512,6 +518,7 @@ class Problem(Base, metaclass=ABCMeta):
             vrs,
             components,
             verbosity,
+            pop,
             **kwargs,
         )
 

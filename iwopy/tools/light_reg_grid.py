@@ -122,7 +122,7 @@ class LightRegGrid:
         m = self.origin + self.n_steps * self.deltas
         m[(self.n_steps == self.INT_INF) & (self.deltas > 0)] = np.inf
         return m
-    
+
     def print_info(self, spaces=0):
         """
         Prints basic information
@@ -133,7 +133,7 @@ class LightRegGrid:
             The prepending spaces
 
         """
-        s = "" if spaces is 0 else " "*spaces
+        s = "" if spaces is 0 else " " * spaces
         print(f"{s}n_dims  :", self.n_dims)
         print(f"{s}deltas  :", self.deltas.tolist())
         print(f"{s}n_steps :", self.n_steps)
@@ -179,7 +179,7 @@ class LightRegGrid:
 
         Parameters
         ----------
-        i : int 
+        i : int
             The grid point index
 
         Returns
@@ -205,7 +205,7 @@ class LightRegGrid:
         Returns
         -------
         inds : numpy.ndarray
-            The lower-left grid corner indices, 
+            The lower-left grid corner indices,
             shape: (n_gpts, n_dims)
 
         """
@@ -232,9 +232,9 @@ class LightRegGrid:
         Parameters
         ----------
         inds : array-like
-            The integer grid point indices, shape: 
+            The integer grid point indices, shape:
             (n_gpts, dims)
-        
+
         Returns
         -------
         gpts : numpy.ndarray
@@ -374,7 +374,7 @@ class LightRegGrid:
                 s = np.argwhere(sel)[0][0]
                 print(
                     f"Found {np.sum(sel)} coords above higher bounds, e.g. coord {s}: q = {pts[s]}"
-                )            
+                )
         else:
             print("VMIN:", np.min(pts, axis=0))
             print("VMAX:", np.max(pts, axis=0))
@@ -465,7 +465,7 @@ class LightRegGrid:
             The grid points relevant for coeffs,
             shape: (n_gpts, n_dims)
         coeffs : numpy.ndarray
-            The interpolation coefficients, shape: 
+            The interpolation coefficients, shape:
             (n_pts, n_gpts)
         pmap : numpy.ndarray, optional
             The map from pts to gpts, shape: (n_pts, n_gp)
@@ -477,7 +477,7 @@ class LightRegGrid:
 
         opts = np.round(pts - p0, 14)
         try:
-            coeffs = self._interp(opts) # shape: (n_pts, n_gp)
+            coeffs = self._interp(opts)  # shape: (n_pts, n_gp)
         except ValueError as e:
             print(opts)
             self._error_infos(opts, for_ocell=True)
@@ -485,7 +485,7 @@ class LightRegGrid:
 
         ipts = np.stack(np.meshgrid(*ocell, indexing="ij"), axis=-1)
         ipts = ipts.reshape(2**self.n_dims, self.n_dims)
-        gpts = p0[:, None] + ipts[None, :] # shape: (n_pts, n_gp, n_dims)
+        gpts = p0[:, None] + ipts[None, :]  # shape: (n_pts, n_gp, n_dims)
 
         # remove points with zero weights:
         sel = np.all(np.abs(coeffs) < 1.0e-14, axis=0)
@@ -497,7 +497,9 @@ class LightRegGrid:
         # reorganize data to single grid point array:
         n_pts, n_gp = coeffs.shape
         n_apts = n_pts * n_gp
-        gpts, amap = np.unique(gpts.reshape(n_apts, self.n_dims), axis=0, return_inverse=True)
+        gpts, amap = np.unique(
+            gpts.reshape(n_apts, self.n_dims), axis=0, return_inverse=True
+        )
         n_gpts = len(gpts)
         amap = amap.reshape(n_pts, n_gp)
         temp = coeffs
@@ -516,7 +518,7 @@ class LightRegGrid:
         Parameters
         ----------
         inds : numpy.ndarray
-            The integer grid point indices, shape: 
+            The integer grid point indices, shape:
             (n_inds, n_dims)
         var : int
             The dimension representing the variable
@@ -526,20 +528,22 @@ class LightRegGrid:
             1 = forward, -1 = backward, 2 = centre
         orderb : int
             The finite difference order at boundary points
-        
+
         Returns
         -------
         gpts : numpy.ndarray
             The grid points relevant for coeffs,
             shape: (n_gpts, n_dims)
         coeffs : numpy.ndarray
-            The gradient coefficients, shape: 
+            The gradient coefficients, shape:
             (n_inds, n_gpts)
-        
+
         """
         # check indices:
         if var < 0 or var > self.n_dims:
-            raise ValueError(f"Variable choice '{var}' exceeds dimensions, n_dims = {self.n_dims}")
+            raise ValueError(
+                f"Variable choice '{var}' exceeds dimensions, n_dims = {self.n_dims}"
+            )
         ipts = self.inds2gpts(inds)
         n_inds = len(inds)
 
@@ -564,11 +568,11 @@ class LightRegGrid:
 
             if orderb == 1:
                 gpts[:, 0][sel_bleft] = ipts[sel_bleft]
-                coeffs[:, 0][sel_bleft] = -1.
+                coeffs[:, 0][sel_bleft] = -1.0
 
                 gpts[:, 1][sel_bleft] = ipts[sel_bleft]
                 gpts[:, 1, var][sel_bleft] += self.deltas[var]
-                coeffs[:, 1][sel_bleft] = 1.
+                coeffs[:, 1][sel_bleft] = 1.0
 
             elif orderb == 2:
                 gpts[:, 0][sel_bleft] = ipts[sel_bleft]
@@ -576,25 +580,27 @@ class LightRegGrid:
 
                 gpts[:, 1][sel_bleft] = ipts[sel_bleft]
                 gpts[:, 1, var][sel_bleft] += self.deltas[var]
-                coeffs[:, 1][sel_bleft] = 2.
+                coeffs[:, 1][sel_bleft] = 2.0
 
                 gpts[:, 2][sel_bleft] = ipts[sel_bleft]
                 gpts[:, 2, var][sel_bleft] += 2 * self.deltas[var]
                 coeffs[:, 2][sel_bleft] = -0.5
 
             else:
-                raise NotImplementedError(f"Choice 'orderb = {orderb}' is not supported, please choose: 1 or 2")
+                raise NotImplementedError(
+                    f"Choice 'orderb = {orderb}' is not supported, please choose: 1 or 2"
+                )
 
         # coeffs for right boundary points:
         if np.any(sel_bright):
 
             if orderb == 1:
                 gpts[:, 0][sel_bright] = ipts[sel_bright]
-                coeffs[:, 0][sel_bright] = 1.
+                coeffs[:, 0][sel_bright] = 1.0
 
                 gpts[:, 1][sel_bright] = ipts[sel_bright]
                 gpts[:, 1, var][sel_bright] -= self.deltas[var]
-                coeffs[:, 1][sel_bright] = -1.
+                coeffs[:, 1][sel_bright] = -1.0
 
             elif orderb == 2:
                 gpts[:, 0][sel_bright] = ipts[sel_bright]
@@ -602,14 +608,16 @@ class LightRegGrid:
 
                 gpts[:, 1][sel_bright] = ipts[sel_bright]
                 gpts[:, 1, var][sel_bright] -= self.deltas[var]
-                coeffs[:, 1][sel_bright] = -2.
+                coeffs[:, 1][sel_bright] = -2.0
 
                 gpts[:, 2][sel_bright] = ipts[sel_bright]
                 gpts[:, 2, var][sel_bright] -= 2 * self.deltas[var]
                 coeffs[:, 2][sel_bright] = 0.5
-                
+
             else:
-                raise NotImplementedError(f"Choice 'orderb = {orderb}' is not supported, please choose: 1 or 2")
+                raise NotImplementedError(
+                    f"Choice 'orderb = {orderb}' is not supported, please choose: 1 or 2"
+                )
 
         # coeffs for central points:
         if not np.all(sel_bleft | sel_bright):
@@ -617,18 +625,18 @@ class LightRegGrid:
             if order == 1:
                 gpts[:, 0][s_centre] = ipts[s_centre]
                 gpts[:, 0, var][s_centre] += self.deltas[var]
-                coeffs[:, 0][s_centre] = 1.
+                coeffs[:, 0][s_centre] = 1.0
 
                 gpts[:, 1][s_centre] = ipts[s_centre]
-                coeffs[:, 1][s_centre] = -1.
+                coeffs[:, 1][s_centre] = -1.0
 
             elif order == -1:
                 gpts[:, 0][s_centre] = ipts[s_centre]
-                coeffs[:, 0][s_centre] = 1.
+                coeffs[:, 0][s_centre] = 1.0
 
                 gpts[:, 1][s_centre] = ipts[s_centre]
                 gpts[:, 1, var][s_centre] -= self.deltas[var]
-                coeffs[:, 1][s_centre] = -1.
+                coeffs[:, 1][s_centre] = -1.0
 
             elif order == 2:
                 gpts[:, 0][s_centre] = ipts[s_centre]
@@ -640,12 +648,16 @@ class LightRegGrid:
                 coeffs[:, 1][s_centre] = -0.5
 
             else:
-                raise NotImplementedError(f"Choice 'order = {order}' is not supported, please choose: -1 (backward), 1 (forward), 2 (centre)")
+                raise NotImplementedError(
+                    f"Choice 'order = {order}' is not supported, please choose: -1 (backward), 1 (forward), 2 (centre)"
+                )
 
         # reorganize data to single grid point array:
         n_pts, n_gp = coeffs.shape
         n_apts = n_pts * n_gp
-        gpts, amap = np.unique(gpts.reshape(n_apts, self.n_dims), axis=0, return_inverse=True)
+        gpts, amap = np.unique(
+            gpts.reshape(n_apts, self.n_dims), axis=0, return_inverse=True
+        )
         n_gpts = len(gpts)
         amap = amap.reshape(n_pts, n_gp)
         temp = coeffs
@@ -670,16 +682,16 @@ class LightRegGrid:
             1 = forward, -1 = backward, 2 = centre
         orderb : int
             The finite difference order at boundary points
-        
+
         Returns
         -------
         gpts : numpy.ndarray
             The grid points relevant for coeffs,
             shape: (n_gpts, n_dims)
         coeffs : numpy.ndarray
-            The gradient coefficients, shape: 
+            The gradient coefficients, shape:
             (n_pts, n_gpts)
-        
+
         """
         gpts0, coeffs0, pmap = self.interpolation_coeffs_points(pts, ret_pmap=True)
 
@@ -689,9 +701,9 @@ class LightRegGrid:
         n_pts = len(pts)
         n_inds0 = len(inds0)
         pmat = np.zeros((n_pts, n_inds0), dtype=np.int8)
-        np.put_along_axis(pmat, pmap, 1., axis=1)
+        np.put_along_axis(pmat, pmap, 1.0, axis=1)
 
-        coeffs = np.einsum('pi,pi,ig->pg', coeffs0, pmat, coeffs1)
+        coeffs = np.einsum("pi,pi,ig->pg", coeffs0, pmat, coeffs1)
 
         return gpts, coeffs
 
@@ -702,7 +714,7 @@ class LightRegGrid:
         Parameters
         ----------
         inds : numpy.ndarray
-            The integer grid point indices, shape: 
+            The integer grid point indices, shape:
             (n_inds, n_dims)
         vars : list of int, optional
             The dimensions representing the variables
@@ -713,16 +725,16 @@ class LightRegGrid:
             1 = forward, -1 = backward, 2 = centre
         orderb : int list of int
             The finite difference order at boundary points
-        
+
         Returns
         -------
         gpts : numpy.ndarray
             The grid points relevant for coeffs,
             shape: (n_gpts, n_dims)
         coeffs : numpy.ndarray
-            The gradient coefficients, 
+            The gradient coefficients,
             shape: (n_inds, n_vars, n_gpts)
-        
+
         """
         if vars is None:
             vars = np.arange(self.n_dims)
@@ -777,16 +789,16 @@ class LightRegGrid:
             1 = forward, -1 = backward, 2 = centre
         orderb : int list of int
             The finite difference order at boundary points
-        
+
         Returns
         -------
         gpts : numpy.ndarray
             The grid points relevant for coeffs,
             shape: (n_gpts, n_dims)
         coeffs : numpy.ndarray
-            The gradient coefficients, 
+            The gradient coefficients,
             shape: (n_pts, n_vars, n_gpts)
-        
+
         """
         gpts0, coeffs0, pmap = self.interpolation_coeffs_points(pts, ret_pmap=True)
 
@@ -796,8 +808,8 @@ class LightRegGrid:
         n_pts = len(pts)
         n_inds0 = len(inds0)
         pmat = np.zeros((n_pts, n_inds0), dtype=np.int8)
-        np.put_along_axis(pmat, pmap, 1., axis=1)
+        np.put_along_axis(pmat, pmap, 1.0, axis=1)
 
-        coeffs = np.einsum('pi,pi,ivg->pvg', coeffs0, pmat, coeffs1)
+        coeffs = np.einsum("pi,pi,ivg->pvg", coeffs0, pmat, coeffs1)
 
         return gpts, coeffs
