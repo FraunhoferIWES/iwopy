@@ -49,19 +49,19 @@ def test_interp_points():
 
         print("RESULTS", gpts.shape, c.shape)
 
-        qts = np.einsum("pdx,pd->px", gpts, c)
+        qts = np.einsum("gx,pg->px", gpts, c)
 
         print("QTS", qts.shape, "PTS", pts.shape)
 
         assert np.all(np.abs(pts - qts) < 1e-10)
 
-def test_deriv():
+def test_deriv_gp():
 
     dnl = (
-        (0.01, 2, 2, 0.001),
+        (0.01, 2, 2, 0.00015),
         (0.01, 2, 1, 0.01),
         (0.01, 1, 1, 0.01),
-        (0.001, 2, 2, 1.35e-6),
+        (0.001, 2, 2, 1.35e-06),
         (0.001, 2, 1, 0.001),
         (0.001, 1, 1, 0.001),
     )
@@ -78,14 +78,17 @@ def test_deriv():
 
         o = [0.]
         d = [step]
-        n = [int(1/step) - 1]
-        gpts = np.array([[0.], [0.3], [0.6], [1.0]])
+        n = [int(1/step)]
+        gpts = np.array([[0.], [0.3], [0.6], [1.]])
 
         grid = iwopy.tools.LightRegGrid(o, d, n)
+        print("step    :", step)
         print("n_dims  :", grid.n_dims)
         print("n_steps :", grid.n_steps)
         print("n_points:", grid.n_points)
-        
+        print("min     :", grid.min)
+        print("max     :", grid.max)
+
         inds = grid.gpts2inds(gpts)
         print("\ngpts =", gpts.tolist())
         print("inds =", inds.tolist())
@@ -103,11 +106,70 @@ def test_deriv():
         fc = f(cpts)
         print(f"fc {fc.shape} =\n", fc.tolist())
         
-        rg = np.einsum('pgd,pg->pd', fc, c)
+        rg = np.einsum('gd,pg->pd', fc, c)
         print(f"\nrg {rg.shape} =\n", rg.tolist())
 
         delta = np.abs(rg - gv)
         print("delta =\n", delta.tolist())
+        print("max delta =", np.max(delta))
+
+        assert np.all(delta < lim)
+
+def test_deriv():
+
+    dnl = (
+        (0.01, 2, 2, 0.00015),
+        (0.01, 2, 1, 0.01),
+        (0.01, 1, 1, 0.01),
+        (0.001, 2, 2, 1.35e-06),
+        (0.001, 2, 1, 0.001),
+        (0.001, 1, 1, 0.001),
+    )
+
+    def f(x):
+        return x + 0.5 * np.sin(2*x)
+    
+    def g(x):
+        return 1 + np.cos(2*x)
+
+    for step, order, orderb, lim in dnl:
+
+        print("\nENTERING", (step, order, orderb, lim), "\n")
+
+        o = [0.]
+        d = [step]
+        n = [int(1/step)]
+        pts = np.array([[0.], [0.1*np.pi], [0.60000123124], [1.0]])
+
+        grid = iwopy.tools.LightRegGrid(o, d, n)
+        print("step    :", step)
+        print("n_dims  :", grid.n_dims)
+        print("n_steps :", grid.n_steps)
+        print("n_points:", grid.n_points)
+        print("min     :", grid.min)
+        print("max     :", grid.max)
+        
+        print("\ngpts =", pts.tolist())
+
+        x = pts[:, 0]
+        print("\nx =", x)
+        fv = f(pts)
+        print("f =", fv[:, 0])
+        gv = g(pts)
+        print("g =", gv[:, 0])
+
+        cpts, c = grid.deriv_coeffs(pts, 0, order, orderb)
+        print(f"\ncpts {cpts.shape} =\n",cpts.tolist())
+        print(f"c {c.shape} =\n",c.tolist())
+        fc = f(cpts)
+        print(f"fc {fc.shape} =\n", fc.tolist())
+        
+        rg = np.einsum('gd,pg->pd', fc, c)
+        print(f"\nrg {rg.shape} =\n", rg.tolist())
+
+        delta = np.abs(rg - gv)
+        print("delta =\n", delta.tolist())
+        print("max delta =", np.max(delta))
 
         assert np.all(delta < lim)
 
@@ -144,14 +206,16 @@ def test_grad():
 
         o = [0., 1., 0.]
         d = [step, step, step]
-        n = [int(1/step) - 1, int(1/step) - 1, int(1/step) - 1]
+        n = [int(1/step), int(1/step), int(1/step)]
         gpts = np.array([[0., 1., 0.], [0.5, 1.5, 0.5], [0.8, 1.1, 0.7], [0., 1.3, 1.], [1.0, 2.0, 1.0]])
 
         grid = iwopy.tools.LightRegGrid(o, d, n)
         print("n_dims  :", grid.n_dims)
         print("n_steps :", grid.n_steps)
         print("n_points:", grid.n_points)
-        
+        print("min     :", grid.min)
+        print("max     :", grid.max)
+
         inds = grid.gpts2inds(gpts)
         print("\ngpts =", gpts.tolist())
         print("inds =", inds.tolist())
@@ -164,21 +228,22 @@ def test_grad():
         cpts, c = grid.grad_coeffs_gridpoints(inds, vars, order, orderb)
         print(f"\ncpts {cpts.shape} =\n",cpts.tolist())
         print(f"c {c.shape} =\n",c.tolist())
-        fc = f(cpts[..., 0], cpts[..., 1], cpts[..., 2])
+        fc = f(cpts[:, 0], cpts[:, 1], cpts[:, 2])
         print(f"fc {fc.shape} =\n", fc.tolist())
         
-        rg = np.einsum('pvg,pvg->pv', fc, c)
+        rg = np.einsum('g,pvg->pv', fc, c)
         print(f"\nrg {rg.shape} =\n", rg.tolist())
 
         delta = np.abs(rg - gv)
         print("delta =\n", delta.tolist())
-        print(np.max(delta, axis=0))
+        print("max delta =", np.max(delta, axis=0))
 
         assert np.all(delta < np.array(lim)[None, :])
 
 if __name__ == "__main__":
     
-    #test_interp_point()
-    #test_interp_points()
-    #test_deriv()
+    test_interp_point()
+    test_interp_points()
+    test_deriv_gp()
+    test_deriv()
     test_grad()
