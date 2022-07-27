@@ -135,31 +135,16 @@ class DiscretizeRegGrid(ProblemWrapper):
         self._order = np.array(self._order, dtype=np.int32)
         self._orderb = np.array(self._orderb, dtype=np.int32)
 
-    def get_grad_plan(self, vars_float, vars):
-        """
-        Create the calculation plan for the gradient computation.
-
-        Parameters
-        ----------
-        vars_float : np.array
-            The float variable values, shape: (n_vars_float,)
-        vars : numpy.ndarray
-            The indices of the gradient variables, shape: (n_vars,)
-
-        Returns
-        -------
-        plan : numpy.ndarray
-            The variables for calculations, shape:
-            (n_pop, n_vars_float)
-
-        """
-        print("GET PLAN")
-        print("VARS", vars, vars_float.tolist())
-
-        quit()
-
     def calc_gradients(
-        self, vars_int, vars_float, func, ivars, fvars, vrs, components, verbosity=0
+        self, 
+        vars_int, 
+        vars_float, 
+        func, 
+        ivars, 
+        fvars, 
+        vrs, 
+        components, 
+        verbosity=0
     ):
         """
         The actual gradient calculation.
@@ -205,6 +190,7 @@ class DiscretizeRegGrid(ProblemWrapper):
         gnan = np.isnan(gradients)
         gvars = np.where(np.any(gnan, axis=0))[0]
         gvars = [vi for vi in gvars if vi in self._vinds]
+        ivars = [self._vinds.index(vi) for vi in gvars]
         pvars = np.array(fvars)[gvars]
         cmpnts = np.where(np.any(gnan, axis=1))[0]
         cmpnts = [c for c in components if c in cmpnts]
@@ -212,7 +198,11 @@ class DiscretizeRegGrid(ProblemWrapper):
             return gradients
         del gnan
 
-        # get calculation plan:
-        plan = self.get_grad_plan(vars_float, gvars)
-
+        # get gradient grid points and coeffs:
+        varsf = vars_float[None, gvars]
+        order = self._order[ivars]
+        orderb = self._orderb[ivars]
+        gpts, coeffs = self.grid.grad_coeffs(varsf, gvars, order, orderb)
+        print("HERE",gpts.shape,coeffs.shape)
+        quit()
         return gradients

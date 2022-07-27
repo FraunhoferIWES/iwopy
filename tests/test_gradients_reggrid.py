@@ -59,7 +59,7 @@ class Test:
         gp = iwopy.DiscretizeRegGrid(p, {"x": 0.01, "y": 0.02})
         gp.initialize(verbosity=1)
 
-        for p0 in np.random.uniform(-2.0, 2.0, (100, 2)):
+        for p0 in np.random.uniform(1.0, 5.0, (100, 2)):
             self._calc(gp, f, p0, 1, 0.01, False)
 
     def test_om1_indi(self):

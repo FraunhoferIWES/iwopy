@@ -30,6 +30,7 @@ def test_interp_point():
 
         assert np.all(np.abs(p - q) < 1e-10)
 
+
 def test_interp_points():
 
     D = 6
@@ -57,6 +58,7 @@ def test_interp_points():
 
         assert np.all(np.abs(pts - qts) < 1e-10)
 
+
 def test_deriv_gp():
 
     dnl = (
@@ -69,19 +71,19 @@ def test_deriv_gp():
     )
 
     def f(x):
-        return x + 0.5 * np.sin(2*x)
-    
+        return x + 0.5 * np.sin(2 * x)
+
     def g(x):
-        return 1 + np.cos(2*x)
+        return 1 + np.cos(2 * x)
 
     for step, order, orderb, lim in dnl:
 
         print("\nENTERING", (step, order, orderb, lim), "\n")
 
-        o = [0.]
+        o = [0.0]
         d = [step]
-        n = [int(1/step)]
-        gpts = np.array([[0.], [0.3], [0.6], [1.]])
+        n = [int(1 / step)]
+        gpts = np.array([[0.0], [0.3], [0.6], [1.0]])
 
         grid = iwopy.tools.LightRegGrid(o, d, n)
         grid.print_info()
@@ -98,12 +100,12 @@ def test_deriv_gp():
         print("g =", gv[:, 0])
 
         cpts, c = grid.deriv_coeffs_gridpoints(inds, 0, order, orderb)
-        print(f"\ncpts {cpts.shape} =\n",cpts.tolist())
-        print(f"c {c.shape} =\n",c.tolist())
+        print(f"\ncpts {cpts.shape} =\n", cpts.tolist())
+        print(f"c {c.shape} =\n", c.tolist())
         fc = f(cpts)
         print(f"fc {fc.shape} =\n", fc.tolist())
-        
-        rg = np.einsum('gd,pg->pd', fc, c)
+
+        rg = np.einsum("gd,pg->pd", fc, c)
         print(f"\nrg {rg.shape} =\n", rg.tolist())
 
         delta = np.abs(rg - gv)
@@ -111,6 +113,7 @@ def test_deriv_gp():
         print("max delta =", np.max(delta))
 
         assert np.all(delta < lim)
+
 
 def test_deriv():
 
@@ -124,23 +127,23 @@ def test_deriv():
     )
 
     def f(x):
-        return x + 0.5 * np.sin(2*x)
-    
+        return x + 0.5 * np.sin(2 * x)
+
     def g(x):
-        return 1 + np.cos(2*x)
+        return 1 + np.cos(2 * x)
 
     for step, order, orderb, lim in dnl:
 
         print("\nENTERING", (step, order, orderb, lim), "\n")
 
-        o = [0.]
+        o = [0.0]
         d = [step]
-        n = [int(1/step)]
-        pts = np.array([[0.], [0.3], [0.1*np.pi], [0.60000123124], [1.0]])
+        n = [int(1 / step)]
+        pts = np.array([[0.0], [0.3], [0.1 * np.pi], [0.60000123124], [1.0]])
 
         grid = iwopy.tools.LightRegGrid(o, d, n)
         grid.print_info()
-        
+
         print("\ngpts =", pts.tolist())
 
         x = pts[:, 0]
@@ -151,12 +154,12 @@ def test_deriv():
         print("g =", gv[:, 0])
 
         cpts, c = grid.deriv_coeffs(pts, 0, order, orderb)
-        print(f"\ncpts {cpts.shape} =\n",cpts.tolist())
-        print(f"c {c.shape} =\n",c.tolist())
+        print(f"\ncpts {cpts.shape} =\n", cpts.tolist())
+        print(f"c {c.shape} =\n", c.tolist())
         fc = f(cpts)
         print(f"fc {fc.shape} =\n", fc.tolist())
-        
-        rg = np.einsum('gd,pg->pd', fc, c)
+
+        rg = np.einsum("gd,pg->pd", fc, c)
         print(f"\nrg {rg.shape} =\n", rg.tolist())
 
         delta = np.abs(rg - gv)
@@ -164,6 +167,7 @@ def test_deriv():
         print("max delta =", np.max(delta))
 
         assert np.all(delta < lim)
+
 
 def test_grad_gp():
 
@@ -177,29 +181,37 @@ def test_grad_gp():
     )
 
     def f(x, y, z):
-        return x*y*z - 2*y*z**2 + (x + z)/y - y**2 + 3*x
-    
+        return x * y * z - 2 * y * z**2 + (x + z) / y - y**2 + 3 * x
+
     def g(x, y, z, vars=None):
         if vars is None:
             vars = [0, 1, 2]
         out = np.zeros(list(x.shape) + [len(vars)])
         for vi, v in enumerate(vars):
             if v == 0:
-                out[..., vi] = y*z + 1/y + 3
+                out[..., vi] = y * z + 1 / y + 3
             if v == 1:
-                out[..., vi] = x*z - 2*z**2 - (x + z)/y**2 - 2*y
+                out[..., vi] = x * z - 2 * z**2 - (x + z) / y**2 - 2 * y
             if v == 2:
-                out[..., vi] = x*y - 4*y*z + 1/y
+                out[..., vi] = x * y - 4 * y * z + 1 / y
         return out
 
     for vars, step, order, orderb, lim in dnl:
 
         print("\nENTERING", (vars, step, order, orderb, lim), "\n")
 
-        o = [0., 1., 0.]
+        o = [0.0, 1.0, 0.0]
         d = [step, step, step]
-        n = [int(1/step), int(1/step), int(1/step)]
-        gpts = np.array([[0., 1., 0.], [0.5, 1.5, 0.5], [0.8, 1.1, 0.7], [0., 1.3, 1.], [1.0, 2.0, 1.0]])
+        n = [int(1 / step), int(1 / step), int(1 / step)]
+        gpts = np.array(
+            [
+                [0.0, 1.0, 0.0],
+                [0.5, 1.5, 0.5],
+                [0.8, 1.1, 0.7],
+                [0.0, 1.3, 1.0],
+                [1.0, 2.0, 1.0],
+            ]
+        )
 
         grid = iwopy.tools.LightRegGrid(o, d, n)
         grid.print_info()
@@ -214,12 +226,12 @@ def test_grad_gp():
         print(f"g {gv.shape} =", gv)
 
         cpts, c = grid.grad_coeffs_gridpoints(inds, vars, order, orderb)
-        print(f"\ncpts {cpts.shape} =\n",cpts.tolist())
-        print(f"c {c.shape} =\n",c.tolist())
+        print(f"\ncpts {cpts.shape} =\n", cpts.tolist())
+        print(f"c {c.shape} =\n", c.tolist())
         fc = f(cpts[:, 0], cpts[:, 1], cpts[:, 2])
         print(f"fc {fc.shape} =\n", fc.tolist())
-        
-        rg = np.einsum('g,pvg->pv', fc, c)
+
+        rg = np.einsum("g,pvg->pv", fc, c)
         print(f"\nrg {rg.shape} =\n", rg.tolist())
 
         delta = np.abs(rg - gv)
@@ -227,6 +239,7 @@ def test_grad_gp():
         print("max delta =", np.max(delta, axis=0))
 
         assert np.all(delta < np.array(lim)[None, :])
+
 
 def test_grad():
 
@@ -240,29 +253,37 @@ def test_grad():
     )
 
     def f(x, y, z):
-        return x*y*z - 2*y*z**2 + (x + z)/y - y**2 + 3*x
-    
+        return x * y * z - 2 * y * z**2 + (x + z) / y - y**2 + 3 * x
+
     def g(x, y, z, vars=None):
         if vars is None:
             vars = [0, 1, 2]
         out = np.zeros(list(x.shape) + [len(vars)])
         for vi, v in enumerate(vars):
             if v == 0:
-                out[..., vi] = y*z + 1/y + 3
+                out[..., vi] = y * z + 1 / y + 3
             if v == 1:
-                out[..., vi] = x*z - 2*z**2 - (x + z)/y**2 - 2*y
+                out[..., vi] = x * z - 2 * z**2 - (x + z) / y**2 - 2 * y
             if v == 2:
-                out[..., vi] = x*y - 4*y*z + 1/y
+                out[..., vi] = x * y - 4 * y * z + 1 / y
         return out
 
     for vars, step, order, orderb, lim in dnl:
 
         print("\nENTERING", (vars, step, order, orderb, lim), "\n")
 
-        o = [0., 1., 0.]
+        o = [0.0, 1.0, 0.0]
         d = [step, step, step]
-        n = [int(1/step), int(1/step), int(1/step)]
-        pts = np.array([[0., 1., 0.54], [0.512345, 1.5, 0.7875], [0.899, 1.1, 0.7], [0.0999, 1.3999, 0.999], [1.0, 2.0, 1.0]])
+        n = [int(1 / step), int(1 / step), int(1 / step)]
+        pts = np.array(
+            [
+                [0.0, 1.0, 0.54],
+                [0.512345, 1.5, 0.7875],
+                [0.899, 1.1, 0.7],
+                [0.0999, 1.3999, 0.999],
+                [1.0, 2.0, 1.0],
+            ]
+        )
 
         grid = iwopy.tools.LightRegGrid(o, d, n)
         grid.print_info()
@@ -275,12 +296,12 @@ def test_grad():
         print(f"g {gv.shape} =", gv)
 
         cpts, c = grid.grad_coeffs(pts, vars, order, orderb)
-        print(f"\ncpts {cpts.shape} =\n",cpts.tolist())
-        print(f"c {c.shape} =\n",c.tolist())
+        print(f"\ncpts {cpts.shape} =\n", cpts.tolist())
+        print(f"c {c.shape} =\n", c.tolist())
         fc = f(cpts[:, 0], cpts[:, 1], cpts[:, 2])
         print(f"fc {fc.shape} =\n", fc.tolist())
-        
-        rg = np.einsum('g,pvg->pv', fc, c)
+
+        rg = np.einsum("g,pvg->pv", fc, c)
         print(f"\nrg {rg.shape} =\n", rg.tolist())
 
         delta = np.abs(rg - gv)
@@ -289,8 +310,9 @@ def test_grad():
 
         assert np.all(delta < np.array(lim)[None, :])
 
+
 if __name__ == "__main__":
-    
+
     test_interp_point()
     test_interp_points()
     test_deriv_gp()

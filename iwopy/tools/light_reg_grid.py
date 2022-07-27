@@ -361,8 +361,8 @@ class LightRegGrid:
             cmax = self._ocell[:, 1]
             print("CMIN:", cmin.tolist())
             print("CMAX:", cmax.tolist())
-            print("VMIN:", np.min(pts, axis=0))
-            print("VMAX:", np.max(pts, axis=0))
+            print("VMIN:", np.min(pts, axis=0).tolist())
+            print("VMAX:", np.max(pts, axis=0).tolist())
             sel = np.any(pts < cmin[None, :], axis=1)
             if np.any(sel):
                 s = np.argwhere(sel)[0][0]
@@ -708,10 +708,10 @@ class LightRegGrid:
             The dimensions representing the variables
             wrt which to differentiate, shape: (n_vars,).
             Default is all dimensions
-        order : int
+        order : int or list of int
             The finite difference order,
             1 = forward, -1 = backward, 2 = centre
-        orderb : int
+        orderb : int list of int
             The finite difference order at boundary points
         
         Returns
@@ -732,9 +732,11 @@ class LightRegGrid:
         gpts = None
         cfs = None
         sizes = []
-        for v in vars:
+        for vi, v in enumerate(vars):
 
-            hg, hc = self.deriv_coeffs_gridpoints(inds, v, order, orderb)
+            o = order if isinstance(order, int) else order[vi]
+            ob = orderb if isinstance(orderb, int) else orderb[vi]
+            hg, hc = self.deriv_coeffs_gridpoints(inds, v, o, ob)
 
             if gpts is None:
                 gpts = hg
@@ -770,10 +772,10 @@ class LightRegGrid:
             The dimensions representing the variables
             wrt which to differentiate, shape: (n_vars,).
             Default is all dimensions
-        order : int
+        order : int list of int
             The finite difference order,
             1 = forward, -1 = backward, 2 = centre
-        orderb : int
+        orderb : int list of int
             The finite difference order at boundary points
         
         Returns

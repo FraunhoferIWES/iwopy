@@ -337,7 +337,15 @@ class Problem(Base, metaclass=ABCMeta):
             return varsi, varsf
 
     def calc_gradients(
-        self, vars_int, vars_float, func, ivars, fvars, vrs, components, verbosity=0
+        self, 
+        vars_int, 
+        vars_float, 
+        func, 
+        ivars, 
+        fvars, 
+        vrs, 
+        components, 
+        verbosity=0
     ):
         """
         The actual gradient calculation.
