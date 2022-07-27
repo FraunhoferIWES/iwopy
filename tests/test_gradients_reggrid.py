@@ -27,103 +27,56 @@ class Obj1(iwopy.Objective):
         return np.array([2 * x - y, 6 * np.cos(3 * y) - x])
 
 
-class Test:
-    def _calc(self, p, f, p0, o, lim, pop):
+def _calc(p, f, p0, lim, pop):
 
-        print("p0 =", p0)
+    print("p0 =", p0)
 
-        g = p.get_gradients(vars_int=[], vars_float=p0)[0]
-        print("g =", g)
+    g = p.get_gradients(vars_int=[], vars_float=p0, pop=pop)[0]
+    print("g =", g)
 
-        a = f.ana_grad(p0)
-        print("a =", a)
+    a = f.ana_grad(p0)
+    print("a =", a)
 
-        d = a - g
-        print("==> mismatch =", d)
+    d = np.abs(a - g)
+    print("==> mismatch =", d, ", max =", np.max(d))
 
-        assert np.max(d) < lim
+    assert np.max(d) < lim
 
-    def test_o1_indi(self):
+def test():
 
-        print("\n\nTEST order 1 INDI")
+    dsl = (
+        (1, 1, False, 0.01, 0.02, 0.2),
+        (1, 1, False, 0.001, 0.002, 0.02),
+        (1, 1, False, 0.001, 0.001, 0.01),
+
+        (1, 1, True, 0.01, 0.02, 0.2),
+        (1, 1, True, 0.001, 0.002, 0.02),
+        (1, 1, True, 0.001, 0.001, 0.01),
+
+        (2, 2, True, 0.01, 0.02, 0.13),
+        (2, 2, True, 0.001, 0.002, 0.021),
+        (2, 2, True, 0.0001, 0.0002, 0.005),
+    )
+    N = 100
+
+    for ox, oy, pop, dx, dy, lim in dsl:
+
+        print("\nENTERING", (ox, oy, pop, dx, dy, lim), "\n")
 
         p = iwopy.SimpleProblem(
             "test",
             float_vars=["x", "y"],
-            min_float_vars={"x": 1, "y": -5},
-            max_float_vars={"x": 10, "y": 5},
+            min_float_vars={"x": 1., "y": 0.},
+            max_float_vars={"x": 2., "y": 3.},
         )
         f = Obj1(p, "f")
         p.add_objective(f, varmap_float={"x": "x", "y": "y"})
 
-        gp = iwopy.DiscretizeRegGrid(p, {"x": 0.01, "y": 0.02})
+        gp = iwopy.DiscretizeRegGrid(p, {"x": dx, "y": dy}, fd_order={"x": ox, "y": oy})
         gp.initialize(verbosity=1)
 
-        for p0 in np.random.uniform(1.0, 5.0, (100, 2)):
-            self._calc(gp, f, p0, 1, 0.01, False)
-
-    def test_om1_indi(self):
-
-        print("\n\nTEST order -1 INDI")
-
-        p = iwopy.SimpleProblem("test", float_vars=["x", "y"])
-        f = Obj1(p, "f")
-        p.add_objective(f, varmap_float={0: 0, 1: 1})
-        p.initialize()
-
-        for p0 in np.random.uniform(-2.0, 2.0, (100, 2)):
-            self._calc(p, f, p0, -1, 0.01, False)
-
-    def test_o2_indi(self):
-
-        print("\n\nTEST order 1 INDI")
-
-        p = iwopy.SimpleProblem("test", float_vars=["x", "y"])
-        f = Obj1(p, "f")
-        p.add_objective(f)
-        p.initialize()
-
-        for p0 in np.random.uniform(-2.0, 2.0, (100, 2)):
-            self._calc(p, f, p0, 2, 0.01, False)
-
-    def test_o1_pop(self):
-
-        print("\n\nTEST order 1 POP")
-
-        p = iwopy.SimpleProblem("test", float_vars=["x", "y"])
-        f = Obj1(p, "f")
-        p.add_objective(f)
-        p.initialize()
-
-        for p0 in np.random.uniform(-2.0, 2.0, (100, 2)):
-            self._calc(p, f, p0, 1, 0.01, True)
-
-    def test_om1_pop(self):
-
-        print("\n\nTEST order -1 POP")
-
-        p = iwopy.SimpleProblem("test", float_vars=["x", "y"])
-        f = Obj1(p, "f")
-        p.add_objective(f)
-        p.initialize()
-
-        for p0 in np.random.uniform(-2.0, 2.0, (100, 2)):
-            self._calc(p, f, p0, -1, 0.01, True)
-
-    def test_o2_pop(self):
-
-        print("\n\nTEST order 1 POP")
-
-        p = iwopy.SimpleProblem("test", float_vars=["x", "y"])
-        f = Obj1(p, "f")
-        p.add_objective(f)
-        p.initialize()
-
-        for p0 in np.random.uniform(-2.0, 2.0, (100, 2)):
-            self._calc(p, f, p0, 2, 0.01, True)
-
+        for p0 in np.random.uniform(1.0, 2.0, (N, 2)):
+            _calc(gp, f, p0, lim, pop)
 
 if __name__ == "__main__":
-
-    test = Test()
-    test.test_o1_indi()
+    test()

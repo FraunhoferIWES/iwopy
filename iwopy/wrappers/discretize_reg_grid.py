@@ -206,6 +206,22 @@ class DiscretizeRegGrid(ProblemWrapper):
         order = self._order[ivars]
         orderb = self._orderb[ivars]
         gpts, coeffs = self.grid.grad_coeffs(varsf, gvars, order, orderb)
-        print("HERE", gpts.shape, coeffs.shape)
-        quit()
+
+        # run the calculation:
+        n_pop = len(gpts)
+        varsf = np.full((n_pop, self.n_vars_float), np.nan, dtype=np.float64)
+        varsf[:] = vars_float[None, :]
+        varsf[:, gvars] = gpts
+        if pop:
+            __, objs, cons = self.evaluate_population(vars_int, varsf)
+        else:
+            objs = np.full((n_pop, self.n_objectives), np.nan, dtype=np.float64)
+            cons = np.full((n_pop, self.n_constraints), np.nan, dtype=np.float64)
+            for i, vf in enumerate(varsf):
+                __, objs[i], cons[i] = self.evaluate_individual(vars_int, vf)
+
+        # recombine results:
+        fres = np.c_[objs, cons][:, cmpnts]
+        gradients = np.einsum('gc,vg->cv', fres, coeffs[0])
+
         return gradients

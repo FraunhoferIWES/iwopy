@@ -207,7 +207,13 @@ class Problem(Base, metaclass=ABCMeta):
         else:
             f.rename_vars_float(vmap)
 
-    def add_objective(self, objective, varmap_int=None, varmap_float=None, verbosity=0):
+    def add_objective(
+        self,
+        objective,
+        varmap_int=None,
+        varmap_float=None,
+        verbosity=0,
+    ):
         """
         Add an objective to the problem.
 
@@ -234,7 +240,11 @@ class Problem(Base, metaclass=ABCMeta):
         self.objs.append(objective)
 
     def add_constraint(
-        self, constraint, varmap_int=None, varmap_float=None, verbosity=0
+        self,
+        constraint,
+        varmap_int=None,
+        varmap_float=None,
+        verbosity=0,
     ):
         """
         Add a constraint to the problem.
