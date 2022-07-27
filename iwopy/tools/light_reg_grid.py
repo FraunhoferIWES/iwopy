@@ -135,6 +135,7 @@ class LightRegGrid:
         """
         s = "" if spaces is 0 else " "*spaces
         print(f"{s}n_dims  :", self.n_dims)
+        print(f"{s}deltas  :", self.deltas.tolist())
         print(f"{s}n_steps :", self.n_steps)
         print(f"{s}n_points:", self.n_points)
         print(f"{s}p_min   :", self.p_min)
@@ -340,8 +341,10 @@ class LightRegGrid:
         print("GMIN:", self.p_min.tolist())
         print("GMAX:", self.p_max.tolist())
         if for_ocell:
-            print("CMIN:", np.min(self._cell, axis=0).tolist())
-            print("CMAX:", np.max(self._cell, axis=0).tolist())
+            cmin = self._ocell[:, 0]
+            cmax = self._ocell[:, 1]
+            print("CMIN:", cmin.tolist())
+            print("CMAX:", cmax.tolist())
             print("Q   :", p)
         else:
             print("P   :", p)
@@ -353,13 +356,13 @@ class LightRegGrid:
         print("GDIM:", self.n_points.tolist())
         print("GMIN:", self.p_min.tolist())
         print("GMAX:", self.p_max.tolist())
-        print("VMIN:", np.min(pts, axis=0))
-        print("VMAX:", np.max(pts, axis=0))
         if for_ocell:
-            cmin = np.min(self._cell, axis=0)
-            cmax = np.max(self._cell, axis=0)
+            cmin = self._ocell[:, 0]
+            cmax = self._ocell[:, 1]
             print("CMIN:", cmin.tolist())
             print("CMAX:", cmax.tolist())
+            print("VMIN:", np.min(pts, axis=0))
+            print("VMAX:", np.max(pts, axis=0))
             sel = np.any(pts < cmin[None, :], axis=1)
             if np.any(sel):
                 s = np.argwhere(sel)[0][0]
@@ -373,6 +376,8 @@ class LightRegGrid:
                     f"Found {np.sum(sel)} coords above higher bounds, e.g. coord {s}: q = {pts[s]}"
                 )            
         else:
+            print("VMIN:", np.min(pts, axis=0))
+            print("VMAX:", np.max(pts, axis=0))
             sel = np.any(pts < self.p_min[None, :], axis=1)
             if np.any(sel):
                 s = np.argwhere(sel)[0][0]
