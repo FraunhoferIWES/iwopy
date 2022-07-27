@@ -17,6 +17,7 @@ def test_interp_point():
         p = np.random.uniform(0.02, 5.0, dims)
 
         g = iwopy.tools.LightRegGrid(o, d, n)
+        g.print_info()
 
         pts, c = g.interpolation_coeffs_point(p)
 
@@ -44,6 +45,7 @@ def test_interp_points():
         pts = np.random.uniform(0.1, 5.0, (N, dims))
 
         g = iwopy.tools.LightRegGrid(o, d, n)
+        g.print_info()
 
         gpts, c = g.interpolation_coeffs_points(pts)
 
@@ -82,12 +84,7 @@ def test_deriv_gp():
         gpts = np.array([[0.], [0.3], [0.6], [1.]])
 
         grid = iwopy.tools.LightRegGrid(o, d, n)
-        print("step    :", step)
-        print("n_dims  :", grid.n_dims)
-        print("n_steps :", grid.n_steps)
-        print("n_points:", grid.n_points)
-        print("min     :", grid.min)
-        print("max     :", grid.max)
+        grid.print_info()
 
         inds = grid.gpts2inds(gpts)
         print("\ngpts =", gpts.tolist())
@@ -142,12 +139,7 @@ def test_deriv():
         pts = np.array([[0.], [0.1*np.pi], [0.60000123124], [1.0]])
 
         grid = iwopy.tools.LightRegGrid(o, d, n)
-        print("step    :", step)
-        print("n_dims  :", grid.n_dims)
-        print("n_steps :", grid.n_steps)
-        print("n_points:", grid.n_points)
-        print("min     :", grid.min)
-        print("max     :", grid.max)
+        grid.print_info()
         
         print("\ngpts =", pts.tolist())
 
@@ -173,7 +165,7 @@ def test_deriv():
 
         assert np.all(delta < lim)
 
-def test_grad():
+def test_grad_gp():
 
     dnl = (
         (None, 0.0011, 2, 1, [0.001, 0.002, 0.008]),
@@ -210,11 +202,7 @@ def test_grad():
         gpts = np.array([[0., 1., 0.], [0.5, 1.5, 0.5], [0.8, 1.1, 0.7], [0., 1.3, 1.], [1.0, 2.0, 1.0]])
 
         grid = iwopy.tools.LightRegGrid(o, d, n)
-        print("n_dims  :", grid.n_dims)
-        print("n_steps :", grid.n_steps)
-        print("n_points:", grid.n_points)
-        print("min     :", grid.min)
-        print("max     :", grid.max)
+        grid.print_info()
 
         inds = grid.gpts2inds(gpts)
         print("\ngpts =", gpts.tolist())
@@ -246,4 +234,4 @@ if __name__ == "__main__":
     test_interp_points()
     test_deriv_gp()
     test_deriv()
-    test_grad()
+    test_grad_gp()

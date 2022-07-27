@@ -92,7 +92,7 @@ class LightRegGrid:
         return len(self.origin)
 
     @property
-    def min(self):
+    def p_min(self):
         """
         The minimal grid point values
 
@@ -108,7 +108,7 @@ class LightRegGrid:
         return m
 
     @property
-    def max(self):
+    def p_max(self):
         """
         The maximal grid point values
 
@@ -122,6 +122,23 @@ class LightRegGrid:
         m = self.origin + self.n_steps * self.deltas
         m[(self.n_steps == self.INT_INF) & (self.deltas > 0)] = np.inf
         return m
+    
+    def print_info(self, spaces=0):
+        """
+        Prints basic information
+
+        Parameters
+        ----------
+        spaces : int
+            The prepending spaces
+
+        """
+        s = "" if spaces is 0 else " "*spaces
+        print(f"{s}n_dims  :", self.n_dims)
+        print(f"{s}n_steps :", self.n_steps)
+        print(f"{s}n_points:", self.n_points)
+        print(f"{s}p_min   :", self.p_min)
+        print(f"{s}p_max   :", self.p_max)
 
     def gp2i(self, gp, allow_outer=True):
         """
@@ -320,8 +337,8 @@ class LightRegGrid:
         Helper for printing information at interpolation error
         """
         print("GDIM:", self.n_points.tolist())
-        print("GMIN:", self.min.tolist())
-        print("GMAX:", self.max.tolist())
+        print("GMIN:", self.p_min.tolist())
+        print("GMAX:", self.p_max.tolist())
         if for_ocell:
             print("CMIN:", np.min(self._cell, axis=0).tolist())
             print("CMAX:", np.max(self._cell, axis=0).tolist())
@@ -334,8 +351,8 @@ class LightRegGrid:
         Helper for printing information at interpolation error
         """
         print("GDIM:", self.n_points.tolist())
-        print("GMIN:", self.min.tolist())
-        print("GMAX:", self.max.tolist())
+        print("GMIN:", self.p_min.tolist())
+        print("GMAX:", self.p_max.tolist())
         print("VMIN:", np.min(pts, axis=0))
         print("VMAX:", np.max(pts, axis=0))
         if for_ocell:
@@ -356,13 +373,13 @@ class LightRegGrid:
                     f"Found {np.sum(sel)} coords above higher bounds, e.g. coord {s}: q = {pts[s]}"
                 )            
         else:
-            sel = np.any(pts < self.min[None, :], axis=1)
+            sel = np.any(pts < self.p_min[None, :], axis=1)
             if np.any(sel):
                 s = np.argwhere(sel)[0][0]
                 print(
                     f"Found {np.sum(sel)} points blow lower bounds, e.g. point {s}: p = {pts[s]}"
                 )
-            sel = np.any(pts > self.max[None, :], axis=1)
+            sel = np.any(pts > self.p_max[None, :], axis=1)
             if np.any(sel):
                 s = np.argwhere(sel)[0][0]
                 print(
@@ -666,7 +683,7 @@ class LightRegGrid:
 
         n_pts = len(pts)
         n_inds0 = len(inds0)
-        pmat = np.zeros((n_pts, n_inds0), dtype=np.int32)
+        pmat = np.zeros((n_pts, n_inds0), dtype=np.int8)
         np.put_along_axis(pmat, pmap, 1., axis=1)
 
         coeffs = np.einsum('pi,pi,ig->pg', coeffs0, pmat, coeffs1)
@@ -733,5 +750,47 @@ class LightRegGrid:
             i1 = i0 + s
             np.put_along_axis(coeffs[:, vi], gmap[None, i0:i1], cfs[:, i0:i1], axis=1)
             i0 = i1
+
+        return gpts, coeffs
+
+    def grad_coeffs(self, pts, vars, order=2, orderb=1):
+        """
+        Calculates the gradient coefficients at grid points.
+
+        Parameters
+        ----------
+        pts : numpy.ndarray
+            The evaluation points, shape: (n_pts, n_dims)
+        vars : list of int, optional
+            The dimensions representing the variables
+            wrt which to differentiate, shape: (n_vars,).
+            Default is all dimensions
+        order : int
+            The finite difference order,
+            1 = forward, -1 = backward, 2 = centre
+        orderb : int
+            The finite difference order at boundary points
+        
+        Returns
+        -------
+        gpts : numpy.ndarray
+            The grid points relevant for coeffs,
+            shape: (n_gpts, n_dims)
+        coeffs : numpy.ndarray
+            The gradient coefficients, 
+            shape: (n_pts, n_vars, n_gpts)
+        
+        """
+        gpts0, coeffs0, pmap = self.interpolation_coeffs_points(pts, ret_pmap=True)
+
+        inds0 = self.gpts2inds(gpts0, allow_outer=True)
+        gpts, coeffs1 = self.grad_coeffs_gridpoints(inds0, vars, order, orderb)
+
+        n_pts = len(pts)
+        n_inds0 = len(inds0)
+        pmat = np.zeros((n_pts, n_inds0), dtype=np.int8)
+        np.put_along_axis(pmat, pmap, 1., axis=1)
+
+        coeffs = np.einsum('pi,pi,ivg->pvg', coeffs0, pmat, coeffs1)
 
         return gpts, coeffs

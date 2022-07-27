@@ -1,5 +1,6 @@
 import numpy as np
 
+from iwopy.tools import LightRegGrid
 from .problem_wrapper import ProblemWrapper
 
 
@@ -30,11 +31,8 @@ class DiscretizeRegGrid(ProblemWrapper):
 
     Attributes
     ----------
-    base_problem : iwopy.Problem
-        The underlying concrete problem
-    deltas : dict
-        The step sizes. Key: variable name str,
-        Value: step size.
+    grid : iwopy.tools.LightRegGrid
+        The discretization grid
     order : dict
         Finite difference order. Key: variable name
         str, value: 1 = forward, -1 = backward, 2 = centre
@@ -47,7 +45,8 @@ class DiscretizeRegGrid(ProblemWrapper):
     def __init__(self, base_problem, deltas, fd_order=1, fd_bounds_order=None):
         super().__init__(base_problem, base_problem.name + "_grid")
 
-        self.deltas = deltas
+        self.grid = None
+        self._deltas = deltas
 
         if isinstance(fd_order, int):
             self.order = {v: fd_order for v in deltas.keys()}
@@ -87,9 +86,9 @@ class DiscretizeRegGrid(ProblemWrapper):
             print(f"  Finite difference grid:")
 
         self._vinds = []
-        self._origin = []
-        self._delta = []
-        self._nsteps = []
+        origin = []
+        deltas = []
+        nsteps = []
         self._order = []
         self._orderb = []
 
@@ -98,7 +97,7 @@ class DiscretizeRegGrid(ProblemWrapper):
         vmins[:] = super().min_values_float()
         vmaxs = np.full(super().n_vars_float, np.nan, dtype=np.float64)
         vmaxs[:] = super().max_values_float()
-        for v, d in self.deltas.items():
+        for v, d in self._deltas.items():
 
             if v not in vnms:
                 raise KeyError(
@@ -112,119 +111,31 @@ class DiscretizeRegGrid(ProblemWrapper):
             self._order.append(self.order[v])
             self._orderb.append(self.orderb[v])
             if np.isinf(vmin) and np.isinf(vmax):
-                self._origin.append(0.0)
-                self._delta.append(d)
-                self._nsteps.append(None)
+                origin.append(0.0)
+                deltas.append(d)
+                nsteps.append(None)
             elif np.isinf(vmin):
-                self._origin.append(vmax)
-                self._delta.append(d)
-                self._nsteps.append(None)
+                origin.append(vmax)
+                deltas.append(d)
+                nsteps.append(None)
             elif np.isinf(vmax):
-                self._origin.append(vmin)
-                self._delta.append(d)
-                self._nsteps.append(None)
+                origin.append(vmin)
+                deltas.append(d)
+                nsteps.append(None)
             else:
-                self._origin.append(vmin)
-                self._nsteps.append(int((vmax - vmin) / d))
-                self._delta.append((vmax - vmin) / self._nsteps[-1])
+                origin.append(vmin)
+                nsteps.append(int((vmax - vmin) / d))
+                deltas.append((vmax - vmin) / nsteps[-1])
 
-            if verbosity:
-                s = f"    Variable {v}: p0 = {self._origin[-1]:.3e}, d = {self._delta[-1]:.3e}, n = {self._nsteps[-1]}, o = {self.order[v]}, ob = {self.orderb[v]}"
-                print(s)
+        self.grid = LightRegGrid(origin, deltas, nsteps)
         if verbosity:
-            print("-" * len(s))
+            self.grid.print_info(0)
+            print(self._hline)
 
-        self._origin = np.array(self._origin, dtype=np.float64)
-        self._delta = np.array(self._delta, dtype=np.float64)
-        self._nsteps = np.array(self._nsteps, dtype=np.int32)
         self._order = np.array(self._order, dtype=np.int32)
         self._orderb = np.array(self._orderb, dtype=np.int32)
 
-    def get_grid_corner(self, p, subgrid=None):
-        """
-        Get the lower-left grid corner of a point in varaible space.
-
-        Parameters
-        ----------
-        p : numpy.ndarray
-            The point in variable space, shape: (n_p_dims,)
-        subgrid : list of int, optional
-            The variable space dimensions, shape: (n_gvars,)
-            or None for all
-
-        Returns
-        -------
-        p0 : numpy.ndarray
-            The lower-left grid corner point, shape: (n_p_dims,)
-
-        """
-        if subgrid is None:
-            return self._origin + ((p - self._origin) // self._delta) * self._delta
-        else:
-            o = self._origin[subgrid]
-            d = self._delta[subgrid]
-            return o + ((p - o) // d) * d
-
-    def get_grid_corners(self, pts, subgrid=None):
-        """
-        Get the lower-left grid corner of points in varaible space.
-
-        Parameters
-        ----------
-        pts : numpy.ndarray
-            The points in variable space, shape: (n_pts, n_p_dims)
-        subgrid : list of int, optional
-            The variable space dimensions, shape: (n_gvars,)
-            or None for all
-
-        Returns
-        -------
-        p0 : numpy.ndarray
-            The lower-left grid corner points, shape: (n_pts, n_p_dims)
-
-        """
-        if subgrid is None:
-            o = self._origin[None, :]
-            d = self._delta[None, :]
-        else:
-            o = self._origin[subgrid][None, :]
-            d = self._delta[subgrid][None, :]
-        return o + ((pts - o) // d) * d
-
-    def get_grid_cell(self, p, subgrid=None):
-        """
-        Get the grid cell that contains a point in
-        varaible space.
-
-        Parameters
-        ----------
-        p : numpy.ndarray
-            The point in variable space, shape: (n_p_dims,)
-        subgrid : list of int, optional
-            The variable space dimensions, shape: (n_gvars,)
-            or None for all
-
-        Returns
-        -------
-        cell : numpy.ndarray
-            The lower-left grid corner point, shape: (n_cdims, n_p_dims)
-        ongrid : nbool
-            True if point is on grid
-
-        """
-        p0 = self.get_grid_corner(p, subgrid)
-
-        n_dims = len(self._origin) if subgrid is None else len(subgrid)
-        n_cdim = 2**n_dims
-        cell = np.zeros((n_cdim, n_dims), dtype=np.float64)
-        cell[:] = p0[None, :]
-
-        d = self._delta[subgrid] if subgrid is not None else self._delta
-        a = np.array([])
-
-        return cell, np.all(p == p0)
-
-    def get_grad_plan(self, vars_float, vars, origin, delta, nsteps, order, orderb):
+    def get_grad_plan(self, vars_float, vars):
         """
         Create the calculation plan for the gradient computation.
 
@@ -234,17 +145,6 @@ class DiscretizeRegGrid(ProblemWrapper):
             The float variable values, shape: (n_vars_float,)
         vars : numpy.ndarray
             The indices of the gradient variables, shape: (n_vars,)
-        origin : numpy.ndarray
-            The origin value, shape: (n_vars,)
-        delta : numpy.ndarray
-            The step delta, shape: (n_vars,)
-        nsteps : numpy.ndarray
-            The number of steps, shape: (n_vars,)
-        order : numpy.ndarray
-            The finite difference order, shape: (n_vars,)
-        orderb : numpy.ndarray
-            The finite difference order of boundary points,
-            shape: (n_vars,)
 
         Returns
         -------
@@ -253,7 +153,10 @@ class DiscretizeRegGrid(ProblemWrapper):
             (n_pop, n_vars_float)
 
         """
-        TODO
+        print("GET PLAN")
+        print("VARS", vars, vars_float.tolist())
+
+        quit()
 
     def calc_gradients(
         self, vars_int, vars_float, func, ivars, fvars, vrs, components, verbosity=0
@@ -309,17 +212,7 @@ class DiscretizeRegGrid(ProblemWrapper):
             return gradients
         del gnan
 
-        # find subgrid data:
-        linds = [self._vinds.index(i) for i in pvars]
-        origin = self._origin[linds]
-        delta = self._delta[linds]
-        nsteps = self._nsteps[linds]
-        order = self._order[linds]
-        orderb = self._orderb[linds]
-
         # get calculation plan:
-        plan = self.get_grad_plan(
-            vars_float, gvars, origin, delta, nsteps, order, orderb
-        )
+        plan = self.get_grad_plan(vars_float, gvars)
 
         return gradients

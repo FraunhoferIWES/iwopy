@@ -536,23 +536,23 @@ class Problem(Base, metaclass=ABCMeta):
         if verbosity:
             s = f"Problem '{self.name}' ({type(self).__name__}): Initializing"
             print(s)
-            L = len(s)
-            print("-" * L)
+            self._hline = "-" * len(s)
+            print(self._hline)
 
         n_int = self.n_vars_int
         n_float = self.n_vars_float
         if verbosity:
             print(f"  n_vars_int   : {n_int}")
             print(f"  n_vars_float : {n_float}")
-            print("-" * L)
+            print(self._hline)
 
         if verbosity:
             print(f"  n_objectives : {self.objs.n_functions}")
             print(f"  n_obj_cmptns : {self.n_objectives}")
-            print("-" * L)
+            print(self._hline)
             print(f"  n_constraints: {self.cons.n_functions}")
             print(f"  n_con_cmptns : {self.n_constraints}")
-            print("-" * L)
+            print(self._hline)
 
         if self.n_objectives == 0:
             raise ValueError("Problem initialized without added objectives.")
