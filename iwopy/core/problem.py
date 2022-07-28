@@ -5,7 +5,7 @@ from abc import ABCMeta
 from .base import Base
 from .function_list import OptFunctionList
 from .memory import Memory
-from iwopy.tools.light_reg_grid import LightRegGrid
+from iwopy.utils import RegularDiscretizationGrid
 
 
 class Problem(Base, metaclass=ABCMeta):
@@ -33,7 +33,7 @@ class Problem(Base, metaclass=ABCMeta):
 
     """
 
-    INT_INF = LightRegGrid.INT_INF
+    INT_INF = RegularDiscretizationGrid.INT_INF
 
     def __init__(self, name, mem_size=None, mem_keyf=None):
         super().__init__(name)

@@ -2,7 +2,7 @@ import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 
 
-class LightRegGrid:
+class RegularDiscretizationGrid:
     """
     A lightweight regular grid in n dimensions,
     without points storage.
@@ -443,7 +443,7 @@ class LightRegGrid:
 
         Example
         -------
-            >>> g = LightRegGrid(...)
+            >>> g = RegularDiscretizationGrid(...)
             >>> p = ...
             >>> gpts, c = g.interpolation_coeffs_point(p)
             >>> ratg = ... calc results at gpts, shape (n_gpts, x) ...
@@ -490,7 +490,7 @@ class LightRegGrid:
 
         Example
         -------
-            >>> g = LightRegGrid(...)
+            >>> g = RegularDiscretizationGrid(...)
             >>> pts = ...
             >>> gpts, c = g.interpolation_coeffs_points(pts)
             >>> ratg = ... calc results at gpts, shape (n_gpts, x) ...

@@ -1,6 +1,6 @@
 import numpy as np
 
-from iwopy.tools import LightRegGrid
+from iwopy.utils import RegularDiscretizationGrid
 from .problem_wrapper import ProblemWrapper
 from iwopy.core import Memory
 
@@ -33,7 +33,7 @@ class DiscretizeRegGrid(ProblemWrapper):
 
     Attributes
     ----------
-    grid : iwopy.tools.LightRegGrid
+    grid : iwopy.tools.RegularDiscretizationGrid
         The discretization grid
     order : dict
         Finite difference order. Key: variable name
@@ -137,7 +137,7 @@ class DiscretizeRegGrid(ProblemWrapper):
                 nsteps.append(int((vmax - vmin) / d))
                 deltas.append((vmax - vmin) / nsteps[-1])
 
-        self.grid = LightRegGrid(origin, deltas, nsteps)
+        self.grid = RegularDiscretizationGrid(origin, deltas, nsteps)
         if verbosity:
             self.grid.print_info(4)
             print(self._hline)
