@@ -325,7 +325,6 @@ class DiscretizeRegGrid(ProblemWrapper):
             return super().evaluate_individual(vars_int, vars_float)
         
         else:
-
             gpts, coeffs = self.grid.interpolation_coeffs_point(varsf)
 
             n_gpts = len(gpts)
@@ -333,10 +332,57 @@ class DiscretizeRegGrid(ProblemWrapper):
             cons = np.zeros((n_gpts, self.n_constraints), dtype=np.float64)
 
             for gi, gp in enumerate(gpts):
-                if np.abs(coeffs[gi]) > 1e-14:
-
-                    varsf = vars_float.copy()
-                    varsf[self._vinds] = gp
-                    objs[gi], cons[gi] = super().evaluate_individual(vars_int, varsf)
+                varsf = vars_float.copy()
+                varsf[self._vinds] = gp
+                objs[gi], cons[gi] = super().evaluate_individual(vars_int, varsf)
 
             return np.einsum('go,g->o', objs, coeffs), np.einsum('gc,g->c', cons, coeffs)
+
+    def evaluate_population(self, vars_int, vars_float):
+        """
+        Evaluate all individuals of a population.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values, shape: (n_pop, n_vars_int)
+        vars_float : np.array
+            The float variable values, shape: (n_pop, n_vars_float)
+
+        Returns
+        -------
+        objs : np.array
+            The objective function values, shape: (n_pop, n_objectives)
+        cons : np.array
+            The constraints values, shape: (n_pop, n_constraints)
+
+        """
+        varsf = vars_float[:, self._vinds]
+        if self.grid.all_gridpoints(varsf):
+            return super().evaluate_population(vars_int, vars_float)
+        
+        else:
+
+            # only grid variables may vary in population:
+            if vars_int.shape[1]:
+                __, counts = np.unique(vars_int, axis=0, return_counts=True)
+                if np.min(counts) < len(vars_int):
+                    raise NotImplementedError(f"Problem '{self.name}': Found varying values for int float variables in population, cannot handle this")
+            ivinds = [vi for vi in range(self.n_vars_float) if vi not in self._vinds]
+            if len(ivinds):
+                __, counts = np.unique(vars_float[:, ivinds], axis=0, return_counts=True)
+                if np.min(counts) < len(vars_float):
+                    raise NotImplementedError(f"Problem '{self.name}': Found varying values for non-grid float variables {ivinds} in population, cannot handle this")
+
+            gpts, coeffs = self.grid.interpolation_coeffs_points(varsf)
+
+            n_gpts = len(gpts)
+            varsi = np.zeros((n_gpts, self.n_vars_int), dtype=np.int32)
+            varsi[:] = vars_int[0, None, :]
+            varsf = np.zeros((n_gpts, self.n_vars_float), dtype=np.float64)
+            varsf[:] = vars_float[0, None, :]
+            varsf[:, self._vinds] = gpts
+
+            objs, cons = self.evaluate_population(varsi, varsf)
+
+            return np.einsum('go,pg->po', objs, coeffs), np.einsum('gc,pg->pc', cons, coeffs)

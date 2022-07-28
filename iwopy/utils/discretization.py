@@ -309,7 +309,7 @@ class RegularDiscretizationGrid:
 
         """
         i = self.gp2i(p, allow_outer)
-        return self.origin + i * self.deltas
+        return np.round(self.origin + i * self.deltas, self.DIGITS)
 
     def get_corners(self, pts, allow_outer=True):
         """
@@ -332,7 +332,7 @@ class RegularDiscretizationGrid:
         o = self.origin[None, :]
         d = self.deltas[None, :]
         i = self.gpts2inds(pts, allow_outer)
-        return o + i * d
+        return np.round(o + i * d, self.DIGITS)
 
     def get_cell(self, p):
         """
@@ -353,7 +353,7 @@ class RegularDiscretizationGrid:
         cell = np.zeros((self.n_dims, 2), dtype=np.float64)
         cell[:] = self.get_corner(p, allow_outer=False)[:, None]
         cell[:, 1] += self.deltas
-        return cell
+        return np.round(cell, self.DIGITS)
 
     def get_cells(self, pts):
         """
@@ -376,7 +376,7 @@ class RegularDiscretizationGrid:
         cells = np.zeros((n_pts, self.n_dims, 2), dtype=np.float64)
         cells[:] = self.get_corners(pts, allow_outer=False)[:, :, None]
         cells[:, :, 1] += self.deltas[None, :]
-        return cells
+        return np.round(cells, self.DIGITS)
 
     def _error_info(self, p, for_ocell=False):
         """
@@ -475,14 +475,14 @@ class RegularDiscretizationGrid:
             raise e
 
         gpts = np.stack(np.meshgrid(*cell, indexing="ij"), axis=-1)
-        gpts = gpts.reshape(2**n_dims, n_dims)
+        gpts = np.round(gpts, self.DIGITS).reshape(2**n_dims, n_dims)
 
         sel = np.abs(coeffs) < 1.0e-14
         if np.any(sel):
             gpts = gpts[~sel]
             coeffs = coeffs[~sel]
 
-        return np.round(gpts, self.DIGITS), coeffs
+        return gpts, coeffs
 
     def interpolation_coeffs_points(self, pts, ret_pmap=False):
         """

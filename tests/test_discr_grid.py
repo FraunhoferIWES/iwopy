@@ -7,6 +7,8 @@ def test_interp_point():
 
     D = 6
 
+    iwopy.utils.RegularDiscretizationGrid.DIGITS = 12
+
     for dims in range(1, D + 1):
 
         print("\nINTERP_POINT: Entering dims =", dims, "\n")
@@ -28,13 +30,15 @@ def test_interp_point():
         print("p\n", p)
         print("q\n", q)
 
-        assert np.all(np.abs(p - q) < 1e-10)
+        assert np.all(np.abs(p - q) < 1e-12)
 
 
 def test_interp_points():
 
     D = 6
     N = 100
+
+    iwopy.utils.RegularDiscretizationGrid.DIGITS = 12
 
     for dims in range(1, D + 1):
 
@@ -56,16 +60,18 @@ def test_interp_points():
 
         print("QTS", qts.shape, "PTS", pts.shape)
 
-        assert np.all(np.abs(pts - qts) < 1e-10)
+        assert np.all(np.abs(pts - qts) < 1e-12)
 
 
 def test_deriv_gp():
+
+    iwopy.utils.RegularDiscretizationGrid.DIGITS = 12
 
     dnl = (
         (0.01, 2, 2, 0.00015),
         (0.01, 2, 1, 0.01),
         (0.01, 1, 1, 0.01),
-        (0.001, 2, 2, 1.35e-06),
+        (0.001, 2, 2, 1.35e-6),
         (0.001, 2, 1, 0.001),
         (0.001, 1, 1, 0.001),
     )
@@ -116,6 +122,8 @@ def test_deriv_gp():
 
 
 def test_deriv():
+
+    iwopy.utils.RegularDiscretizationGrid.DIGITS = 12
 
     dnl = (
         (0.01, 2, 2, 0.00015),
@@ -171,13 +179,15 @@ def test_deriv():
 
 def test_grad_gp():
 
+    iwopy.utils.RegularDiscretizationGrid.DIGITS = 12
+
     dnl = (
-        (None, 0.0011, 2, 1, [0.001, 0.002, 0.008]),
-        (None, 0.011, 2, 2, [0.03, 0.05, 0.1]),
-        (None, 0.011, 2, 1, [0.03, 0.05, 0.14]),
-        (None, 0.011, 1, 1, [0.03, 0.05, 0.14]),
-        ([0, 2], 0.011, 1, 1, [0.03, 0.14]),
-        ([0, 2], 0.1, 1, 1, [0.12, 0.41]),
+        (None, 0.001, 2, 1, [0.001, 0.005, 0.005]),
+        (None, 0.01, 2, 2, [0.0001, 0.0002, 0.001]),
+        (None, 0.01, 2, 1, [0.0001, 0.02, 0.05]),
+        (None, 0.01, 1, 1, [0.0001, 0.02, 0.05]),
+        ([0, 2], 0.01, 1, 1, [0.0001, 0.05]),
+        ([0, 2], 0.1, 1, 1, [0.001, 0.5]),
     )
 
     def f(x, y, z):
@@ -243,13 +253,15 @@ def test_grad_gp():
 
 def test_grad():
 
+    iwopy.utils.RegularDiscretizationGrid.DIGITS = 12
+
     dnl = (
-        (None, 0.001, 2, 1, [0.001, 0.002, 0.008]),
-        (None, 0.01, 2, 2, [0.03, 0.05, 0.1]),
-        (None, 0.01, 2, 1, [0.03, 0.05, 0.14]),
-        (None, 0.01, 1, 1, [0.03, 0.05, 0.14]),
-        ([0, 2], 0.01, 1, 1, [0.03, 0.14]),
-        ([0, 2], 0.1, 1, 1, [0.12, 0.41]),
+        (None, 0.001, 2, 1, [0.001, 0.0008, 0.005]),
+        (None, 0.01, 2, 2, [0.001, 0.001, 0.001]),
+        (None, 0.01, 2, 1, [0.001, 0.008, 0.05]),
+        (None, 0.01, 1, 1, [0.001, 0.008, 0.05]),
+        ([0, 2], 0.01, 1, 1, [0.001, 0.05]),
+        ([0, 2], 0.1, 1, 1, [0.001, 0.5]),
     )
 
     def f(x, y, z):

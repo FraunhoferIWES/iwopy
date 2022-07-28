@@ -650,7 +650,7 @@ class Problem(Base, metaclass=ABCMeta):
         """
         return None
 
-    def evaluate_individual(self, vars_int, vars_float, ret_prob_res=False):
+    def evaluate_individual(self, vars_int, vars_float):
         """
         Evaluate a single individual of the problem.
 
@@ -665,9 +665,6 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        problem_results : Any
-            The results of the variable application
-            to the problem
         objs : np.array
             The objective function values, shape: (n_objectives,)
         con : np.array
@@ -694,12 +691,9 @@ class Problem(Base, metaclass=ABCMeta):
             if self.memory is not None:
                 self.memory.store_individual(vars_int, vars_float, objs, cons)
 
-        if ret_prob_res:
-            return objs, cons, results
-        
         return objs, cons
 
-    def evaluate_population(self, vars_int, vars_float, ret_prob_res=False):
+    def evaluate_population(self, vars_int, vars_float):
         """
         Evaluate all individuals of a population.
 
@@ -709,14 +703,9 @@ class Problem(Base, metaclass=ABCMeta):
             The integer variable values, shape: (n_pop, n_vars_int)
         vars_float : np.array
             The float variable values, shape: (n_pop, n_vars_float)
-        ret_prob_res : bool
-            Flag for additionally returning of problem results
 
         Returns
         -------
-        problem_results : Any
-            The results of the variable application
-            to the problem
         objs : np.array
             The objective function values, shape: (n_pop, n_objectives)
         cons : np.array
@@ -730,7 +719,6 @@ class Problem(Base, metaclass=ABCMeta):
             if memres is not None:
                 todo = np.any(np.isnan(memres), axis=1)
                 from_mem = not np.all(todo)
-                results = None
         
         if from_mem:
 
@@ -766,9 +754,6 @@ class Problem(Base, metaclass=ABCMeta):
 
             if self.memory is not None:
                 self.memory.store_population(vars_int, vars_float, objs, cons)
-
-        if ret_prob_res:
-            return objs, cons, results
         
         return objs, cons
 
