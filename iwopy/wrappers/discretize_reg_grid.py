@@ -2,7 +2,7 @@ import numpy as np
 
 from iwopy.tools import LightRegGrid
 from .problem_wrapper import ProblemWrapper
-
+from iwopy.core import Memory
 
 class DiscretizeRegGrid(ProblemWrapper):
     """
@@ -28,6 +28,8 @@ class DiscretizeRegGrid(ProblemWrapper):
         Either a dict with key: variable name str,
         value: order int, or a global integer order
         for all variables. Default is same as fd_order
+    mem_size : int, optional
+        The memory size, default no memory
 
     Attributes
     ----------
@@ -42,11 +44,19 @@ class DiscretizeRegGrid(ProblemWrapper):
 
     """
 
-    def __init__(self, base_problem, deltas, fd_order=1, fd_bounds_order=None):
+    def __init__(
+            self, 
+            base_problem, 
+            deltas, 
+            fd_order=1, 
+            fd_bounds_order=None, 
+            mem_size=1000,
+        ):
         super().__init__(base_problem, base_problem.name + "_grid")
 
         self.grid = None
         self._deltas = deltas
+        self._msize = mem_size
 
         if isinstance(fd_order, int):
             self.order = {v: fd_order for v in deltas.keys()}
@@ -135,6 +145,16 @@ class DiscretizeRegGrid(ProblemWrapper):
         self._order = np.array(self._order, dtype=np.int32)
         self._orderb = np.array(self._orderb, dtype=np.int32)
 
+        if self._msize is not None:
+
+            def keyf(varsi, varsf):
+                gpts = varsf[self._vinds]
+                li = varsi.tolist() if len(varsi) else []
+                tf = tuple(tuple(v.tolist()) for v in self.grid.gpts2inds(gpts))
+                return (tuple(li), tf)
+            
+            self.memory = Memory(self._msize, keyf)
+
     def calc_gradients(
         self,
         vars_int,
@@ -181,7 +201,7 @@ class DiscretizeRegGrid(ProblemWrapper):
         -------
         gradients : numpy.ndarray
             The gradients of the functions, shape:
-            (n_func_cmpnts, n_vars)
+            (n_func_cmpnts, n_vrs)
 
         """
         # get analytic gradient results:
@@ -192,12 +212,12 @@ class DiscretizeRegGrid(ProblemWrapper):
         # find variables and components of unsolved gradients:
         gnan = np.isnan(gradients)
         gvars = np.where(np.any(gnan, axis=0))[0]
-        gvars = [vi for vi in gvars if vi in self._vinds]
-        ivars = [self._vinds.index(vi) for vi in gvars]
         pvars = np.array(fvars)[gvars]
+        gvars = [vi for vi in pvars if vi in self._vinds]
+        ivars = [self._vinds.index(vi) for vi in gvars]
         cmpnts = np.where(np.any(gnan, axis=1))[0]
         cmpnts = [c for c in components if c in cmpnts]
-        if not len(pvars) or not len(cmpnts):
+        if not len(gvars) or not len(cmpnts):
             return gradients
         del gnan
 
@@ -213,15 +233,110 @@ class DiscretizeRegGrid(ProblemWrapper):
         varsf[:] = vars_float[None, :]
         varsf[:, gvars] = gpts
         if pop:
-            __, objs, cons = self.evaluate_population(vars_int, varsf)
+            objs, cons = self.evaluate_population(vars_int, varsf)
         else:
             objs = np.full((n_pop, self.n_objectives), np.nan, dtype=np.float64)
             cons = np.full((n_pop, self.n_constraints), np.nan, dtype=np.float64)
             for i, vf in enumerate(varsf):
-                __, objs[i], cons[i] = self.evaluate_individual(vars_int, vf)
+                objs[i], cons[i] = self.evaluate_individual(vars_int, vf)
 
         # recombine results:
         fres = np.c_[objs, cons][:, cmpnts]
-        gradients = np.einsum('gc,vg->cv', fres, coeffs[0])
+        gres = np.einsum('gc,vg->cv', fres, coeffs[0])
+        if len(cmpnts) == func.n_components():
+            gradients[:, gvars] = gres
+        else:
+            temp = gradients[:, gvars]
+            temp[cmpnts] = gres
+            gradients[:, gvars] = temp
 
         return gradients
+
+    def apply_individual(self, vars_int, vars_float):
+        """
+        Apply new variables to the problem.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values, shape: (n_vars_int,)
+        vars_float : np.array
+            The float variable values, shape: (n_vars_float,)
+
+        Returns
+        -------
+        problem_results : Any
+            The results of the variable application
+            to the problem
+
+        """
+        if self.grid.is_gridpoint(vars_float[self._vinds]):
+            return super().apply_individual(vars_int, vars_float)
+        
+        else:
+            raise NotImplementedError(f"Problem '{self.name}' cannot apply non-grid point {vars_float} to problem")
+
+    def apply_population(self, vars_int, vars_float):
+        """
+        Apply new variables to the problem,
+        for a whole population.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values, shape: (n_pop, n_vars_int)
+        vars_float : np.array
+            The float variable values, shape: (n_pop, n_vars_float)
+
+        Returns
+        -------
+        problem_results : Any
+            The results of the variable application
+            to the problem
+
+        """
+        if self.grid.all_gridpoints(vars_float[:, self._vinds]):
+            return super().apply_population(vars_int, vars_float)
+        
+        else:
+            raise NotImplemented(f"Problem '{self.name}' cannot apply non-grid points to problem")
+
+    def evaluate_individual(self, vars_int, vars_float):
+        """
+        Evaluate a single individual of the problem.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values, shape: (n_vars_int,)
+        vars_float : np.array
+            The float variable values, shape: (n_vars_float,)
+
+        Returns
+        -------
+        objs : np.array
+            The objective function values, shape: (n_objectives,)
+        con : np.array
+            The constraints values, shape: (n_constraints,)
+
+        """
+        varsf = vars_float[self._vinds]
+        if self.grid.is_gridpoint(varsf):
+            return super().evaluate_individual(vars_int, vars_float)
+        
+        else:
+
+            gpts, coeffs = self.grid.interpolation_coeffs_point(varsf)
+
+            n_gpts = len(gpts)
+            objs = np.zeros((n_gpts, self.n_objectives), dtype=np.float64)
+            cons = np.zeros((n_gpts, self.n_constraints), dtype=np.float64)
+
+            for gi, gp in enumerate(gpts):
+                if np.abs(coeffs[gi]) > 1e-14:
+
+                    varsf = vars_float.copy()
+                    varsf[self._vinds] = gp
+                    objs[gi], cons[gi] = super().evaluate_individual(vars_int, varsf)
+
+            return np.einsum('go,g->o', objs, coeffs), np.einsum('gc,g->c', cons, coeffs)

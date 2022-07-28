@@ -1,10 +1,11 @@
 import numpy as np
 import fnmatch
 from abc import ABCMeta
-from copy import deepcopy
 
 from .base import Base
 from .function_list import OptFunctionList
+from .memory import Memory
+from iwopy.tools.light_reg_grid import LightRegGrid
 
 
 class Problem(Base, metaclass=ABCMeta):
@@ -15,6 +16,11 @@ class Problem(Base, metaclass=ABCMeta):
     ----------
     name: str
         The problem's name
+    mem_size : int, optional
+        The memory size, default no memory
+    mem_keyf : Function, optional
+        The memory key function. Parameters: 
+        (vars_int, vars_float), returns key Object
 
     Attributes
     ----------
@@ -22,16 +28,22 @@ class Problem(Base, metaclass=ABCMeta):
         The objective functions
     cons : iwopy.core.OptFunctionList
         The constraints
+    memory : iwopy.core.Memory
+        The memory, or None
 
     """
 
-    INT_INF = 999999
+    INT_INF = LightRegGrid.INT_INF
 
-    def __init__(self, name):
+    def __init__(self, name, mem_size=None, mem_keyf=None):
         super().__init__(name)
 
         self.objs = OptFunctionList(self, "objs")
         self.cons = OptFunctionList(self, "cons")
+
+        self.memory = None
+        self._mem_size = mem_size
+        self._mem_keyf = mem_keyf
 
     def var_names_int(self):
         """
@@ -392,7 +404,7 @@ class Problem(Base, metaclass=ABCMeta):
         -------
         gradients : numpy.ndarray
             The gradients of the functions, shape:
-            (n_func_cmpnts, n_vars)
+            (n_func_cmpnts, n_vrs)
 
         """
         n_vars = len(vrs)
@@ -458,7 +470,7 @@ class Problem(Base, metaclass=ABCMeta):
         -------
         gradients : numpy.ndarray
             The gradients of the functions, shape:
-            (n_func_cmpnts, n_vars)
+            (n_func_cmpnts, n_vrs)
 
         """
         # set and check func:
@@ -564,6 +576,12 @@ class Problem(Base, metaclass=ABCMeta):
             self._hline = "-" * len(s)
             print(self._hline)
 
+        if self._mem_size is not None:
+            self.memory = Memory(self._mem_size, self._mem_keyf)
+            if verbosity:
+                print(f"  Memory size  : {self.memory.size}")
+                print(self._hline)
+
         n_int = self.n_vars_int
         n_float = self.n_vars_float
         if verbosity:
@@ -632,7 +650,7 @@ class Problem(Base, metaclass=ABCMeta):
         """
         return None
 
-    def evaluate_individual(self, vars_int, vars_float):
+    def evaluate_individual(self, vars_int, vars_float, ret_prob_res=False):
         """
         Evaluate a single individual of the problem.
 
@@ -642,6 +660,8 @@ class Problem(Base, metaclass=ABCMeta):
             The integer variable values, shape: (n_vars_int,)
         vars_float : np.array
             The float variable values, shape: (n_vars_float,)
+        ret_prob_res : bool
+            Flag for additionally returning of problem results
 
         Returns
         -------
@@ -654,17 +674,32 @@ class Problem(Base, metaclass=ABCMeta):
             The constraints values, shape: (n_constraints,)
 
         """
-        results = self.apply_individual(vars_int, vars_float)
+        objs, cons = None, None
+        if self.memory is not None:
+            memres = self.memory.lookup_individual(vars_int, vars_float)
+            if memres is not None:
+                objs, cons = memres
+                results = None
 
-        varsi, varsf = self._find_vars(vars_int, vars_float, self.objs)
-        objs = self.objs.calc_individual(varsi, varsf, results)
+        if objs is None:
 
-        varsi, varsf = self._find_vars(vars_int, vars_float, self.cons)
-        cons = self.cons.calc_individual(varsi, varsf, results)
+            results = self.apply_individual(vars_int, vars_float)
 
-        return results, objs, cons
+            varsi, varsf = self._find_vars(vars_int, vars_float, self.objs)
+            objs = self.objs.calc_individual(varsi, varsf, results)
 
-    def evaluate_population(self, vars_int, vars_float):
+            varsi, varsf = self._find_vars(vars_int, vars_float, self.cons)
+            cons = self.cons.calc_individual(varsi, varsf, results)
+
+            if self.memory is not None:
+                self.memory.store_individual(vars_int, vars_float, objs, cons)
+
+        if ret_prob_res:
+            return objs, cons, results
+        
+        return objs, cons
+
+    def evaluate_population(self, vars_int, vars_float, ret_prob_res=False):
         """
         Evaluate all individuals of a population.
 
@@ -674,6 +709,8 @@ class Problem(Base, metaclass=ABCMeta):
             The integer variable values, shape: (n_pop, n_vars_int)
         vars_float : np.array
             The float variable values, shape: (n_pop, n_vars_float)
+        ret_prob_res : bool
+            Flag for additionally returning of problem results
 
         Returns
         -------
@@ -686,15 +723,54 @@ class Problem(Base, metaclass=ABCMeta):
             The constraints values, shape: (n_pop, n_constraints)
 
         """
-        results = self.apply_population(vars_int, vars_float)
 
-        varsi, varsf = self._find_vars(vars_int, vars_float, self.objs)
-        objs = self.objs.calc_population(varsi, varsf, results)
+        from_mem = False
+        if self.memory is not None:
+            memres = self.memory.lookup_population(vars_int, vars_float)
+            if memres is not None:
+                todo = np.any(np.isnan(memres), axis=1)
+                from_mem = not np.all(todo)
+                results = None
+        
+        if from_mem:
 
-        varsi, varsf = self._find_vars(vars_int, vars_float, self.cons)
-        cons = self.cons.calc_population(varsi, varsf, results)
+            objs = memres[:, :self.n_objectives]
+            cons = memres[:, self.n_objectives:]
+            del memres
 
-        return results, objs, cons
+            if np.any(todo):
+
+                vals_int = vars_int[todo]
+                vals_float = vars_float[todo]
+            
+                results = self.apply_population(vals_int, vals_float)
+
+                varsi, varsf = self._find_vars(vals_int, vals_float, self.objs)
+                ores = self.objs.calc_population(varsi, varsf, results)
+                objs[todo] = ores
+
+                varsi, varsf = self._find_vars(vals_int, vals_float, self.cons)
+                cres = self.cons.calc_population(varsi, varsf, results)
+                cons[todo] = cres
+
+                self.memory.store_population(vals_int, vals_float, ores, cres)
+
+        else:
+            results = self.apply_population(vars_int, vars_float)
+
+            varsi, varsf = self._find_vars(vars_int, vars_float, self.objs)
+            objs = self.objs.calc_population(varsi, varsf, results)
+
+            varsi, varsf = self._find_vars(vars_int, vars_float, self.cons)
+            cons = self.cons.calc_population(varsi, varsf, results)
+
+            if self.memory is not None:
+                self.memory.store_population(vars_int, vars_float, objs, cons)
+
+        if ret_prob_res:
+            return objs, cons, results
+        
+        return objs, cons
 
     def check_constraints_individual(self, constraint_values, verbosity=0):
         """

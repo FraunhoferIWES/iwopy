@@ -13,6 +13,8 @@ class ProblemWrapper(Problem):
         The underlying concrete problem
     name : str
         The problem name
+    kwargs : dict, optional
+        Additional parameters for the Problem class
 
     Attributes
     ----------
@@ -21,8 +23,8 @@ class ProblemWrapper(Problem):
 
     """
 
-    def __init__(self, base_problem, name):
-        super().__init__(name)
+    def __init__(self, base_problem, name, **kwargs):
+        super().__init__(name, **kwargs)
         self.base_problem = base_problem
 
     def var_names_int(self):

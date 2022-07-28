@@ -12,19 +12,19 @@ class Obj1(iwopy.Objective):
 
     def calc_individual(self, vars_int, vars_float, problem_results):
         x, y = vars_float
-        return [x**2 + 2 * np.sin(3 * y) - y * x]
+        return [x + np.sin(x - 0.6*y)]
 
     def calc_population(self, vars_int, vars_float, problem_results):
         x, y = vars_float[:, 0], vars_float[:, 1]
 
         def f(x, y):
-            return x**2 + 2 * np.sin(3 * y) - y * x
+            return np.sin(x + 0.6*y)
 
         return f(x, y)[:, None]
 
     def ana_grad(self, pvars0_float):
         x, y = pvars0_float
-        return np.array([2 * x - y, 6 * np.cos(3 * y) - x])
+        return np.array([1 + np.cos(x - 0.6*y), -0.6*np.cos(x - 0.6*y)])
 
 
 def _calc(p, f, p0, lim, pop):
@@ -45,19 +45,19 @@ def _calc(p, f, p0, lim, pop):
 def test():
 
     dsl = (
-        (1, 1, False, 0.01, 0.02, 0.2),
-        (1, 1, False, 0.001, 0.002, 0.02),
-        (1, 1, False, 0.001, 0.001, 0.01),
+        (1, 1, False, 0.01, 0.02, 0.02),
+        (1, 1, False, 0.001, 0.002, 0.0),
+        (1, 1, False, 0.001, 0.001, 0.0),
 
-        (1, 1, True, 0.01, 0.02, 0.2),
-        (1, 1, True, 0.001, 0.002, 0.02),
-        (1, 1, True, 0.001, 0.001, 0.01),
+        (1, 1, True, 0.01, 0.02, 0.),
+        (1, 1, True, 0.001, 0.002, 0.0),
+        (1, 1, True, 0.001, 0.001, 0.0),
 
-        (2, 2, True, 0.01, 0.02, 0.13),
-        (2, 2, True, 0.001, 0.002, 0.021),
-        (2, 2, True, 0.0001, 0.0002, 0.005),
+        (2, 2, True, 0.01, 0.02, 0.),
+        (2, 2, True, 0.001, 0.002, 0.),
+        (2, 2, True, 0.0001, 0.0002, 0.),
     )
-    N = 100
+    N = 500
 
     for ox, oy, pop, dx, dy, lim in dsl:
 

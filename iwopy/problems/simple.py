@@ -16,6 +16,8 @@ class SimpleProblem(Problem):
     float_vars : dict or array-like
         The float variables, either dict with name str
         to initial value mapping, or list of variable names
+    kwargs : dict, optional
+        Additional parameters for the Problem class
 
     """
 
@@ -28,8 +30,9 @@ class SimpleProblem(Problem):
         max_int_vars=None,
         min_float_vars=None,
         max_float_vars=None,
+        **kwargs,
     ):
-        super().__init__(name)
+        super().__init__(name, **kwargs)
 
         if int_vars is None and float_vars is None:
             raise KeyError(

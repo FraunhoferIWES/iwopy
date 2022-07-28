@@ -30,7 +30,8 @@ class LightRegGrid:
 
     """
 
-    INT_INF = -99999
+    INT_INF = -999999
+    DIGITS = 12
 
     def __init__(self, origin, deltas, n_steps, **kwargs):
 
@@ -38,7 +39,7 @@ class LightRegGrid:
         self.n_steps = np.array(n_steps, dtype=np.int32)
         self.deltas = np.array(deltas, dtype=np.float64)
 
-        self._ocell = np.round(self.get_cell(self.origin) - self.origin[:, None], 14)
+        self._ocell = np.round(self.get_cell(self.origin) - self.origin[:, None], self.DIGITS)
         self._interp = self._get_interp(self._ocell, **kwargs)
 
     def _get_interp(self, cell0, **kwargs):
@@ -141,7 +142,7 @@ class LightRegGrid:
         print(f"{s}p_min   :", self.p_min)
         print(f"{s}p_max   :", self.p_max)
 
-    def gp2i(self, gp, allow_outer=True):
+    def gp2i(self, gp, allow_outer=True, error=True):
         """
         Get grid index of a grid point
 
@@ -152,6 +153,9 @@ class LightRegGrid:
         allow_outer : bool
             Allow outermost point indices, else
             reduce those to lower-left cell corner
+        error : bool
+            Flag for throwing error if off-grid, else
+            return None in that case
 
         Returns
         -------
@@ -159,7 +163,7 @@ class LightRegGrid:
             The lower-left grid corner point indices, shape: (n_dims,)
 
         """
-        inds = ((gp - self.origin) / self.deltas).astype(np.int32)
+        inds = np.round((gp - self.origin) / self.deltas, self.DIGITS).astype(np.int32)
 
         sel0 = ~(self.n_steps == self.INT_INF)
         if not allow_outer:
@@ -168,6 +172,8 @@ class LightRegGrid:
 
         sel = (inds < 0) | (sel0 & (inds >= self.n_points))
         if np.any(sel):
+            if not error:
+                return None
             self._error_info(gp)
             raise ValueError(f"Point {gp} out of grid")
 
@@ -188,9 +194,9 @@ class LightRegGrid:
             The grid point, shape: (n_dims,)
 
         """
-        return self.origin + i * self.deltas
+        return np.round(self.origin + i * self.deltas, self.DIGITS)
 
-    def gpts2inds(self, gpts, allow_outer=True):
+    def gpts2inds(self, gpts, allow_outer=True, error=True):
         """
         Get grid indices of grid points.
 
@@ -201,6 +207,9 @@ class LightRegGrid:
         allow_outer : bool
             Allow outermost point indices, else
             reduce those to lower-left cell corner
+        error : bool
+            Flag for throwing error if off-grid, else
+            return None in that case
 
         Returns
         -------
@@ -211,7 +220,7 @@ class LightRegGrid:
         """
         o = self.origin[None, :]
         d = self.deltas[None, :]
-        inds = ((gpts - o) / d).astype(np.int32)
+        inds = np.round((gpts - o) / d, self.DIGITS).astype(np.int32)
 
         sel0 = ~(self.n_steps == self.INT_INF)
         if not allow_outer:
@@ -220,6 +229,8 @@ class LightRegGrid:
 
         sel = (inds < 0) | (sel0[None, :] & (inds >= self.n_points[None, :]))
         if np.any(sel):
+            if not error:
+                return None
             self._error_infos(gpts)
             raise ValueError(f"Found {np.sum(np.any(sel, axis=1))} points out of grid")
 
@@ -243,7 +254,41 @@ class LightRegGrid:
         """
         o = self.origin[None, :]
         d = self.deltas[None, :]
-        return o + inds * d
+        return np.round(o + inds * d, self.DIGITS)
+
+    def is_gridpoint(self, p):
+        """
+        Checks if a point is on grid.
+
+        Parameters
+        ----------
+        p : numpy.ndarray
+            The point, shape: (n_dims,)
+
+        Returns
+        -------
+        bool :
+            True if on grid
+
+        """
+        return self.gp2i(p, error=False) is not None
+
+    def all_gridpoints(self, pts):
+        """
+        Checks if all points are on grid.
+
+        Parameters
+        ----------
+        pts : numpy.ndarray
+            The points space, shape: (n_pts, n_dims)
+
+        Returns
+        -------
+        bool :
+            True if all points on grid
+
+        """
+        return self.gpts2inds(pts, error=False) is not None
 
     def get_corner(self, p, allow_outer=True):
         """
@@ -421,7 +466,7 @@ class LightRegGrid:
         cell = self.get_cell(p)
         p0 = cell[:, 0]
         n_dims = len(p0)
-        pts = np.round(p[None, :] - p0[None, :], 14)
+        pts = np.round(p[None, :] - p0[None, :], self.DIGITS)
 
         try:
             coeffs = self._interp(pts)[0]
@@ -437,7 +482,7 @@ class LightRegGrid:
             gpts = gpts[~sel]
             coeffs = coeffs[~sel]
 
-        return gpts, coeffs
+        return np.round(gpts, self.DIGITS), coeffs
 
     def interpolation_coeffs_points(self, pts, ret_pmap=False):
         """
@@ -472,10 +517,10 @@ class LightRegGrid:
 
         """
         cells = self.get_cells(pts)
-        ocell = cells[0] - cells[0, :, 0, None]
+        ocell = np.round(cells[0] - cells[0, :, 0, None], self.DIGITS)
         p0 = cells[:, :, 0]
 
-        opts = np.round(pts - p0, 14)
+        opts = np.round(pts - p0, self.DIGITS)
         try:
             coeffs = self._interp(opts)  # shape: (n_pts, n_gp)
         except ValueError as e:
@@ -485,7 +530,7 @@ class LightRegGrid:
 
         ipts = np.stack(np.meshgrid(*ocell, indexing="ij"), axis=-1)
         ipts = ipts.reshape(2**self.n_dims, self.n_dims)
-        gpts = p0[:, None] + ipts[None, :]  # shape: (n_pts, n_gp, n_dims)
+        gpts = np.round(p0[:, None] + ipts[None, :], self.DIGITS)  # shape: (n_pts, n_gp, n_dims)
 
         # remove points with zero weights:
         sel = np.all(np.abs(coeffs) < 1.0e-14, axis=0)
@@ -655,6 +700,7 @@ class LightRegGrid:
         # reorganize data to single grid point array:
         n_pts, n_gp = coeffs.shape
         n_apts = n_pts * n_gp
+        gpts = np.round(gpts, self.DIGITS)
         gpts, amap = np.unique(
             gpts.reshape(n_apts, self.n_dims), axis=0, return_inverse=True
         )

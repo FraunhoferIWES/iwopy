@@ -84,7 +84,7 @@ class Test:
             varsi = ivars[n]
             varsf = fvars[n]
 
-            __, ovals, cvals = problem.evaluate_individual(varsi, varsf)
+            ovals, cvals = problem.evaluate_individual(varsi, varsf)
 
             ovals_direct = np.array(Obj1.f(varsi[0], *varsf[:2]))
             assert np.all(ovals == ovals_direct)
@@ -120,7 +120,7 @@ class Test:
             4000 + np.arange(N),
         ]
 
-        __, ovals, cvals = problem.evaluate_population(varsi, varsf)
+        ovals, cvals = problem.evaluate_population(varsi, varsf)
 
         ovals_direct = np.column_stack(Obj1.f(varsi[:, 0], varsf[:, 0], varsf[:, 1]))
         assert np.all(ovals == ovals_direct)
