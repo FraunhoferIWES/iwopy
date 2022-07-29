@@ -127,6 +127,50 @@ class OptFunctionList(OptFunction):
 
         super().initialize(verbosity)
 
+    def vardeps_int(self):
+        """
+        Gets the dependencies of all components
+        on the function int variables
+
+        Returns
+        -------
+        deps : numpy.ndarray of bool
+            The dependencies of components on function 
+            variables, shape: (n_components, n_vars_int)
+
+        """
+        deps = np.zeros((self.n_components(), self.n_vars_int), dtype=bool)
+
+        i0 = 0
+        for fi, f in enumerate(self.functions):
+            i1 = i0 + f.n_components()
+            deps[i0:i1][self.func_vars_int[fi]] = True
+            i0 = i1
+
+        return deps
+
+    def vardeps_float(self):
+        """
+        Gets the dependencies of all components
+        on the function float variables
+
+        Returns
+        -------
+        deps : numpy.ndarray of bool
+            The dependencies of components on function 
+            variables, shape: (n_components, n_vars_float)
+
+        """
+        deps = np.zeros((self.n_components(), self.n_vars_float), dtype=bool)
+
+        i0 = 0
+        for fi, f in enumerate(self.functions):
+            i1 = i0 + f.n_components()
+            deps[i0:i1][self.func_vars_float[fi]] = True
+            i0 = i1
+
+        return deps
+
     def n_components(self):
         """
         Returns the number of components of the

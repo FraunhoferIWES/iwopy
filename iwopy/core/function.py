@@ -182,6 +182,36 @@ class OptFunction(Base, metaclass=ABCMeta):
         """
         return len(self.var_names_float)
 
+    @property
+    def vardeps_int(self):
+        """
+        Gets the dependencies of all components
+        on the function int variables
+
+        Returns
+        -------
+        deps : numpy.ndarray of bool
+            The dependencies of components on function 
+            variables, shape: (n_components, n_vars_int)
+
+        """
+        return np.ones((self.n_components(), self.n_vars_int), dtype=bool)
+
+    @property
+    def vardeps_float(self):
+        """
+        Gets the dependencies of all components
+        on the function float variables
+
+        Returns
+        -------
+        deps : numpy.ndarray of bool
+            The dependencies of components on function 
+            variables, shape: (n_components, n_vars_float)
+
+        """
+        return np.ones((self.n_components(), self.n_vars_float), dtype=bool)
+
     def _rename_vars(self, varmap, target, vtype):
         """
         Helper function for variable renaming

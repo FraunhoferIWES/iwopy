@@ -5,3 +5,5 @@ from .function_list import OptFunctionList
 from .objective import Objective
 from .constraint import Constraint
 from .memory import Memory
+from .optimizer import Optimizer
+from .opt_results import OptResults

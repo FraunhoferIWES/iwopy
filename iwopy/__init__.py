@@ -3,3 +3,4 @@ from .problems import SimpleProblem
 from .wrappers import ProblemWrapper, DiscretizeRegGrid
 
 from . import utils
+from . import interfaces
