@@ -134,249 +134,13 @@ class RegularDiscretizationGrid:
             The prepending spaces
 
         """
-        s = "" if spaces is 0 else " " * spaces
+        s = "" if spaces == 0 else " " * spaces
         print(f"{s}n_dims  :", self.n_dims)
         print(f"{s}deltas  :", self.deltas.tolist())
         print(f"{s}n_steps :", self.n_steps)
         print(f"{s}n_points:", self.n_points)
         print(f"{s}p_min   :", self.p_min)
         print(f"{s}p_max   :", self.p_max)
-
-    def gp2i(self, gp, allow_outer=True, error=True):
-        """
-        Get grid index of a grid point
-
-        Parameters
-        ----------
-        gp : numpy.ndarray
-            The point, shape: (n_dims,)
-        allow_outer : bool
-            Allow outermost point indices, else
-            reduce those to lower-left cell corner
-        error : bool
-            Flag for throwing error if off-grid, else
-            return None in that case
-
-        Returns
-        -------
-        inds : numpy.ndarray
-            The lower-left grid corner point indices, shape: (n_dims,)
-
-        """
-        inds = np.round((gp - self.origin) / self.deltas, self.DIGITS).astype(np.int32)
-
-        sel0 = ~(self.n_steps == self.INT_INF)
-        if not allow_outer:
-            sel = sel0 & (inds == self.n_points - 1)
-            inds[sel] -= 1
-
-        sel = (inds < 0) | (sel0 & (inds >= self.n_points))
-        if np.any(sel):
-            if not error:
-                return None
-            self._error_info(gp)
-            raise ValueError(f"Point {gp} out of grid")
-
-        return inds
-
-    def i2gp(self, i):
-        """
-        Translates grid point index to grid point.
-
-        Parameters
-        ----------
-        i : int
-            The grid point index
-
-        Returns
-        -------
-        gp : numpy.ndarray
-            The grid point, shape: (n_dims,)
-
-        """
-        return np.round(self.origin + i * self.deltas, self.DIGITS)
-
-    def gpts2inds(self, gpts, allow_outer=True, error=True):
-        """
-        Get grid indices of grid points.
-
-        Parameters
-        ----------
-        gpts : numpy.ndarray
-            The grid points, shape: (n_gpts, n_dims)
-        allow_outer : bool
-            Allow outermost point indices, else
-            reduce those to lower-left cell corner
-        error : bool
-            Flag for throwing error if off-grid, else
-            return None in that case
-
-        Returns
-        -------
-        inds : numpy.ndarray
-            The lower-left grid corner indices,
-            shape: (n_gpts, n_dims)
-
-        """
-        o = self.origin[None, :]
-        d = self.deltas[None, :]
-        inds = np.round((gpts - o) / d, self.DIGITS).astype(np.int32)
-
-        sel0 = ~(self.n_steps == self.INT_INF)
-        if not allow_outer:
-            sel = sel0[None, :] & (inds == self.n_points[None, :] - 1)
-            inds[sel] -= 1
-
-        sel = (inds < 0) | (sel0[None, :] & (inds >= self.n_points[None, :]))
-        if np.any(sel):
-            if not error:
-                return None
-            self._error_infos(gpts)
-            raise ValueError(f"Found {np.sum(np.any(sel, axis=1))} points out of grid")
-
-        return inds
-
-    def inds2gpts(self, inds):
-        """
-        Translates grid point indices to grid points.
-
-        Parameters
-        ----------
-        inds : array-like
-            The integer grid point indices, shape:
-            (n_gpts, dims)
-
-        Returns
-        -------
-        gpts : numpy.ndarray
-            The grid points, shape: (n_gpts, n_dims)
-
-        """
-        o = self.origin[None, :]
-        d = self.deltas[None, :]
-        return np.round(o + inds * d, self.DIGITS)
-
-    def is_gridpoint(self, p):
-        """
-        Checks if a point is on grid.
-
-        Parameters
-        ----------
-        p : numpy.ndarray
-            The point, shape: (n_dims,)
-
-        Returns
-        -------
-        bool :
-            True if on grid
-
-        """
-        return self.gp2i(p, error=False) is not None
-
-    def all_gridpoints(self, pts):
-        """
-        Checks if all points are on grid.
-
-        Parameters
-        ----------
-        pts : numpy.ndarray
-            The points space, shape: (n_pts, n_dims)
-
-        Returns
-        -------
-        bool :
-            True if all points on grid
-
-        """
-        return self.gpts2inds(pts, error=False) is not None
-
-    def get_corner(self, p, allow_outer=True):
-        """
-        Get the lower-left grid corner of a point.
-
-        Parameters
-        ----------
-        p : numpy.ndarray
-            The point, shape: (n_dims,)
-        allow_outer : bool
-            Allow outermost point indices, else
-            reduce those to lower-left cell corner
-
-        Returns
-        -------
-        p0 : numpy.ndarray
-            The lower-left grid corner point, shape: (n_dims,)
-
-        """
-        i = self.gp2i(p, allow_outer)
-        return np.round(self.origin + i * self.deltas, self.DIGITS)
-
-    def get_corners(self, pts, allow_outer=True):
-        """
-        Get the lower-left grid corners of points.
-
-        Parameters
-        ----------
-        pts : numpy.ndarray
-            The points space, shape: (n_pts, n_dims)
-        allow_outer : bool
-            Allow outermost point indices, else
-            reduce those to lower-left cell corner
-
-        Returns
-        -------
-        p0 : numpy.ndarray
-            The lower-left grid corner points, shape: (n_pts, n_dims)
-
-        """
-        o = self.origin[None, :]
-        d = self.deltas[None, :]
-        i = self.gpts2inds(pts, allow_outer)
-        return np.round(o + i * d, self.DIGITS)
-
-    def get_cell(self, p):
-        """
-        Get the grid cell that contains a point.
-
-        Parameters
-        ----------
-        p : numpy.ndarray
-            The point, shape: (n_dims,)
-
-        Returns
-        -------
-        cell : numpy.ndarray
-            The min and max values of each dimension. Shape:
-            (n_dims, 2)
-
-        """
-        cell = np.zeros((self.n_dims, 2), dtype=np.float64)
-        cell[:] = self.get_corner(p, allow_outer=False)[:, None]
-        cell[:, 1] += self.deltas
-        return np.round(cell, self.DIGITS)
-
-    def get_cells(self, pts):
-        """
-        Get the grid cells that contain the given points,
-        one cell per point.
-
-        Parameters
-        ----------
-        pts : numpy.ndarray
-            The points, shape: (n_pts, n_dims)
-
-        Returns
-        -------
-        cells : numpy.ndarray
-            The min and max values of each dimension. Shape:
-            (n_pts, n_dims, 2)
-
-        """
-        n_pts = pts.shape[0]
-        cells = np.zeros((n_pts, self.n_dims, 2), dtype=np.float64)
-        cells[:] = self.get_corners(pts, allow_outer=False)[:, :, None]
-        cells[:, :, 1] += self.deltas[None, :]
-        return np.round(cells, self.DIGITS)
 
     def _error_info(self, p, for_ocell=False):
         """
@@ -435,6 +199,433 @@ class RegularDiscretizationGrid:
                 print(
                     f"Found {np.sum(sel)} points above higher bounds, e.g. point {s}: p = {pts[s]}"
                 )
+
+    def is_gridi(self, inds):
+        """
+        Checks if grid indices are valid
+
+        Parameters
+        ----------
+        inds : int
+            The grid point indices, shape: (n_dims,)
+
+        Returns
+        -------
+        bool :
+            True if on grid
+
+        """
+        sel0 = ~(self.n_steps == self.INT_INF)
+        sel = (inds < 0) | (sel0 & (inds >= self.n_points))
+        return not np.any(sel)
+
+    def i2gp(self, inds, error=True):
+        """
+        Translates grid point indices to grid point.
+
+        Parameters
+        ----------
+        inds : int
+            The grid point indices, shape: (n_dims,)
+        error : bool
+            Flag for throwing error if off-grid, else
+            return None in that case
+
+        Returns
+        -------
+        gp : numpy.ndarray
+            The grid point, shape: (n_dims,)
+
+        """
+        if not self.is_gridi(inds):
+            if error:
+                self.print_info()
+                raise ValueError(f"Grind indices {inds} are not on grid")
+
+        return np.round(self.origin + inds * self.deltas, self.DIGITS)
+
+    def find_grid_inds(self, inds):
+        """
+        Finds indices that are on grid
+
+        Parameters
+        ----------
+        inds : numpy.ndarray
+            The grid point index candidates,
+            shape: (n_inds, n_dims)
+
+        Returns
+        -------
+        sel_grid : numpy.ndarray of bool
+            Subset selection of on-grid indices,
+            shape: (n_inds, n_dims)
+
+        """
+        sel0 = ~(self.n_steps == self.INT_INF)
+        sel = (inds < 0) | (sel0[None, :] & (inds >= self.n_points[None, :]))
+        return ~sel
+
+    def inds2gpts(self, inds):
+        """
+        Translates grid point indices to grid points.
+
+        Parameters
+        ----------
+        inds : array-like
+            The integer grid point indices, shape:
+            (n_gpts, dims)
+
+        Returns
+        -------
+        gpts : numpy.ndarray
+            The grid points, shape: (n_gpts, n_dims)
+
+        """
+        selg = np.all(self.find_grid_inds(inds), axis=1)
+        if not np.all(selg):
+            selg = np.where(selg)[0]
+            raise ValueError(f"Found {len(selg)} indices outside grid, e.g. index {selg[0]}: {inds[selg[0]]}")
+
+        o = self.origin[None, :]
+        d = self.deltas[None, :]
+        return np.round(o + inds * d, self.DIGITS)
+
+    def _gp2i(self, gp, allow_outer=True, lower_left=False):
+        """
+        Helper function for indices calculation
+        """
+        if lower_left:
+            inds = np.round((gp - self.origin) / self.deltas, self.DIGITS-1).astype(np.int32)
+        else:
+            inds = np.round((gp - self.origin) / self.deltas).astype(np.int32)
+
+        if not allow_outer:
+            sel0 = ~(self.n_steps == self.INT_INF)
+            sel = sel0 & (inds == self.n_points - 1)
+            inds[sel] -= 1
+
+        return inds
+
+    def _gpts2inds(self, gpts, allow_outer=True, lower_left=False):
+        """
+        Helper function for index calculation
+        """
+        o = self.origin[None, :]
+        d = self.deltas[None, :]
+
+        if lower_left:
+            inds = np.round((gpts - o) / d, self.DIGITS-1).astype(np.int32)
+        else:
+            inds = np.round((gpts - o) / d).astype(np.int32)
+
+        sel0 = ~(self.n_steps == self.INT_INF)
+        if not allow_outer:
+            sel = sel0[None, :] & (inds == self.n_points[None, :] - 1)
+            inds[sel] -= 1
+        
+        return inds
+
+    def is_gridpoint(self, p, ret_inds=False):
+        """
+        Checks if a point is on grid.
+
+        Parameters
+        ----------
+        p : numpy.ndarray
+            The point, shape: (n_dims,)
+        ret_inds : bool
+            Additionally return indices
+
+        Returns
+        -------
+        bool :
+            True if on grid
+        inds : numpy.ndarray, optional
+            The grid point indices, shape: (n_dims,)
+
+        """
+        inds = self._gp2i(p)
+        if not self.is_gridi(inds):
+            if ret_inds:
+                return False, inds
+            return False
+        
+        p0 = np.round(self.origin + inds * self.deltas, self.DIGITS)
+        if ret_inds:
+            return np.all(p0 == p), inds
+        return np.all(p0 == p)
+
+    def find_gridpoints(self, pts, allow_outer=True, ret_inds=False):
+        """
+        Finds points that are on grid.
+
+        Parameters
+        ----------
+        pts : numpy.ndarray
+            The points, shape: (n_pts, n_dims)
+        allow_outer : bool
+            Allow outermost point indices, else
+            reduce those to lower-left cell corner
+        ret_inds : bool
+            Additionally return indices
+
+        Returns
+        -------
+        sel_grid : numpy.ndarray of bool
+            Subset selection of points that are on grid,
+            shape: (n_pts, n_dims)
+        inds : numpy.ndarray, optional
+            The grid point indices, shape: (n_gpts, n_dims)
+
+        """
+        inds = self._gpts2inds(pts, allow_outer)
+        sel = self.find_grid_inds(inds)
+
+        if np.any(sel):
+            o = self.origin[None, :]
+            d = self.deltas[None, :]
+            p0 = np.round(o + inds * d, self.DIGITS)
+            sel = sel & (p0 == pts)
+
+        if ret_inds:
+            return sel, inds[np.all(sel, axis=1)]
+
+        return sel
+
+    def all_gridpoints(self, pts, allow_outer=True):
+        """
+        Checks if all points are on grid.
+
+        Parameters
+        ----------
+        pts : numpy.ndarray
+            The points space, shape: (n_pts, n_dims)
+        allow_outer : bool
+            Allow outermost point indices, else
+            reduce those to lower-left cell corner
+
+        Returns
+        -------
+        bool :
+            True if all points on grid
+
+        """
+        selg = self.find_gridpoints(pts, allow_outer)
+        return np.all(selg)
+
+    def in_grid(self, p):
+        """
+        Checks if a point is located within the grid.
+
+        Parameters
+        ----------
+        p : numpy.ndarray
+            The point, shape: (n_dims,)
+
+        Returns
+        -------
+        bool :
+            True if within grid
+
+        """
+        return np.all((p >= self.p_min) & (p <= self.p_max))
+
+    def find_ingrid(self, pts):
+        """
+        Finds points that are on grid.
+
+        Parameters
+        ----------
+        pts : numpy.ndarray
+            The points, shape: (n_pts, n_dims)
+
+        Returns
+        -------
+        sel_grid : numpy.ndarray of bool
+            Subset selection of points that are in grid,
+            shape: (n_pts, n_dims)
+
+        """
+        return (pts >= self.p_min[None, :]) & (pts <= self.p_max[None, :])
+
+    def gp2i(self, gp, allow_outer=True, error=True):
+        """
+        Get grid index of a grid point
+
+        Parameters
+        ----------
+        gp : numpy.ndarray
+            The point, shape: (n_dims,)
+        allow_outer : bool
+            Allow outermost point indices, else
+            reduce those to lower-left cell corner
+        error : bool
+            Flag for throwing error if off-grid, else
+            return None in that case
+
+        Returns
+        -------
+        inds : numpy.ndarray
+            The lower-left grid corner point indices, shape: (n_dims,)
+
+        """
+        isgp, inds = self.is_gridpoint(gp, ret_inds=True)
+
+        if isgp:
+            if error:
+                self._error_info(gp)
+                raise KeyError(f"Point gp = {gp} is not on grid")
+            return None
+
+        if not self.is_gridi(inds):
+            if error:
+                self._error_info(gp)
+                raise ValueError(f"Point {gp} out of grid")
+            return None
+
+        return inds
+
+    def gpts2inds(self, gpts, allow_outer=True, error=True):
+        """
+        Get grid indices of grid points.
+
+        Parameters
+        ----------
+        gpts : numpy.ndarray
+            The grid points, shape: (n_gpts, n_dims)
+        allow_outer : bool
+            Allow outermost point indices, else
+            reduce those to lower-left cell corner
+        error : bool
+            Flag for throwing error if off-grid, else
+            return None in that case
+
+        Returns
+        -------
+        inds : numpy.ndarray
+            The lower-left grid corner indices,
+            shape: (n_gpts, n_dims)
+
+        """
+        selg, inds = self.find_gridpoints(gpts, allow_outer, ret_inds=True)
+
+        if not np.all(selg):
+            if error:
+                self._error_infos(gpts)
+                sel = np.where(np.any(~selg, axis=1))[0]
+                raise KeyError(f"Found {len(sel)} points not on grid, e.g. point {sel[0]}: {gpts[0]}")
+            return None
+
+        return inds
+
+    def get_corner(self, p, allow_outer=True):
+        """
+        Get the lower-left grid corner of a point.
+
+        Parameters
+        ----------
+        p : numpy.ndarray
+            The point, shape: (n_dims,)
+        allow_outer : bool
+            Allow outermost point indices, else
+            reduce those to lower-left cell corner
+
+        Returns
+        -------
+        p0 : numpy.ndarray
+            The lower-left grid corner point, shape: (n_dims,)
+
+        """
+        if not self.in_grid(p):
+            self.print_info()
+            raise ValueError(f"Point {p} not in grid")
+
+        inds = self._gp2i(p, allow_outer, lower_left=True)
+        if not self.is_gridi(inds):
+            self.print_info()
+            raise KeyError(f"Grind indices {inds} are not on grid")
+
+        return np.round(self.origin + inds * self.deltas, self.DIGITS)
+
+    def get_corners(self, pts, allow_outer=True):
+        """
+        Get the lower-left grid corners of points.
+
+        Parameters
+        ----------
+        pts : numpy.ndarray
+            The points space, shape: (n_pts, n_dims)
+        allow_outer : bool
+            Allow outermost point indices, else
+            reduce those to lower-left cell corner
+
+        Returns
+        -------
+        p0 : numpy.ndarray
+            The lower-left grid corner points, shape: (n_pts, n_dims)
+
+        """
+        selg = self.find_ingrid(pts)
+        if not np.all(selg):
+            self._error_infos(pts)
+            selg = np.where(np.any(~selg), axis=1)[0]
+            raise ValueError(f"Found {len(selg)} points out of grid, e.g. point {selg[0]}: {pts[selg[0]]}")
+
+        o = self.origin[None, :]
+        d = self.deltas[None, :]
+        inds = self._gpts2inds(pts, allow_outer, lower_left=True)
+
+        selg = self.find_grid_inds(inds)
+        if not np.all(selg):
+            self._error_infos(pts)
+            selg = np.where(np.any(~selg), axis=1)[0]
+            raise ValueError(f"Found {len(selg)} indices not on grid, e.g. indices {selg[0]}: {inds[selg[0]]}")
+
+        return np.round(o + inds * d, self.DIGITS)
+
+    def get_cell(self, p):
+        """
+        Get the grid cell that contains a point.
+
+        Parameters
+        ----------
+        p : numpy.ndarray
+            The point, shape: (n_dims,)
+
+        Returns
+        -------
+        cell : numpy.ndarray
+            The min and max values of each dimension. Shape:
+            (n_dims, 2)
+
+        """
+        cell = np.zeros((self.n_dims, 2), dtype=np.float64)
+        cell[:] = self.get_corner(p, allow_outer=False)[:, None]
+        cell[:, 1] += self.deltas
+        return np.round(cell, self.DIGITS)
+
+    def get_cells(self, pts):
+        """
+        Get the grid cells that contain the given points,
+        one cell per point.
+
+        Parameters
+        ----------
+        pts : numpy.ndarray
+            The points, shape: (n_pts, n_dims)
+
+        Returns
+        -------
+        cells : numpy.ndarray
+            The min and max values of each dimension. Shape:
+            (n_pts, n_dims, 2)
+
+        """
+        n_pts = pts.shape[0]
+        cells = np.zeros((n_pts, self.n_dims, 2), dtype=np.float64)
+        cells[:] = self.get_corners(pts, allow_outer=False)[:, :, None]
+        cells[:, :, 1] += self.deltas[None, :]
+        return np.round(cells, self.DIGITS)
 
     def interpolation_coeffs_point(self, p):
         """

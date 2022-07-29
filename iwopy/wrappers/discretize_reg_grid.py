@@ -148,7 +148,7 @@ class DiscretizeRegGrid(ProblemWrapper):
         if self._msize is not None:
 
             def keyf(varsi, varsf):
-                gpts = varsf[self._vinds]
+                gpts = np.atleast_2d(varsf[self._vinds])
                 li = varsi.tolist() if len(varsi) else []
                 tf = tuple(tuple(v.tolist()) for v in self.grid.gpts2inds(gpts))
                 return (tuple(li), tf)
