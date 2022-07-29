@@ -295,7 +295,7 @@ class RegularDiscretizationGrid:
         Helper function for indices calculation
         """
         if lower_left:
-            inds = np.round((gp - self.origin) / self.deltas, self.DIGITS-1).astype(np.int32)
+            inds = np.round((gp - self.origin) / self.deltas, self.DIGITS).astype(np.int32)
         else:
             inds = np.round((gp - self.origin) / self.deltas).astype(np.int32)
 
@@ -314,7 +314,7 @@ class RegularDiscretizationGrid:
         d = self.deltas[None, :]
 
         if lower_left:
-            inds = np.round((gpts - o) / d, self.DIGITS-1).astype(np.int32)
+            inds = np.round((gpts - o) / d, self.DIGITS).astype(np.int32)
         else:
             inds = np.round((gpts - o) / d).astype(np.int32)
 
