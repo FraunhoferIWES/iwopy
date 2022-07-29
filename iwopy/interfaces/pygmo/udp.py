@@ -12,6 +12,10 @@ class UDP:
         The problem to optimize
     c_tol : float
         Constraint tolerance
+    grad_pop : bool
+        Vectorized gradient computation
+    verbosity : int
+        The verbosity level, 0 = silent
 
     Attributes
     ----------
@@ -25,12 +29,18 @@ class UDP:
         Constraint tolerances
     values : numpy.ndarray
         The function values, shape: (n_fitness,)
+    grad_pop : bool
+        Vectorized gradient computation
+    verbosity : int
+        The verbosity level, 0 = silent
 
     """
 
     def __init__(self, 
             problem,
             c_tol=0.,
+            grad_pop=False,
+            verbosity=0,
         ):
 
         self.problem = problem
@@ -38,8 +48,10 @@ class UDP:
         self.n_fitness = problem.n_objectives + problem.n_constraints
         
         self.c_tol = [c_tol] * problem.n_constraints
-
         self.values = np.zeros(self.n_fitness, dtype=np.float64)
+
+        self.grad_pop = grad_pop
+        self.verbosity = verbosity
 
     def apply(self, xi, xf):
 
@@ -101,57 +113,18 @@ class UDP:
 
     def gradient(self, x):
 
-        TODO
+        spars = np.array(self.gradient_sparsity())
+        cmpnts = np.unique(spars[:, 0])
+        vrs = np.unique(spars[:, 1])
 
-        spars = self.gradient_sparsity()
-        out   = np.zeros(len(spars))
-        
-        dx = np.ones(self.n_vars_all, dtype=np.float64)
-        dx[:self.problem.n_vars_float()] = self.deriv_fd_step
-        fdabs = np.ones(self.n_vars_all, dtype=np.float64)
-        fdabs[:self.problem.n_vars_float()] = ( self.deriv_fd_calc == "abs" )
-        isrel = ( fdabs == 0 )
-        dx[isrel] *= x[isrel]
+        varsf = x[:self.problem.n_vars_float]
+        varsi = x[self.problem.n_vars_float:].astype(np.int32)
 
-        v2f = [[]] * self.n_vars_all
-        v2o = [[]] * self.n_vars_all
-        v2c = [[]] * self.n_vars_all
-        v2s = [[]] * self.n_vars_all
-        for vi in range(self.n_vars_all):
-            for si, s in enumerate(spars):
-
-                if s[1] == vi:
-                    v2s[vi].append(si)
-
-                    if not s[0] in v2f[vi]:
-                        v2f[vi].append(s[0])
-
-                        if s[0] < self.problem.n_objectives:
-                            v2o[vi].append(s[0])
-                        else:
-                            v2c[vi].append(s[0] - self.problem.n_objectives)
-            
-        vderivs_o = []
-        vderivs_c = []
-        for vi in range(self.n_vars_all):
-
-            derivs_o = []
-            derivs_c = []
-            if len(v2f[vi]) > 0:
-                derivs_o, derivs_c = calc_derivatives_order1(self.problem, vi, dx[vi], v2o[vi], v2c[vi])
-            vderivs_o.append(derivs_o)
-            vderivs_c.append(derivs_c)
-
-        for si, s in enumerate(spars):
-            vi = s[1]
-            if s[0] < self.problem.n_objectives:
-                fi = v2o[vi].index(s[0])
-                out[si] = vderivs_o[vi][fi]
-            else:
-                fi = v2c[vi].index(s[0] - self.problem.n_objectives)
-                out[si] = vderivs_c[vi][fi]
-        
-        return out    
+        grad = self.problem.get_gradients(varsi, varsf, vars=vrs,
+                        components=cmpnts, verbosity=self.verbosity,
+                        pop=self.grad_pop,)
+    
+        return [grad[c, vrs.index(v)] for c, v in spars]
 
     def has_gradient_sparsity(self):
         return False

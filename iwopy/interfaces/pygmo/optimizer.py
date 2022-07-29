@@ -127,7 +127,7 @@ class Optimizer_pygmo(Optimizer):
             self.algo.set_verbosity(verbosity)
 
         # general silencing for Python prints:
-        silent = verbosity==0
+        silent = verbosity<=0
         with suppress_stdout(silent):
             
             # Run solver:

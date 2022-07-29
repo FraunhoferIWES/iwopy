@@ -2,7 +2,7 @@ try:
     import pygmo
     IMPORT_OK = True
 except ImportError:
-    pg = None
+    pygmo = None
     IMPORT_OK = False
 
 def check_import():
