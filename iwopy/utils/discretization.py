@@ -715,7 +715,6 @@ class RegularDiscretizationGrid:
         try:
             coeffs = self._interp(opts)  # shape: (n_pts, n_gp)
         except ValueError as e:
-            print(opts)
             self._error_infos(opts, for_ocell=True)
             raise e
 
