@@ -81,15 +81,13 @@ class Optimizer_pygmo(Optimizer):
 
             x = np.zeros(self.udp.n_vars_all)
 
-            if self.problem.n_vars_float():
-                vnames, vmin, vmax, vini = self.problem.vars_float_info()
-                x[:self.problem.n_vars_float()] = vini
-            if self.problem.n_vars_int():
-                vnames, vmin, vmax, vini = self.problem.vars_int_info()
-                x[self.problem.n_vars_float():] = vini
+            if self.problem.n_vars_float:
+                x[:self.problem.n_vars_float] = self.problem.initial_values_float()
+            if self.problem.n_vars_int:
+                x[self.problem.n_vars_float:] = self.problem.initial_values_int()
             
-            xf = x[:self.problem.n_vars_float()]
-            xi = x[self.problem.n_vars_float():].astype(np.int64)
+            xf = x[:self.problem.n_vars_float]
+            xi = x[self.problem.n_vars_float:].astype(np.int64)
 
             self.udp._active = True 
             self.pop.set_x(0, x)

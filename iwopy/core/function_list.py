@@ -142,9 +142,9 @@ class OptFunctionList(OptFunction):
         deps = np.zeros((self.n_components(), self.n_vars_int), dtype=bool)
 
         i0 = 0
-        for fi, f in enumerate(self.functions):
+        for f in self.functions:
             i1 = i0 + f.n_components()
-            deps[i0:i1][self.func_vars_int[fi]] = True
+            deps[i0:i1] = f.vardeps_int()
             i0 = i1
 
         return deps
@@ -164,9 +164,9 @@ class OptFunctionList(OptFunction):
         deps = np.zeros((self.n_components(), self.n_vars_float), dtype=bool)
 
         i0 = 0
-        for fi, f in enumerate(self.functions):
+        for f in self.functions:
             i1 = i0 + f.n_components()
-            deps[i0:i1][self.func_vars_float[fi]] = True
+            deps[i0:i1] = f.vardeps_float()
             i0 = i1
 
         return deps

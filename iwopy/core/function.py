@@ -182,7 +182,6 @@ class OptFunction(Base, metaclass=ABCMeta):
         """
         return len(self.var_names_float)
 
-    @property
     def vardeps_int(self):
         """
         Gets the dependencies of all components
@@ -197,7 +196,6 @@ class OptFunction(Base, metaclass=ABCMeta):
         """
         return np.ones((self.n_components(), self.n_vars_int), dtype=bool)
 
-    @property
     def vardeps_float(self):
         """
         Gets the dependencies of all components

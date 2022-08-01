@@ -83,13 +83,13 @@ class Optimizer(Base, metaclass=ABCMeta):
                 if self.problem.n_objectives == 1:
 
                     i0 = 0
-                    for o in self.problem.objs:
-                        n     = o.n_components
+                    for o in self.problem.objs.functions:
+                        n     = o.n_components()
                         i1    = i0 + n
                         names = o.component_names
                         if n == 1:
                             val = opt_results.objs[i0]
-                            print(f"  Best {o.base_name} = {val}")
+                            print(f"  Best {o.name} = {val}")
                         else:
                             for i in range(n):
                                 val = opt_results.objs[i0 + i]
@@ -99,13 +99,13 @@ class Optimizer(Base, metaclass=ABCMeta):
                 else:
 
                     i0 = 0
-                    for o in self.problem.objs:
-                        n     = o.n_components
+                    for o in self.problem.objs.functions:
+                        n     = o.n_components()
                         i1    = i0 + n
                         names = o.component_names
                         if n == 1:
                             val = np.min(opt_results.objs[:, i0])
-                            print(f"  Best {o.base_name} = {val}")
+                            print(f"  Best {o.name} = {val}")
                         else:
                             for i in range(n):
                                 val = np.min(opt_results.objs[:, i0 + i])

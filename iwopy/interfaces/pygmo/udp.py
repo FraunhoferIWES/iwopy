@@ -119,12 +119,12 @@ class UDP:
 
         varsf = x[:self.problem.n_vars_float]
         varsi = x[self.problem.n_vars_float:].astype(np.int32)
-
+        
         grad = self.problem.get_gradients(varsi, varsf, vars=vrs,
                         components=cmpnts, verbosity=self.verbosity,
                         pop=self.grad_pop,)
     
-        return [grad[c, vrs.index(v)] for c, v in spars]
+        return [grad[c, list(vrs).index(v)] for c, v in spars]
 
     def has_gradient_sparsity(self):
         return False
@@ -134,19 +134,22 @@ class UDP:
         out = []
 
         # add sparsity of objectives:
-        out += np.argwhere(self.problem.objs.vardeps_float).tolist()
-        depsi = np.argwhere(self.problem.objs.vardeps_int)
-        depsi[:, 1] += self.problem.n_vars_float
-        out += depsi.tolist()
+        out += np.argwhere(self.problem.objs.vardeps_float()).tolist()
+        if self.problem.n_vars_int:
+            depsi = np.argwhere(self.problem.objs.vardeps_int())
+            depsi[:, 1] += self.problem.n_vars_float
+            out += depsi.tolist()
 
         # add sparsity of constraints:
-        depsf = np.argwhere(self.problem.cons.vardeps_float)
-        depsf[:, 0] += self.problem.n_objectives
-        out += depsf.tolist()
-        depsi = np.argwhere(self.problem.objs.vardeps_int)
-        depsi[:, 0] += self.problem.n_objectives
-        depsi[:, 1] += self.problem.n_vars_float
-        out += depsi.tolist()
+        if self.problem.n_constraints:
+            depsf = np.argwhere(self.problem.cons.vardeps_float())
+            depsf[:, 0] += self.problem.n_objectives
+            out += depsf.tolist()
+            if self.problem.n_vars_int:
+                depsi = np.argwhere(self.problem.cons.vardeps_int())
+                depsi[:, 0] += self.problem.n_objectives
+                depsi[:, 1] += self.problem.n_vars_float
+                out += depsi.tolist()
 
         return sorted(out)
 
@@ -205,4 +208,4 @@ class UDP:
         suc = np.all(self.problem.check_constraints_individual(cons, verbosity))
         if verbosity: print()
 
-        return OptResults(suc, xi, xf, objs, cons, self.results)
+        return OptResults(suc, xi, xf, objs, cons, None)

@@ -203,7 +203,7 @@ class Problem(Base, metaclass=ABCMeta):
                     )
                 else:
                     vmap[fv] = pvl[0]
-            elif isinstance(pv, int):
+            elif np.issubdtype(type(pv), np.integer):
                 if pv < 0 or pv >= len(pnms):
                     raise ValueError(
                         f"Problem '{self.name}': varmap rule '{fv} --> {pv}' cannot be applied for {len(pnms)} {vtype} variables {pnms}"
@@ -497,7 +497,7 @@ class Problem(Base, metaclass=ABCMeta):
         else:
             tvars = []
             for v in vars:
-                if isinstance(v, int):
+                if np.issubdtype(type(v), np.integer):
                     if v < 0 or v > len(vnmsf):
                         raise ValueError(
                             f"Problem '{self.name}': Variable index {v} exceeds problem float variables, count = {len(vnmsf)}"
