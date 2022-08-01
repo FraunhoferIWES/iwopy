@@ -358,21 +358,13 @@ class DiscretizeRegGrid(ProblemWrapper):
 
         """
         varsf = vars_float[:, self._vinds]
+        
+        # case all points on grid:
         if self.grid.all_gridpoints(varsf):
             return super().evaluate_population(vars_int, vars_float)
         
-        else:
-
-            # only grid variables may vary in population:
-            if vars_int.shape[1]:
-                __, counts = np.unique(vars_int, axis=0, return_counts=True)
-                if np.min(counts) < len(vars_int):
-                    raise NotImplementedError(f"Problem '{self.name}': Found varying values for int float variables in population, cannot handle this")
-            ivinds = [vi for vi in range(self.n_vars_float) if vi not in self._vinds]
-            if len(ivinds):
-                __, counts = np.unique(vars_float[:, ivinds], axis=0, return_counts=True)
-                if np.min(counts) < len(vars_float):
-                    raise NotImplementedError(f"Problem '{self.name}': Found varying values for non-grid float variables {ivinds} in population, cannot handle this")
+        # case all vars are grid vars:
+        elif self.n_vars_int == 0 and len(self._vinds) == self.n_vars_float:
 
             gpts, coeffs = self.grid.interpolation_coeffs_points(varsf)
 
@@ -386,3 +378,46 @@ class DiscretizeRegGrid(ProblemWrapper):
             objs, cons = self.evaluate_population(varsi, varsf)
 
             return np.einsum('go,pg->po', objs, coeffs), np.einsum('gc,pg->pc', cons, coeffs)
+
+        # mixed case:
+        else:
+
+            gpts, coeffs, gmap = self.grid.interpolation_coeffs_points(varsf, ret_pmap=True)
+
+            # each pop has n_gp grid points, this yields pop2:
+            n_pop = len(vars_float)
+            n_gp = gmap.shape[1]
+            n_pop2 = n_pop*n_gp
+            n_int = self.n_vars_int
+            n_v = n_int + self.n_vars_float
+            vinds = n_int + np.array(self._vinds)
+
+            # create variables of pop2:
+            apts = np.zeros((n_pop, n_gp, n_v), dtype=np.float64)
+            apts[:, :, :n_int] = vars_int.astype(np.float64)[:, None, :]
+            apts[:, :, n_int:] = vars_float[:, None, :]
+            apts = apts.reshape(n_pop2, n_v)
+            apts[:, vinds] = np.take_along_axis(gpts, gmap.reshape(n_pop2), axis=0)
+
+            # the uniques of pop2 form pop3:
+            upts, umap = np.unique(apts, axis=0, return_inverse=True)
+            varsi = upts[:, :n_int].astype(np.int32)
+            varsf = upts[:, n_int:]
+            del apts, upts
+
+            # calculate results for pop3:
+            objs, cons = self.evaluate_population(varsi, varsf)
+            del varsi, varsf
+
+            # reconstruct results for pop2:
+            objs = np.take_along_axis(objs, umap, axis=0)
+            cons = np.take_along_axis(cons, umap, axis=0)
+
+            # calculate results for pop, by applying coeffs:
+            objs = objs.reshape(n_pop, n_gp, self.n_objectives)
+            cons = cons.reshape(n_pop, n_gp, self.n_objectives)
+            coeffs = np.take_along_axis(coeffs, gmap, axis=1)
+            return (
+                np.einsum('pgo,pg->po', objs, coeffs), 
+                np.einsum('pgc,pg->pc', cons, coeffs),
+            )
