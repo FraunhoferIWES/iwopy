@@ -429,9 +429,8 @@ class Problem(Base, metaclass=ABCMeta):
         func=None,
         vars=None,
         components=None,
-        verbosity=0,
         pop=False,
-        **kwargs,
+        verbosity=0,
     ):
         """
         Obtain gradients of a function that is linked to the
@@ -463,8 +462,6 @@ class Problem(Base, metaclass=ABCMeta):
             The verbosity level, 0 = silent
         pop : bool
             Flag for vectorizing calculations via population
-        kwargs : dict, optional
-            Additional arguments forwarded to `calc_gradients`
 
         Returns
         -------
@@ -539,9 +536,8 @@ class Problem(Base, metaclass=ABCMeta):
             fvars,
             vrs,
             components,
-            verbosity,
-            pop,
-            **kwargs,
+            pop=pop,
+            verbosity=verbosity,
         )
 
         # check success:

@@ -119,7 +119,7 @@ class UDP:
 
         varsf = x[:self.problem.n_vars_float]
         varsi = x[self.problem.n_vars_float:].astype(np.int32)
-        
+
         grad = self.problem.get_gradients(varsi, varsf, vars=vrs,
                         components=cmpnts, verbosity=self.verbosity,
                         pop=self.grad_pop,)

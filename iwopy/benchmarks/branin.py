@@ -29,7 +29,7 @@ class BraninObjective(Objective):
     with a function value of
 
     f(x,y) = 0.397887
-    
+
     Parameters
     ----------
     problem: iwopy.Problem
@@ -40,7 +40,25 @@ class BraninObjective(Objective):
     """
     def __init__(self, problem, name="f"):
         super().__init__(problem, name, vnames_float=["x", "y"])
-    
+
+        # Parameters of branin function,
+        # (a, b, c, r, s, t)
+        self._pars = (
+            1, 
+            5.1/(4*np.pi**2),
+            5/np.pi,
+            6,
+            10,
+            1/(8*np.pi),
+        )
+
+    def f(self, x, y):
+        """
+        The Branin function f(x, y)
+        """
+        a, b, c, r, s, t = self._pars
+        return a*(y-b*x**2+c*x-r)**2 + s*(1-t)*np.cos(x)+s
+
     def n_components(self):
         """
         Returns the number of components of the
@@ -89,19 +107,33 @@ class BraninObjective(Objective):
 
         """
         x, y = vars_float
+        return np.array([self.f(x,y)])
 
-        # Parameters of branin function:
-        a = 1
-        b = 5.1/(4*np.pi**2)
-        c = 5/np.pi
-        r = 6
-        s = 10
-        t = 1/(8*np.pi)
+    def calc_population(self, vars_int, vars_float, problem_results):
+        """
+        Calculate values for all individuals of a population.
 
-        # calculate:
-        result = a*(y-b*x**2+c*x-r)**2 + s*(1-t)*np.cos(x)+s
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values, shape: (n_pop, n_vars_int)
+        vars_float : np.array
+            The float variable values, shape: (n_pop, n_vars_float)
+        problem_results : Any
+            The results of the variable application
+            to the problem
 
-        return np.array([result])
+        Returns
+        -------
+        values : np.array
+            The component values, shape: (n_pop, n_components,)
+
+        """
+        x = vars_float[:, 0]
+        y = vars_float[:, 1]
+        print(x.tolist())
+        
+        return self.f(x,y)[:, None]
 
 class BraninProblem(SimpleProblem):
     """

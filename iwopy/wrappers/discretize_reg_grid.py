@@ -233,7 +233,9 @@ class DiscretizeRegGrid(ProblemWrapper):
         varsf[:] = vars_float[None, :]
         varsf[:, gvars] = gpts
         if pop:
-            objs, cons = self.evaluate_population(vars_int, varsf)
+            varsi = np.zeros((n_pop, self.n_vars_int), dtype=np.int32)
+            varsi[:] = vars_int[None, :]
+            objs, cons = self.evaluate_population(varsi, varsf)
         else:
             objs = np.full((n_pop, self.n_objectives), np.nan, dtype=np.float64)
             cons = np.full((n_pop, self.n_constraints), np.nan, dtype=np.float64)
