@@ -52,5 +52,102 @@ def test_branin_ipopt():
         print("delxy =", delxy,", lim =", limxy)
         assert np.all(delxy < limxy)
 
+def run_branin_heu(type, init_vals, ngen, npop):
+
+    prob = BraninProblem(initial_values=init_vals)
+    prob.initialize()
+
+    solver = Optimizer_pygmo(
+        prob, 
+        problem_pars=dict(),
+        algo_pars=dict(
+            type=type,
+            gen=ngen, 
+            seed=42,
+        ),
+        pop_size=npop,
+        seed=42
+    )
+    solver.initialize()
+    solver.print_info()
+
+    results = solver.solve(verbosity=0)
+    solver.finalize(results)
+
+    return results
+
+def test_branin_sga():
+
+    cases = (
+        ("sga", 500, 50, (1., 1.), 0.397887, 0.0002,),
+        ("pso", 500, 50, (1., 1.), 0.397887, 5e-7,),
+        ("bee_colony", 500, 50, (1., 1.), 0.397887, 5e-7,),
+    )
+    
+    for typ,ngen, npop, ivals, f, limf in cases:
+
+        print("\nENTERING", (typ, ngen, npop, ivals, f, limf), "\n")
+
+        results = run_branin_heu(typ, ivals, ngen, npop)
+        print("Opt vars:", results.vars_float)
+
+        delf = np.abs(results.objs[0]-f)
+        print("delf =", delf,", lim =", limf)
+        assert delf < limf
+
+def test_branin_sga():
+
+    cases = (
+        ("sga", 500, 50, (1., 1.), 0.397887, 0.0002,),
+    )
+    
+    for typ,ngen, npop, ivals, f, limf in cases:
+
+        print("\nENTERING", (typ, ngen, npop, ivals, f, limf), "\n")
+
+        results = run_branin_heu(typ, ivals, ngen, npop)
+        print("Opt vars:", results.vars_float)
+
+        delf = np.abs(results.objs[0]-f)
+        print("delf =", delf,", lim =", limf)
+        assert delf < limf
+
+def test_branin_pso():
+
+    cases = (
+        ("pso", 500, 50, (1., 1.), 0.397887, 5e-7,),
+    )
+    
+    for typ,ngen, npop, ivals, f, limf in cases:
+
+        print("\nENTERING", (typ, ngen, npop, ivals, f, limf), "\n")
+
+        results = run_branin_heu(typ, ivals, ngen, npop)
+        print("Opt vars:", results.vars_float)
+
+        delf = np.abs(results.objs[0]-f)
+        print("delf =", delf,", lim =", limf)
+        assert delf < limf
+
+def test_branin_bee():
+
+    cases = (
+        ("bee_colony", 500, 50, (1., 1.), 0.397887, 5e-7,),
+    )
+    
+    for typ,ngen, npop, ivals, f, limf in cases:
+
+        print("\nENTERING", (typ, ngen, npop, ivals, f, limf), "\n")
+
+        results = run_branin_heu(typ, ivals, ngen, npop)
+        print("Opt vars:", results.vars_float)
+
+        delf = np.abs(results.objs[0]-f)
+        print("delf =", delf,", lim =", limf)
+        assert delf < limf
+
 if __name__ == "__main__":
     test_branin_ipopt()
+    test_branin_sga()
+    test_branin_pso()
+    test_branin_bee()
