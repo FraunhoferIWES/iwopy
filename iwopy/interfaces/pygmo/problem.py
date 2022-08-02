@@ -4,7 +4,7 @@ from iwopy.core import OptResults, Problem
 
 class UDP:
     """
-    Generic OptProblem to Pygmo UserDefinedProblem adapter
+    Generic Problem to Pygmo UserDefinedProblem adapter
 
     Parameters
     ----------
@@ -19,7 +19,7 @@ class UDP:
 
     Attributes
     ----------
-    problem : iwopy.OptProblem
+    problem : iwopy.Problem
         The problem to optimize
     n_vars_all :  int
         The sum of int and float variable counts

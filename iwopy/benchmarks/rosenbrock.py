@@ -1,10 +1,10 @@
 import numpy as np
 
-from iwopy.core.problem import OptProblem
-from iwopy.core.objective import ObjFunction
-from iwopy.core.constraint import OptConstraint
+from iwopy.core.problem import Problem
+from iwopy.core.objective import Objective
+from iwopy.core.constraint import Constraint
 
-class Problem(OptProblem):
+class Problem(Problem):
     """
     Problem definition of benchmark function Rosenbrock.
 
@@ -95,13 +95,13 @@ class Problem(OptProblem):
                 np.array([1., 0.])
 
 
-class Objective(ObjFunction):
+class Objective(Objective):
     """
     The objective function for the Rosenbrock problem.
 
     Parameters
     ----------
-    problem: iwopy.OptProblem
+    problem: iwopy.Problem
         The underlying optimization problem
     base_name: str
         The base name of the objective functions
@@ -201,7 +201,7 @@ class Objective(ObjFunction):
         return result[:, None]
 
 
-class Constraints(OptConstraint):
+class Constraints(Constraint):
     """
     The constraints for the Rosenbrock problem.
 
@@ -231,7 +231,7 @@ class Constraints(OptConstraint):
 
     Parameters
     ----------
-    problem: iwopy.OptProblem
+    problem: iwopy.Problem
         The underlying optimization problem
     base_name: str
         The base name of the objective functions
