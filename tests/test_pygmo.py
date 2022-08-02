@@ -65,8 +65,10 @@ def run_branin_heu(type, init_vals, ngen, npop):
             gen=ngen, 
             seed=42,
         ),
-        pop_size=npop,
-        seed=42
+        setup_pars=dict(
+            pop_size=npop,
+            seed=42,
+        )
     )
     solver.initialize()
     solver.print_info()
@@ -75,25 +77,6 @@ def run_branin_heu(type, init_vals, ngen, npop):
     solver.finalize(results)
 
     return results
-
-def test_branin_sga():
-
-    cases = (
-        ("sga", 500, 50, (1., 1.), 0.397887, 0.0002,),
-        ("pso", 500, 50, (1., 1.), 0.397887, 5e-7,),
-        ("bee_colony", 500, 50, (1., 1.), 0.397887, 5e-7,),
-    )
-    
-    for typ,ngen, npop, ivals, f, limf in cases:
-
-        print("\nENTERING", (typ, ngen, npop, ivals, f, limf), "\n")
-
-        results = run_branin_heu(typ, ivals, ngen, npop)
-        print("Opt vars:", results.vars_float)
-
-        delf = np.abs(results.objs[0]-f)
-        print("delf =", delf,", lim =", limf)
-        assert delf < limf
 
 def test_branin_sga():
 

@@ -131,8 +131,6 @@ class BraninObjective(Objective):
         """
         x = vars_float[:, 0]
         y = vars_float[:, 1]
-        print(x.tolist())
-        
         return self.f(x,y)[:, None]
 
 class BraninProblem(SimpleProblem):

@@ -2,9 +2,9 @@ import numpy as np
 
 from iwopy.core import Optimizer
 from iwopy.utils import suppress_stdout
-from .udp import UDP
+from .problem import UDP
 from .algos import AlgoFactory
-from .import_lib import pygmo, check_import
+from .imports import pygmo, check_import
 
 class Optimizer_pygmo(Optimizer):
     """
@@ -19,32 +19,32 @@ class Optimizer_pygmo(Optimizer):
         Parameters for the problem
     algo_pars : dict
         Parameters for the alorithm
-    setup : dict, optional
-        Parameters for the model setup
+    setup_pars : dict
+        Parameters for the calculation setup
 
     Attributes
     ----------
-    problem_pars: dict
+    problem_pars : dict
         Parameters for the problem
-    algo_pars: dict
+    algo_pars : dict
         Parameters for the alorithm
-    setup: dict
-        Parameters for the model setup
-    udp: iwopy.interfaces.pygmo.UDA
+    setup_pars : dict
+        Parameters for the calculation setup
+    udp : iwopy.interfaces.pygmo.UDA
         The pygmo problem
-    algo: pygmo.algo
+    algo : pygmo.algo
         The pygmo algorithm
 
     """
 
-    def __init__(self, problem, problem_pars, algo_pars, **setup):
+    def __init__(self, problem, problem_pars, algo_pars, setup_pars={}):
         super().__init__(problem)
 
         check_import()
 
         self.problem_pars = problem_pars
         self.algo_pars = algo_pars
-        self.setup = setup
+        self.setup_pars = setup_pars
 
         self.udp  = None
         self.algo = None
@@ -67,14 +67,14 @@ class Optimizer_pygmo(Optimizer):
         self.algo = AlgoFactory.new(**self.algo_pars)
 
         # create population:
-        psize = self.setup.get('pop_size', 1)
-        pseed = self.setup.get('seed', None)
-        pnrfi = self.setup.get('norandom_first', psize == 1)
+        psize = self.setup_pars.get('pop_size', 1)
+        pseed = self.setup_pars.get('seed', None)
+        pnrfi = self.setup_pars.get('norandom_first', psize == 1)
         self.pop = pygmo.population(self.udp, size = psize, seed = pseed)
-        self.pop.problem.c_tol = [self.setup.get('c_tol', 1e-10)] * self.pop.problem.get_nc()
+        self.pop.problem.c_tol = [self.setup_pars.get('c_tol', 1e-10)] * self.pop.problem.get_nc()
 
         # memorize verbosity level:
-        self.verbosity = self.setup.get('verbosity', 1)
+        self.verbosity = self.setup_pars.get('verbosity', 1)
         
         # set first indiviual to initial values:
         if pnrfi:

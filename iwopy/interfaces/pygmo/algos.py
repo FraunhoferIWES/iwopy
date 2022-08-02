@@ -1,4 +1,4 @@
-from .import_lib import pygmo, check_import
+from .imports import pygmo, check_import
 
 class AlgoFactory:
     """

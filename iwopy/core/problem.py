@@ -44,6 +44,9 @@ class Problem(Base, metaclass=ABCMeta):
         self.memory = None
         self._mem_size = mem_size
         self._mem_keyf = mem_keyf
+        
+        self._cons_mi = None
+        self._cons_ma = None
 
     def var_names_int(self):
         """
@@ -282,6 +285,40 @@ class Problem(Base, metaclass=ABCMeta):
         self._apply_varmap("int", constraint, "constraint", varmap_int)
         self._apply_varmap("float", constraint, "constraint", varmap_float)
         self.cons.append(constraint)
+
+        cmi, cma = constraint.get_bounds()
+        if self._cons_mi is None:
+            self._cons_mi = cmi
+            self._cons_ma = cma
+        else:
+            self._cons_mi = np.append(self._cons_mi, cmi, axis=0)
+            self._cons_ma = np.append(self._cons_ma, cma, axis=0)
+    
+    @property
+    def min_values_constraints(self):
+        """
+        Gets the minimal values of constraints
+
+        Returns
+        -------
+        cmi : numpy.ndarray
+            The minimal constraint values, shape: (n_constraints,)
+
+        """
+        return self._cons_mi
+
+    @property
+    def max_values_constraints(self):
+        """
+        Gets the maximal values of constraints
+
+        Returns
+        -------
+        cma : numpy.ndarray
+            The maximal constraint values, shape: (n_constraints,)
+
+        """
+        return self._cons_ma
 
     @property
     def n_objectives(self):
