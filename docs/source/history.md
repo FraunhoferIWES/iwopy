@@ -4,7 +4,7 @@
 
 This is the initial release of **iwopy** - ready for testing.
 
-So far not many models have been transferred from the Fraunhofer IWES in-house predecessor *iwes-opt*, they will be added in the following versions. Also optimization is not yet included. We are just getting started here!
+So far not many models have been transferred from the Fraunhofer IWES in-house predecessor *iwes-opt*, they will be added in the following versions. We are just getting started here!
 
 Enjoy - we are awaiting comments and issues, thanks for testing.
 
