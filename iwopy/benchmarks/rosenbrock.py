@@ -1,13 +1,9 @@
 import numpy as np
 
-from iwopy.core.problem import Problem
-from iwopy.core.objective import Objective
-from iwopy.core.constraint import Constraint
+from iwopy import SimpleProblem, Objective, Constraint
 
-class Problem(Problem):
+class RosenbrockObjective(Objective):
     """
-    Problem definition of benchmark function Rosenbrock.
-
     The Rosenbrock function is defined as
 
     f(x,y) = (a-x)^2 + b(y-x^2)^2
@@ -30,86 +26,40 @@ class Problem(Problem):
 
     Parameters
     ----------
-    x_bounds: tuple
-        The (min, max) values for x
-    y_bounds: tuple
-        The (min, max) values for y
-    name: str
-        The name of the problem
+    problem : iwopy.Problem
+        The underlying optimization problem
+    x_bounds : tuple
+        The (min, max) values for x, 
+        use np.inf for infinite
+    y_bounds : tuple
+        The (min, max) values for y, 
+        use np.inf for infinite
+    pars
+    name : str
+        The function name
 
     """
     def __init__(
             self, 
-            x_bounds=(-np.inf, np.inf),
-            y_bounds=(-np.inf, np.inf),
-            name="rosenbrock"
+            problem,  
+            x_bounds,
+            y_bounds,
+            pars=(1., 100.),
+            name="f",
         ):
-        super().__init__(name)
+        super().__init__(problem, name, vnames_float=["x", "y"])
 
-        self.x_bounds = x_bounds
-        self.y_bounds = y_bounds
+        # Parameters of branin function,
+        # (a, b)
+        self._pars = pars
 
-    def n_vars_int(self):
+    def f(self, x, y):
         """
-        Returns the number of integer variables.
-
-        Returns
-        -------
-        int:
-            The number of integer variables
-
+        The Rosenbrock function f(x, y)
         """
-        return 0
+        a, b = self._pars
+        return (a - x)**2 + b * (y - x**2)**2
 
-    def n_vars_float(self):
-        """
-        Return the number of float variables
-
-        Returns
-        -------
-        int:
-            The number of float variables
-        
-        """
-        return 2
-
-    def vars_float_info(self):
-        """
-        Get basic info about the float variables.
-
-        Returns
-        -------
-        names: list
-            The variable names, len = n_vars_float
-        min: np.array
-            The minimum float values, shape: (n_vars_float)
-        max: np.array
-            The maximum float values, shape: (n_vars_float)
-        initial: np.array
-            The initial float values, shape: (n_vars_float)
-
-        """
-        return  ['x','y'], \
-                np.array([self.x_bounds[0], self.y_bounds[0]]), \
-                np.array([self.x_bounds[1], self.y_bounds[1]]), \
-                np.array([1., 0.])
-
-
-class Objective(Objective):
-    """
-    The objective function for the Rosenbrock problem.
-
-    Parameters
-    ----------
-    problem: iwopy.Problem
-        The underlying optimization problem
-    base_name: str
-        The base name of the objective functions
-
-    """
-    def __init__(self, problem, base_name="f"):
-        super().__init__(problem, base_name)
-    
     def n_components(self):
         """
         Returns the number of components of the
@@ -129,44 +79,36 @@ class Objective(Objective):
 
         Returns
         -------
-        flags: np.array
+        flags : np.array
             Bool array for component maximization,
-            shape: (n_components)
+            shape: (n_components,)
 
         """
-        return np.zeros(1, dtype=np.bool)
-
+        return [False]
+    
     def calc_individual(self, vars_int, vars_float, problem_results):
         """
-        Calculate values for a single individual of the 
+        Calculate values for a single individual of the
         underlying problem.
 
         Parameters
         ----------
-        vars_int: np.array
-            The integer variable values, shape: (n_vars_int)
-        vars_float: np.array
-            The float variable values, shape: (n_vars_float)
-        problem_results: object
-            The results of the variable application 
-            to the problem  
+        vars_int : np.array
+            The integer variable values, shape: (n_vars_int,)
+        vars_float : np.array
+            The float variable values, shape: (n_vars_float,)
+        problem_results : Any
+            The results of the variable application
+            to the problem
 
         Returns
         -------
-        values: np.array
-            The component values, shape: (n_components)    
+        values : np.array
+            The component values, shape: (n_components,)
 
         """
-        x = vars_float[0]
-        y = vars_float[1]
-
-        # Parameters of rosenbrock function
-        a = 1
-        b = 100
-
-        result = (a-x)**2 + b*(y-x**2)**2
-
-        return np.array([result])
+        x, y = vars_float
+        return np.array([self.f(x,y)])
 
     def calc_population(self, vars_int, vars_float, problem_results):
         """
@@ -174,34 +116,24 @@ class Objective(Objective):
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int : np.array
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float: np.array
+        vars_float : np.array
             The float variable values, shape: (n_pop, n_vars_float)
-        problem_results: object
-            The results of the variable application 
-            to the problem  
+        problem_results : Any
+            The results of the variable application
+            to the problem
 
         Returns
         -------
-        values: np.array
-            The component values, shape: (n_pop, n_components) 
+        values : np.array
+            The component values, shape: (n_pop, n_components,)
 
         """
-
         x = vars_float[:, 0]
         y = vars_float[:, 1]
-
-        # Parameters of rosenbrock function
-        a = 1
-        b = 100
-
-        result = (a-x)**2 + b*(y-x**2)**2
-
-        return result[:, None]
-
-
-class Constraints(Constraint):
+        return self.f(x,y)[:, None]
+class RosenbrockConstraints(Constraint):
     """
     The constraints for the Rosenbrock problem.
 
@@ -237,8 +169,8 @@ class Constraints(Constraint):
         The base name of the objective functions
 
     """
-    def __init__(self, problem, base_name='c'):
-        super().__init__(problem, base_name)
+    def __init__(self, problem, name='c'):
+        super().__init__(problem, name, vnames_float=["x", "y"])
     
     def n_components(self):
         """
@@ -329,3 +261,32 @@ class Constraints(Constraint):
         out[:, 1] = x + y - 3 
 
         return out
+
+class RosenbrockProblem(SimpleProblem):
+    """
+    Problem definition of benchmark function Rosenbrock.
+
+    Parameters
+    ----------
+    name : str
+        The name of the problem
+    initial_values : list of float
+        The initial values
+    
+    Attributes
+    ----------
+    initial_values : list of float
+        The initial values
+
+    """
+
+    def __init__(self, name="branin", initial_values=[1., 1.]):
+        
+        super().__init__(
+            name,
+            float_vars={"x": initial_values[0], "y": initial_values[1]},
+            min_float_vars={"x": -5., "y": 0.},
+            max_float_vars={"x": 10., "y": 15},
+        )
+
+        self.add_objective(BraninObjective(self))

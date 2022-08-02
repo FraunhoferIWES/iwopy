@@ -1,2 +1,2 @@
 from . import branin
-#from . import rosenbrock
+from . import rosenbrock

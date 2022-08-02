@@ -9,3 +9,9 @@ So far not many models have been transferred from the Fraunhofer IWES in-house p
 Enjoy - we are awaiting comments and issues, thanks for testing.
 
 **Full Changelog**: https://github.com/FraunhoferIWES/iwopy/commits/v0.0.11
+
+## v0.0.12-alpha
+
+- Benchmarks:
+    - New benchmark `rosenbrock` added
+
