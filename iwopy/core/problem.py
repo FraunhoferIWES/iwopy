@@ -19,7 +19,7 @@ class Problem(Base, metaclass=ABCMeta):
     mem_size : int, optional
         The memory size, default no memory
     mem_keyf : Function, optional
-        The memory key function. Parameters: 
+        The memory key function. Parameters:
         (vars_int, vars_float), returns key Object
 
     Attributes
@@ -44,7 +44,7 @@ class Problem(Base, metaclass=ABCMeta):
         self.memory = None
         self._mem_size = mem_size
         self._mem_keyf = mem_keyf
-        
+
         self._cons_mi = None
         self._cons_ma = None
 
@@ -293,7 +293,7 @@ class Problem(Base, metaclass=ABCMeta):
         else:
             self._cons_mi = np.append(self._cons_mi, cmi, axis=0)
             self._cons_ma = np.append(self._cons_ma, cma, axis=0)
-    
+
     @property
     def min_values_constraints(self):
         """
@@ -752,18 +752,18 @@ class Problem(Base, metaclass=ABCMeta):
             if memres is not None:
                 todo = np.any(np.isnan(memres), axis=1)
                 from_mem = not np.all(todo)
-        
+
         if from_mem:
 
-            objs = memres[:, :self.n_objectives]
-            cons = memres[:, self.n_objectives:]
+            objs = memres[:, : self.n_objectives]
+            cons = memres[:, self.n_objectives :]
             del memres
 
             if np.any(todo):
 
                 vals_int = vars_int[todo]
                 vals_float = vars_float[todo]
-            
+
                 results = self.apply_population(vals_int, vals_float)
 
                 varsi, varsf = self._find_vars(vals_int, vals_float, self.objs)
@@ -787,7 +787,7 @@ class Problem(Base, metaclass=ABCMeta):
 
             if self.memory is not None:
                 self.memory.store_population(vars_int, vars_float, objs, cons)
-        
+
         return objs, cons
 
     def check_constraints_individual(self, constraint_values, verbosity=0):

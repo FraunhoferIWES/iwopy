@@ -2,6 +2,7 @@ import numpy as np
 
 from iwopy import DiscretizeRegGrid
 from iwopy.benchmarks.branin import BraninProblem
+from iwopy.benchmarks.rosenbrock import RosenbrockProblem
 from iwopy.interfaces.pygmo import Optimizer_pygmo
 
 def run_branin_ipopt(init_vals, dx, dy, tol, pop):
@@ -11,14 +12,9 @@ def run_branin_ipopt(init_vals, dx, dy, tol, pop):
     gprob.initialize()
 
     solver = Optimizer_pygmo(
-        gprob, 
-        problem_pars=dict(
-            grad_pop=pop
-        ),
-        algo_pars=dict(
-            type="ipopt",
-            tol=tol
-        ),
+        gprob,
+        problem_pars=dict(grad_pop=pop),
+        algo_pars=dict(type="ipopt", tol=tol),
     )
     solver.initialize()
 
@@ -27,15 +23,56 @@ def run_branin_ipopt(init_vals, dx, dy, tol, pop):
 
     return results
 
+
 def test_branin_ipopt():
 
     cases = (
-        (0.001, 0.001, 1e-6, (1., 1.), 0.397887, (9.42478, 2.475), 5e-6, (0.0008, 0.002), False,),
-        (0.0001, 0.0001, 1e-7, (1., 1.), 0.397887, (9.42478, 2.475), 5e-7, (7e-5, 1.1e-4), False,),
-        (0.001, 0.001, 1e-6, (-3, 12.), 0.397887, (-np.pi, 12.275), 7e-6, (0.001, 0.0016), True,),
-        (0.001, 0.001, 1e-6, (3, 3.), 0.397887, (np.pi, 2.275), 3e-6, (0.0005, 0.00015), True,),
+        (
+            0.001,
+            0.001,
+            1e-6,
+            (1.0, 1.0),
+            0.397887,
+            (9.42478, 2.475),
+            5e-6,
+            (0.0008, 0.002),
+            False,
+        ),
+        (
+            0.0001,
+            0.0001,
+            1e-7,
+            (1.0, 1.0),
+            0.397887,
+            (9.42478, 2.475),
+            5e-7,
+            (7e-5, 1.1e-4),
+            False,
+        ),
+        (
+            0.001,
+            0.001,
+            1e-6,
+            (-3, 12.0),
+            0.397887,
+            (-np.pi, 12.275),
+            7e-6,
+            (0.001, 0.0016),
+            True,
+        ),
+        (
+            0.001,
+            0.001,
+            1e-6,
+            (3, 3.0),
+            0.397887,
+            (np.pi, 2.275),
+            3e-6,
+            (0.0005, 0.00015),
+            True,
+        ),
     )
-    
+
     for dx, dy, tol, ivals, f, xy, limf, limxy, pop in cases:
 
         print("\nENTERING", (dx, dy, tol, ivals, f, xy, limf, limxy, pop), "\n")
@@ -43,14 +80,15 @@ def test_branin_ipopt():
         results = run_branin_ipopt(ivals, dx, dy, tol, pop)
         print("Opt vars:", results.vars_float)
 
-        delf = np.abs(results.objs[0]-f)
-        print("delf =", delf,", lim =", limf)
+        delf = np.abs(results.objs[0] - f)
+        print("delf =", delf, ", lim =", limf)
         assert delf < limf
 
-        delxy = np.abs(results.vars_float-np.array(xy))
+        delxy = np.abs(results.vars_float - np.array(xy))
         limxy = np.array(limxy)
-        print("delxy =", delxy,", lim =", limxy)
+        print("delxy =", delxy, ", lim =", limxy)
         assert np.all(delxy < limxy)
+
 
 def run_branin_heu(type, init_vals, ngen, npop):
 
@@ -58,17 +96,17 @@ def run_branin_heu(type, init_vals, ngen, npop):
     prob.initialize()
 
     solver = Optimizer_pygmo(
-        prob, 
+        prob,
         problem_pars=dict(),
         algo_pars=dict(
             type=type,
-            gen=ngen, 
+            gen=ngen,
             seed=42,
         ),
         setup_pars=dict(
             pop_size=npop,
             seed=42,
-        )
+        ),
     )
     solver.initialize()
     solver.print_info()
@@ -78,59 +116,195 @@ def run_branin_heu(type, init_vals, ngen, npop):
 
     return results
 
+
 def test_branin_sga():
 
     cases = (
-        ("sga", 500, 50, (1., 1.), 0.397887, 0.0002,),
+        (
+            "sga",
+            500,
+            50,
+            (1.0, 1.0),
+            0.397887,
+            0.0002,
+        ),
     )
-    
-    for typ,ngen, npop, ivals, f, limf in cases:
+
+    for typ, ngen, npop, ivals, f, limf in cases:
 
         print("\nENTERING", (typ, ngen, npop, ivals, f, limf), "\n")
 
         results = run_branin_heu(typ, ivals, ngen, npop)
         print("Opt vars:", results.vars_float)
 
-        delf = np.abs(results.objs[0]-f)
-        print("delf =", delf,", lim =", limf)
+        delf = np.abs(results.objs[0] - f)
+        print("delf =", delf, ", lim =", limf)
         assert delf < limf
+
 
 def test_branin_pso():
 
     cases = (
-        ("pso", 500, 50, (1., 1.), 0.397887, 5e-7,),
+        (
+            "pso",
+            500,
+            50,
+            (1.0, 1.0),
+            0.397887,
+            5e-7,
+        ),
     )
-    
-    for typ,ngen, npop, ivals, f, limf in cases:
+
+    for typ, ngen, npop, ivals, f, limf in cases:
 
         print("\nENTERING", (typ, ngen, npop, ivals, f, limf), "\n")
 
         results = run_branin_heu(typ, ivals, ngen, npop)
         print("Opt vars:", results.vars_float)
 
-        delf = np.abs(results.objs[0]-f)
-        print("delf =", delf,", lim =", limf)
+        delf = np.abs(results.objs[0] - f)
+        print("delf =", delf, ", lim =", limf)
         assert delf < limf
+
 
 def test_branin_bee():
 
     cases = (
-        ("bee_colony", 500, 50, (1., 1.), 0.397887, 5e-7,),
+        (
+            "bee_colony",
+            500,
+            50,
+            (1.0, 1.0),
+            0.397887,
+            5e-7,
+        ),
     )
-    
-    for typ,ngen, npop, ivals, f, limf in cases:
+
+    for typ, ngen, npop, ivals, f, limf in cases:
 
         print("\nENTERING", (typ, ngen, npop, ivals, f, limf), "\n")
 
         results = run_branin_heu(typ, ivals, ngen, npop)
         print("Opt vars:", results.vars_float)
 
-        delf = np.abs(results.objs[0]-f)
-        print("delf =", delf,", lim =", limf)
+        delf = np.abs(results.objs[0] - f)
+        print("delf =", delf, ", lim =", limf)
         assert delf < limf
 
+
+def run_rosen0_ipopt(lower, upper, inits, dx, dy, tol, pop, ana):
+
+    prob = RosenbrockProblem(lower=lower, upper=upper, initial=inits, 
+                constrained=False, ana_deriv=ana)
+    
+    gprob = DiscretizeRegGrid(
+        prob, deltas={"x": dx, "y": dy}, fd_order=2, fd_bounds_order=2
+    )
+    gprob.initialize()
+
+    solver = Optimizer_pygmo(
+        gprob,
+        problem_pars=dict(
+            grad_pop=pop,
+        ),
+        algo_pars=dict(
+            type="ipopt",
+            tol=tol,
+        ),
+    )
+    solver.initialize()
+
+    results = solver.solve()
+    solver.finalize(results)
+
+    return results
+
+
+def test_rosen0_ipopt():
+
+    cases = (
+        (
+            0.01,
+            0.01,
+            1e-4,
+            (-2.0, -2),
+            (2, 2),
+            (0.1, -0.1),
+            0.0,
+            (1.0, 1.0),
+            1e-4,
+            (2e-5, 4e-5),
+            False,
+            True,
+        ),
+        (
+            0.001,
+            0.001,
+            1e-6,
+            (-2.0, -2),
+            (2, 2),
+            (1.8, 1.9),
+            0.0,
+            (1.0, 1.0),
+            6e-11,
+            (2e-10, 2e-10),
+            True,
+            True,
+        ),
+        (
+            0.001,
+            0.001,
+            1e-4,
+            (-2.0, -2),
+            (2, 2),
+            (1.8, 1.9),
+            0.0,
+            (1.0, 1.0),
+            1e-4,
+            (0.001, 0.002),
+            True,
+            False,
+        ),
+        (
+            0.0001,
+            0.0001,
+            1e-4,
+            (-2.0, -2),
+            (2, 2),
+            (1.8, 1.9),
+            0.0,
+            (1.0, 1.0),
+            1.5e-5,
+            (0.0004, 0.0008),
+            True,
+            True,
+        ),
+    )
+
+    for dx, dy, tol, low, up, ivals, f, xy, limf, limxy, pop, ana in cases:
+
+        print(
+            "\nENTERING", (dx, dy, tol, low, up, ivals, f, xy, limf, limxy, pop, ana), "\n"
+        )
+
+        results = run_rosen0_ipopt(low, up, ivals, dx, dy, tol, pop, ana)
+        print("Opt vars:", results.vars_float)
+
+        delf = np.abs(results.objs[0] - f)
+        print("delf =", delf, ", lim =", limf)
+        assert delf < limf
+
+        delxy = np.abs(results.vars_float - np.array(xy))
+        limxy = np.array(limxy)
+        print("delxy =", delxy, ", lim =", limxy)
+        assert np.all(delxy < limxy)
+
+
 if __name__ == "__main__":
-    test_branin_ipopt()
-    test_branin_sga()
-    test_branin_pso()
-    test_branin_bee()
+
+    # test_branin_ipopt()
+    # test_branin_sga()
+    # test_branin_pso()
+    # test_branin_bee()
+
+    test_rosen0_ipopt()

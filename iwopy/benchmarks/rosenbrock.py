@@ -2,6 +2,7 @@ import numpy as np
 
 from iwopy import SimpleProblem, Objective, Constraint
 
+
 class RosenbrockObjective(Objective):
     """
     The Rosenbrock function is defined as
@@ -28,37 +29,73 @@ class RosenbrockObjective(Objective):
     ----------
     problem : iwopy.Problem
         The underlying optimization problem
-    x_bounds : tuple
-        The (min, max) values for x, 
-        use np.inf for infinite
-    y_bounds : tuple
-        The (min, max) values for y, 
-        use np.inf for infinite
-    pars
+    pars : tuple
+        The a, b parameters
+    ana_deriv : bool
+        Switch for analytical derivatives
     name : str
         The function name
 
     """
+
     def __init__(
-            self, 
-            problem,  
-            x_bounds,
-            y_bounds,
-            pars=(1., 100.),
-            name="f",
-        ):
+        self,
+        problem,
+        pars=(1.0, 100.0),
+        ana_deriv=False,
+        name="f",
+    ):
         super().__init__(problem, name, vnames_float=["x", "y"])
 
         # Parameters of branin function,
         # (a, b)
         self._pars = pars
 
+        self._ana_deriv = ana_deriv
+
     def f(self, x, y):
         """
         The Rosenbrock function f(x, y)
         """
         a, b = self._pars
-        return (a - x)**2 + b * (y - x**2)**2
+        return (a - x) ** 2 + b * (y - x**2) ** 2
+
+    def ana_deriv(self, vars_int, vars_float, var, components=None):
+        """
+        Calculates the analytic derivative, if possible.
+
+        Use `numpy.nan` if analytic derivatives cannot be calculated.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values, shape: (n_vars_int,)
+        vars_float : np.array
+            The float variable values, shape: (n_vars_float,)
+        var : int
+            The index of the differentiation float variable
+        components : list of int
+            The selected components, or None for all
+
+        Returns
+        -------
+        deriv : numpy.ndarray
+            The derivative values, shape: (n_sel_components,)
+
+        """
+        if not self._ana_deriv:
+            return super().ana_deriv(vars_int, vars_float, var, components)
+
+        x, y = vars_float
+        a, b = self._pars
+
+        if var == 0:
+            return np.array(
+                [-2 * (a - x) - 2 * b * (y - x**2) * 2 * x], dtype=np.float64
+            )
+
+        elif var == 1:
+            return np.array([2 * b * (y - x**2)], dtype=np.float64)
 
     def n_components(self):
         """
@@ -85,7 +122,7 @@ class RosenbrockObjective(Objective):
 
         """
         return [False]
-    
+
     def calc_individual(self, vars_int, vars_float, problem_results):
         """
         Calculate values for a single individual of the
@@ -108,7 +145,7 @@ class RosenbrockObjective(Objective):
 
         """
         x, y = vars_float
-        return np.array([self.f(x,y)])
+        return np.array([self.f(x, y)])
 
     def calc_population(self, vars_int, vars_float, problem_results):
         """
@@ -132,7 +169,9 @@ class RosenbrockObjective(Objective):
         """
         x = vars_float[:, 0]
         y = vars_float[:, 1]
-        return self.f(x,y)[:, None]
+        return self.f(x, y)[:, None]
+
+
 class RosenbrockConstraints(Constraint):
     """
     The constraints for the Rosenbrock problem.
@@ -163,15 +202,19 @@ class RosenbrockConstraints(Constraint):
 
     Parameters
     ----------
-    problem: iwopy.Problem
+    problem : iwopy.Problem
         The underlying optimization problem
-    base_name: str
-        The base name of the objective functions
+    ana_deriv : bool
+        Switch for analytical derivatives
+    name : str
+        The constraint name
 
     """
-    def __init__(self, problem, name='c'):
+
+    def __init__(self, problem, name="c", ana_deriv=False):
         super().__init__(problem, name, vnames_float=["x", "y"])
-    
+        self._ana_deriv = ana_deriv
+
     def n_components(self):
         """
         Returns the number of components of the
@@ -185,50 +228,30 @@ class RosenbrockConstraints(Constraint):
         """
         return 2
 
-    def get_bounds(self):
-        """
-        Returns the bounds for all components.
-
-        Express non-existing bounds using np.inf.
-
-        Returns
-        -------
-        min: np.array
-            The lower bounds, shape: (n_components)
-        max: np.array
-            The upper bounds, shape: (n_components)
-
-        """
-        return np.array([-np.inf, -np.inf]), np.array([0., 0.])
-
     def calc_individual(self, vars_int, vars_float, problem_results):
         """
-        Calculate values for a single individual of the 
+        Calculate values for a single individual of the
         underlying problem.
 
         Parameters
         ----------
-        vars_int: np.array
-            The integer variable values, shape: (n_vars_int)
-        vars_float: np.array
-            The float variable values, shape: (n_vars_float)
-        problem_results: object
-            The results of the variable application 
-            to the problem  
+        vars_int : np.array
+            The integer variable values, shape: (n_vars_int,)
+        vars_float : np.array
+            The float variable values, shape: (n_vars_float,)
+        problem_results : Any
+            The results of the variable application
+            to the problem
 
         Returns
         -------
-        values: np.array
-            The component values, shape: (n_components)    
+        values : np.array
+            The component values, shape: (n_components,)
 
         """
-
-        x  = vars_float[0]
-        y  = vars_float[1]
-        c1 = (x-1)**3 - y + 1   
-        c2 = x + y - 3       
-
-        return np.array([c1, c2])
+        x = vars_float[0]
+        y = vars_float[1]
+        return np.array([(x - 1) ** 3 - y + 1, x + y - 3])
 
     def calc_population(self, vars_int, vars_float, problem_results):
         """
@@ -236,31 +259,66 @@ class RosenbrockConstraints(Constraint):
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int : np.array
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float: np.array
+        vars_float : np.array
             The float variable values, shape: (n_pop, n_vars_float)
-        problem_results: object
-            The results of the variable application 
-            to the problem  
+        problem_results : Any
+            The results of the variable application
+            to the problem
 
         Returns
         -------
-        values: np.array
-            The component values, shape: (n_pop, n_components) 
+        values : np.array
+            The component values, shape: (n_pop, n_components,)
 
         """
+        x = vars_float[:, 0]
+        y = vars_float[:, 1]
+        return np.stack([(x - 1) ** 3 - y + 1, x + y - 3], axis=1)
 
-        n_pop = vars_float.shape[0]
+    def ana_deriv(self, vars_int, vars_float, var, components=None):
+        """
+        Calculates the analytic derivative, if possible.
 
-        x  = vars_float[:, 0]
-        y  = vars_float[:, 1]
+        Use `numpy.nan` if analytic derivatives cannot be calculated.
 
-        out       = np.zeros((n_pop, self.n_components()))
-        out[:, 0] = (x-1)**3 - y + 1  
-        out[:, 1] = x + y - 3 
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values, shape: (n_vars_int,)
+        vars_float : np.array
+            The float variable values, shape: (n_vars_float,)
+        var : int
+            The index of the differentiation float variable
+        components : list of int
+            The selected components, or None for all
+
+        Returns
+        -------
+        deriv : numpy.ndarray
+            The derivative values, shape: (n_sel_components,)
+
+        """
+        if not self._ana_deriv:
+            return super().ana_deriv(vars_int, vars_float, var, components)
+
+        x, y = vars_float
+        cmpnts = [0, 1] if components is None else components
+        out = np.full(len(cmpnts), np.nan, dtype=np.float64)
+
+        for i, ci in enumerate(cmpnts):
+
+            # (x-1)**3 - y + 1
+            if ci == 0:
+                out[i] = 3 * (x - 1) ** 2 if var == 0 else -1
+
+            # x + y - 3
+            elif ci == 1:
+                out[i] = 1
 
         return out
+
 
 class RosenbrockProblem(SimpleProblem):
     """
@@ -268,11 +326,19 @@ class RosenbrockProblem(SimpleProblem):
 
     Parameters
     ----------
+    constrained : bool
+        Switch for constraints
+    lower : list of float
+        The minimal variable values
+    upper : list of float
+        The maximal variable values
+    initial : list of float
+        The initial values
+    ana_deriv : bool
+        Switch for analytical derivatives
     name : str
         The name of the problem
-    initial_values : list of float
-        The initial values
-    
+
     Attributes
     ----------
     initial_values : list of float
@@ -280,13 +346,24 @@ class RosenbrockProblem(SimpleProblem):
 
     """
 
-    def __init__(self, name="branin", initial_values=[1., 1.]):
-        
+    def __init__(
+        self,
+        constrained=True,
+        lower=[-1.5, -0.5],
+        upper=[-0.5, 2.5],
+        initial=[0.0, 0.0],
+        ana_deriv=False,
+        name="rosenbrock",
+    ):
+
         super().__init__(
             name,
-            float_vars={"x": initial_values[0], "y": initial_values[1]},
-            min_float_vars={"x": -5., "y": 0.},
-            max_float_vars={"x": 10., "y": 15},
+            float_vars={"x": initial[0], "y": initial[1]},
+            min_float_vars={"x": lower[0], "y": lower[1]},
+            max_float_vars={"x": upper[0], "y": upper[1]},
         )
 
-        self.add_objective(BraninObjective(self))
+        self.add_objective(RosenbrockObjective(self, ana_deriv=ana_deriv))
+
+        if constrained:
+            self.add_constraint(RosenbrockConstraints(self, ana_deriv=ana_deriv))

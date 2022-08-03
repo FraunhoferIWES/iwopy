@@ -2,6 +2,7 @@ import os
 import sys
 from contextlib import contextmanager
 
+
 @contextmanager
 def suppress_stdout(silent=True):
     """
@@ -11,8 +12,8 @@ def suppress_stdout(silent=True):
     -------
         >>> with suppress_stdout():
         >>>    ...
-    
-    Source: 
+
+    Source:
     https://stackoverflow.com/questions/2125702/how-to-suppress-console-output-in-python
 
     Paramters
@@ -25,10 +26,9 @@ def suppress_stdout(silent=True):
         if silent:
             old_stdout = sys.stdout
             sys.stdout = devnull
-            try:  
+            try:
                 yield
             finally:
                 sys.stdout = old_stdout
         else:
             yield
-            

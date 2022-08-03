@@ -3,6 +3,7 @@ import numpy as np
 from iwopy.core import OptResults
 from .imports import check_import, Problem
 
+
 class Pymoo_problem(Problem):
     """
     Wrapper around the pymoo problem.
@@ -34,7 +35,7 @@ class Pymoo_problem(Problem):
 
         check_import()
 
-        self.problem   = problem
+        self.problem = problem
         self.vectorize = vectorize
 
         if self.problem.n_vars_float > 0 and self.problem.n_vars_int == 0:
@@ -42,31 +43,33 @@ class Pymoo_problem(Problem):
             self.is_intprob = False
 
             super().__init__(
-                    n_var=self.problem.n_vars_float,
-                    n_obj=self.problem.n_objectives,
-                    n_ieq_constr=self.problem.n_constraints,
-                    xl=self.problem.min_values_float(),
-                    xu=self.problem.max_values_float(),
-                    elementwise=not vectorize,
-                    type_var=np.float64
-                )
-        
+                n_var=self.problem.n_vars_float,
+                n_obj=self.problem.n_objectives,
+                n_ieq_constr=self.problem.n_constraints,
+                xl=self.problem.min_values_float(),
+                xu=self.problem.max_values_float(),
+                elementwise=not vectorize,
+                type_var=np.float64,
+            )
+
         elif self.problem.n_vars_float == 0 and self.problem.n_vars_int > 0:
 
             self.is_intprob = True
-        
+
             super().__init__(
-                    n_var=self.problem.n_vars_int,
-                    n_obj=self.problem.n_objectives,
-                    n_ieq_constr=self.problem.n_constraints,
-                    xl=self.problem.min_values_int(),
-                    xu=self.problem.max_values_int(),
-                    elementwise=not vectorize,
-                    type_var=np.int32
-                )
+                n_var=self.problem.n_vars_int,
+                n_obj=self.problem.n_objectives,
+                n_ieq_constr=self.problem.n_constraints,
+                xl=self.problem.min_values_int(),
+                xu=self.problem.max_values_int(),
+                elementwise=not vectorize,
+                type_var=np.int32,
+            )
 
         else:
-            raise NotImplementedError("Interface not implemented for mixed int/float problems.")
+            raise NotImplementedError(
+                "Interface not implemented for mixed int/float problems."
+            )
 
         if self.problem.n_constraints:
 
@@ -80,7 +83,9 @@ class Pymoo_problem(Problem):
 
             sel = (~np.isinf(self._cmi)) & (~np.isinf(self._cma))
             if np.any(sel):
-                raise RuntimeError(f"Constraints {cnames[sel]} have both lower and upper bounds")
+                raise RuntimeError(
+                    f"Constraints {cnames[sel]} have both lower and upper bounds"
+                )
 
     def _evaluate(self, x, out, *args, **kwargs):
         """
@@ -99,7 +104,7 @@ class Pymoo_problem(Problem):
             else:
                 dummies = np.zeros((n_pop, 0), dtype=np.int32)
                 out["F"], out["G"] = self.problem.evaluate_population(dummies, x)
-        
+
             if self.problem.n_constraints:
 
                 sel = ~np.isinf(self._cma)
@@ -112,7 +117,7 @@ class Pymoo_problem(Problem):
         else:
 
             if self.is_intprob:
-                dummies  = np.zeros(0, dtype=np.float64)
+                dummies = np.zeros(0, dtype=np.float64)
                 for i in range(n_pop):
                     out["F"], out["G"] = self.problem.evaluate_individual(x, dummies)
             else:
@@ -126,7 +131,6 @@ class Pymoo_problem(Problem):
 
                 sel = ~np.isinf(self._cmi)
                 out["G"][sel] = self._cmi[sel] - out["G"][sel]
-
 
     def finalize(self, pymoo_results, verbosity=1):
         """
@@ -147,15 +151,15 @@ class Pymoo_problem(Problem):
         """
 
         # prepare:
-        r   = pymoo_results
+        r = pymoo_results
         suc = True
 
         # case no solution from pymoo:
         if r.X is None:
-            suc  = False
-            xi   = None
-            xf   = None
-            res  = None
+            suc = False
+            xi = None
+            xf = None
+            res = None
             objs = None
             cons = None
 
@@ -167,26 +171,30 @@ class Pymoo_problem(Problem):
             else:
                 xi = np.zeros(0, dtype=np.int)
                 xf = r.X
-            
+
             if self.vectorize:
 
-                n_pop  = len(r.pop)
+                n_pop = len(r.pop)
                 n_vars = len(r.X)
-                vars   = np.zeros((n_pop, n_vars), dtype=np.float64)
+                vars = np.zeros((n_pop, n_vars), dtype=np.float64)
                 for pi, p in enumerate(r.pop):
                     vars[pi] = p.X
-                
+
                 if self.is_intprob:
                     dummies = np.zeros((n_pop, 0), dtype=np.int32)
-                    self.problem.finalize_population(vars.astype(np.int32), dummies, verbosity)
+                    self.problem.finalize_population(
+                        vars.astype(np.int32), dummies, verbosity
+                    )
                 else:
                     dummies = np.zeros((n_pop, 0), dtype=np.float64)
                     self.problem.finalize_population(dummies, vars, verbosity)
 
             res, objs, cons = self.problem.finalize_individual(xi, xf, verbosity)
 
-            if verbosity: print()
+            if verbosity:
+                print()
             suc = np.all(self.problem.check_constraints_individual(cons, False))
-            if verbosity: print()
-        
+            if verbosity:
+                print()
+
         return OptResults(suc, xi, xf, objs, cons, res)

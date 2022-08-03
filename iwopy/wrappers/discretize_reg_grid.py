@@ -4,6 +4,7 @@ from iwopy.utils import RegularDiscretizationGrid
 from .problem_wrapper import ProblemWrapper
 from iwopy.core import Memory
 
+
 class DiscretizeRegGrid(ProblemWrapper):
     """
     A wrapper that provides finite distance
@@ -45,13 +46,13 @@ class DiscretizeRegGrid(ProblemWrapper):
     """
 
     def __init__(
-            self, 
-            base_problem, 
-            deltas, 
-            fd_order=1, 
-            fd_bounds_order=None, 
-            mem_size=1000,
-        ):
+        self,
+        base_problem,
+        deltas,
+        fd_order=1,
+        fd_bounds_order=None,
+        mem_size=1000,
+    ):
         super().__init__(base_problem, base_problem.name + "_grid")
 
         self.grid = None
@@ -152,7 +153,7 @@ class DiscretizeRegGrid(ProblemWrapper):
                 li = varsi.tolist() if len(varsi) else []
                 tf = tuple(tuple(v.tolist()) for v in self.grid.gpts2inds(gpts))
                 return (tuple(li), tf)
-            
+
             self.memory = Memory(self._msize, keyf)
 
     def calc_gradients(
@@ -245,7 +246,7 @@ class DiscretizeRegGrid(ProblemWrapper):
 
         # recombine results:
         fres = np.c_[objs, cons][:, cmpnts]
-        gres = np.einsum('gc,vg->cv', fres, coeffs[0])
+        gres = np.einsum("gc,vg->cv", fres, coeffs[0])
         if len(cmpnts) == func.n_components():
             gradients[:, gvars] = gres
         else:
@@ -275,9 +276,11 @@ class DiscretizeRegGrid(ProblemWrapper):
         """
         if self.grid.is_gridpoint(vars_float[self._vinds]):
             return super().apply_individual(vars_int, vars_float)
-        
+
         else:
-            raise NotImplementedError(f"Problem '{self.name}' cannot apply non-grid point {vars_float} to problem")
+            raise NotImplementedError(
+                f"Problem '{self.name}' cannot apply non-grid point {vars_float} to problem"
+            )
 
     def apply_population(self, vars_int, vars_float):
         """
@@ -300,9 +303,11 @@ class DiscretizeRegGrid(ProblemWrapper):
         """
         if self.grid.all_gridpoints(vars_float[:, self._vinds]):
             return super().apply_population(vars_int, vars_float)
-        
+
         else:
-            raise NotImplemented(f"Problem '{self.name}' cannot apply non-grid points to problem")
+            raise NotImplemented(
+                f"Problem '{self.name}' cannot apply non-grid points to problem"
+            )
 
     def evaluate_individual(self, vars_int, vars_float):
         """
@@ -326,7 +331,7 @@ class DiscretizeRegGrid(ProblemWrapper):
         varsf = vars_float[self._vinds]
         if self.grid.is_gridpoint(varsf):
             return super().evaluate_individual(vars_int, vars_float)
-        
+
         else:
             gpts, coeffs = self.grid.interpolation_coeffs_point(varsf)
 
@@ -339,7 +344,9 @@ class DiscretizeRegGrid(ProblemWrapper):
                 varsf[self._vinds] = gp
                 objs[gi], cons[gi] = super().evaluate_individual(vars_int, varsf)
 
-            return np.einsum('go,g->o', objs, coeffs), np.einsum('gc,g->c', cons, coeffs)
+            return np.einsum("go,g->o", objs, coeffs), np.einsum(
+                "gc,g->c", cons, coeffs
+            )
 
     def evaluate_population(self, vars_int, vars_float):
         """
@@ -361,11 +368,11 @@ class DiscretizeRegGrid(ProblemWrapper):
 
         """
         varsf = vars_float[:, self._vinds]
-        
+
         # case all points on grid:
         if self.grid.all_gridpoints(varsf):
             return super().evaluate_population(vars_int, vars_float)
-        
+
         # case all vars are grid vars:
         elif self.n_vars_int == 0 and len(self._vinds) == self.n_vars_float:
 
@@ -380,17 +387,21 @@ class DiscretizeRegGrid(ProblemWrapper):
 
             objs, cons = self.evaluate_population(varsi, varsf)
 
-            return np.einsum('go,pg->po', objs, coeffs), np.einsum('gc,pg->pc', cons, coeffs)
+            return np.einsum("go,pg->po", objs, coeffs), np.einsum(
+                "gc,pg->pc", cons, coeffs
+            )
 
         # mixed case:
         else:
 
-            gpts, coeffs, gmap = self.grid.interpolation_coeffs_points(varsf, ret_pmap=True)
+            gpts, coeffs, gmap = self.grid.interpolation_coeffs_points(
+                varsf, ret_pmap=True
+            )
 
             # each pop has n_gp grid points, this yields pop2:
             n_pop = len(vars_float)
             n_gp = gmap.shape[1]
-            n_pop2 = n_pop*n_gp
+            n_pop2 = n_pop * n_gp
             n_int = self.n_vars_int
             n_v = n_int + self.n_vars_float
             vinds = n_int + np.array(self._vinds)
@@ -421,6 +432,6 @@ class DiscretizeRegGrid(ProblemWrapper):
             cons = cons.reshape(n_pop, n_gp, self.n_objectives)
             coeffs = np.take_along_axis(coeffs, gmap, axis=1)
             return (
-                np.einsum('pgo,pg->po', objs, coeffs), 
-                np.einsum('pgc,pg->pc', cons, coeffs),
+                np.einsum("pgo,pg->po", objs, coeffs),
+                np.einsum("pgc,pg->pc", cons, coeffs),
             )

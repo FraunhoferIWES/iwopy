@@ -7,4 +7,5 @@ from . import interfaces
 from . import benchmarks
 
 from importlib.resources import read_text
+
 __version__ = read_text(__package__, "VERSION")

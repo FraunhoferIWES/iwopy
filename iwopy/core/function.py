@@ -190,7 +190,7 @@ class OptFunction(Base, metaclass=ABCMeta):
         Returns
         -------
         deps : numpy.ndarray of bool
-            The dependencies of components on function 
+            The dependencies of components on function
             variables, shape: (n_components, n_vars_int)
 
         """
@@ -204,7 +204,7 @@ class OptFunction(Base, metaclass=ABCMeta):
         Returns
         -------
         deps : numpy.ndarray of bool
-            The dependencies of components on function 
+            The dependencies of components on function
             variables, shape: (n_components, n_vars_float)
 
         """

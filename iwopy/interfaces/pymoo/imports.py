@@ -8,11 +8,13 @@ try:
 except ImportError:
 
     Problem = object
+
     class Callback:
         def __init__(self):
             self.data = dict()
-    
+
     IMPORT_OK = False
+
 
 def check_import():
     """

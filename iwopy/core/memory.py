@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def get_default_keyf(digits=12):
     """
     Get the default key function
@@ -8,7 +9,7 @@ def get_default_keyf(digits=12):
     ----------
     digits : int
         The number of digits for floats
-    
+
     Returns
     -------
     Function :
@@ -29,15 +30,16 @@ def get_default_keyf(digits=12):
 
         Returns
         -------
-        Object : 
-            The key 
+        Object :
+            The key
 
         """
         li = vars_int.tolist() if len(vars_int) else []
         tf = tuple(tuple(v.tolist()) for v in np.round(vars_float, digits))
         return (tuple(li), tf)
-    
+
     return default_key
+
 
 class Memory:
     """
@@ -48,7 +50,7 @@ class Memory:
     size : int
         The number of maximally stored results
     keyf : Function, optional
-        The memory key function. Parameters: 
+        The memory key function. Parameters:
         (vars_int, vars_float), returns key Object
 
     Attributes
@@ -59,36 +61,37 @@ class Memory:
         The stored data. Key: keyf return type,
         Values: tuples (objs, cons)
     keyf : Function
-        The memory key function. Parameters: 
+        The memory key function. Parameters:
         (vars_int, vars_float), returns key Object
 
     """
+
     def __init__(self, size, keyf=None):
         self.max_size = size
         self.keyf = keyf if keyf is not None else get_default_keyf()
         self.data = {}
-    
+
     def clear(self):
         """
         Clears the memory
         """
         self.data = {}
-    
+
     @property
     def size(self):
         """
-        The number of elements currently stored 
+        The number of elements currently stored
         in memory
 
         Returns
         -------
         int :
-            The number of elements currently stored 
+            The number of elements currently stored
             in memory
 
         """
         return len(self.data)
-    
+
     def found_individual(self, vars_int, vars_float):
         """
         Check if entry is found in memory.
@@ -103,7 +106,7 @@ class Memory:
         Returns
         -------
         found : bool
-            True if data is available 
+            True if data is available
 
         """
         key = self.keyf(vars_int, vars_float)
@@ -229,7 +232,7 @@ class Memory:
                     n_o = len(objs)
                     n_c = len(cons)
                     results = np.full((n_pop, n_o + n_c), np.nan, dtype=objs.dtype)
-                
+
                 results[pi] = np.r_[objs, cons]
 
         return results

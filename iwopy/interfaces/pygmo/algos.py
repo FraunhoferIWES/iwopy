@@ -1,5 +1,6 @@
 from .imports import pygmo, check_import
 
+
 class AlgoFactory:
     """
     Creates a pygmo algorithm from parameters
@@ -18,12 +19,12 @@ class AlgoFactory:
             Name of the driver type
         kwargs : dict, optional
             Additional parameters, type dependent
-        
+
         Returns
         -------
         pygmo.algo :
             The pygmo algorithm object
-        
+
         """
 
         check_import()
@@ -31,21 +32,21 @@ class AlgoFactory:
         # nlopt:
         if type == "nlopt":
 
-            uda = pygmo.nlopt(kwargs['optimizer'])
+            uda = pygmo.nlopt(kwargs["optimizer"])
             algo = pygmo.algorithm(uda)
 
-            if 'ftol_rel' in kwargs:
-                algo.extract(pygmo.nlopt).ftol_rel = kwargs['ftol_rel']
-            if 'ftol_abs' in kwargs:
-                algo.extract(pygmo.nlopt).ftol_abs = kwargs['ftol_abs']
-            if 'xtol_rel' in kwargs:
-                algo.extract(pygmo.nlopt).xtol_rel = kwargs['xtol_rel']
-            if 'xtol_abs' in kwargs:
-                algo.extract(pygmo.nlopt).xtol_abs = kwargs['xtol_abs']
-            if 'maxeval' in kwargs:
-                algo.extract(pygmo.nlopt).maxeval = kwargs['maxeval']
-            if 'maxtime' in kwargs:
-                algo.extract(pygmo.nlopt).maxtime = kwargs['maxtime']
+            if "ftol_rel" in kwargs:
+                algo.extract(pygmo.nlopt).ftol_rel = kwargs["ftol_rel"]
+            if "ftol_abs" in kwargs:
+                algo.extract(pygmo.nlopt).ftol_abs = kwargs["ftol_abs"]
+            if "xtol_rel" in kwargs:
+                algo.extract(pygmo.nlopt).xtol_rel = kwargs["xtol_rel"]
+            if "xtol_abs" in kwargs:
+                algo.extract(pygmo.nlopt).xtol_abs = kwargs["xtol_abs"]
+            if "maxeval" in kwargs:
+                algo.extract(pygmo.nlopt).maxeval = kwargs["maxeval"]
+            if "maxtime" in kwargs:
+                algo.extract(pygmo.nlopt).maxtime = kwargs["maxtime"]
 
         # ipopt:
         elif type == "ipopt":
@@ -56,20 +57,20 @@ class AlgoFactory:
 
                 if isinstance(a, int):
                     uda.set_integer_option(k, a)
-                
+
                 elif isinstance(a, float):
                     uda.set_numeric_option(k, a)
-                
+
                 else:
                     uda.set_string_option(k, a)
-            
+
             algo = pygmo.algorithm(uda)
 
         # sga:
         elif type == "sga":
 
             """
-            
+
             Simple Genetic Algorithm
 
             Args:
@@ -112,7 +113,7 @@ class AlgoFactory:
             """
 
             uda = pygmo.sga(**kwargs)
-            
+
             algo = pygmo.algorithm(uda)
 
         # pso:
@@ -135,7 +136,7 @@ class AlgoFactory:
                 OverflowError: if *gen* or *seed* is negative or greater than an implementation-defined value
                 ValueError: if *omega* is not in the [0,1] interval, if *eta1*, *eta2* are not in the [0,4] interval, if *max_vel* is not in ]0,1]
                 ValueError: *variant* is not one of 1 .. 6, if *neighb_type* is not one of 1 .. 4 or if *neighb_param* is zero
-                
+
             The following variants can be selected via the *variant* parameter:
 
             +-----------------------------------------+-----------------------------------------+
@@ -203,13 +204,12 @@ class AlgoFactory:
             """
 
             uda = pygmo.nsga2(**kwargs)
-            
-            algo = pygmo.algorithm(uda)
 
+            algo = pygmo.algorithm(uda)
 
         # unknown driver:
         else:
-            estr  = f"Unknown uda type '{type}'.\nKnown solvers:"
+            estr = f"Unknown uda type '{type}'.\nKnown solvers:"
             estr += "\n  nlopt"
             estr += "\n  ipopt"
             estr += "\n  sga"
@@ -221,4 +221,3 @@ class AlgoFactory:
         algo.set_verbosity(1)
 
         return algo
-        

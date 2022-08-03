@@ -1,9 +1,11 @@
 try:
     import pygmo
+
     IMPORT_OK = True
 except ImportError:
     pygmo = None
     IMPORT_OK = False
+
 
 def check_import():
     """

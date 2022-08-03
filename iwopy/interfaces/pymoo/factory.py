@@ -2,9 +2,9 @@ from .imports import IMPORT_OK, check_import
 
 if IMPORT_OK:
     from pymoo.operators.sampling.rnd import (
-        IntegerRandomSampling, 
-        FloatRandomSampling, 
-        BinaryRandomSampling, 
+        IntegerRandomSampling,
+        FloatRandomSampling,
+        BinaryRandomSampling,
         PermutationRandomSampling,
     )
     from pymoo.operators.sampling.lhs import LatinHypercubeSampling
@@ -16,16 +16,17 @@ if IMPORT_OK:
         DefaultMultiObjectiveTermination,
     )
 
+
 class Factory:
     """
     A factory for pymoo components
     """
 
-    def __init__(self, pymoo_problem,verbosity):
+    def __init__(self, pymoo_problem, verbosity):
         check_import()
         self.pymoo_problem = pymoo_problem
         self.verbosity = verbosity
-    
+
     def print(self, *args, **kwargs):
         if self.verbosity:
             print(*args, **kwargs)
@@ -51,7 +52,9 @@ class Factory:
         elif samp_name == "lhs":
             out = LatinHypercubeSampling(**kwargs)
         else:
-            raise KeyError(f"Unknown sampling '{samp_name}', please choose: int_random, float_random, binary_random, permutation_random, lhs")
+            raise KeyError(
+                f"Unknown sampling '{samp_name}', please choose: int_random, float_random, binary_random, permutation_random, lhs"
+            )
 
         self.print(f"Selecting sampling: {samp_name} ({type(out).__name__})")
 
@@ -65,7 +68,7 @@ class Factory:
             out = SBX(**pars)
         else:
             raise KeyError(f"Unknown crossover '{cross}', please choose: sbx")
-        
+
         self.print(f"Selecting crossover: {cross} ({type(out).__name__})")
 
         return out

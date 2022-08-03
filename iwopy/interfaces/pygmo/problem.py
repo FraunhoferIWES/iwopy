@@ -2,6 +2,7 @@ import numpy as np
 
 from iwopy.core import OptResults, Problem
 
+
 class UDP:
     """
     Generic Problem to Pygmo UserDefinedProblem adapter
@@ -36,17 +37,18 @@ class UDP:
 
     """
 
-    def __init__(self, 
-            problem,
-            c_tol=0.,
-            grad_pop=False,
-            verbosity=0,
-        ):
+    def __init__(
+        self,
+        problem,
+        c_tol=0.0,
+        grad_pop=False,
+        verbosity=0,
+    ):
 
         self.problem = problem
         self.n_vars_all = problem.n_vars_float + problem.n_vars_int
         self.n_fitness = problem.n_objectives + problem.n_constraints
-        
+
         self.c_tol = [c_tol] * problem.n_constraints
         self.values = np.zeros(self.n_fitness, dtype=np.float64)
 
@@ -57,14 +59,14 @@ class UDP:
 
         # apply new variables and calculate:
         objs, cons = self.problem.evaluate_individual(xi, xf)
-        self.values[:self.problem.n_objectives] = objs
-        self.values[self.problem.n_objectives:] = cons
+        self.values[: self.problem.n_objectives] = objs
+        self.values[self.problem.n_objectives :] = cons
 
     def fitness(self, dv):
 
         # extract variables:
-        xf = dv[:self.problem.n_vars_float]
-        xi = dv[self.problem.n_vars_float:].astype(np.int32)
+        xf = dv[: self.problem.n_vars_float]
+        xi = dv[self.problem.n_vars_float :].astype(np.int32)
 
         # apply new variables:
         self.apply(xi, xf)
@@ -72,18 +74,18 @@ class UDP:
         return self.values
 
     def get_bounds(self):
-    
+
         lb = np.full(self.n_vars_all, -np.inf)
         ub = np.full(self.n_vars_all, np.inf)
 
         if self.problem.n_vars_float:
-            lb[:self.problem.n_vars_float] = self.problem.min_values_float()
-            ub[:self.problem.n_vars_float] = self.problem.max_values_float()
+            lb[: self.problem.n_vars_float] = self.problem.min_values_float()
+            ub[: self.problem.n_vars_float] = self.problem.max_values_float()
 
         if self.problem.n_vars_int:
 
-            lbi = lb[self.problem.n_vars_float:]
-            ubi = ub[self.problem.n_vars_float:]
+            lbi = lb[self.problem.n_vars_float :]
+            ubi = ub[self.problem.n_vars_float :]
 
             lbi[:] = self.problem.min_values_int()
             ubi[:] = self.problem.max_values_int()
@@ -117,20 +119,25 @@ class UDP:
         cmpnts = np.unique(spars[:, 0])
         vrs = np.unique(spars[:, 1])
 
-        varsf = x[:self.problem.n_vars_float]
-        varsi = x[self.problem.n_vars_float:].astype(np.int32)
+        varsf = x[: self.problem.n_vars_float]
+        varsi = x[self.problem.n_vars_float :].astype(np.int32)
 
-        grad = self.problem.get_gradients(varsi, varsf, vars=vrs,
-                        components=cmpnts, verbosity=self.verbosity,
-                        pop=self.grad_pop,)
-    
+        grad = self.problem.get_gradients(
+            varsi,
+            varsf,
+            vars=vrs,
+            components=cmpnts,
+            verbosity=self.verbosity,
+            pop=self.grad_pop,
+        )
+
         return [grad[c, list(vrs).index(v)] for c, v in spars]
 
     def has_gradient_sparsity(self):
         return False
 
     def gradient_sparsity(self):
-        
+
         out = []
 
         # add sparsity of objectives:
@@ -156,17 +163,17 @@ class UDP:
     def has_hessians(self):
         return False
 
-    #def hessians(self, dv):
+    # def hessians(self, dv):
 
     def has_hessians_sparsity(self):
         return False
-    
-    #def hessians_sparsity(self):
+
+    # def hessians_sparsity(self):
 
     def has_set_seed(self):
         return False
 
-    #def set_seed(self, s):
+    # def set_seed(self, s):
 
     def get_name(self):
         return self.problem.name
@@ -194,18 +201,20 @@ class UDP:
 
         # extract variables:
         dv = pygmo_pop.champion_x
-        xf = dv[:self.problem.n_vars_float]
-        xi = dv[self.problem.n_vars_float:].astype(np.int32)
+        xf = dv[: self.problem.n_vars_float]
+        xi = dv[self.problem.n_vars_float :].astype(np.int32)
 
         # apply final variables:
         self.apply(xi, xf)
 
         # extract objs and cons:
-        objs = self.values[:self.problem.n_objectives]
-        cons = self.values[self.problem.n_objectives:]
+        objs = self.values[: self.problem.n_objectives]
+        cons = self.values[self.problem.n_objectives :]
 
-        if verbosity: print()
+        if verbosity:
+            print()
         suc = np.all(self.problem.check_constraints_individual(cons, verbosity))
-        if verbosity: print()
+        if verbosity:
+            print()
 
         return OptResults(suc, xi, xf, objs, cons, None)

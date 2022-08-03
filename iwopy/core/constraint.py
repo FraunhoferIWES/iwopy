@@ -23,8 +23,9 @@ class Constraint(OptFunction):
             The upper bounds, shape: (n_components,)
 
         """
-        return np.full(self.n_components(), -np.inf, dtype=np.float64), np.zeros(
-            self.n_components(), dtype=np.float64
+        return (
+            np.full(self.n_components(), -np.inf, dtype=np.float64),
+            np.zeros(self.n_components(), dtype=np.float64),
         )
 
     def check_individual(self, constraint_values, verbosity=0):

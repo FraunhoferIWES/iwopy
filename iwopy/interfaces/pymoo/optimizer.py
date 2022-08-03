@@ -9,23 +9,24 @@ from .factory import Factory
 if IMPORT_OK:
     from pymoo.optimize import minimize
 
-class DefaultCallback(Callback):
 
+class DefaultCallback(Callback):
     def __init__(self):
         super().__init__()
-        self.data["f_best"]  = None
+        self.data["f_best"] = None
         self.data["cv_best"] = None
 
     def notify(self, algorithm):
         fvals = algorithm.pop.get("F")
         cvals = algorithm.pop.get("CV")
-        i     = np.argmin(fvals)
+        i = np.argmin(fvals)
         if self.data["f_best"] is None:
-            self.data["f_best"]  = fvals[i]
+            self.data["f_best"] = fvals[i]
             self.data["cv_best"] = cvals[i]
         else:
-            self.data["f_best"]  = np.append(self.data["f_best"], fvals[i])
-            self.data["cv_best"] = np.append(self.data["cv_best"], cvals[i]) 
+            self.data["f_best"] = np.append(self.data["f_best"], fvals[i])
+            self.data["cv_best"] = np.append(self.data["cv_best"], cvals[i])
+
 
 class Optimizer_pymoo(Optimizer):
     """
@@ -69,7 +70,7 @@ class Optimizer_pymoo(Optimizer):
         self.setup_pars = setup_pars
         self.term_pars = term_pars
 
-        self.pymoo_problem  = None
+        self.pymoo_problem = None
         self.algo = None
 
     def print_info(self):
@@ -84,7 +85,7 @@ class Optimizer_pymoo(Optimizer):
             for k, v in self.problem_pars.items():
                 if isinstance(v, int) or isinstance(v, float) or isinstance(v, str):
                     print(f"  {k}: {v}")
-        
+
         if len(self.algo_pars):
             print("\nAlgorithm:")
             print("----------")
@@ -121,7 +122,7 @@ class Optimizer_pymoo(Optimizer):
 
         if verbosity:
             print("Initializing", type(self).__name__)
-        
+
         factory = Factory(self.pymoo_problem, verbosity)
         self.algo = factory.get_algorithm(self.algo_pars)
         self.term = factory.get_termination(self.term_pars)
@@ -152,23 +153,23 @@ class Optimizer_pymoo(Optimizer):
         # run pymoo solver:
         self.callback = callback
         self.results = minimize(
-                        self.pymoo_problem,
-                        algorithm=self.algo,
-                        termination=self.term,
-                        verbose=verbosity > 0,
-                        callback=self.callback,
-                        **self.setup_pars
-                    )
-        
+            self.pymoo_problem,
+            algorithm=self.algo,
+            termination=self.term,
+            verbose=verbosity > 0,
+            callback=self.callback,
+            **self.setup_pars,
+        )
+
         # transfer callback:
         if self.callback is not None:
             self.callback = self.results.algorithm.callback
 
         return self.pymoo_problem.finalize(self.results)
-    
+
     def get_figure_f(self, fig=None, ax=None, valid_dict=None, **kwargs):
         """
-        Create a figure that shows the 
+        Create a figure that shows the
         objective function development
         during optimization.
 
@@ -199,19 +200,19 @@ class Optimizer_pymoo(Optimizer):
                 ax = fig.add_subplot(111)
             else:
                 raise TypeError(f"Impossible fig/ax input")
-            
+
             fname = self.problem.objs[0].base_name
-            fvals = self.callback.data['f_best']
-            gens  = range(len(fvals))
+            fvals = self.callback.data["f_best"]
+            gens = range(len(fvals))
 
             ax.plot(gens, fvals, label=fname, **kwargs)
-            
+
             if self.problem.n_constraints():
-                cv  = np.array(self.callback.data['cv_best'])
-                sel = cv == 0.
+                cv = np.array(self.callback.data["cv_best"])
+                sel = cv == 0.0
                 if np.any(sel):
-                    i     = np.argwhere(sel)[0][0] 
-                    vdict = {'label': 'first valid', 'color': 'red'}
+                    i = np.argwhere(sel)[0][0]
+                    vdict = {"label": "first valid", "color": "red"}
                     if valid_dict is not None:
                         vdict.update(valid_dict)
                     ax.scatter(i, fvals[i], **vdict)
@@ -223,7 +224,6 @@ class Optimizer_pymoo(Optimizer):
             plt.tight_layout()
 
             return fig
-        
+
         else:
             raise NotImplementedError
-        

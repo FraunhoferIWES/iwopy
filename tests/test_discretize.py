@@ -2,14 +2,16 @@ import numpy as np
 
 import iwopy
 
+
 def f(x, y):
-    return x + np.sin(x - 0.6*y)
+    return x + np.sin(x - 0.6 * y)
+
 
 def g(x, y):
-    return [1 + np.cos(x - 0.6*y), -0.6*np.cos(x - 0.6*y)]
+    return [1 + np.cos(x - 0.6 * y), -0.6 * np.cos(x - 0.6 * y)]
+
 
 class Obj1(iwopy.Objective):
-    
     def n_components(self):
         return 1
 
@@ -28,6 +30,7 @@ class Obj1(iwopy.Objective):
         x, y = pvars0_float
         return np.array(g(x, y))
 
+
 def test_grad():
 
     np.random.seed(42)
@@ -36,11 +39,9 @@ def test_grad():
         (1, 1, False, 0.01, 0.02, 0.005),
         (1, 1, False, 0.001, 0.002, 0.0005),
         (1, 1, False, 0.001, 0.001, 0.0005),
-
         (1, 1, True, 0.01, 0.02, 0.005),
         (1, 1, True, 0.001, 0.002, 0.0005),
         (1, 1, True, 0.001, 0.001, 0.0005),
-
         (2, 2, True, 0.01, 0.02, 5e-5),
         (2, 2, True, 0.001, 0.002, 5e-7),
         (2, 2, True, 0.0001, 0.0002, 5e-9),
@@ -54,8 +55,8 @@ def test_grad():
         p = iwopy.SimpleProblem(
             "test",
             float_vars=["x", "y"],
-            min_float_vars={"x": 1., "y": 0.},
-            max_float_vars={"x": 2., "y": 3.},
+            min_float_vars={"x": 1.0, "y": 0.0},
+            max_float_vars={"x": 2.0, "y": 3.0},
         )
         obj1 = Obj1(p, "f")
         p.add_objective(obj1, varmap_float={"x": "x", "y": "y"})
@@ -77,6 +78,7 @@ def test_grad():
             print("==> mismatch =", d, ", max =", np.max(d))
 
             assert np.max(d) < lim
+
 
 if __name__ == "__main__":
     test_grad()

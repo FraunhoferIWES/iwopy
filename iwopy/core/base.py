@@ -15,7 +15,7 @@ class Base:
     """
 
     def __init__(self, name):
-        self.name = name 
+        self.name = name
         self._initialized = False
         if name is None:
             self.name = type(self).__name__

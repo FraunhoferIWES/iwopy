@@ -31,7 +31,7 @@ class RegularDiscretizationGrid:
     """
 
     INT_INF = -999999
-    DIGITS = 12
+    DIGITS = 6
 
     def __init__(self, origin, deltas, n_steps, **kwargs):
 
@@ -39,7 +39,9 @@ class RegularDiscretizationGrid:
         self.n_steps = np.array(n_steps, dtype=np.int32)
         self.deltas = np.array(deltas, dtype=np.float64)
 
-        self._ocell = np.round(self.get_cell(self.origin) - self.origin[:, None], self.DIGITS)
+        self._ocell = np.round(
+            self.get_cell(self.origin) - self.origin[:, None], self.DIGITS
+        )
         self._interp = self._get_interp(self._ocell, **kwargs)
 
     def _get_interp(self, cell0, **kwargs):
@@ -284,7 +286,9 @@ class RegularDiscretizationGrid:
         selg = np.all(self.find_grid_inds(inds), axis=1)
         if not np.all(selg):
             selg = np.where(selg)[0]
-            raise ValueError(f"Found {len(selg)} indices outside grid, e.g. index {selg[0]}: {inds[selg[0]]}")
+            raise ValueError(
+                f"Found {len(selg)} indices outside grid, e.g. index {selg[0]}: {inds[selg[0]]}"
+            )
 
         o = self.origin[None, :]
         d = self.deltas[None, :]
@@ -295,7 +299,9 @@ class RegularDiscretizationGrid:
         Helper function for indices calculation
         """
         if lower_left:
-            inds = np.round((gp - self.origin) / self.deltas, self.DIGITS).astype(np.int32)
+            inds = np.round((gp - self.origin) / self.deltas, self.DIGITS).astype(
+                np.int32
+            )
         else:
             inds = np.round((gp - self.origin) / self.deltas).astype(np.int32)
 
@@ -322,7 +328,7 @@ class RegularDiscretizationGrid:
         if not allow_outer:
             sel = sel0[None, :] & (inds == self.n_points[None, :] - 1)
             inds[sel] -= 1
-        
+
         return inds
 
     def is_gridpoint(self, p, ret_inds=False):
@@ -349,7 +355,7 @@ class RegularDiscretizationGrid:
             if ret_inds:
                 return False, inds
             return False
-        
+
         p0 = np.round(self.origin + inds * self.deltas, self.DIGITS)
         if ret_inds:
             return np.all(p0 == p), inds
@@ -513,7 +519,9 @@ class RegularDiscretizationGrid:
             if error:
                 self._error_infos(gpts)
                 sel = np.where(np.any(~selg, axis=1))[0]
-                raise KeyError(f"Found {len(sel)} points not on grid, e.g. point {sel[0]}: {gpts[0]}")
+                raise KeyError(
+                    f"Found {len(sel)} points not on grid, e.g. point {sel[0]}: {gpts[0]}"
+                )
             return None
 
         return inds
@@ -569,7 +577,9 @@ class RegularDiscretizationGrid:
         if not np.all(selg):
             self._error_infos(pts)
             selg = np.where(np.any(~selg), axis=1)[0]
-            raise ValueError(f"Found {len(selg)} points out of grid, e.g. point {selg[0]}: {pts[selg[0]]}")
+            raise ValueError(
+                f"Found {len(selg)} points out of grid, e.g. point {selg[0]}: {pts[selg[0]]}"
+            )
 
         o = self.origin[None, :]
         d = self.deltas[None, :]
@@ -579,7 +589,9 @@ class RegularDiscretizationGrid:
         if not np.all(selg):
             self._error_infos(pts)
             selg = np.where(np.any(~selg), axis=1)[0]
-            raise ValueError(f"Found {len(selg)} indices not on grid, e.g. indices {selg[0]}: {inds[selg[0]]}")
+            raise ValueError(
+                f"Found {len(selg)} indices not on grid, e.g. indices {selg[0]}: {inds[selg[0]]}"
+            )
 
         return np.round(o + inds * d, self.DIGITS)
 
@@ -720,7 +732,9 @@ class RegularDiscretizationGrid:
 
         ipts = np.stack(np.meshgrid(*ocell, indexing="ij"), axis=-1)
         ipts = ipts.reshape(2**self.n_dims, self.n_dims)
-        gpts = np.round(p0[:, None] + ipts[None, :], self.DIGITS)  # shape: (n_pts, n_gp, n_dims)
+        gpts = np.round(
+            p0[:, None] + ipts[None, :], self.DIGITS
+        )  # shape: (n_pts, n_gp, n_dims)
 
         # remove points with zero weights:
         sel = np.all(np.abs(coeffs) < 1.0e-14, axis=0)
