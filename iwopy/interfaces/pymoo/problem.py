@@ -169,7 +169,7 @@ class Pymoo_problem(Problem):
                 xi = r.X
                 xf = np.zeros(0, dtype=np.float64)
             else:
-                xi = np.zeros(0, dtype=np.int)
+                xi = np.zeros(0, dtype=int)
                 xf = r.X
 
             if self.vectorize:

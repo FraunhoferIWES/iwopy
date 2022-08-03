@@ -16,6 +16,9 @@ class RegularDiscretizationGrid:
     n_steps : array-like
         The number of steps, len: n_dims. Use
         INT_INF for infinite.
+    tol : list of float, optional
+        The tolerances for grid bounds, default is 0, 
+        shape: (n_dims,)
     **kwargs : dict, optional
         Additional parameters for `RegularGridInterpolator`
 
@@ -27,21 +30,29 @@ class RegularDiscretizationGrid:
         The step sizes, shape: (n_dims,)
     n_steps : numpy.ndarray
         The number of steps, shape: (n_dims,)
+    tol : numpy.ndarray
+        The tolerances for grid bounds, shape: (n_dims,),
+        or None
 
     """
 
     INT_INF = -999999
-    DIGITS = 6
+    DIGITS = 12
 
-    def __init__(self, origin, deltas, n_steps, **kwargs):
+    def __init__(self, origin, deltas, n_steps, tol=None, **kwargs):
 
         self.origin = np.array(origin, dtype=np.float64)
         self.n_steps = np.array(n_steps, dtype=np.int32)
         self.deltas = np.array(deltas, dtype=np.float64)
 
-        self._ocell = np.round(
-            self.get_cell(self.origin) - self.origin[:, None], self.DIGITS
-        )
+        if tol is not None:
+            self.tol = np.zeros(self.n_dims, dtype=np.float64)
+            self.tol[:] = tol
+        else:
+            self.tol = None
+
+        self._ocell = np.zeros((self.n_dims, 2), dtype=np.float64)
+        self._ocell[:, 1] += self.deltas
         self._interp = self._get_interp(self._ocell, **kwargs)
 
     def _get_interp(self, cell0, **kwargs):
@@ -124,7 +135,7 @@ class RegularDiscretizationGrid:
         """
         m = self.origin + self.n_steps * self.deltas
         m[(self.n_steps == self.INT_INF) & (self.deltas > 0)] = np.inf
-        return m
+        return np.round(m, self.DIGITS)
 
     def print_info(self, spaces=0):
         """
@@ -151,6 +162,7 @@ class RegularDiscretizationGrid:
         print("GDIM:", self.n_points.tolist())
         print("GMIN:", self.p_min.tolist())
         print("GMAX:", self.p_max.tolist())
+        print("GTOL:", self.tol.tolist())
         if for_ocell:
             cmin = self._ocell[:, 0]
             cmax = self._ocell[:, 1]
@@ -167,6 +179,7 @@ class RegularDiscretizationGrid:
         print("GDIM:", self.n_points.tolist())
         print("GMIN:", self.p_min.tolist())
         print("GMAX:", self.p_max.tolist())
+        print("GTOL:", self.tol.tolist())
         if for_ocell:
             cmin = self._ocell[:, 0]
             cmax = self._ocell[:, 1]
@@ -331,6 +344,72 @@ class RegularDiscretizationGrid:
 
         return inds
 
+    def apply_tol(self, p):
+        """
+        Get tolerance corrected point
+
+        Parameters
+        ----------
+        p : numpy.ndarray
+            The point, shape: (n_dims,)
+        
+        Returns
+        -------
+        q : numpy.ndarray
+            The corrected point, shape: (n_dims,)
+
+        """
+        if self.tol is not None:
+
+            q = p.copy()
+
+            dlo = q - self.p_min
+            sel = (dlo < 0.) & (dlo >= -self.tol)
+            q[sel] = self.p_min[sel]
+
+            dhi = q - self.p_max
+            sel = (dhi > 0.) & (dhi <= self.tol)
+            q[sel] = self.p_max[sel]
+
+            return q
+        return p
+
+    def apply_tols(self, pts):
+        """
+        Get tolerance corrected points
+
+        Parameters
+        ----------
+        pts : numpy.ndarray
+            The points, shape: (n_pts, n_dims)
+        
+        Returns
+        -------
+        q : numpy.ndarray
+            The corrected points, shape: (n_pts, n_dims)
+
+        """
+        if self.tol is not None:
+
+            qts = pts.copy()
+
+            dlo = qts - self.p_min[None, :]
+            sel = (dlo < 0.) & (dlo >= -self.tol[None, :])
+            if np.any(sel):
+                pmin = np.zeros_like(qts)
+                pmin[:] = self.p_min[None, :]
+                qts[sel] = pmin[sel]
+
+            dhi = qts - self.p_max[None, :]
+            sel = (dhi > 0.) & (dhi <= self.tol[None, :])
+            if np.any(sel):
+                pmax = np.zeros_like(qts)
+                pmax[:] = self.p_max[None, :]
+                qts[sel] = pmax[sel]
+            
+            return qts
+        return pts
+
     def is_gridpoint(self, p, ret_inds=False):
         """
         Checks if a point is on grid.
@@ -350,6 +429,8 @@ class RegularDiscretizationGrid:
             The grid point indices, shape: (n_dims,)
 
         """
+        p = self.apply_tol(p)
+
         inds = self._gp2i(p)
         if not self.is_gridi(inds):
             if ret_inds:
@@ -384,6 +465,8 @@ class RegularDiscretizationGrid:
             The grid point indices, shape: (n_gpts, n_dims)
 
         """
+        pts = self.apply_tols(pts)
+
         inds = self._gpts2inds(pts, allow_outer)
         sel = self.find_grid_inds(inds)
 
@@ -434,6 +517,7 @@ class RegularDiscretizationGrid:
             True if within grid
 
         """
+        p = self.apply_tol(p)
         return np.all((p >= self.p_min) & (p <= self.p_max))
 
     def find_ingrid(self, pts):
@@ -452,6 +536,7 @@ class RegularDiscretizationGrid:
             shape: (n_pts, n_dims)
 
         """
+        pts = self.apply_tols(pts)
         return (pts >= self.p_min[None, :]) & (pts <= self.p_max[None, :])
 
     def gp2i(self, gp, allow_outer=True, error=True):
@@ -544,6 +629,8 @@ class RegularDiscretizationGrid:
             The lower-left grid corner point, shape: (n_dims,)
 
         """
+        p = self.apply_tol(p)
+
         if not self.in_grid(p):
             self.print_info()
             raise ValueError(f"Point {p} not in grid")
@@ -573,6 +660,8 @@ class RegularDiscretizationGrid:
             The lower-left grid corner points, shape: (n_pts, n_dims)
 
         """
+        pts = self.apply_tols(pts)
+
         selg = self.find_ingrid(pts)
         if not np.all(selg):
             self._error_infos(pts)
@@ -666,6 +755,8 @@ class RegularDiscretizationGrid:
             The interpolation coefficients, shape: (n_gpts,)
 
         """
+        p = self.apply_tol(p)
+
         cell = self.get_cell(p)
         p0 = cell[:, 0]
         n_dims = len(p0)
@@ -719,6 +810,8 @@ class RegularDiscretizationGrid:
             The map from pts to gpts, shape: (n_pts, n_gp)
 
         """
+        pts = self.apply_tols(pts)
+
         cells = self.get_cells(pts)
         ocell = np.round(cells[0] - cells[0, :, 0, None], self.DIGITS)
         p0 = cells[:, :, 0]

@@ -1,9 +1,52 @@
 import numpy as np
 
-from iwopy import DiscretizeRegGrid
+from iwopy import DiscretizeRegGrid, Constraint
 from iwopy.benchmarks.branin import BraninProblem
 from iwopy.benchmarks.rosenbrock import RosenbrockProblem
 from iwopy.interfaces.pygmo import Optimizer_pygmo
+
+class RC(Constraint):
+
+    def __init__(self, problem, name="c", ana_deriv=False):
+        super().__init__(problem, name, vnames_float=["x", "y"])
+        self._ana_deriv = ana_deriv
+
+    def n_components(self):
+        return 2
+    
+    def f(self, x, y):
+        return [(x - 1)**3 - y + 1, x + y - 3]
+
+    def calc_individual(self, vars_int, vars_float, problem_results):
+        x = vars_float[0]
+        y = vars_float[1]
+        return np.array(self.f(x, y))
+
+    def calc_population(self, vars_int, vars_float, problem_results):
+        x = vars_float[:, 0]
+        y = vars_float[:, 1]
+        return np.stack(self.f(x, y), axis=1)
+
+    def ana_deriv(self, vars_int, vars_float, var, components=None):
+        
+        if not self._ana_deriv:
+            return super().ana_deriv(vars_int, vars_float, var, components)
+
+        x, y = vars_float
+        cmpnts = [0, 1] if components is None else components
+        out = np.full(len(cmpnts), np.nan, dtype=np.float64)
+
+        for i, ci in enumerate(cmpnts):
+
+            # (x-1)**3 - y + 1
+            if ci == 0:
+                out[i] = 3*(x - 1)**2 if var == 0 else -1
+
+            # x + y - 3
+            elif ci == 1:
+                out[i] = 1
+
+        return out
 
 def run_branin_ipopt(init_vals, dx, dy, tol, pop):
 
@@ -194,11 +237,10 @@ def test_branin_bee():
 
 def run_rosen0_ipopt(lower, upper, inits, dx, dy, tol, pop, ana):
 
-    prob = RosenbrockProblem(lower=lower, upper=upper, initial=inits, 
-                constrained=False, ana_deriv=ana)
+    prob = RosenbrockProblem(lower=lower, upper=upper, initial=inits, ana_deriv=ana)
     
     gprob = DiscretizeRegGrid(
-        prob, deltas={"x": dx, "y": dy}, fd_order=2, fd_bounds_order=2
+        prob, deltas={"x": dx, "y": dy}, fd_order=2, fd_bounds_order=2, tol=1e-6
     )
     gprob.initialize()
 
@@ -299,6 +341,85 @@ def test_rosen0_ipopt():
         print("delxy =", delxy, ", lim =", limxy)
         assert np.all(delxy < limxy)
 
+def run_rosen_ipopt(lower, upper, inits, dx, dy, tol, pop, ana):
+
+    prob = RosenbrockProblem(lower=lower, upper=upper, initial=inits, ana_deriv=ana)
+    prob.add_constraint(RC(prob, ana_deriv=ana))
+
+    gprob = DiscretizeRegGrid(
+        prob, deltas={"x": dx, "y": dy}, fd_order=2, fd_bounds_order=2,
+        tol=1e-6
+    )
+    gprob.initialize(verbosity=0)
+
+    solver = Optimizer_pygmo(
+        gprob,
+        problem_pars=dict(
+            grad_pop=pop,
+        ),
+        algo_pars=dict(
+            type="ipopt",
+            tol=tol,
+        ),
+    )
+    solver.initialize(verbosity=0)
+
+    results = solver.solve()
+    solver.finalize(results)
+
+    return results
+
+
+def test_rosen_ipopt():
+
+    cases = (
+        (
+            0.001,
+            0.001,
+            (-5, -5),
+            (-0.2, -0.2),
+            1e-4,
+            (-3.3, -1.45),
+            7.2,
+            (-0.2, -0.2),
+            3e-6,
+            (1e-7, 1e-7),
+            False,
+            False,
+        ),
+        (
+            0.001,
+            0.001,
+            (-5, -5),
+            (-0.2, -0.2),
+            1e-4,
+            (-3.3, -1.45),
+            7.2,
+            (-0.2, -0.2),
+            3e-6,
+            (1e-7, 1e-7),
+            True,
+            True,
+        ),
+    )
+
+    for dx, dy, low, up, tol, ivals, f, xy, limf, limxy, pop, ana in cases:
+
+        print(
+            "\nENTERING", (dx, dy, low, up, tol, ivals, f, xy, limf, limxy, pop, ana), "\n"
+        )
+
+        results = run_rosen_ipopt(low, up, ivals, dx, dy, tol, pop, ana)
+        print("Opt vars:", results.vars_float)
+
+        delf = np.abs(results.objs[0] - f)
+        print("delf =", delf, ", lim =", limf)
+        assert delf < limf
+
+        delxy = np.abs(results.vars_float - np.array(xy))
+        limxy = np.array(limxy)
+        print("delxy =", delxy, ", lim =", limxy)
+        assert np.all(delxy < limxy)
 
 if __name__ == "__main__":
 
@@ -307,4 +428,5 @@ if __name__ == "__main__":
     # test_branin_pso()
     # test_branin_bee()
 
-    test_rosen0_ipopt()
+    #test_rosen0_ipopt()
+    test_rosen_ipopt()

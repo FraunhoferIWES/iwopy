@@ -31,6 +31,8 @@ class DiscretizeRegGrid(ProblemWrapper):
         for all variables. Default is same as fd_order
     mem_size : int, optional
         The memory size, default no memory
+    dpars : dict, optional
+        Additional parameters for `RegularDiscretizationGrid`
 
     Attributes
     ----------
@@ -52,12 +54,14 @@ class DiscretizeRegGrid(ProblemWrapper):
         fd_order=1,
         fd_bounds_order=None,
         mem_size=1000,
+        **dpars,
     ):
         super().__init__(base_problem, base_problem.name + "_grid")
 
         self.grid = None
         self._deltas = deltas
         self._msize = mem_size
+        self._dpars = dpars
 
         if isinstance(fd_order, int):
             self.order = {v: fd_order for v in deltas.keys()}
@@ -138,7 +142,7 @@ class DiscretizeRegGrid(ProblemWrapper):
                 nsteps.append(int((vmax - vmin) / d))
                 deltas.append((vmax - vmin) / nsteps[-1])
 
-        self.grid = RegularDiscretizationGrid(origin, deltas, nsteps)
+        self.grid = RegularDiscretizationGrid(origin, deltas, nsteps, **self._dpars)
         if verbosity:
             self.grid.print_info(4)
             print(self._hline)
