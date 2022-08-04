@@ -15,3 +15,10 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Benchmarks:
     - New benchmark `rosenbrock` added
 
+- Interfaces:
+    - New interface: pygmo
+    - New interface: pymoo
+
+- Tests:
+    - New tests for pygmo and pymoo
+    
