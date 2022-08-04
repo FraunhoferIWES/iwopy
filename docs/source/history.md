@@ -15,10 +15,10 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Benchmarks:
     - New benchmark `rosenbrock` added
 
-- Interfaces:
-    - New interface: pygmo
-    - New interface: pymoo
-
 - Tests:
-    - New tests for pygmo and pymoo
+    - Extended tests for pygmo and pymoo
+
+- Fixes:
+    - Bugs fixed with discretization
     
+**Full Changelog**: https://github.com/FraunhoferIWES/iwopy/commits/v0.0.12
