@@ -4,7 +4,7 @@ from iwopy.interfaces.pymoo import Optimizer_pymoo
 from iwopy.benchmarks.branin import BraninProblem
 from iwopy.benchmarks.rosenbrock import RosenbrockProblem
 
-from test_pygmo import RC
+from tests.pygmo.test_pygmo import RC
 
 def run_branin_ga(type, init_vals, ngen, npop, pop):
 
