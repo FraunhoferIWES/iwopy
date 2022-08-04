@@ -1,6 +1,11 @@
 from .core import Problem, Objective, Constraint, Memory
-from .problems import SimpleProblem
-from .wrappers import ProblemWrapper, DiscretizeRegGrid
+from .wrappers import (
+    ProblemWrapper, 
+    DiscretizeRegGrid, 
+    SimpleProblem, 
+    SimpleObjective, 
+    SimpleConstraint,
+)
 
 from . import utils
 from . import interfaces

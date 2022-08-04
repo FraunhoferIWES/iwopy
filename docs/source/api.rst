@@ -9,6 +9,5 @@ API
         iwopy.benchmarks
         iwopy.core
         iwopy.interfaces
-        iwopy.problems
         iwopy.utils
         iwopy.wrappers

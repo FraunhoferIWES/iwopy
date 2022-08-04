@@ -1,9 +1,9 @@
 import numpy as np
 
-from iwopy import SimpleProblem, Objective
+from iwopy import SimpleProblem, SimpleObjective
 
 
-class BraninObjective(Objective):
+class BraninObjective(SimpleObjective):
     """
     The objective function for the Branin problem.
 
@@ -43,7 +43,7 @@ class BraninObjective(Objective):
     """
 
     def __init__(self, problem, ana_deriv=False, name="f"):
-        super().__init__(problem, name, vnames_float=["x", "y"])
+        super().__init__(problem, name, n_components=1, has_ana_derivs=ana_deriv)
 
         # Parameters of branin function,
         # (a, b, c, r, s, t)
@@ -64,120 +64,16 @@ class BraninObjective(Objective):
         """
         a, b, c, r, s, t = self._pars
         return a * (y - b*x**2 + c*x - r)** 2 + s*(1 - t)*np.cos(x) + s
-
-    def ana_deriv(self, vars_int, vars_float, var, components=None):
+    
+    def g(self, var, x, y, components=None):
         """
-        Calculates the analytic derivative, if possible.
-
-        Use `numpy.nan` if analytic derivatives cannot be calculated.
-
-        Parameters
-        ----------
-        vars_int : np.array
-            The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
-            The float variable values, shape: (n_vars_float,)
-        var : int
-            The index of the differentiation float variable
-        components : list of int
-            The selected components, or None for all
-
-        Returns
-        -------
-        deriv : numpy.ndarray
-            The derivative values, shape: (n_sel_components,)
-
+        The derivative of the Branin function
         """
-        if not self._ana_deriv:
-            return super().ana_deriv(vars_int, vars_float, var, components)
-
-        x, y = vars_float
         a, b, c, r, s, t = self._pars
-
         if var == 0:
-            return np.array(
-                [
-                    2*a*(y - b*x**2 + c*x - r)*(-2*b*x + c) -s*(1 - t)*np.sin(x)
-                ], dtype=np.float64
-            )
-
-        elif var == 1:
-            return np.array([2*a*(y - b*x**2 + c*x - r)], dtype=np.float64)
-
-    def n_components(self):
-        """
-        Returns the number of components of the
-        function.
-
-        Returns
-        -------
-        int:
-            The number of components.
-
-        """
-        return 1
-
-    def maximize(self):
-        """
-        Returns flag for maximization of each component.
-
-        Returns
-        -------
-        flags : np.array
-            Bool array for component maximization,
-            shape: (n_components,)
-
-        """
-        return [False]
-
-    def calc_individual(self, vars_int, vars_float, problem_results):
-        """
-        Calculate values for a single individual of the
-        underlying problem.
-
-        Parameters
-        ----------
-        vars_int : np.array
-            The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
-            The float variable values, shape: (n_vars_float,)
-        problem_results : Any
-            The results of the variable application
-            to the problem
-
-        Returns
-        -------
-        values : np.array
-            The component values, shape: (n_components,)
-
-        """
-        x, y = vars_float
-        return np.array([self.f(x, y)])
-
-    def calc_population(self, vars_int, vars_float, problem_results):
-        """
-        Calculate values for all individuals of a population.
-
-        Parameters
-        ----------
-        vars_int : np.array
-            The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float : np.array
-            The float variable values, shape: (n_pop, n_vars_float)
-        problem_results : Any
-            The results of the variable application
-            to the problem
-
-        Returns
-        -------
-        values : np.array
-            The component values, shape: (n_pop, n_components,)
-
-        """
-        x = vars_float[:, 0]
-        y = vars_float[:, 1]
-        return self.f(x, y)[:, None]
-
+            return 2*a*(y - b*x**2 + c*x - r)*(-2*b*x + c) -s*(1 - t)*np.sin(x)
+        else:
+            return 2*a*(y - b*x**2 + c*x - r)
 
 class BraninProblem(SimpleProblem):
     """

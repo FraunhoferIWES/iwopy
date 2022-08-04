@@ -1,38 +1,20 @@
 import numpy as np
 
-from iwopy import DiscretizeRegGrid, Constraint
+from iwopy import DiscretizeRegGrid, SimpleConstraint
 from iwopy.benchmarks.branin import BraninProblem
 from iwopy.benchmarks.rosenbrock import RosenbrockProblem
 from iwopy.interfaces.pygmo import Optimizer_pygmo
 
-class RC(Constraint):
+class RC(SimpleConstraint):
 
     def __init__(self, problem, name="c", ana_deriv=False):
-        super().__init__(problem, name, vnames_float=["x", "y"])
-        self._ana_deriv = ana_deriv
-
-    def n_components(self):
-        return 2
+        super().__init__(problem, name, n_components=2, has_ana_derivs=ana_deriv)
     
     def f(self, x, y):
         return [(x - 1)**3 - y + 1, x + y - 3]
+    
+    def g(self, var, x, y, components):
 
-    def calc_individual(self, vars_int, vars_float, problem_results):
-        x = vars_float[0]
-        y = vars_float[1]
-        return np.array(self.f(x, y))
-
-    def calc_population(self, vars_int, vars_float, problem_results):
-        x = vars_float[:, 0]
-        y = vars_float[:, 1]
-        return np.stack(self.f(x, y), axis=1)
-
-    def ana_deriv(self, vars_int, vars_float, var, components=None):
-        
-        if not self._ana_deriv:
-            return super().ana_deriv(vars_int, vars_float, var, components)
-
-        x, y = vars_float
         cmpnts = [0, 1] if components is None else components
         out = np.full(len(cmpnts), np.nan, dtype=np.float64)
 
@@ -423,7 +405,7 @@ def test_rosen_ipopt():
 
 if __name__ == "__main__":
 
-    # test_branin_ipopt()
+    #test_branin_ipopt()
     # test_branin_sga()
     # test_branin_pso()
     # test_branin_bee()
