@@ -1,15 +1,22 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: on-push
+name: run-tests
 
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches:    
+      - 'main'
+      - 'dev'
+
+  pull_request:
+    branches:    
+      - 'main'
+      - 'dev'
 
 jobs:
   tests37:
-    name: test-on-push-py3.7
+    name: run-tests-py3.7
 
     runs-on: ubuntu-latest
     strategy:
@@ -45,7 +52,7 @@ jobs:
         pytest tests/pymoo
 
   tests38:
-    name: test-on-push-py3.8
+    name: run-tests-py3.8
 
     runs-on: ubuntu-latest
     strategy:
@@ -81,7 +88,7 @@ jobs:
         pytest tests/pymoo
 
   tests39:
-    name: test-on-push-py3.9
+    name: run-tests-py3.9
 
     runs-on: ubuntu-latest
     strategy:
@@ -110,7 +117,7 @@ jobs:
         pytest tests/core
 
   tests310:
-    name: test-on-push-py3.10
+    name: run-tests-py3.10
 
     runs-on: ubuntu-latest
     strategy:
