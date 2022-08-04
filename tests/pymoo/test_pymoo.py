@@ -1,10 +1,52 @@
 import numpy as np
 
+from iwopy import Constraint
 from iwopy.interfaces.pymoo import Optimizer_pymoo
 from iwopy.benchmarks.branin import BraninProblem
 from iwopy.benchmarks.rosenbrock import RosenbrockProblem
 
-from tests.pygmo.test_pygmo import RC
+class RC(Constraint):
+
+    def __init__(self, problem, name="c", ana_deriv=False):
+        super().__init__(problem, name, vnames_float=["x", "y"])
+        self._ana_deriv = ana_deriv
+
+    def n_components(self):
+        return 2
+    
+    def f(self, x, y):
+        return [(x - 1)**3 - y + 1, x + y - 3]
+
+    def calc_individual(self, vars_int, vars_float, problem_results):
+        x = vars_float[0]
+        y = vars_float[1]
+        return np.array(self.f(x, y))
+
+    def calc_population(self, vars_int, vars_float, problem_results):
+        x = vars_float[:, 0]
+        y = vars_float[:, 1]
+        return np.stack(self.f(x, y), axis=1)
+
+    def ana_deriv(self, vars_int, vars_float, var, components=None):
+        
+        if not self._ana_deriv:
+            return super().ana_deriv(vars_int, vars_float, var, components)
+
+        x, y = vars_float
+        cmpnts = [0, 1] if components is None else components
+        out = np.full(len(cmpnts), np.nan, dtype=np.float64)
+
+        for i, ci in enumerate(cmpnts):
+
+            # (x-1)**3 - y + 1
+            if ci == 0:
+                out[i] = 3*(x - 1)**2 if var == 0 else -1
+
+            # x + y - 3
+            elif ci == 1:
+                out[i] = 1
+
+        return out
 
 def run_branin_ga(type, init_vals, ngen, npop, pop):
 
