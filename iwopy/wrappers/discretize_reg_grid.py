@@ -58,6 +58,9 @@ class DiscretizeRegGrid(ProblemWrapper):
     ):
         super().__init__(base_problem, base_problem.name + "_grid")
 
+        if isinstance(deltas, float):
+            deltas = {v: deltas for v in base_problem.var_names_float()}
+
         self.grid = None
         self._deltas = deltas
         self._msize = mem_size
