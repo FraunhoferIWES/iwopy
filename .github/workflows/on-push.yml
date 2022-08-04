@@ -8,7 +8,7 @@ on:
     branches: [ "main", "dev" ]
 
 jobs:
-  build:
+  tests-py3.7:
     name: test-on-push-py3.7
 
     runs-on: ubuntu-latest
@@ -37,7 +37,7 @@ jobs:
       run: |
         pytest
 
-  build:
+  tests-py3.8:
     name: test-on-push-py3.8
 
     runs-on: ubuntu-latest
