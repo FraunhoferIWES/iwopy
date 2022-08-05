@@ -324,10 +324,10 @@ def test_grad():
 
 
 if __name__ == "__main__":
-
+    np.random.seed(42)
     test_interp_point()
-    test_interp_points()
-    test_deriv_gp()
-    test_deriv()
-    test_grad_gp()
-    test_grad()
+    #test_interp_points()
+    #test_deriv_gp()
+    #test_deriv()
+    #test_grad_gp()
+    #test_grad()

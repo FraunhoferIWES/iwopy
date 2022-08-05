@@ -727,6 +727,65 @@ class RegularDiscretizationGrid:
         cells[:] = self.get_corners(pts, allow_outer=False)[:, :, None]
         cells[:, :, 1] += self.deltas[None, :]
         return np.round(cells, self.DIGITS)
+    
+    def _calc_coeffs(self, qts):
+
+        """
+        ocell = np.zeros((self.n_dims, 2), dtype=np.float64)
+        ocell[:, 1] += self.deltas
+
+        cdata = np.zeros_like(ocell)
+        cdata[:, 1] = 1.0
+        cdata = np.meshgrid(*cdata, indexing="ij")
+
+        print("GUESS",qts/self.deltas[None, :])
+        print("OCELL",ocell.shape,ocell.tolist())
+        print("CDATA",cdata[0].shape)
+
+        n_qts = len(qts)
+        coeffs = np.zeros((n_qts, self.n_dims, 2), dtype=np.float64)
+        for di in range(self.n_dims):
+            idata = np.zeros_like(ocell)
+            idata[di, 1] = 1
+            idata = np.stack(np.meshgrid(*idata, indexing="ij"), axis=-1)
+            interp = RegularGridInterpolator(ocell, idata)
+            res = interp(qts)
+            print("RES",di,res.shape,res.tolist())
+            coeffs[:, di] = res
+        print("CALC COEFFS",coeffs.shape, coeffs.tolist())
+
+        return
+
+
+
+        return RegularGridInterpolator(cell0, idata, **kwargs)
+        """
+        qqts = qts/self.deltas[None, :]
+        n_qts = len(qts)
+
+        ocell = np.zeros((self.n_dims, 2), dtype=np.int8)
+        ocell[:, 1] += 1
+        xyz = np.stack(np.meshgrid(*ocell, indexing="ij"), axis=-1)
+        print("QQTS",qqts.shape,qqts.tolist())
+        print("OCELL",ocell.shape,ocell.tolist())
+        print("XYZ",xyz.shape,xyz.tolist())
+
+        coeffs = np.zeros([n_qts] + [2]*self.n_dims, dtype=np.float64)
+        TODO
+        print("COEFFS",coeffs.shape,coeffs.tolist())
+
+
+
+        #return coeffs
+
+        n_qts = len(qts)
+        coeffs = np.zeros((n_qts, self.n_dims, 2), dtype=np.float64)
+        coeffs[:, :, 1] = qts / self.deltas[None, :]
+        coeffs[:, :, 0] = 1. - coeffs[:, :, 1]
+
+        print("CALC COEFFS",coeffs.shape,coeffs.tolist())
+
+        return coeffs.reshape(n_qts, 2*self.n_dims)
 
     def interpolation_coeffs_point(self, p):
         """
@@ -760,16 +819,24 @@ class RegularDiscretizationGrid:
         cell = self.get_cell(p)
         p0 = cell[:, 0]
         n_dims = len(p0)
-        pts = np.round(p[None, :] - p0[None, :], self.DIGITS)
+        qts = np.round(p[None, :] - p0[None, :], self.DIGITS)
+
+        print("HERE", p)
+        print("QTS",qts.shape, qts.tolist())
+        print("CELL",cell.shape, cell.tolist())
 
         try:
-            coeffs = self._interp(pts)[0]
+            coeffs = self._calc_coeffs(qts)
+            coeffs = self._interp(qts)[0]
         except ValueError as e:
             self._error_info(p, for_ocell=True)
             raise e
-
         gpts = np.stack(np.meshgrid(*cell, indexing="ij"), axis=-1)
         gpts = np.round(gpts, self.DIGITS).reshape(2**n_dims, n_dims)
+
+        print("RCOEFFS",coeffs.shape, coeffs.tolist())
+        print("GPTS",gpts.shape, gpts.tolist())
+        if self.n_dims == 2: quit()
 
         sel = np.abs(coeffs) < 1.0e-14
         if np.any(sel):
