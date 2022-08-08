@@ -201,8 +201,8 @@ class UDP:
 
         # extract variables:
         dv = pygmo_pop.champion_x
-        xf = dv[:self.problem.n_vars_float]
-        xi = dv[self.problem.n_vars_float:].astype(np.int32)
+        xf = dv[: self.problem.n_vars_float]
+        xi = dv[self.problem.n_vars_float :].astype(np.int32)
 
         if verbosity:
             print()
@@ -210,8 +210,8 @@ class UDP:
 
         # apply final variables:
         res, objs, cons = self.problem.finalize_individual(xi, xf, verbosity)
-        self.values[:self.problem.n_objectives] = objs
-        self.values[self.problem.n_objectives:] = cons
+        self.values[: self.problem.n_objectives] = objs
+        self.values[self.problem.n_objectives :] = cons
 
         if verbosity:
             print()

@@ -63,17 +63,20 @@ class BraninObjective(SimpleObjective):
         The Branin function f(x, y)
         """
         a, b, c, r, s, t = self._pars
-        return a * (y - b*x**2 + c*x - r)** 2 + s*(1 - t)*np.cos(x) + s
-    
+        return a * (y - b * x**2 + c * x - r) ** 2 + s * (1 - t) * np.cos(x) + s
+
     def g(self, var, x, y, components=None):
         """
         The derivative of the Branin function
         """
         a, b, c, r, s, t = self._pars
         if var == 0:
-            return 2*a*(y - b*x**2 + c*x - r)*(-2*b*x + c) -s*(1 - t)*np.sin(x)
+            return 2 * a * (y - b * x**2 + c * x - r) * (-2 * b * x + c) - s * (
+                1 - t
+            ) * np.sin(x)
         else:
-            return 2*a*(y - b*x**2 + c*x - r)
+            return 2 * a * (y - b * x**2 + c * x - r)
+
 
 class BraninProblem(SimpleProblem):
     """

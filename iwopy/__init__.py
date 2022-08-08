@@ -1,9 +1,9 @@
 from .core import Problem, Objective, Constraint, Memory
 from .wrappers import (
-    ProblemWrapper, 
-    DiscretizeRegGrid, 
-    SimpleProblem, 
-    SimpleObjective, 
+    ProblemWrapper,
+    DiscretizeRegGrid,
+    SimpleProblem,
+    SimpleObjective,
     SimpleConstraint,
 )
 

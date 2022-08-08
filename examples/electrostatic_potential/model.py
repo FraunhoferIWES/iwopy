@@ -3,43 +3,45 @@ import matplotlib.pyplot as plt
 
 from iwopy import Problem, Constraint, Objective
 
-class MinPotential(Objective):
 
+class MinPotential(Objective):
     def __init__(self, problem, n_charges):
         super().__init__(problem, "potential", vnames_float=problem.var_names_float())
         self.n_charges = n_charges
 
     def n_components(self):
         return 1
-    
+
     def maximize(self):
         return [False]
-    
+
     def calc_individual(self, vars_int, vars_float, problem_results):
         xy = problem_results
-        value = 0.
+        value = 0.0
         for i in range(1, self.n_charges):
-            value += 2 * np.sum(1/np.linalg.norm(xy[i-1, None] - xy[i:], axis=-1))
+            value += 2 * np.sum(1 / np.linalg.norm(xy[i - 1, None] - xy[i:], axis=-1))
         return value
-    
+
     def calc_population(self, vars_int, vars_float, problem_results):
         xy = problem_results
         n_pop = len(xy)
         value = np.zeros((n_pop, 1))
         for i in range(1, self.n_charges):
-            value[:] += 2 * np.sum(1/np.linalg.norm(xy[:, i-1, None] - xy[:, i:], axis=-1))
+            value[:] += 2 * np.sum(
+                1 / np.linalg.norm(xy[:, i - 1, None] - xy[:, i:], axis=-1)
+            )
         return value
 
-class MaxRadius(Constraint):
 
+class MaxRadius(Constraint):
     def __init__(self, problem, n_charges, radius):
         super().__init__(problem, "radius", vnames_float=problem.var_names_float())
         self.n_charges = n_charges
         self.radius = radius
-    
+
     def n_components(self):
         return self.n_charges
-    
+
     def calc_individual(self, vars_int, vars_float, problem_results):
         xy = problem_results
         r = np.linalg.norm(xy, axis=-1)
@@ -50,11 +52,11 @@ class MaxRadius(Constraint):
         r = np.linalg.norm(xy, axis=-1)
         return r - self.radius
 
-class ChargesProblem(Problem):
 
+class ChargesProblem(Problem):
     def __init__(self, xy_init, radius):
         super().__init__(name="charges_problem")
-        
+
         self.xy_init = xy_init
         self.n_charges = len(xy_init)
         self.radius = radius
@@ -69,14 +71,14 @@ class ChargesProblem(Problem):
         return vnames
 
     def initial_values_float(self):
-        return self.xy_init.reshape(2*self.n_charges)
+        return self.xy_init.reshape(2 * self.n_charges)
 
     def min_values_float(self):
-        return np.full(2*self.n_charges, -self.radius)
+        return np.full(2 * self.n_charges, -self.radius)
 
     def max_values_float(self):
-        return np.full(2*self.n_charges, self.radius)
-    
+        return np.full(2 * self.n_charges, self.radius)
+
     def apply_individual(self, vars_int, vars_float):
         return vars_float.reshape(self.n_charges, 2)
 
@@ -87,7 +89,7 @@ class ChargesProblem(Problem):
     def get_fig(self, xy):
         fig, ax = plt.subplots()
         ax.scatter(xy[:, 0], xy[:, 1], color="orange")
-        ax.add_patch(plt.Circle((0, 0), self.radius, color='darkred', fill=False))
+        ax.add_patch(plt.Circle((0, 0), self.radius, color="darkred", fill=False))
         ax.set_aspect("equal", adjustable="box")
         ax.set_xlabel("x")
         ax.set_ylabel("y")

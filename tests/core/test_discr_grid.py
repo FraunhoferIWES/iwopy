@@ -53,8 +53,8 @@ def test_interp_points():
 
         gpts, c = g.interpolation_coeffs_points(pts)
         print("RESULTS", gpts.shape, c.shape)
-        #print("GPTS\n",gpts.tolist())
-        #print("COEFFS\n",c.tolist())
+        # print("GPTS\n",gpts.tolist())
+        # print("COEFFS\n",c.tolist())
 
         qts = np.einsum("gx,pg->px", gpts, c)
         print("QTS", qts.shape, "PTS", pts.shape)

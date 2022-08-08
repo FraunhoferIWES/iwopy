@@ -5,14 +5,14 @@ from iwopy.interfaces.pymoo import Optimizer_pymoo
 from iwopy.benchmarks.branin import BraninProblem
 from iwopy.benchmarks.rosenbrock import RosenbrockProblem
 
-class RC(SimpleConstraint):
 
+class RC(SimpleConstraint):
     def __init__(self, problem, name="c", ana_deriv=False):
         super().__init__(problem, name, n_components=2, has_ana_derivs=ana_deriv)
-    
+
     def f(self, x, y):
-        return [(x - 1)**3 - y + 1, x + y - 3]
-    
+        return [(x - 1) ** 3 - y + 1, x + y - 3]
+
     def g(self, var, x, y, components):
 
         cmpnts = [0, 1] if components is None else components
@@ -22,13 +22,14 @@ class RC(SimpleConstraint):
 
             # (x-1)**3 - y + 1
             if ci == 0:
-                out[i] = 3*(x - 1)**2 if var == 0 else -1
+                out[i] = 3 * (x - 1) ** 2 if var == 0 else -1
 
             # x + y - 3
             elif ci == 1:
                 out[i] = 1
 
         return out
+
 
 def run_branin_ga(type, init_vals, ngen, npop, pop):
 
@@ -172,7 +173,7 @@ def test_rosen0_ga():
             50,
             0.03,
             0.0,
-            (1., 1.),
+            (1.0, 1.0),
             (0.05, 0.1),
             True,
         ),
@@ -183,7 +184,7 @@ def test_rosen0_ga():
             100,
             5e-6,
             0.0,
-            (1., 1.),
+            (1.0, 1.0),
             (0.003, 0.005),
             True,
         ),
@@ -205,6 +206,7 @@ def test_rosen0_ga():
         print("delxy =", delxy, ", lim =", limxy)
         assert np.all(delxy < limxy)
 
+
 def test_rosen_ga():
 
     cases = (
@@ -224,8 +226,8 @@ def test_rosen_ga():
         (
             "ga",
             (1.6, 1.3),
-            (15., 15.),
-            (5., 8.),
+            (15.0, 15.0),
+            (5.0, 8.0),
             500,
             100,
             1e-4,
@@ -238,7 +240,11 @@ def test_rosen_ga():
 
     for typ, low, up, inits, ngen, npop, limf, f, xy, limxy, pop in cases:
 
-        print("\nENTERING", (typ, low, up, inits, ngen, npop, limf, f, xy, limxy, pop), "\n")
+        print(
+            "\nENTERING",
+            (typ, low, up, inits, ngen, npop, limf, f, xy, limxy, pop),
+            "\n",
+        )
 
         results = run_rosen_ga(typ, low, up, inits, ngen, npop, pop)
         print("Opt vars:", results.vars_float)
@@ -252,7 +258,8 @@ def test_rosen_ga():
         print("delxy =", delxy, ", lim =", limxy)
         assert np.all(delxy < limxy)
 
+
 if __name__ == "__main__":
     # test_branin_ga()
-    #test_rosen0_ga()
+    # test_rosen0_ga()
     test_rosen_ga()

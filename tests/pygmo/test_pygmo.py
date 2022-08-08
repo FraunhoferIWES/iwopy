@@ -5,14 +5,14 @@ from iwopy.benchmarks.branin import BraninProblem
 from iwopy.benchmarks.rosenbrock import RosenbrockProblem
 from iwopy.interfaces.pygmo import Optimizer_pygmo
 
-class RC(SimpleConstraint):
 
+class RC(SimpleConstraint):
     def __init__(self, problem, name="c", ana_deriv=False):
         super().__init__(problem, name, n_components=2, has_ana_derivs=ana_deriv)
-    
+
     def f(self, x, y):
-        return [(x - 1)**3 - y + 1, x + y - 3]
-    
+        return [(x - 1) ** 3 - y + 1, x + y - 3]
+
     def g(self, var, x, y, components):
 
         cmpnts = [0, 1] if components is None else components
@@ -22,13 +22,14 @@ class RC(SimpleConstraint):
 
             # (x-1)**3 - y + 1
             if ci == 0:
-                out[i] = 3*(x - 1)**2 if var == 0 else -1
+                out[i] = 3 * (x - 1) ** 2 if var == 0 else -1
 
             # x + y - 3
             elif ci == 1:
                 out[i] = 1
 
         return out
+
 
 def run_branin_ipopt(init_vals, dx, dy, tol, pop):
 
@@ -220,9 +221,9 @@ def test_branin_bee():
 def run_rosen0_ipopt(lower, upper, inits, dx, dy, tol, pop, ana):
 
     prob = RosenbrockProblem(lower=lower, upper=upper, initial=inits, ana_deriv=ana)
-    
+
     gprob = DiscretizeRegGrid(
-        prob, deltas={"x": dx, "y": dy}, fd_order=2, fd_bounds_order=2, tol=1e-6
+        prob, deltas={"x": dx, "y": dy}, fd_order=2, fd_bounds_order=2, tol=1e-9
     )
     gprob.initialize()
 
@@ -250,41 +251,41 @@ def test_rosen0_ipopt():
         (
             0.01,
             0.01,
-            1e-4,
+            1e-2,
             (-2.0, -2),
             (2, 2),
             (0.1, -0.1),
             0.0,
             (1.0, 1.0),
             1e-4,
-            (2e-5, 4e-5),
+            (0.01, 0.02),
             False,
             True,
         ),
         (
             0.001,
             0.001,
-            1e-6,
+            1e-3,
             (-2.0, -2),
             (2, 2),
             (1.8, 1.9),
             0.0,
             (1.0, 1.0),
-            6e-11,
-            (2e-10, 2e-10),
+            1e-9,
+            (2e-5, 4e-5),
             True,
             True,
         ),
         (
             0.001,
             0.001,
-            1e-4,
+            1e-3,
             (-2.0, -2),
             (2, 2),
             (1.8, 1.9),
             0.0,
             (1.0, 1.0),
-            1e-4,
+            7e-7,
             (0.001, 0.002),
             True,
             False,
@@ -298,8 +299,8 @@ def test_rosen0_ipopt():
             (1.8, 1.9),
             0.0,
             (1.0, 1.0),
-            1.5e-5,
-            (0.0004, 0.0008),
+            1e-8,
+            (1e-4, 2e-4),
             True,
             True,
         ),
@@ -308,7 +309,9 @@ def test_rosen0_ipopt():
     for dx, dy, tol, low, up, ivals, f, xy, limf, limxy, pop, ana in cases:
 
         print(
-            "\nENTERING", (dx, dy, tol, low, up, ivals, f, xy, limf, limxy, pop, ana), "\n"
+            "\nENTERING",
+            (dx, dy, tol, low, up, ivals, f, xy, limf, limxy, pop, ana),
+            "\n",
         )
 
         results = run_rosen0_ipopt(low, up, ivals, dx, dy, tol, pop, ana)
@@ -323,14 +326,14 @@ def test_rosen0_ipopt():
         print("delxy =", delxy, ", lim =", limxy)
         assert np.all(delxy < limxy)
 
+
 def run_rosen_ipopt(lower, upper, inits, dx, dy, tol, pop, ana):
 
     prob = RosenbrockProblem(lower=lower, upper=upper, initial=inits, ana_deriv=ana)
     prob.add_constraint(RC(prob, ana_deriv=ana))
 
     gprob = DiscretizeRegGrid(
-        prob, deltas={"x": dx, "y": dy}, fd_order=2, fd_bounds_order=2,
-        tol=1e-6
+        prob, deltas={"x": dx, "y": dy}, fd_order=2, fd_bounds_order=2, tol=1e-6
     )
     gprob.initialize(verbosity=0)
 
@@ -388,7 +391,9 @@ def test_rosen_ipopt():
     for dx, dy, low, up, tol, ivals, f, xy, limf, limxy, pop, ana in cases:
 
         print(
-            "\nENTERING", (dx, dy, low, up, tol, ivals, f, xy, limf, limxy, pop, ana), "\n"
+            "\nENTERING",
+            (dx, dy, low, up, tol, ivals, f, xy, limf, limxy, pop, ana),
+            "\n",
         )
 
         results = run_rosen_ipopt(low, up, ivals, dx, dy, tol, pop, ana)
@@ -403,12 +408,13 @@ def test_rosen_ipopt():
         print("delxy =", delxy, ", lim =", limxy)
         assert np.all(delxy < limxy)
 
+
 if __name__ == "__main__":
 
-    #test_branin_ipopt()
-    # test_branin_sga()
-    # test_branin_pso()
-    # test_branin_bee()
+    test_branin_ipopt()
+    test_branin_sga()
+    test_branin_pso()
+    test_branin_bee()
 
-    #test_rosen0_ipopt()
+    test_rosen0_ipopt()
     test_rosen_ipopt()

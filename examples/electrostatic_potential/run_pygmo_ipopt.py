@@ -8,16 +8,18 @@ from model import ChargesProblem
 
 if __name__ == "__main__":
 
-    #np.random.seed(42)
+    # np.random.seed(42)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-n", "--n_points", help="The number of points", type=int, default=5)
-    parser.add_argument("-r", "--radius", help="The radius", type=float, default=5.)
+    parser.add_argument(
+        "-n", "--n_points", help="The number of points", type=int, default=5
+    )
+    parser.add_argument("-r", "--radius", help="The radius", type=float, default=5.0)
     args = parser.parse_args()
     n = args.n_points
     r = args.radius
 
-    xy = np.random.uniform(-r/10., r/10., (n, 2))
+    xy = np.random.uniform(-r / 10.0, r / 10.0, (n, 2))
 
     problem = ChargesProblem(xy, r)
 
@@ -25,7 +27,9 @@ if __name__ == "__main__":
     plt.show()
     plt.close(fig)
 
-    gproblem = DiscretizeRegGrid(problem, deltas=0.001, fd_order=2, fd_bounds_order=1, tol=1e-10)
+    gproblem = DiscretizeRegGrid(
+        problem, deltas=0.001, fd_order=2, fd_bounds_order=1, tol=1e-10
+    )
     gproblem.initialize()
 
     solver = Optimizer_pygmo(

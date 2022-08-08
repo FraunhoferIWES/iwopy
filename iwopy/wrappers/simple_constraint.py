@@ -3,6 +3,7 @@ from abc import abstractmethod
 
 from iwopy.core import Constraint
 
+
 class SimpleConstraint(Constraint):
     """
     A simple constraint that assumes the
@@ -35,12 +36,14 @@ class SimpleConstraint(Constraint):
         name,
         n_components=1,
         mins=-np.inf,
-        maxs=0.,
+        maxs=0.0,
         cnames=None,
         has_ana_derivs=True,
     ):
         if cnames is not None and len(cnames) != n_components:
-            raise ValueError(f"Wrong number of component names, found {len(cnames)}, expected {n_components}: {cnames}")
+            raise ValueError(
+                f"Wrong number of component names, found {len(cnames)}, expected {n_components}: {cnames}"
+            )
         self._n_comps = n_components
 
         super().__init__(
@@ -56,7 +59,7 @@ class SimpleConstraint(Constraint):
         self._mins[:] = mins
         self._maxs[:] = maxs
         self._ana = has_ana_derivs
-    
+
     @abstractmethod
     def f(self, *x):
         """
@@ -97,7 +100,7 @@ class SimpleConstraint(Constraint):
         -------
         result : float or list of float
             For one component, a float, else a list of floats.
-            The length of list is 0 or 1 in case of single component, 
+            The length of list is 0 or 1 in case of single component,
             or n_sel_components otherwise.
 
         """

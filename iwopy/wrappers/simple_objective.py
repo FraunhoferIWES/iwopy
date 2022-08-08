@@ -3,6 +3,7 @@ from abc import abstractmethod
 
 from iwopy.core import Objective
 
+
 class SimpleObjective(Objective):
     """
     A simple objective that assumes the
@@ -35,7 +36,9 @@ class SimpleObjective(Objective):
         has_ana_derivs=True,
     ):
         if cnames is not None and len(cnames) != n_components:
-            raise ValueError(f"Wrong number of component names, found {len(cnames)}, expected {n_components}: {cnames}")
+            raise ValueError(
+                f"Wrong number of component names, found {len(cnames)}, expected {n_components}: {cnames}"
+            )
         self._n_comps = n_components
 
         super().__init__(
@@ -49,7 +52,7 @@ class SimpleObjective(Objective):
         self._maxi = np.zeros(self._n_comps, dtype=bool)
         self._maxi[:] = maximize
         self._ana = has_ana_derivs
-    
+
     @abstractmethod
     def f(self, *x):
         """
@@ -90,7 +93,7 @@ class SimpleObjective(Objective):
         -------
         result : float or list of float
             For one component, a float, else a list of floats.
-            The length of list is 0 or 1 in case of single component, 
+            The length of list is 0 or 1 in case of single component,
             or n_sel_components otherwise.
 
         """

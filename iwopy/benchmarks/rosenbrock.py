@@ -57,7 +57,7 @@ class RosenbrockObjective(SimpleObjective):
         """
         a, b = self._pars
         return (a - x) ** 2 + b * (y - x**2) ** 2
-    
+
     def g(self, var, x, y, components=None):
         """
         The derivative of the Rosenbrock function
@@ -67,6 +67,7 @@ class RosenbrockObjective(SimpleObjective):
             return -2 * (a - x) - 2 * b * (y - x**2) * 2 * x
         else:
             return 2 * b * (y - x**2)
+
 
 class RosenbrockProblem(SimpleProblem):
     """
@@ -94,9 +95,9 @@ class RosenbrockProblem(SimpleProblem):
 
     def __init__(
         self,
-        lower=[-5., -5.],
-        upper=[10., 10.],
-        initial=[0., 0.],
+        lower=[-5.0, -5.0],
+        upper=[10.0, 10.0],
+        initial=[0.0, 0.0],
         ana_deriv=False,
         name="rosenbrock",
     ):

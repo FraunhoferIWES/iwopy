@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class RegularDiscretizationGrid:
     """
     A lightweight regular grid in n dimensions,
@@ -15,7 +16,7 @@ class RegularDiscretizationGrid:
         The number of steps, len: n_dims. Use
         INT_INF for infinite.
     tol : list of float, optional
-        The tolerances for grid bounds, default is 0, 
+        The tolerances for grid bounds, default is 0,
         shape: (n_dims,)
     digits : int
         The grid point precision
@@ -50,7 +51,7 @@ class RegularDiscretizationGrid:
             self.tol[:] = tol
         else:
             self.tol = None
-        
+
         self._opts = None
 
     @property
@@ -329,7 +330,7 @@ class RegularDiscretizationGrid:
         ----------
         p : numpy.ndarray
             The point, shape: (n_dims,)
-        
+
         Returns
         -------
         q : numpy.ndarray
@@ -341,11 +342,11 @@ class RegularDiscretizationGrid:
             q = p.copy()
 
             dlo = q - self.p_min
-            sel = (dlo < 0.) & (dlo >= -self.tol)
+            sel = (dlo < 0.0) & (dlo >= -self.tol)
             q[sel] = self.p_min[sel]
 
             dhi = q - self.p_max
-            sel = (dhi > 0.) & (dhi <= self.tol)
+            sel = (dhi > 0.0) & (dhi <= self.tol)
             q[sel] = self.p_max[sel]
 
             return q
@@ -359,7 +360,7 @@ class RegularDiscretizationGrid:
         ----------
         pts : numpy.ndarray
             The points, shape: (n_pts, n_dims)
-        
+
         Returns
         -------
         q : numpy.ndarray
@@ -371,19 +372,19 @@ class RegularDiscretizationGrid:
             qts = pts.copy()
 
             dlo = qts - self.p_min[None, :]
-            sel = (dlo < 0.) & (dlo >= -self.tol[None, :])
+            sel = (dlo < 0.0) & (dlo >= -self.tol[None, :])
             if np.any(sel):
                 pmin = np.zeros_like(qts)
                 pmin[:] = self.p_min[None, :]
                 qts[sel] = pmin[sel]
 
             dhi = qts - self.p_max[None, :]
-            sel = (dhi > 0.) & (dhi <= self.tol[None, :])
+            sel = (dhi > 0.0) & (dhi <= self.tol[None, :])
             if np.any(sel):
                 pmax = np.zeros_like(qts)
                 pmax[:] = self.p_max[None, :]
                 qts[sel] = pmax[sel]
-            
+
             return qts
         return pts
 
@@ -704,7 +705,7 @@ class RegularDiscretizationGrid:
         cells[:] = self.get_corners(pts, allow_outer=False)[:, :, None]
         cells[:, :, 1] += self.deltas[None, :]
         return np.round(cells, self.digits)
-    
+
     def _interpolate_ocell(self, qts):
         """
         Helper function for interpolation weights in
@@ -721,9 +722,13 @@ class RegularDiscretizationGrid:
             self._opts = np.stack(np.meshgrid(*ocell, indexing="ij"), axis=-1)
             self._opts = self._opts.reshape(2**self.n_dims, self.n_dims)
             del ocell
-        
-        assert (qts >= 0.).all(), f"Found coordinates below 0: {qts[np.any(qts<0., axis=-1)].tolist()}"
-        assert (qts <= 1.).all(), f"Found coordinates above 1: {qts[np.any(qts>1., axis=-1)].tolist()}"
+
+        assert (
+            qts >= 0.0
+        ).all(), f"Found coordinates below 0: {qts[np.any(qts<0., axis=-1)].tolist()}"
+        assert (
+            qts <= 1.0
+        ).all(), f"Found coordinates above 1: {qts[np.any(qts>1., axis=-1)].tolist()}"
 
         return np.product(1 - np.abs(qts[:, None] - self._opts[None, :]), axis=-1)
 
