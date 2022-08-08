@@ -29,7 +29,7 @@ class SimpleObjective(Objective):
     def __init__(
         self,
         problem,
-        name,
+        name="f",
         n_components=1,
         maximize=False,
         cnames=None,
