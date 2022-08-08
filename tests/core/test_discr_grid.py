@@ -7,8 +7,6 @@ def test_interp_point():
 
     D = 6
 
-    iwopy.utils.RegularDiscretizationGrid.DIGITS = 12
-
     for dims in range(1, D + 1):
 
         print("\nINTERP_POINT: Entering dims =", dims, "\n")
@@ -25,20 +23,21 @@ def test_interp_point():
 
         q = np.einsum("pd,p->d", pts, c)
 
-        print("pts\n", pts)
-        print("c\n", c)
-        print("p\n", p)
-        print("q\n", q)
+        print("pts\n", pts.tolist())
+        print("c\n", c.tolist())
+        print("p\n", p.tolist())
+        print("q\n", q.tolist())
 
-        assert np.all(np.abs(p - q) < 1e-12)
+        d = np.abs(p - q)
+        print("d\n", d.tolist())
+
+        assert np.all(d < 1e-11)
 
 
 def test_interp_points():
 
     D = 6
     N = 100
-
-    iwopy.utils.RegularDiscretizationGrid.DIGITS = 12
 
     for dims in range(1, D + 1):
 
@@ -53,19 +52,20 @@ def test_interp_points():
         g.print_info()
 
         gpts, c = g.interpolation_coeffs_points(pts)
-
         print("RESULTS", gpts.shape, c.shape)
+        #print("GPTS\n",gpts.tolist())
+        #print("COEFFS\n",c.tolist())
 
         qts = np.einsum("gx,pg->px", gpts, c)
-
         print("QTS", qts.shape, "PTS", pts.shape)
 
-        assert np.all(np.abs(pts - qts) < 1e-12)
+        d = np.abs(pts - qts)
+        print("MAX DELTA", d.shape, np.max(d))
+
+        assert np.all(d < 1e-12)
 
 
 def test_deriv_gp():
-
-    iwopy.utils.RegularDiscretizationGrid.DIGITS = 12
 
     dnl = (
         (0.01, 2, 2, 0.00015),
@@ -123,8 +123,6 @@ def test_deriv_gp():
 
 def test_deriv():
 
-    iwopy.utils.RegularDiscretizationGrid.DIGITS = 12
-
     dnl = (
         (0.01, 2, 2, 0.00015),
         (0.01, 2, 1, 0.01),
@@ -178,8 +176,6 @@ def test_deriv():
 
 
 def test_grad_gp():
-
-    iwopy.utils.RegularDiscretizationGrid.DIGITS = 12
 
     dnl = (
         (None, 0.001, 2, 1, [0.001, 0.005, 0.005]),
@@ -253,8 +249,6 @@ def test_grad_gp():
 
 def test_grad():
 
-    iwopy.utils.RegularDiscretizationGrid.DIGITS = 12
-
     dnl = (
         (None, 0.001, 2, 1, [0.001, 0.0008, 0.005]),
         (None, 0.01, 2, 2, [0.001, 0.001, 0.001]),
@@ -326,8 +320,8 @@ def test_grad():
 if __name__ == "__main__":
     np.random.seed(42)
     test_interp_point()
-    #test_interp_points()
-    #test_deriv_gp()
-    #test_deriv()
-    #test_grad_gp()
-    #test_grad()
+    test_interp_points()
+    test_deriv_gp()
+    test_deriv()
+    test_grad_gp()
+    test_grad()

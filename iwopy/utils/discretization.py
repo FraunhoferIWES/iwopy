@@ -1,6 +1,4 @@
 import numpy as np
-from scipy.interpolate import RegularGridInterpolator
-
 
 class RegularDiscretizationGrid:
     """
@@ -19,6 +17,8 @@ class RegularDiscretizationGrid:
     tol : list of float, optional
         The tolerances for grid bounds, default is 0, 
         shape: (n_dims,)
+    digits : int
+        The grid point precision
     **kwargs : dict, optional
         Additional parameters for `RegularGridInterpolator`
 
@@ -33,48 +33,27 @@ class RegularDiscretizationGrid:
     tol : numpy.ndarray
         The tolerances for grid bounds, shape: (n_dims,),
         or None
+    digits : int
+        The grid point precision
 
     """
 
     INT_INF = -999999
-    DIGITS = 12
 
-    def __init__(self, origin, deltas, n_steps, tol=None, **kwargs):
+    def __init__(self, origin, deltas, n_steps, tol=None, digits=12, **kwargs):
 
         self.origin = np.array(origin, dtype=np.float64)
         self.n_steps = np.array(n_steps, dtype=np.int32)
         self.deltas = np.array(deltas, dtype=np.float64)
+        self.digits = digits
 
         if tol is not None:
             self.tol = np.zeros(self.n_dims, dtype=np.float64)
             self.tol[:] = tol
         else:
             self.tol = None
-
-        self._ocell = np.zeros((self.n_dims, 2), dtype=np.float64)
-        self._ocell[:, 1] += self.deltas
-        self._interp = self._get_interp(self._ocell, **kwargs)
-
-    def _get_interp(self, cell0, **kwargs):
-        """
-        Helper function for interpolation object creation
-        """
-
-        n_dims = len(cell0)
-
-        cdata = np.zeros_like(cell0)
-        cdata[:, 1] = 1.0
-        cdata = np.meshgrid(*cdata, indexing="ij")
-
-        cshp = list(cdata[0].shape)
-        idata = np.zeros(cshp + [2**n_dims], dtype=np.float64)
-        isel = np.zeros_like(cdata[0], dtype=np.int32)
-        for di in range(n_dims):
-            dj = n_dims - 1 - di
-            isel[:] += (2**dj * cdata[di]).astype(np.int32)
-        np.put_along_axis(idata, isel[..., None], 1, axis=-1)
-
-        return RegularGridInterpolator(cell0, idata, **kwargs)
+        
+        self._opts = None
 
     @property
     def n_points(self):
@@ -135,7 +114,7 @@ class RegularDiscretizationGrid:
         """
         m = self.origin + self.n_steps * self.deltas
         m[(self.n_steps == self.INT_INF) & (self.deltas > 0)] = np.inf
-        return np.round(m, self.DIGITS)
+        return np.round(m, self.digits)
 
     def print_info(self, spaces=0):
         """
@@ -257,7 +236,7 @@ class RegularDiscretizationGrid:
                 self.print_info()
                 raise ValueError(f"Grind indices {inds} are not on grid")
 
-        return np.round(self.origin + inds * self.deltas, self.DIGITS)
+        return np.round(self.origin + inds * self.deltas, self.digits)
 
     def find_grid_inds(self, inds):
         """
@@ -305,14 +284,14 @@ class RegularDiscretizationGrid:
 
         o = self.origin[None, :]
         d = self.deltas[None, :]
-        return np.round(o + inds * d, self.DIGITS)
+        return np.round(o + inds * d, self.digits)
 
     def _gp2i(self, gp, allow_outer=True, lower_left=False):
         """
         Helper function for indices calculation
         """
         if lower_left:
-            inds = np.round((gp - self.origin) / self.deltas, self.DIGITS).astype(
+            inds = np.round((gp - self.origin) / self.deltas, self.digits).astype(
                 np.int32
             )
         else:
@@ -333,7 +312,7 @@ class RegularDiscretizationGrid:
         d = self.deltas[None, :]
 
         if lower_left:
-            inds = np.round((gpts - o) / d, self.DIGITS).astype(np.int32)
+            inds = np.round((gpts - o) / d, self.digits).astype(np.int32)
         else:
             inds = np.round((gpts - o) / d).astype(np.int32)
 
@@ -437,7 +416,7 @@ class RegularDiscretizationGrid:
                 return False, inds
             return False
 
-        p0 = np.round(self.origin + inds * self.deltas, self.DIGITS)
+        p0 = np.round(self.origin + inds * self.deltas, self.digits)
         if ret_inds:
             return np.all(p0 == p), inds
         return np.all(p0 == p)
@@ -473,7 +452,7 @@ class RegularDiscretizationGrid:
         if np.any(sel):
             o = self.origin[None, :]
             d = self.deltas[None, :]
-            p0 = np.round(o + inds * d, self.DIGITS)
+            p0 = np.round(o + inds * d, self.digits)
             sel = sel & (p0 == pts)
 
         if ret_inds:
@@ -640,7 +619,7 @@ class RegularDiscretizationGrid:
             self.print_info()
             raise KeyError(f"Grind indices {inds} are not on grid")
 
-        return np.round(self.origin + inds * self.deltas, self.DIGITS)
+        return np.round(self.origin + inds * self.deltas, self.digits)
 
     def get_corners(self, pts, allow_outer=True):
         """
@@ -682,7 +661,7 @@ class RegularDiscretizationGrid:
                 f"Found {len(selg)} indices not on grid, e.g. indices {selg[0]}: {inds[selg[0]]}"
             )
 
-        return np.round(o + inds * d, self.DIGITS)
+        return np.round(o + inds * d, self.digits)
 
     def get_cell(self, p):
         """
@@ -703,7 +682,7 @@ class RegularDiscretizationGrid:
         cell = np.zeros((self.n_dims, 2), dtype=np.float64)
         cell[:] = self.get_corner(p, allow_outer=False)[:, None]
         cell[:, 1] += self.deltas
-        return np.round(cell, self.DIGITS)
+        return np.round(cell, self.digits)
 
     def get_cells(self, pts):
         """
@@ -726,66 +705,29 @@ class RegularDiscretizationGrid:
         cells = np.zeros((n_pts, self.n_dims, 2), dtype=np.float64)
         cells[:] = self.get_corners(pts, allow_outer=False)[:, :, None]
         cells[:, :, 1] += self.deltas[None, :]
-        return np.round(cells, self.DIGITS)
+        return np.round(cells, self.digits)
     
-    def _calc_coeffs(self, qts):
+    def _interpolate_ocell(self, qts):
+        """
+        Helper function for interpolation weights in
+        unit hypercube.
+
+        Classic volume weighting, see e.g. Fig. 2 and Eq. (4) in
+        http://dx.doi.org/10.1088/0004-6256/139/2/342
 
         """
-        ocell = np.zeros((self.n_dims, 2), dtype=np.float64)
-        ocell[:, 1] += self.deltas
 
-        cdata = np.zeros_like(ocell)
-        cdata[:, 1] = 1.0
-        cdata = np.meshgrid(*cdata, indexing="ij")
+        if self._opts is None:
+            ocell = np.zeros((self.n_dims, 2), dtype=np.int8)
+            ocell[:, 1] += 1
+            self._opts = np.stack(np.meshgrid(*ocell, indexing="ij"), axis=-1)
+            self._opts = self._opts.reshape(2**self.n_dims, self.n_dims)
+            del ocell
+        
+        assert (qts >= 0.).all(), f"Found coordinates below 0: {qts[np.any(qts<0., axis=-1)].tolist()}"
+        assert (qts <= 1.).all(), f"Found coordinates above 1: {qts[np.any(qts>1., axis=-1)].tolist()}"
 
-        print("GUESS",qts/self.deltas[None, :])
-        print("OCELL",ocell.shape,ocell.tolist())
-        print("CDATA",cdata[0].shape)
-
-        n_qts = len(qts)
-        coeffs = np.zeros((n_qts, self.n_dims, 2), dtype=np.float64)
-        for di in range(self.n_dims):
-            idata = np.zeros_like(ocell)
-            idata[di, 1] = 1
-            idata = np.stack(np.meshgrid(*idata, indexing="ij"), axis=-1)
-            interp = RegularGridInterpolator(ocell, idata)
-            res = interp(qts)
-            print("RES",di,res.shape,res.tolist())
-            coeffs[:, di] = res
-        print("CALC COEFFS",coeffs.shape, coeffs.tolist())
-
-        return
-
-
-
-        return RegularGridInterpolator(cell0, idata, **kwargs)
-        """
-        qqts = qts/self.deltas[None, :]
-        n_qts = len(qts)
-
-        ocell = np.zeros((self.n_dims, 2), dtype=np.int8)
-        ocell[:, 1] += 1
-        xyz = np.stack(np.meshgrid(*ocell, indexing="ij"), axis=-1)
-        print("QQTS",qqts.shape,qqts.tolist())
-        print("OCELL",ocell.shape,ocell.tolist())
-        print("XYZ",xyz.shape,xyz.tolist())
-
-        coeffs = np.zeros([n_qts] + [2]*self.n_dims, dtype=np.float64)
-        TODO
-        print("COEFFS",coeffs.shape,coeffs.tolist())
-
-
-
-        #return coeffs
-
-        n_qts = len(qts)
-        coeffs = np.zeros((n_qts, self.n_dims, 2), dtype=np.float64)
-        coeffs[:, :, 1] = qts / self.deltas[None, :]
-        coeffs[:, :, 0] = 1. - coeffs[:, :, 1]
-
-        print("CALC COEFFS",coeffs.shape,coeffs.tolist())
-
-        return coeffs.reshape(n_qts, 2*self.n_dims)
+        return np.product(1 - np.abs(qts[:, None] - self._opts[None, :]), axis=-1)
 
     def interpolation_coeffs_point(self, p):
         """
@@ -819,24 +761,15 @@ class RegularDiscretizationGrid:
         cell = self.get_cell(p)
         p0 = cell[:, 0]
         n_dims = len(p0)
-        qts = np.round(p[None, :] - p0[None, :], self.DIGITS)
-
-        print("HERE", p)
-        print("QTS",qts.shape, qts.tolist())
-        print("CELL",cell.shape, cell.tolist())
+        qts = np.round((p[None, :] - p0[None, :]) / self.deltas[None, :], self.digits)
 
         try:
-            coeffs = self._calc_coeffs(qts)
-            coeffs = self._interp(qts)[0]
-        except ValueError as e:
+            coeffs = self._interpolate_ocell(qts)[0]
+        except AssertionError as e:
             self._error_info(p, for_ocell=True)
             raise e
         gpts = np.stack(np.meshgrid(*cell, indexing="ij"), axis=-1)
-        gpts = np.round(gpts, self.DIGITS).reshape(2**n_dims, n_dims)
-
-        print("RCOEFFS",coeffs.shape, coeffs.tolist())
-        print("GPTS",gpts.shape, gpts.tolist())
-        if self.n_dims == 2: quit()
+        gpts = np.round(gpts, self.digits).reshape(2**n_dims, n_dims)
 
         sel = np.abs(coeffs) < 1.0e-14
         if np.any(sel):
@@ -878,28 +811,22 @@ class RegularDiscretizationGrid:
 
         """
         pts = self.apply_tols(pts)
+        p0 = self.get_corners(pts, allow_outer=False)
+        qts = np.round((pts - p0) / self.deltas[None, :], self.digits)
 
-        cells = self.get_cells(pts)
-        ocell = np.round(cells[0] - cells[0, :, 0, None], self.DIGITS)
-        p0 = cells[:, :, 0]
-
-        opts = np.round(pts - p0, self.DIGITS)
         try:
-            coeffs = self._interp(opts)  # shape: (n_pts, n_gp)
-        except ValueError as e:
-            self._error_infos(opts, for_ocell=True)
+            coeffs = self._interpolate_ocell(qts)  # shape: (n_pts, n_gp)
+        except AssertionError as e:
+            self._error_infos(qts, for_ocell=True)
             raise e
 
-        ipts = np.stack(np.meshgrid(*ocell, indexing="ij"), axis=-1)
-        ipts = ipts.reshape(2**self.n_dims, self.n_dims)
         gpts = np.round(
-            p0[:, None] + ipts[None, :], self.DIGITS
+            p0[:, None] + self._opts[None, :] * self.deltas[None, :], self.digits
         )  # shape: (n_pts, n_gp, n_dims)
 
         # remove points with zero weights:
         sel = np.all(np.abs(coeffs) < 1.0e-14, axis=0)
         if np.any(sel):
-            ipts = ipts[~sel]
             coeffs = coeffs[:, ~sel]
             gpts = gpts[:, ~sel]
 
@@ -1064,7 +991,7 @@ class RegularDiscretizationGrid:
         # reorganize data to single grid point array:
         n_pts, n_gp = coeffs.shape
         n_apts = n_pts * n_gp
-        gpts = np.round(gpts, self.DIGITS)
+        gpts = np.round(gpts, self.digits)
         gpts, amap = np.unique(
             gpts.reshape(n_apts, self.n_dims), axis=0, return_inverse=True
         )
