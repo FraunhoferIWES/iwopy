@@ -62,10 +62,11 @@ class Optimizer_pygmo(Optimizer):
         """
 
         # create pygmo problem:
+        pop = self.problem_pars.get("pop", False)
         self.udp = UDP(self.problem, **self.problem_pars)
 
         # create algorithm:
-        self.algo = AlgoFactory.new(**self.algo_pars)
+        self.algo = AlgoFactory.new(pop=pop, **self.algo_pars)
 
         # create population:
         psize = self.setup_pars.get("pop_size", 1)
@@ -89,12 +90,11 @@ class Optimizer_pygmo(Optimizer):
             if self.problem.n_vars_int:
                 x[self.problem.n_vars_float :] = self.problem.initial_values_int()
 
-            xf = x[: self.problem.n_vars_float]
-            xi = x[self.problem.n_vars_float :].astype(np.int64)
+            #xf = x[: self.problem.n_vars_float]
+            #xi = x[self.problem.n_vars_float :].astype(np.int64)
 
             self.udp._active = True
             self.pop.set_x(0, x)
-            self.udp.apply(xi, xf)
 
         super().initialize(verbosity)
 
@@ -132,6 +132,7 @@ class Optimizer_pygmo(Optimizer):
         with suppress_stdout(silent):
 
             # Run solver:
+
             pop = self.algo.evolve(self.pop)
 
         return self.udp.finalize(pop, verbosity)

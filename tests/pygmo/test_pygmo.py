@@ -39,7 +39,7 @@ def run_branin_ipopt(init_vals, dx, dy, tol, pop):
 
     solver = Optimizer_pygmo(
         gprob,
-        problem_pars=dict(grad_pop=pop),
+        problem_pars=dict(pop=pop),
         algo_pars=dict(type="ipopt", tol=tol),
     )
     solver.initialize()
@@ -223,18 +223,19 @@ def run_rosen0_ipopt(lower, upper, inits, dx, dy, tol, pop, ana):
     prob = RosenbrockProblem(lower=lower, upper=upper, initial=inits, ana_deriv=ana)
 
     gprob = DiscretizeRegGrid(
-        prob, deltas={"x": dx, "y": dy}, fd_order=2, fd_bounds_order=2, tol=1e-9
+        prob, deltas={"x": dx, "y": dy}, fd_order=2, fd_bounds_order=1, tol=1e-6
     )
     gprob.initialize()
 
     solver = Optimizer_pygmo(
         gprob,
         problem_pars=dict(
-            grad_pop=pop,
+            pop=pop,
         ),
         algo_pars=dict(
             type="ipopt",
             tol=tol,
+            max_iter=100,
         ),
     )
     solver.initialize()
@@ -251,35 +252,21 @@ def test_rosen0_ipopt():
         (
             0.01,
             0.01,
-            1e-2,
-            (-2.0, -2),
-            (2, 2),
-            (0.1, -0.1),
-            0.0,
-            (1.0, 1.0),
-            1e-4,
-            (0.01, 0.02),
-            False,
-            True,
-        ),
-        (
-            0.001,
-            0.001,
             1e-3,
             (-2.0, -2),
             (2, 2),
             (1.8, 1.9),
             0.0,
             (1.0, 1.0),
-            1e-9,
-            (2e-5, 4e-5),
+            0.00011,
+            (0.011, 0.021),
             True,
             True,
         ),
         (
             0.001,
             0.001,
-            1e-3,
+            1e-4,
             (-2.0, -2),
             (2, 2),
             (1.8, 1.9),
@@ -293,7 +280,7 @@ def test_rosen0_ipopt():
         (
             0.0001,
             0.0001,
-            1e-4,
+            1e-5,
             (-2.0, -2),
             (2, 2),
             (1.8, 1.9),
@@ -340,7 +327,7 @@ def run_rosen_ipopt(lower, upper, inits, dx, dy, tol, pop, ana):
     solver = Optimizer_pygmo(
         gprob,
         problem_pars=dict(
-            grad_pop=pop,
+            pop=pop,
         ),
         algo_pars=dict(
             type="ipopt",
@@ -411,10 +398,10 @@ def test_rosen_ipopt():
 
 if __name__ == "__main__":
 
-    test_branin_ipopt()
-    test_branin_sga()
-    test_branin_pso()
-    test_branin_bee()
+    #test_branin_ipopt()
+    #test_branin_sga()
+    #test_branin_pso()
+    #test_branin_bee()
 
     test_rosen0_ipopt()
-    test_rosen_ipopt()
+    #test_rosen_ipopt()

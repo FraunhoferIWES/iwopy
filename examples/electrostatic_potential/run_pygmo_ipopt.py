@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-n", "--n_points", help="The number of points", type=int, default=5
+        "-n", "--n_points", help="The number of points", type=int, default=4
     )
     parser.add_argument("-r", "--radius", help="The radius", type=float, default=5.0)
     parser.add_argument("-o", "--order", help="Derivative order", type=int, default=1)
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     solver = Optimizer_pygmo(
         gproblem,
-        problem_pars=dict(grad_pop=args.pop),
+        problem_pars=dict(pop=args.pop),
         algo_pars=dict(type="ipopt", tol=1e-4),
     )
     solver.initialize()

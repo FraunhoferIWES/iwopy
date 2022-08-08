@@ -13,8 +13,8 @@ class UDP:
         The problem to optimize
     c_tol : float
         Constraint tolerance
-    grad_pop : bool
-        Vectorized gradient computation
+    pop : bool
+        Vectorized fitness computation
     verbosity : int
         The verbosity level, 0 = silent
 
@@ -30,8 +30,8 @@ class UDP:
         Constraint tolerances
     values : numpy.ndarray
         The function values, shape: (n_fitness,)
-    grad_pop : bool
-        Vectorized gradient computation
+    pop : bool
+        Vectorized fitness computation
     verbosity : int
         The verbosity level, 0 = silent
 
@@ -41,7 +41,7 @@ class UDP:
         self,
         problem,
         c_tol=0.0,
-        grad_pop=False,
+        pop=False,
         verbosity=0,
     ):
 
@@ -52,15 +52,8 @@ class UDP:
         self.c_tol = [c_tol] * problem.n_constraints
         self.values = np.zeros(self.n_fitness, dtype=np.float64)
 
-        self.grad_pop = grad_pop
+        self.pop = pop
         self.verbosity = verbosity
-
-    def apply(self, xi, xf):
-
-        # apply new variables and calculate:
-        objs, cons = self.problem.evaluate_individual(xi, xf)
-        self.values[: self.problem.n_objectives] = objs
-        self.values[self.problem.n_objectives :] = cons
 
     def fitness(self, dv):
 
@@ -69,9 +62,34 @@ class UDP:
         xi = dv[self.problem.n_vars_float :].astype(np.int32)
 
         # apply new variables:
-        self.apply(xi, xf)
+        values = np.zeros(self.n_fitness, dtype=np.float64)
+        objs, cons = self.problem.evaluate_individual(xi, xf)
+        values[: self.problem.n_objectives] = objs
+        values[self.problem.n_objectives :] = cons
 
-        return self.values
+        return values
+
+    def batch_fitness(self, dvs):
+
+        # extract variables:
+        n_vf = self.problem.n_vars_float
+        n_vi = self.problem.n_vars_int
+        n_v = n_vi + n_vf
+        n_pop = int(len(dvs) / n_v)
+        dvs = dvs.reshape(n_pop, n_v)
+        xf = dvs[:, :n_vf]
+        xi = dvs[:, n_vf:].astype(np.int32)
+
+        # apply new variables:
+        values = np.zeros((n_pop, self.n_fitness), dtype=np.float64)
+        objs, cons = self.problem.evaluate_population(xi, xf)
+        values[:, :self.problem.n_objectives] = objs
+        values[:, self.problem.n_objectives:] = cons
+
+        return values.reshape(n_pop*self.n_fitness)
+    
+    def has_batch_fitness(self):
+        return self.pop
 
     def get_bounds(self):
 
@@ -107,9 +125,6 @@ class UDP:
     def get_nix(self):
         return self.problem.n_vars_int
 
-    def has_batch_fitness(self):
-        return False
-
     def has_gradient(self):
         return True
 
@@ -128,7 +143,7 @@ class UDP:
             vars=vrs,
             components=cmpnts,
             verbosity=self.verbosity,
-            pop=self.grad_pop,
+            pop=self.pop,
         )
 
         return [grad[c, list(vrs).index(v)] for c, v in spars]
@@ -210,8 +225,6 @@ class UDP:
 
         # apply final variables:
         res, objs, cons = self.problem.finalize_individual(xi, xf, verbosity)
-        self.values[: self.problem.n_objectives] = objs
-        self.values[self.problem.n_objectives :] = cons
 
         if verbosity:
             print()
