@@ -19,8 +19,6 @@ class RegularDiscretizationGrid:
         shape: (n_dims,)
     digits : int
         The grid point precision
-    **kwargs : dict, optional
-        Additional parameters for `RegularGridInterpolator`
 
     Attributes
     ----------
@@ -40,7 +38,7 @@ class RegularDiscretizationGrid:
 
     INT_INF = -999999
 
-    def __init__(self, origin, deltas, n_steps, tol=None, digits=12, **kwargs):
+    def __init__(self, origin, deltas, n_steps, tol=None, digits=12):
 
         self.origin = np.array(origin, dtype=np.float64)
         self.n_steps = np.array(n_steps, dtype=np.int32)

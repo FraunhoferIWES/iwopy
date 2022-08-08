@@ -134,7 +134,7 @@ class UDP:
         return [grad[c, list(vrs).index(v)] for c, v in spars]
 
     def has_gradient_sparsity(self):
-        return False
+        return True
 
     def gradient_sparsity(self):
 
@@ -201,15 +201,17 @@ class UDP:
 
         # extract variables:
         dv = pygmo_pop.champion_x
-        xf = dv[: self.problem.n_vars_float]
-        xi = dv[self.problem.n_vars_float :].astype(np.int32)
+        xf = dv[:self.problem.n_vars_float]
+        xi = dv[self.problem.n_vars_float:].astype(np.int32)
+
+        if verbosity:
+            print()
+            print(pygmo_pop)
 
         # apply final variables:
-        self.apply(xi, xf)
-
-        # extract objs and cons:
-        objs = self.values[: self.problem.n_objectives]
-        cons = self.values[self.problem.n_objectives :]
+        res, objs, cons = self.problem.finalize_individual(xi, xf, verbosity)
+        self.values[:self.problem.n_objectives] = objs
+        self.values[self.problem.n_objectives:] = cons
 
         if verbosity:
             print()
@@ -217,4 +219,4 @@ class UDP:
         if verbosity:
             print()
 
-        return OptResults(suc, xi, xf, objs, cons, None)
+        return OptResults(suc, xi, xf, objs, cons, res)

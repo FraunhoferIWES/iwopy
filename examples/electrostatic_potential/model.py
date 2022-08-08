@@ -1,79 +1,94 @@
 import numpy as np
-from scipy.spatial.distance import cdist
+import matplotlib.pyplot as plt
 
-from iwopy import Problem, SimpleConstraint, SimpleObjective
+from iwopy import Problem, Constraint, Objective
 
-class Model:
+class MinPotential(Objective):
 
-    def __init__(self, initial_xy):
-        self.xy = initial_xy
+    def __init__(self, problem, n_charges):
+        super().__init__(problem, "potential", vnames_float=problem.var_names_float())
+        self.n_charges = n_charges
+
+    def n_components(self):
+        return 1
     
-    @property
-    def n_points(self):
-        return len(self.xy)
+    def maximize(self):
+        return [False]
     
-    @property
-    def n_dims(self):
-        return self.xy.shape[1]
+    def calc_individual(self, vars_int, vars_float, problem_results):
+        xy = problem_results
+        value = 0.
+        for i in range(1, self.n_charges):
+            value += 2 * np.sum(1/np.linalg.norm(xy[i-1, None] - xy[i:], axis=-1))
+        return value
     
-    def calculate_potential(self):
-        dists = cdist(self.xy, self.xy)
-        np.fill_diagonal(dists, np.inf)
-        return np.sum(1/dists)
+    def calc_population(self, vars_int, vars_float, problem_results):
+        xy = problem_results
+        n_pop = len(xy)
+        value = np.zeros((n_pop, 1))
+        for i in range(1, self.n_charges):
+            value[:] += 2 * np.sum(1/np.linalg.norm(xy[:, i-1, None] - xy[:, i:], axis=-1))
+        return value
 
-class MinPotential(SimpleObjective):
+class MaxRadius(Constraint):
 
-    def __init__(self, problem):
-        super().__init__(problem, "potential", has_ana_derivs=False)
-        self.model = problem.model
-    
-    def f(self, *vars):
-        return self.model.calculate_potential()
-
-class MaxRadius(SimpleConstraint):
-
-    def __init__(self, problem, radius):
-        super().__init__(problem, "radius", n_components=problem.model.n_points, has_ana_derivs=False)
-        self.model = problem.model
+    def __init__(self, problem, n_charges, radius):
+        super().__init__(problem, "radius", vnames_float=problem.var_names_float())
+        self.n_charges = n_charges
         self.radius = radius
     
-    def f(self, *vars):
-        xy = np.array(vars).reshape(self.model.n_points, self.model.n_dims)
+    def n_components(self):
+        return self.n_charges
+    
+    def calc_individual(self, vars_int, vars_float, problem_results):
+        xy = problem_results
         r = np.linalg.norm(xy, axis=-1)
         return r - self.radius
 
-class ModelProblem(Problem):
+    def calc_population(self, vars_int, vars_float, problem_results):
+        xy = problem_results
+        r = np.linalg.norm(xy, axis=-1)
+        return r - self.radius
 
-    def __init__(self, model, mins, maxs, radius):
-        super().__init__(name="my_model")
+class ChargesProblem(Problem):
+
+    def __init__(self, xy_init, radius):
+        super().__init__(name="charges_problem")
         
-        self.model = model
-        self.N = self.model.n_points * self.model.n_dims
-        self.init_vals = self.model.xy.copy()
+        self.xy_init = xy_init
+        self.n_charges = len(xy_init)
+        self.radius = radius
 
-        self.mins = np.zeros((model.n_points, model.n_dims), dtype=np.float64)
-        self.mins[:] = np.array(mins)[None, :]
-        self.maxs = np.zeros((model.n_points, model.n_dims), dtype=np.float64)
-        self.maxs[:] = np.array(maxs)[None, :]
-
-        self.add_objective(MinPotential(self))
-        self.add_constraint(MaxRadius(self, radius))
+        self.add_objective(MinPotential(self, self.n_charges))
+        self.add_constraint(MaxRadius(self, self.n_charges, radius))
 
     def var_names_float(self):
         vnames = []
-        for i in range(self.model.n_points):
+        for i in range(self.n_charges):
             vnames += [f"x{i}", f"y{i}"]
         return vnames
 
     def initial_values_float(self):
-        return self.init_vals.reshape(self.N)
+        return self.xy_init.reshape(2*self.n_charges)
 
     def min_values_float(self):
-        return self.mins.reshape(self.N)
+        return np.full(2*self.n_charges, -self.radius)
 
     def max_values_float(self):
-        return self.maxs.reshape(self.N)
+        return np.full(2*self.n_charges, self.radius)
     
     def apply_individual(self, vars_int, vars_float):
-        xy = vars_float.reshape(self.model.n_points, self.model.n_dims)
-        self.model.xy = xy
+        return vars_float.reshape(self.n_charges, 2)
+
+    def apply_population(self, vars_int, vars_float):
+        n_pop = len(vars_float)
+        return vars_float.reshape(n_pop, self.n_charges, 2)
+
+    def get_fig(self, xy):
+        fig, ax = plt.subplots()
+        ax.scatter(xy[:, 0], xy[:, 1], color="orange")
+        ax.add_patch(plt.Circle((0, 0), self.radius, color='darkred', fill=False))
+        ax.set_aspect("equal", adjustable="box")
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
+        return fig

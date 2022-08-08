@@ -166,12 +166,12 @@ class SimpleObjective(Objective):
             The component values, shape: (n_pop, n_components,)
 
         """
-        varsi = (vars_int[:, vi] for vi in range(self.n_vars_int))
-        varsf = (vars_float[:, vi] for vi in range(self.n_vars_float))
+        varsi = [vars_int[:, vi] for vi in range(self.n_vars_int)]
+        varsf = [vars_float[:, vi] for vi in range(self.n_vars_float)]
 
         results = self.f(*varsi, *varsf)
         if self.n_components() == 1:
-            return results[:, None]
+            return np.atleast_1d(results)[:, None]
         else:
             return np.stack(results, axis=1)
 
