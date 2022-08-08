@@ -11,6 +11,7 @@ if IMPORT_OK:
     from pymoo.operators.crossover.sbx import SBX
     from pymoo.operators.mutation.pm import PM
     from pymoo.algorithms.soo.nonconvex.ga import GA
+    from pymoo.algorithms.soo.nonconvex.pso import PSO
     from pymoo.termination.default import (
         DefaultSingleObjectiveTermination,
         DefaultMultiObjectiveTermination,
@@ -91,6 +92,8 @@ class Factory:
         Algorithm factory function
         """
         typ = pars["type"]
+
+        # Genetic Algorithm:
         if typ == "ga":
 
             samp_name = pars.get("sampling", None)
@@ -114,8 +117,36 @@ class Factory:
                 pars["mutation"] = self.get_mutation(mut, **mut_pars)
 
             out = GA(**pars)
+        
+        # Particle Swarm:
+        elif typ == "pso":
+
+            if "samplig" in pars:
+                samp_name = pars.get("sampling", None)
+                samp_pars = pars.get("sampling_pars", {})
+                if "sampling_pars" in pars:
+                    del pars["sampling_pars"]
+                pars["sampling"] = self.get_sampling(samp_name, **samp_pars)
+
+            cross_pars = pars.get("crossover_pars", {})
+            if "crossover_pars" in pars:
+                del pars["crossover_pars"]
+            if "crossover" in pars and isinstance(pars["crossover"], str):
+                cross = pars["crossover"]
+                pars["crossover"] = self.get_crossover(cross, **cross_pars)
+
+            mut_pars = pars.get("mutation_pars", {})
+            if "mutation_pars" in pars:
+                del pars["mutation_pars"]
+            if "mutation" in pars and isinstance(pars["mutation"], str):
+                mut = pars["mutation"]
+                pars["mutation"] = self.get_mutation(mut, **mut_pars)
+
+            out = PSO(**pars)
+
+
         else:
-            raise KeyError(f"Unknown algorithm '{typ}', please choose: ga")
+            raise KeyError(f"Unknown algorithm '{typ}', please choose: ga, pso")
 
         self.print(f"Selecting algorithm: {typ} ({type(out).__name__})")
 

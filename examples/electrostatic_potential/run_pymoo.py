@@ -11,6 +11,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-n", "--n_points", help="The number of points", type=int, default=10
     )
+    parser.add_argument("-a", "--algo", help="The algorithm choice", default="ga")
     parser.add_argument("-r", "--radius", help="The radius", type=float, default=5.0)
     parser.add_argument("--n_gen", help="The number of generations", type=int, default=200)
     parser.add_argument("--n_pop", help="The population size", type=int, default=50)
@@ -35,7 +36,7 @@ if __name__ == "__main__":
             vectorize=args.pop,
         ),
         algo_pars=dict(
-            type="ga",
+            type=args.algo,
             pop_size=args.n_pop,
             seed=args.seed,
         ),

@@ -93,4 +93,5 @@ class ChargesProblem(Problem):
         ax.set_aspect("equal", adjustable="box")
         ax.set_xlabel("x")
         ax.set_ylabel("y")
+        ax.set_title(f"N = {self.n_charges}")
         return fig
