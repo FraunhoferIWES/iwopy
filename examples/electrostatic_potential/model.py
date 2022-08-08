@@ -27,8 +27,8 @@ class MinPotential(Objective):
         n_pop = len(xy)
         value = np.zeros((n_pop, 1))
         for i in range(1, self.n_charges):
-            value[:] += 2 * np.sum(
-                1 / np.linalg.norm(xy[:, i - 1, None] - xy[:, i:], axis=-1)
+            value[:, 0] += 2 * np.sum(
+                1 / np.linalg.norm(xy[:, i - 1, None] - xy[:, i:], axis=-1), axis=1
             )
         return value
 
