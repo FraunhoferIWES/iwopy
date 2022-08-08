@@ -7,7 +7,22 @@ class Constraint(OptFunction):
     """
     Abstract base class for optimization
     constraints.
+
+    Parameters
+    ----------
+    tol : float
+        The tolerance for constraint violations
+    
+    Attributes
+    ----------
+    tol : float
+        The tolerance for constraint violations
+
     """
+
+    def __init__(self, *args, tol=1e-5, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tol = tol
 
     def get_bounds(self):
         """
@@ -41,21 +56,22 @@ class Constraint(OptFunction):
             The verbosity level, 0 = silent
 
         Returns
-        -------
         values : np.array
+        -------
             The boolean result, shape: (n_components,)
 
         """
         vals = constraint_values
         mi, ma = self.get_bounds()
-        out = (vals >= mi) & (vals <= ma)
+        out = (vals + self.tol >= mi) & (vals - self.tol <= ma)
 
         if verbosity:
+            print(f"Constraint '{self.name}': tol = {self.tol}")
             cnames = self.component_names
             for ci in range(self.n_components()):
-                val = f"{cnames[ci]} = {vals[ci]:.3f}"
+                val = f"{cnames[ci]} = {vals[ci]:.3e}"
                 suc = "OK" if out[ci] else "FAILED"
-                print(f"Constraint {val:<30} {suc}")
+                print(f"  Constraint {val:<30} {suc}")
 
         return out
 
@@ -82,12 +98,13 @@ class Constraint(OptFunction):
         mi = np.array(mi, dtype=np.float64)
         ma = np.array(ma, dtype=np.float64)
 
-        out = (vals >= mi[None, :]) & (vals <= ma[None, :])
+        out = (vals + self.tol >= mi[None, :]) & (vals - self.tol <= ma[None, :])
 
         if verbosity:
+            print(f"Constraint '{self.name}': tol = {self.tol}")
             cnames = self.component_names
             for ci in range(self.n_components()):
                 suc = "OK" if np.all(out[ci]) else "FAILED"
-                print(f"Constraint {cnames[ci]:<20} {suc}")
+                print(f"  Constraint {cnames[ci]:<20} {suc}")
 
         return out

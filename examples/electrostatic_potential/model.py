@@ -34,8 +34,8 @@ class MinPotential(Objective):
 
 
 class MaxRadius(Constraint):
-    def __init__(self, problem, n_charges, radius):
-        super().__init__(problem, "radius", vnames_float=problem.var_names_float())
+    def __init__(self, problem, n_charges, radius, tol=1e-4):
+        super().__init__(problem, "radius", vnames_float=problem.var_names_float(), tol=tol)
         self.n_charges = n_charges
         self.radius = radius
 

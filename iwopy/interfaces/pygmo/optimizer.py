@@ -74,7 +74,7 @@ class Optimizer_pygmo(Optimizer):
         pnrfi = self.setup_pars.get("norandom_first", psize == 1)
         self.pop = pygmo.population(self.udp, size=psize, seed=pseed)
         self.pop.problem.c_tol = [
-            self.setup_pars.get("c_tol", 1e-10)
+            self.setup_pars.get("c_tol", 1e-4)
         ] * self.pop.problem.get_nc()
 
         # memorize verbosity level:

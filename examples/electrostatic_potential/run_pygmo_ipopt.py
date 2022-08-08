@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     solver = Optimizer_pygmo(
         gproblem,
-        problem_pars=dict(pop=args.pop),
+        problem_pars=dict(pop=args.pop, c_tol=1e-3),
         algo_pars=dict(type="ipopt", tol=1e-4),
     )
     solver.initialize()

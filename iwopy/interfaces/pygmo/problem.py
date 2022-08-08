@@ -50,7 +50,6 @@ class UDP:
         self.n_fitness = problem.n_objectives + problem.n_constraints
 
         self.c_tol = [c_tol] * problem.n_constraints
-        self.values = np.zeros(self.n_fitness, dtype=np.float64)
 
         self.pop = pop
         self.verbosity = verbosity
