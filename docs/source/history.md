@@ -28,7 +28,9 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Wrappers:
     - Introducing `SimpleObjective` and `SimpleConstraint`, for functions of simple numeric types like `f(x, y, ...)`
 - Examples:
-    - New example: `electrostatic_potential`
+    - New example: `electrostatics`, solvable with IPOPT, GA, PSO
+- Notebooks:
+    - Work on `examples.ipynb`: Adding section on simple function minimization
 
     
 **Full Changelog**: https://github.com/FraunhoferIWES/iwopy/commits/v0.0.13
