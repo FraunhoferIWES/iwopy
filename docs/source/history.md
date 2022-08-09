@@ -31,6 +31,10 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
     - New example: `electrostatics`, solvable with IPOPT, GA, PSO
 - Notebooks:
     - Work on `examples.ipynb`: Adding section on simple function minimization
-
     
 **Full Changelog**: https://github.com/FraunhoferIWES/iwopy/commits/v0.0.13
+
+## v0.0.14-alpha
+
+**Full Changelog**: https://github.com/FraunhoferIWES/iwopy/commits/v0.0.14
+
