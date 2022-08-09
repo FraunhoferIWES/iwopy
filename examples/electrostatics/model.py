@@ -43,7 +43,13 @@ class MaxRadius(Constraint):
 
     def n_components(self):
         return self.n_charges
-
+    
+    def vardeps_float(self):
+        deps = np.zeros((self.n_components(), self.n_charges, 2), dtype=bool)
+        np.fill_diagonal(deps[..., 0], True)
+        np.fill_diagonal(deps[..., 1], True)
+        return deps.reshape(self.n_components(), 2*self.n_charges)
+        
     def calc_individual(self, vars_int, vars_float, problem_results):
         xy = problem_results
         r = np.linalg.norm(xy, axis=-1)
