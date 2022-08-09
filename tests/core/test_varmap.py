@@ -53,88 +53,95 @@ class Con1(iwopy.Constraint):
         return self.f(n, a, x, k, p)[:, None]
 
 
-class Test:
-    def test_indi(self):
 
-        print("\n\nTEST INDI")
+def test_indi():
 
-        problem = iwopy.SimpleProblem(
-            "test", int_vars=["A", "N"], float_vars=["X", "Y", "K", "P"]
-        )
-        problem.add_objective(
-            Obj1(problem, "f"), varmap_int={0: "A"}, varmap_float={0: "X", 1: "Y"}
-        )
-        problem.add_constraint(
-            Con1(problem, "g"),
-            varmap_int={0: "N", 1: "A"},
-            varmap_float={0: "X", 1: "K", 2: "P"},
-        )
-        problem.initialize(verbosity=1)
+    print("\n\nTEST INDI")
 
-        N = 100
-        ivars = np.c_[np.arange(N), -np.arange(N)]
-        fvars = np.c_[
-            1000 + np.arange(N),
-            2000 + np.arange(N),
-            3000 + np.arange(N),
-            4000 + np.arange(N),
-        ]
-        for n in range(N):
+    problem = iwopy.SimpleProblem(
+        "test", 
+        int_vars=["A", "N"], 
+        float_vars=["X", "Y", "K", "P"],
+        init_values_int=[0, 0],
+        init_values_float=[0, 0, 0, 0],
+    )
+    problem.add_objective(
+        Obj1(problem, "f"), varmap_int={0: "A"}, varmap_float={0: "X", 1: "Y"}
+    )
+    problem.add_constraint(
+        Con1(problem, "g"),
+        varmap_int={0: "N", 1: "A"},
+        varmap_float={0: "X", 1: "K", 2: "P"},
+    )
+    problem.initialize(verbosity=1)
 
-            varsi = ivars[n]
-            varsf = fvars[n]
+    N = 100
+    ivars = np.c_[np.arange(N), -np.arange(N)]
+    fvars = np.c_[
+        1000 + np.arange(N),
+        2000 + np.arange(N),
+        3000 + np.arange(N),
+        4000 + np.arange(N),
+    ]
+    for n in range(N):
 
-            ovals, cvals = problem.evaluate_individual(varsi, varsf)
+        varsi = ivars[n]
+        varsf = fvars[n]
 
-            ovals_direct = np.array(Obj1.f(varsi[0], *varsf[:2]))
-            assert np.all(ovals == ovals_direct)
+        ovals, cvals = problem.evaluate_individual(varsi, varsf)
 
-            cvals_direct = np.array(Con1.f(varsi[1], varsi[0], varsf[0], *varsf[2:]))
-            assert np.all(cvals == cvals_direct)
-
-            assert np.all(problem.check_constraints_individual(cvals))
-
-    def test_pop(self):
-
-        print("\n\nTEST POP")
-
-        problem = iwopy.SimpleProblem(
-            "test", int_vars=["A", "N"], float_vars=["X", "Y", "K", "P"]
-        )
-        problem.add_objective(
-            Obj1(problem, "f"), varmap_int={0: "A"}, varmap_float={0: "X", 1: "Y"}
-        )
-        problem.add_constraint(
-            Con1(problem, "g"),
-            varmap_int={0: "N", 1: "A"},
-            varmap_float={0: "X", 1: "K", 2: "P"},
-        )
-        problem.initialize(verbosity=1)
-
-        N = 100
-        varsi = np.c_[np.arange(N), -np.arange(N)]
-        varsf = np.c_[
-            1000 + np.arange(N),
-            2000 + np.arange(N),
-            3000 + np.arange(N),
-            4000 + np.arange(N),
-        ]
-
-        ovals, cvals = problem.evaluate_population(varsi, varsf)
-
-        ovals_direct = np.column_stack(Obj1.f(varsi[:, 0], varsf[:, 0], varsf[:, 1]))
+        ovals_direct = np.array(Obj1.f(varsi[0], *varsf[:2]))
         assert np.all(ovals == ovals_direct)
 
-        cvals_direct = Con1.f(
-            varsi[:, 1], varsi[:, 0], varsf[:, 0], varsf[:, 2], varsf[:, 3]
-        )[:, None]
+        cvals_direct = np.array(Con1.f(varsi[1], varsi[0], varsf[0], *varsf[2:]))
         assert np.all(cvals == cvals_direct)
 
-        assert np.all(problem.check_constraints_population(cvals))
+        assert np.all(problem.check_constraints_individual(cvals))
+
+def test_pop():
+
+    print("\n\nTEST POP")
+
+    problem = iwopy.SimpleProblem(
+        "test", 
+        int_vars=["A", "N"], 
+        float_vars=["X", "Y", "K", "P"],
+        init_values_int=[0, 0],
+        init_values_float=[0, 0, 0, 0],
+    )
+    problem.add_objective(
+        Obj1(problem, "f"), varmap_int={0: "A"}, varmap_float={0: "X", 1: "Y"}
+    )
+    problem.add_constraint(
+        Con1(problem, "g"),
+        varmap_int={0: "N", 1: "A"},
+        varmap_float={0: "X", 1: "K", 2: "P"},
+    )
+    problem.initialize(verbosity=1)
+
+    N = 100
+    varsi = np.c_[np.arange(N), -np.arange(N)]
+    varsf = np.c_[
+        1000 + np.arange(N),
+        2000 + np.arange(N),
+        3000 + np.arange(N),
+        4000 + np.arange(N),
+    ]
+
+    ovals, cvals = problem.evaluate_population(varsi, varsf)
+
+    ovals_direct = np.column_stack(Obj1.f(varsi[:, 0], varsf[:, 0], varsf[:, 1]))
+    assert np.all(ovals == ovals_direct)
+
+    cvals_direct = Con1.f(
+        varsi[:, 1], varsi[:, 0], varsf[:, 0], varsf[:, 2], varsf[:, 3]
+    )[:, None]
+    assert np.all(cvals == cvals_direct)
+
+    assert np.all(problem.check_constraints_population(cvals))
 
 
 if __name__ == "__main__":
 
-    test = Test()
-    test.test_indi()
-    test.test_pop()
+    test_indi()
+    test_pop()

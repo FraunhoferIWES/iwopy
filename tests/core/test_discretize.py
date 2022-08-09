@@ -55,8 +55,9 @@ def test_grad():
         p = iwopy.SimpleProblem(
             "test",
             float_vars=["x", "y"],
-            min_float_vars={"x": 1.0, "y": 0.0},
-            max_float_vars={"x": 2.0, "y": 3.0},
+            init_values_float=[1.5, 1.0],
+            min_values_float=[1.0, 0.0],
+            max_values_float=[2.0, 3.0],
         )
         obj1 = Obj1(p, "f")
         p.add_objective(obj1, varmap_float={"x": "x", "y": "y"})

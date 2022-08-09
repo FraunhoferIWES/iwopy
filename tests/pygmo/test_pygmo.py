@@ -15,10 +15,8 @@ class RC(SimpleConstraint):
 
     def g(self, var, x, y, components):
 
-        cmpnts = [0, 1] if components is None else components
-        out = np.full(len(cmpnts), np.nan, dtype=np.float64)
-
-        for i, ci in enumerate(cmpnts):
+        out = np.full(len(components), np.nan, dtype=np.float64)
+        for i, ci in enumerate(components):
 
             # (x-1)**3 - y + 1
             if ci == 0:

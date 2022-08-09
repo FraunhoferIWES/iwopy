@@ -103,8 +103,8 @@ class BraninProblem(SimpleProblem):
         super().__init__(
             name,
             float_vars={"x": initial_values[0], "y": initial_values[1]},
-            min_float_vars={"x": -5.0, "y": 0.0},
-            max_float_vars={"x": 10.0, "y": 15},
+            min_values_float={"x": -5.0, "y": 0.0},
+            max_values_float={"x": 10.0, "y": 15},
         )
 
         self.add_objective(BraninObjective(self, ana_deriv=ana_deriv))

@@ -211,12 +211,14 @@ class SimpleConstraint(Constraint):
             The derivative values, shape: (n_sel_components,)
 
         """
+        cmpnts = list(range(self.n_components())) if components is None else components
+
         if self._ana:
-            results = self.g(var, *vars_int, *vars_float, components=components)
+            results = np.atleast_1d(self.g(var, *vars_int, *vars_float, cmpnts))
         else:
             results = None
 
         if results is None:
-            return super().ana_deriv(vars_int, vars_float, var, components=None)
+            return super().ana_deriv(vars_int, vars_float, var, cmpnts)
         else:
             return np.atleast_1d(np.array(results, dtype=np.float64))

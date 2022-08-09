@@ -105,8 +105,8 @@ class RosenbrockProblem(SimpleProblem):
         super().__init__(
             name,
             float_vars={"x": initial[0], "y": initial[1]},
-            min_float_vars={"x": lower[0], "y": lower[1]},
-            max_float_vars={"x": upper[0], "y": upper[1]},
+            min_values_float={"x": lower[0], "y": lower[1]},
+            max_values_float={"x": upper[0], "y": upper[1]},
         )
 
         self.add_objective(RosenbrockObjective(self, ana_deriv=ana_deriv))

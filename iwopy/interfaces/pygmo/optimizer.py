@@ -132,7 +132,6 @@ class Optimizer_pygmo(Optimizer):
         with suppress_stdout(silent):
 
             # Run solver:
-
             pop = self.algo.evolve(self.pop)
 
         return self.udp.finalize(pop, verbosity)

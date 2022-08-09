@@ -74,7 +74,7 @@ class SimpleObjective(Objective):
         """
         pass
 
-    def g(self, var, *x, components=None):
+    def g(self, var, *x, components):
         """
         The analytical derivative of the function f, df/dvar,
         if available.
@@ -86,8 +86,8 @@ class SimpleObjective(Objective):
             float variables
         x : tuple
             The int and float variables in that order.
-        components : list of int, optional
-            The selected components, or None for all
+        components : list of int
+            The selected components
 
         Returns
         -------
@@ -98,6 +98,19 @@ class SimpleObjective(Objective):
 
         """
         pass
+
+    @property
+    def has_ana_derivs(self):
+        """
+        Returns analyical derivatives flag
+
+        Returns
+        -------
+        bool :
+            Analitical derivatives flag
+
+        """
+        return self._ana
 
     def maximize(self):
         """
@@ -201,12 +214,14 @@ class SimpleObjective(Objective):
             The derivative values, shape: (n_sel_components,)
 
         """
+        cmpnts = list(range(self.n_components())) if components is None else components
+        
         if self._ana:
-            results = self.g(var, *vars_int, *vars_float, components=components)
+            results = np.atleast_1d(self.g(var, *vars_int, *vars_float, cmpnts))
         else:
             results = None
 
         if results is None:
-            return super().ana_deriv(vars_int, vars_float, var, components=None)
+            return super().ana_deriv(vars_int, vars_float, var, cmpnts)
         else:
             return np.atleast_1d(np.array(results, dtype=np.float64))
