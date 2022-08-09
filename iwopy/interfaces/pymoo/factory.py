@@ -117,7 +117,7 @@ class Factory:
                 pars["mutation"] = self.get_mutation(mut, **mut_pars)
 
             out = GA(**pars)
-        
+
         # Particle Swarm:
         elif typ == "pso":
 
@@ -143,7 +143,6 @@ class Factory:
                 pars["mutation"] = self.get_mutation(mut, **mut_pars)
 
             out = PSO(**pars)
-
 
         else:
             raise KeyError(f"Unknown algorithm '{typ}', please choose: ga, pso")

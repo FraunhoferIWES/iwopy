@@ -396,10 +396,10 @@ def test_rosen_ipopt():
 
 if __name__ == "__main__":
 
-    #test_branin_ipopt()
-    #test_branin_sga()
-    #test_branin_pso()
-    #test_branin_bee()
+    # test_branin_ipopt()
+    # test_branin_sga()
+    # test_branin_pso()
+    # test_branin_bee()
 
     test_rosen0_ipopt()
-    #test_rosen_ipopt()
+    # test_rosen_ipopt()

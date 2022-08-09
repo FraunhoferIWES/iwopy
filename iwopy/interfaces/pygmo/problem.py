@@ -82,11 +82,11 @@ class UDP:
         # apply new variables:
         values = np.zeros((n_pop, self.n_fitness), dtype=np.float64)
         objs, cons = self.problem.evaluate_population(xi, xf)
-        values[:, :self.problem.n_objectives] = objs
-        values[:, self.problem.n_objectives:] = cons
+        values[:, : self.problem.n_objectives] = objs
+        values[:, self.problem.n_objectives :] = cons
 
-        return values.reshape(n_pop*self.n_fitness)
-    
+        return values.reshape(n_pop * self.n_fitness)
+
     def has_batch_fitness(self):
         return self.pop
 

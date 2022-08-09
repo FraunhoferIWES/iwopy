@@ -53,14 +53,13 @@ class Con1(iwopy.Constraint):
         return self.f(n, a, x, k, p)[:, None]
 
 
-
 def test_indi():
 
     print("\n\nTEST INDI")
 
     problem = iwopy.SimpleProblem(
-        "test", 
-        int_vars=["A", "N"], 
+        "test",
+        int_vars=["A", "N"],
         float_vars=["X", "Y", "K", "P"],
         init_values_int=[0, 0],
         init_values_float=[0, 0, 0, 0],
@@ -98,13 +97,14 @@ def test_indi():
 
         assert np.all(problem.check_constraints_individual(cvals))
 
+
 def test_pop():
 
     print("\n\nTEST POP")
 
     problem = iwopy.SimpleProblem(
-        "test", 
-        int_vars=["A", "N"], 
+        "test",
+        int_vars=["A", "N"],
         float_vars=["X", "Y", "K", "P"],
         init_values_int=[0, 0],
         init_values_float=[0, 0, 0, 0],

@@ -46,11 +46,12 @@ def _calc(p, f, p0, o, lim, pop):
 
     assert np.max(d) < lim
 
+
 def test_o1_indi():
 
     print("\n\nTEST order 1 INDI")
 
-    p = iwopy.SimpleProblem("test", float_vars=["x", "y"], init_values_float=[0,0])
+    p = iwopy.SimpleProblem("test", float_vars=["x", "y"], init_values_float=[0, 0])
     f = Obj1(p, "f")
     p.add_objective(f, varmap_float={"x": "x", "y": "y"})
     p.initialize()
@@ -58,11 +59,12 @@ def test_o1_indi():
     for p0 in np.random.uniform(-2.0, 2.0, (100, 2)):
         _calc(p, f, p0, 1, 0.01, False)
 
+
 def test_om1_indi():
 
     print("\n\nTEST order -1 INDI")
 
-    p = iwopy.SimpleProblem("test", float_vars=["x", "y"], init_values_float=[0,0])
+    p = iwopy.SimpleProblem("test", float_vars=["x", "y"], init_values_float=[0, 0])
     f = Obj1(p, "f")
     p.add_objective(f, varmap_float={0: 0, 1: 1})
     p.initialize()
@@ -70,11 +72,12 @@ def test_om1_indi():
     for p0 in np.random.uniform(-2.0, 2.0, (100, 2)):
         _calc(p, f, p0, -1, 0.01, False)
 
+
 def test_o2_indi():
 
     print("\n\nTEST order 1 INDI")
 
-    p = iwopy.SimpleProblem("test", float_vars=["x", "y"], init_values_float=[0,0])
+    p = iwopy.SimpleProblem("test", float_vars=["x", "y"], init_values_float=[0, 0])
     f = Obj1(p, "f")
     p.add_objective(f)
     p.initialize()
@@ -82,11 +85,12 @@ def test_o2_indi():
     for p0 in np.random.uniform(-2.0, 2.0, (100, 2)):
         _calc(p, f, p0, 2, 0.01, False)
 
+
 def test_o1_pop():
 
     print("\n\nTEST order 1 POP")
 
-    p = iwopy.SimpleProblem("test", float_vars=["x", "y"], init_values_float=[0,0])
+    p = iwopy.SimpleProblem("test", float_vars=["x", "y"], init_values_float=[0, 0])
     f = Obj1(p, "f")
     p.add_objective(f)
     p.initialize()
@@ -94,11 +98,12 @@ def test_o1_pop():
     for p0 in np.random.uniform(-2.0, 2.0, (100, 2)):
         _calc(p, f, p0, 1, 0.01, True)
 
+
 def test_om1_pop():
 
     print("\n\nTEST order -1 POP")
 
-    p = iwopy.SimpleProblem("test", float_vars=["x", "y"], init_values_float=[0,0])
+    p = iwopy.SimpleProblem("test", float_vars=["x", "y"], init_values_float=[0, 0])
     f = Obj1(p, "f")
     p.add_objective(f)
     p.initialize()
@@ -106,11 +111,12 @@ def test_om1_pop():
     for p0 in np.random.uniform(-2.0, 2.0, (100, 2)):
         _calc(p, f, p0, -1, 0.01, True)
 
+
 def test_o2_pop():
 
     print("\n\nTEST order 1 POP")
 
-    p = iwopy.SimpleProblem("test", float_vars=["x", "y"], init_values_float=[0,0])
+    p = iwopy.SimpleProblem("test", float_vars=["x", "y"], init_values_float=[0, 0])
     f = Obj1(p, "f")
     p.add_objective(f)
     p.initialize()

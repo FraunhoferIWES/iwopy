@@ -90,8 +90,8 @@ class Optimizer_pygmo(Optimizer):
             if self.problem.n_vars_int:
                 x[self.problem.n_vars_float :] = self.problem.initial_values_int()
 
-            #xf = x[: self.problem.n_vars_float]
-            #xi = x[self.problem.n_vars_float :].astype(np.int64)
+            # xf = x[: self.problem.n_vars_float]
+            # xi = x[self.problem.n_vars_float :].astype(np.int64)
 
             self.udp._active = True
             self.pop.set_x(0, x)

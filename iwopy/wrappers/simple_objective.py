@@ -215,7 +215,7 @@ class SimpleObjective(Objective):
 
         """
         cmpnts = list(range(self.n_components())) if components is None else components
-        
+
         if self._ana:
             results = np.atleast_1d(self.g(var, *vars_int, *vars_float, cmpnts))
         else:

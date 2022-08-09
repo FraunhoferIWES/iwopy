@@ -35,7 +35,9 @@ class AlgoFactory:
                     bfe = pygmo.bfe()
                     uda.set_bfe(bfe)
                 except AttributeError:
-                    print(f"Algorithm '{type}': Failed to set bfe for pop mode, will not run vectorized")
+                    print(
+                        f"Algorithm '{type}': Failed to set bfe for pop mode, will not run vectorized"
+                    )
 
         # nlopt:
         if type == "nlopt":
@@ -74,7 +76,7 @@ class AlgoFactory:
 
                 else:
                     uda.set_string_option(k, a)
-            
+
             algo = pygmo.algorithm(uda)
 
         # sga:
@@ -125,7 +127,7 @@ class AlgoFactory:
 
             uda = pygmo.sga(**kwargs)
             set_bfe(uda)
-                
+
             algo = pygmo.algorithm(uda)
 
         # pso:
@@ -171,7 +173,7 @@ class AlgoFactory:
 
             uda = pygmo.pso(**kwargs)
             set_bfe(uda)
-                
+
             algo = pygmo.algorithm(uda)
 
         # bee_colony:
@@ -193,7 +195,7 @@ class AlgoFactory:
 
             uda = pygmo.bee_colony(**kwargs)
             set_bfe(uda)
-                
+
             algo = pygmo.algorithm(uda)
 
         # nsga2:
@@ -219,7 +221,7 @@ class AlgoFactory:
 
             uda = pygmo.nsga2(**kwargs)
             set_bfe(uda)
-                
+
             algo = pygmo.algorithm(uda)
 
         # unknown driver:

@@ -60,10 +60,14 @@ class SimpleProblem(Problem):
         if isinstance(int_vars, dict):
             self._ivars = int_vars
             if init_values_int is not None:
-                raise KeyError(f"Problem '{self.name}': Unexpected parameter 'init_values_int' together with dict type 'int_vars'")
+                raise KeyError(
+                    f"Problem '{self.name}': Unexpected parameter 'init_values_int' together with dict type 'int_vars'"
+                )
         elif int_vars is not None:
             if init_values_int is None:
-                raise KeyError(f"Problem '{self.name}': Expecting parameter 'init_values_int' together with list type 'int_vars'")
+                raise KeyError(
+                    f"Problem '{self.name}': Expecting parameter 'init_values_int' together with list type 'int_vars'"
+                )
             self._ivars = {v: init_values_int[i] for i, v in enumerate(int_vars)}
         else:
             self._ivars = {}
@@ -71,10 +75,14 @@ class SimpleProblem(Problem):
         if isinstance(float_vars, dict):
             self._fvars = float_vars
             if init_values_float is not None:
-                raise KeyError(f"Problem '{self.name}': Unexpected parameter 'init_values_float' together with dict type 'float_vars'")
+                raise KeyError(
+                    f"Problem '{self.name}': Unexpected parameter 'init_values_float' together with dict type 'float_vars'"
+                )
         elif float_vars is not None:
             if init_values_float is None:
-                raise KeyError(f"Problem '{self.name}': Expecting parameter 'init_values_float' together with list type 'float_vars'")
+                raise KeyError(
+                    f"Problem '{self.name}': Expecting parameter 'init_values_float' together with list type 'float_vars'"
+                )
             self._fvars = {v: init_values_float[i] for i, v in enumerate(float_vars)}
         else:
             self._fvars = {}
@@ -82,28 +90,36 @@ class SimpleProblem(Problem):
         if isinstance(min_values_int, dict):
             self._ivars_min = min_values_int
         elif min_values_int is not None:
-            self._ivars_min = {v: min_values_int[i] for i, v in enumerate(self._ivars.keys())}
+            self._ivars_min = {
+                v: min_values_int[i] for i, v in enumerate(self._ivars.keys())
+            }
         else:
             self._ivars_min = {v: -self.INT_INF for v in self._ivars}
 
         if isinstance(max_values_int, dict):
             self._ivars_max = max_values_int
         elif max_values_int is not None:
-            self._ivars_max = {v: max_values_int[i] for i, v in enumerate(self._ivars.keys())}
+            self._ivars_max = {
+                v: max_values_int[i] for i, v in enumerate(self._ivars.keys())
+            }
         else:
             self._ivars_max = {v: self.INT_INF for v in self._ivars}
 
         if isinstance(min_values_float, dict):
             self._fvars_min = min_values_float
         elif min_values_float is not None:
-            self._fvars_min = {v: min_values_float[i] for i, v in enumerate(self._fvars.keys())}
+            self._fvars_min = {
+                v: min_values_float[i] for i, v in enumerate(self._fvars.keys())
+            }
         else:
             self._fvars_min = {v: -np.inf for v in self._fvars}
 
         if isinstance(max_values_float, dict):
             self._fvars_max = max_values_float
         elif max_values_float is not None:
-            self._fvars_max = {v: max_values_float[i] for i, v in enumerate(self._fvars.keys())}
+            self._fvars_max = {
+                v: max_values_float[i] for i, v in enumerate(self._fvars.keys())
+            }
         else:
             self._fvars_max = {v: np.inf for v in self._fvars}
 

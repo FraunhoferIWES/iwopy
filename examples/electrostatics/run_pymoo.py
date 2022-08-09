@@ -13,7 +13,9 @@ if __name__ == "__main__":
     )
     parser.add_argument("-a", "--algo", help="The algorithm choice", default="ga")
     parser.add_argument("-r", "--radius", help="The radius", type=float, default=5.0)
-    parser.add_argument("--n_gen", help="The number of generations", type=int, default=200)
+    parser.add_argument(
+        "--n_gen", help="The number of generations", type=int, default=200
+    )
     parser.add_argument("--n_pop", help="The population size", type=int, default=50)
     parser.add_argument("--seed", help="The seed", type=int, default=None)
     parser.add_argument("--pop", help="Run in vectorized form", action="store_true")

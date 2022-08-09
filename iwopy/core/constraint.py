@@ -12,7 +12,7 @@ class Constraint(OptFunction):
     ----------
     tol : float
         The tolerance for constraint violations
-    
+
     Attributes
     ----------
     tol : float
