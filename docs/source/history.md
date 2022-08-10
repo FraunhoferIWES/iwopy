@@ -36,4 +36,9 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 ## v0.0.14-alpha
 
+- Notebooks:
+    - Work on `examples.ipynb`: Adding electrostatics example
+- Core:
+    - `OptResults` can now be printed
+
 **Full Changelog**: https://github.com/FraunhoferIWES/iwopy/commits/v0.0.14

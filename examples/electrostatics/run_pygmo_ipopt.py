@@ -44,9 +44,9 @@ if __name__ == "__main__":
     results = solver.solve()
     solver.finalize(results)
 
-    xy = results.problem_results
-    print("\nResults:\n", xy.tolist())
+    print()
+    print(results)
 
-    fig = problem.get_fig(xy)
+    fig = problem.get_fig(results.problem_results)
     plt.show()
     plt.close(fig)

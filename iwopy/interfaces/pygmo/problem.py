@@ -231,4 +231,4 @@ class UDP:
         if verbosity:
             print()
 
-        return OptResults(suc, xi, xf, objs, cons, res)
+        return OptResults(self.problem, suc, xi, xf, objs, cons, res)
