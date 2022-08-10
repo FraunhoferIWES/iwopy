@@ -42,3 +42,7 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
     - `OptResults` can now be printed
 
 **Full Changelog**: https://github.com/FraunhoferIWES/iwopy/commits/v0.0.14
+
+## v0.0.15-alpha
+
+**Full Changelog**: https://github.com/FraunhoferIWES/iwopy/commits/v0.0.15
