@@ -637,10 +637,24 @@ class Problem(Base, metaclass=ABCMeta):
         i0 = 0
         for f in self.objs.functions:
             i1 = i0 + f.n_components()
-            self._maximize[i0:i1] = np.array(f.maximize(), dtype=bool)
+            self._maximize[i0:i1] = f.maximize()
             i0 = i1
 
         super().initialize(verbosity)
+    
+    @property
+    def maximize_objs(self):
+        """
+        Flags for objective maximization
+
+        Returns
+        -------
+        maximize : numpy.ndarray
+            Boolean flag for maximization of objective,
+            shape: (n_objectives,)
+
+        """
+        return self._maximize
 
     def apply_individual(self, vars_int, vars_float):
         """
