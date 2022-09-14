@@ -192,7 +192,7 @@ class Pymoo_problem(Problem):
                 else:
                     dummies = np.zeros((n_pop, 0), dtype=np.float64)
                     self.problem.finalize_population(dummies, vars, verbosity)
-
+            
             res, objs, cons = self.problem.finalize_individual(xi, xf, verbosity)
 
             if verbosity:
