@@ -13,6 +13,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("-a", "--algo", help="The algorithm choice", default="ga")
     parser.add_argument("-r", "--radius", help="The radius", type=float, default=5.0)
+    parser.add_argument("-d", "--min_dist", help="The minimal charges distance", type=float, default=None)
     parser.add_argument(
         "--n_gen", help="The number of generations", type=int, default=200
     )
@@ -22,10 +23,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     n = args.n_points
     r = args.radius
+    d = args.min_dist
 
     xy = np.random.uniform(-r / 10.0, r / 10.0, (n, 2))
 
-    problem = ChargesProblem(xy, r)
+    problem = ChargesProblem(xy, r, d)
     problem.initialize()
 
     fig = problem.get_fig(xy)

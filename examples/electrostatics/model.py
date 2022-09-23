@@ -19,7 +19,8 @@ class MinPotential(Objective):
         xy = problem_results
         value = 0.0
         for i in range(1, self.n_charges):
-            value += 2 * np.sum(1 / np.linalg.norm(xy[i - 1, None] - xy[i:], axis=-1))
+            dist = np.maximum(np.linalg.norm(xy[i - 1, None] - xy[i:], axis=-1), 1e-10)
+            value += 2 * np.sum(1 / dist)
         return value
 
     def calc_population(self, vars_int, vars_float, problem_results):
@@ -27,9 +28,8 @@ class MinPotential(Objective):
         n_pop = len(xy)
         value = np.zeros((n_pop, 1))
         for i in range(1, self.n_charges):
-            value[:, 0] += 2 * np.sum(
-                1 / np.linalg.norm(xy[:, i - 1, None] - xy[:, i:], axis=-1), axis=1
-            )
+            dist = np.maximum(np.linalg.norm(xy[:, i - 1, None] - xy[:, i:], axis=-1), 1e-10)
+            value[:, 0] += 2 * np.sum(1 / dist, axis=1)
         return value
 
 
@@ -61,8 +61,57 @@ class MaxRadius(Constraint):
         return r - self.radius
 
 
+class MinDist(Constraint):
+    def __init__(self, problem, n_charges, min_dist, tol=1e-4):
+        super().__init__(
+            problem, "dist", vnames_float=problem.var_names_float(), tol=tol
+        )
+        self.n_charges = n_charges
+        self.min_dist = min_dist
+
+    def initialize(self, verbosity=0):
+        N = self.n_charges
+        self.i2t = [] # i --> (ti, tj)
+        self.t2i = np.full([N, N], -1) # (ti, tj) --> i
+        i = 0
+        for ti in range(N):
+            for tj in range(N):
+                if ti != tj and self.t2i[ti, tj] < 0:
+                    self.i2t.append([ti, tj])
+                    self.t2i[ti, tj] = i
+                    self.t2i[tj, ti] = i
+                    i += 1
+        self.i2t = np.array(self.i2t)
+        self._cnames = [f"dist_{ti}_{tj}" for ti, tj in self.i2t]
+        super().initialize(verbosity)
+
+    def n_components(self):
+        return len(self.i2t)
+
+    def vardeps_float(self):
+        deps = np.zeros((self.n_components(), self.n_charges, 2), dtype=bool)
+        for i, (ti, tj) in enumerate(self.i2t):
+            deps[i, ti] = True
+            deps[i, tj] = True
+        return deps.reshape(self.n_components(), 2 * self.n_charges)
+
+    def calc_individual(self, vars_int, vars_float, problem_results):
+        xy = problem_results
+        a = np.take_along_axis(xy, self.i2t[:, 0, None], axis=0)
+        b = np.take_along_axis(xy, self.i2t[:, 1, None], axis=0)
+        d = np.linalg.norm(a - b, axis=-1)
+        return self.min_dist - d
+
+    def calc_population(self, vars_int, vars_float, problem_results):
+        xy = problem_results
+        a = np.take_along_axis(xy, self.i2t[None, :, 0, None], axis=1)
+        b = np.take_along_axis(xy, self.i2t[None, :, 1, None], axis=1)
+        d = np.linalg.norm(a - b, axis=-1)
+        return self.min_dist - d
+
+
 class ChargesProblem(Problem):
-    def __init__(self, xy_init, radius):
+    def __init__(self, xy_init, radius, min_dist=None):
         super().__init__(name="charges_problem")
 
         self.xy_init = xy_init
@@ -71,6 +120,8 @@ class ChargesProblem(Problem):
 
         self.add_objective(MinPotential(self, self.n_charges))
         self.add_constraint(MaxRadius(self, self.n_charges, radius))
+        if min_dist is not None:
+            self.add_constraint(MinDist(self, self.n_charges, min_dist))
 
     def var_names_float(self):
         vnames = []

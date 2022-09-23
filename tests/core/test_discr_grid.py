@@ -16,7 +16,7 @@ def test_interp_point():
         n = np.random.randint(50, 60, dims)
         p = np.random.uniform(0.02, 5.0, dims)
 
-        g = iwopy.utils.RegularDiscretizationGrid(o, d, n)
+        g = iwopy.utils.RegularDiscretizationGrid(o, d, n, interpolation="linear")
         g.print_info()
 
         pts, c = g.interpolation_coeffs_point(p)
@@ -48,7 +48,7 @@ def test_interp_points():
         n = np.random.randint(51, 60, dims)
         pts = np.random.uniform(0.1, 5.0, (N, dims))
 
-        g = iwopy.utils.RegularDiscretizationGrid(o, d, n)
+        g = iwopy.utils.RegularDiscretizationGrid(o, d, n, interpolation="linear")
         g.print_info()
 
         gpts, c = g.interpolation_coeffs_points(pts)
@@ -91,7 +91,7 @@ def test_deriv_gp():
         n = [int(1 / step)]
         gpts = np.array([[0.0], [0.3], [0.6], [1.0]])
 
-        grid = iwopy.utils.RegularDiscretizationGrid(o, d, n)
+        grid = iwopy.utils.RegularDiscretizationGrid(o, d, n, interpolation="linear")
         grid.print_info()
 
         inds = grid.gpts2inds(gpts)
@@ -147,7 +147,7 @@ def test_deriv():
         n = [int(1 / step)]
         pts = np.array([[0.0], [0.3], [0.1 * np.pi], [0.60000123124], [1.0]])
 
-        grid = iwopy.utils.RegularDiscretizationGrid(o, d, n)
+        grid = iwopy.utils.RegularDiscretizationGrid(o, d, n, interpolation="linear")
         grid.print_info()
 
         print("\ngpts =", pts.tolist())
@@ -219,7 +219,7 @@ def test_grad_gp():
             ]
         )
 
-        grid = iwopy.utils.RegularDiscretizationGrid(o, d, n)
+        grid = iwopy.utils.RegularDiscretizationGrid(o, d, n, interpolation="linear")
         grid.print_info()
 
         inds = grid.gpts2inds(gpts)
@@ -291,7 +291,7 @@ def test_grad():
             ]
         )
 
-        grid = iwopy.utils.RegularDiscretizationGrid(o, d, n)
+        grid = iwopy.utils.RegularDiscretizationGrid(o, d, n, interpolation="linear")
         grid.print_info()
 
         print("\npts =", pts.tolist())
