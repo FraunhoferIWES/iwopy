@@ -34,7 +34,7 @@ class MinPotential(Objective):
 
 
 class MaxRadius(Constraint):
-    def __init__(self, problem, n_charges, radius, tol=1e-4):
+    def __init__(self, problem, n_charges, radius, tol=1e-3):
         super().__init__(
             problem, "radius", vnames_float=problem.var_names_float(), tol=tol
         )
@@ -62,7 +62,7 @@ class MaxRadius(Constraint):
 
 
 class MinDist(Constraint):
-    def __init__(self, problem, n_charges, min_dist, tol=1e-4):
+    def __init__(self, problem, n_charges, min_dist, tol=1e-3):
         super().__init__(
             problem, "dist", vnames_float=problem.var_names_float(), tol=tol
         )
@@ -111,7 +111,7 @@ class MinDist(Constraint):
 
 
 class ChargesProblem(Problem):
-    def __init__(self, xy_init, radius, min_dist=None):
+    def __init__(self, xy_init, radius, min_dist=None, ctol=1e-3):
         super().__init__(name="charges_problem")
 
         self.xy_init = xy_init
@@ -119,9 +119,9 @@ class ChargesProblem(Problem):
         self.radius = radius
 
         self.add_objective(MinPotential(self, self.n_charges))
-        self.add_constraint(MaxRadius(self, self.n_charges, radius))
+        self.add_constraint(MaxRadius(self, self.n_charges, radius, ctol))
         if min_dist is not None:
-            self.add_constraint(MinDist(self, self.n_charges, min_dist))
+            self.add_constraint(MinDist(self, self.n_charges, min_dist, ctol))
 
     def var_names_float(self):
         vnames = []

@@ -45,4 +45,9 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 ## v0.0.15-alpha
 
+- Utils:
+    - `RegularDiscretizationGrid` now with interpolation parameter: None, nearest or linear
+- Examples:
+    - `electrostatics`: New optional constraint `MinDist`, forcing charges to keep a minimal distance. Also adding a script that demonstrates how to solve this problem using `NLOPT` via `pygmo`
+
 **Full Changelog**: https://github.com/FraunhoferIWES/iwopy/commits/v0.0.15

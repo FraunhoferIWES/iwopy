@@ -18,7 +18,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--min_dist", help="The minimal charges distance", type=float, default=None)
     parser.add_argument("-o", "--order", help="Derivative order", type=int, default=1)
     parser.add_argument("-i", "--interpolation", help="The interpolation method", default=None)
-    parser.add_argument("--pop", help="Run in vectorized form", action="store_true")
+    parser.add_argument("-nop", "--no_pop", help="Switch off vectorization", action="store_true")
     args = parser.parse_args()
     n = args.n_points
     r = args.radius
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     np.random.seed(42)
     xy = np.random.uniform(-r / 10.0, r / 10.0, (n, 2))
 
-    problem = ChargesProblem(xy, r, d)
+    problem = ChargesProblem(xy, r, d, ctol=1e-2)
 
     fig = problem.get_fig(xy)
     plt.show()
@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     solver = Optimizer_pygmo(
         gproblem,
-        problem_pars=dict(pop=args.pop, c_tol=1e-2),
+        problem_pars=dict(pop=not args.no_pop),
         algo_pars=dict(type="ipopt", tol=1e-4),
     )
     solver.initialize()

@@ -40,7 +40,6 @@ class UDP:
     def __init__(
         self,
         problem,
-        c_tol=0.0,
         pop=False,
         verbosity=0,
     ):
@@ -49,7 +48,7 @@ class UDP:
         self.n_vars_all = problem.n_vars_float + problem.n_vars_int
         self.n_fitness = problem.n_objectives + problem.n_constraints
 
-        self.c_tol = [c_tol] * problem.n_constraints
+        self.c_tol = problem.constraints_tol
 
         self.pop = pop
         self.verbosity = verbosity
