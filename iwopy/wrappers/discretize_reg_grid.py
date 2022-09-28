@@ -88,7 +88,7 @@ class DiscretizeRegGrid(ProblemWrapper):
                         f"Problem '{self.name}': Missing fd_bounds_order entry for variable '{v}'"
                     )
 
-    def initialize(self, verbosity=0):
+    def initialize(self, verbosity=1):
         """
         Initialize the problem.
 
@@ -100,7 +100,7 @@ class DiscretizeRegGrid(ProblemWrapper):
         """
         super().initialize(verbosity)
 
-        if verbosity:
+        if verbosity > 1:
             print(f"  Finite difference grid:")
 
         self._vinds = []
@@ -146,7 +146,7 @@ class DiscretizeRegGrid(ProblemWrapper):
                 deltas.append((vmax - vmin) / nsteps[-1])
 
         self.grid = RegularDiscretizationGrid(origin, deltas, nsteps, **self._dpars)
-        if verbosity:
+        if verbosity > 1:
             self.grid.print_info(4)
             print(self._hline)
 
