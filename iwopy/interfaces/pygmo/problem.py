@@ -1,6 +1,6 @@
 import numpy as np
 
-from iwopy.core import OptResults, Problem
+from iwopy.core import OptResults, Problem, OptFunctionList, OptFunctionSubset
 
 
 class UDP:
@@ -134,6 +134,17 @@ class UDP:
         cmpnts = np.unique(spars[:, 0])
         vrs = np.unique(spars[:, 1])
 
+        if len(cmpnts) != self.problem.n_objectives + self.problem.n_constraints:
+            func = OptFunctionList(self.problem, "objs_cons")
+            for f in self.problem.objs.functions:
+                func.append(f)
+            for f in self.problem.cons.functions:
+                func.append(f)
+            func = OptFunctionSubset(func, cmpnts)
+            func.initialize()
+        else:
+            func = None
+
         varsf = x[: self.problem.n_vars_float]
         varsi = x[self.problem.n_vars_float :].astype(np.int32)
 
@@ -141,7 +152,7 @@ class UDP:
             varsi,
             varsf,
             vars=vrs,
-            components=cmpnts,
+            func=func,
             verbosity=self.verbosity,
             pop=self.pop,
         )
