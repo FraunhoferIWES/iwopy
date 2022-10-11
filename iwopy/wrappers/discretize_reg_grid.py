@@ -2,7 +2,7 @@ import numpy as np
 
 from iwopy.utils import RegularDiscretizationGrid
 from .problem_wrapper import ProblemWrapper
-from iwopy.core import Memory
+from iwopy.core import Memory, ProblemDefaultFunc
 
 
 class DiscretizeRegGrid(ProblemWrapper):
@@ -168,15 +168,16 @@ class DiscretizeRegGrid(ProblemWrapper):
         vars_int,
         vars_float,
         func,
+        components,
         ivars,
         fvars,
         vrs,
-        components,
         pop=False,
         verbosity=0,
     ):
         """
-        The actual gradient calculation.
+        The actual gradient calculation, not to be called directly
+        (call `get_gradients` instead).
 
         Can be overloaded in derived classes, the base class only considers
         analytic derivatives.
@@ -191,6 +192,8 @@ class DiscretizeRegGrid(ProblemWrapper):
             The functions to be differentiated, or None
             for a list of all objectives and all constraints
             (in that order)
+        components : list of int, optional
+            The function's component selection, or None for all
         ivars : list of int
             The indices of the function int variables in the problem
         fvars : list of int
@@ -198,8 +201,6 @@ class DiscretizeRegGrid(ProblemWrapper):
         vrs : list of int
             The function float variable indices wrt which the
             derivatives are to be calculated
-        components : list of int
-            The selected components of func, or None for all
         pop : bool
             Flag for vectorizing calculations via population
         verbosity : int
@@ -209,23 +210,25 @@ class DiscretizeRegGrid(ProblemWrapper):
         -------
         gradients : numpy.ndarray
             The gradients of the functions, shape:
-            (n_func_cmpnts, n_vrs)
+            (n_components, n_vrs)
 
         """
         # get analytic gradient results:
         gradients = super().calc_gradients(
-            vars_int, vars_float, func, ivars, fvars, vrs, components, verbosity
+            vars_int, vars_float, func, components, ivars, fvars, vrs, verbosity
         )
 
         # find variables and components of unsolved gradients:
         gnan = np.isnan(gradients)
-        gvars = np.where(np.any(gnan, axis=0))[0]
+        gvars = np.unique(np.where(np.any(gnan, axis=0))[0])
         pvars = np.array(fvars)[gvars]
         gvars = [vi for vi in pvars if vi in self._vinds]
         ivars = [self._vinds.index(vi) for vi in gvars]
-        cmpnts = np.where(np.any(gnan, axis=1))[0]
-        cmpnts = [c for c in components if c in cmpnts]
-        if not len(gvars) or not len(cmpnts):
+        cmpnts = np.arange(func.n_components()) if components is None else np.array(components)
+        cmptsi = np.unique(np.where(np.any(gnan, axis=1))[0])
+        fcmpts = cmpnts[cmptsi]
+        fcomps = fcmpts if components is not None else None
+        if not len(gvars) or not len(fcmpts):
             return gradients
         del gnan
 
@@ -238,28 +241,36 @@ class DiscretizeRegGrid(ProblemWrapper):
         # run the calculation:
         n_pop = len(gpts)
         varsf = np.full((n_pop, self.n_vars_float), np.nan, dtype=np.float64)
+        values = np.full((n_pop, len(cmptsi)), np.nan, dtype=np.float64)
         varsf[:] = vars_float[None, :]
         varsf[:, gvars] = gpts
         if pop:
             varsi = np.zeros((n_pop, self.n_vars_int), dtype=np.int32)
             if self.n_vars_int:
                 varsi[:] = vars_int[None, :]
-            objs, cons = self.evaluate_population(varsi, varsf)
+            if isinstance(func, ProblemDefaultFunc):
+                os, cs = self.evaluate_population(varsi, varsf)
+                s = np.s_[:] if components is None else fcmpts
+                values[:] = np.c_[os, cs][:, s]
+                del os, cs, s 
+            else:
+                results = self.apply_population(varsi, varsf)
+                values[:] = func.calc_population(varsi, varsf, results, fcomps)
+                del results
         else:
-            objs = np.full((n_pop, self.n_objectives), np.nan, dtype=np.float64)
-            cons = np.full((n_pop, self.n_constraints), np.nan, dtype=np.float64)
             for i, vf in enumerate(varsf):
-                objs[i], cons[i] = self.evaluate_individual(vars_int, vf)
+                if isinstance(func, ProblemDefaultFunc):
+                    os, cs = self.evaluate_individual(vars_int, vf)
+                    s = np.s_[:] if components is None else fcmpts
+                    values[i] = np.r_[os, cs][s]
+                    del os, cs, s 
+                else:
+                    results = self.apply_individual(vars_int, vf)
+                    values[i] = func.calc_individual(vars_int, vf, results, fcomps)
+                    del results
 
         # recombine results:
-        fres = np.c_[objs, cons][:, cmpnts]
-        gres = np.einsum("gc,vg->cv", fres, coeffs[0])
-        if len(cmpnts) == func.n_components():
-            gradients[:, gvars] = gres
-        else:
-            temp = gradients[:, gvars]
-            temp[cmpnts] = gres
-            gradients[:, gvars] = temp
+        gradients[:, gvars] = np.einsum("gc,vg->cv", values, coeffs[0])
 
         return gradients
 
@@ -283,7 +294,6 @@ class DiscretizeRegGrid(ProblemWrapper):
         """
         if self.grid.is_gridpoint(vars_float[self._vinds]):
             return super().apply_individual(vars_int, vars_float)
-
         else:
             raise NotImplementedError(
                 f"Problem '{self.name}' cannot apply non-grid point {vars_float} to problem"
@@ -310,7 +320,6 @@ class DiscretizeRegGrid(ProblemWrapper):
         """
         if self.grid.all_gridpoints(vars_float[:, self._vinds]):
             return super().apply_population(vars_int, vars_float)
-
         else:
             raise NotImplemented(
                 f"Problem '{self.name}' cannot apply non-grid points to problem"

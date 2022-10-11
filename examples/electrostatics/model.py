@@ -15,7 +15,7 @@ class MinPotential(Objective):
     def maximize(self):
         return [False]
 
-    def calc_individual(self, vars_int, vars_float, problem_results):
+    def calc_individual(self, vars_int, vars_float, problem_results, cmpnts=None):
         xy = problem_results
         value = 0.0
         for i in range(1, self.n_charges):
@@ -23,7 +23,7 @@ class MinPotential(Objective):
             value += 2 * np.sum(1 / dist)
         return value
 
-    def calc_population(self, vars_int, vars_float, problem_results):
+    def calc_population(self, vars_int, vars_float, problem_results, cmpnts=None):
         xy = problem_results
         n_pop = len(xy)
         value = np.zeros((n_pop, 1))
@@ -36,7 +36,7 @@ class MinPotential(Objective):
 class MaxRadius(Constraint):
     def __init__(self, problem, n_charges, radius, tol=1e-3):
         super().__init__(
-            problem, "radius", vnames_float=problem.var_names_float(), tol=tol
+            problem, "circle", vnames_float=problem.var_names_float(), tol=tol
         )
         self.n_charges = n_charges
         self.radius = radius
@@ -50,13 +50,15 @@ class MaxRadius(Constraint):
         np.fill_diagonal(deps[..., 1], True)
         return deps.reshape(self.n_components(), 2 * self.n_charges)
 
-    def calc_individual(self, vars_int, vars_float, problem_results):
-        xy = problem_results
+    def calc_individual(self, vars_int, vars_float, problem_results, cmpnts=None):
+        cmpnts = np.s_[:] if cmpnts is None else cmpnts
+        xy = problem_results[cmpnts]
         r = np.linalg.norm(xy, axis=-1)
         return r - self.radius
 
-    def calc_population(self, vars_int, vars_float, problem_results):
-        xy = problem_results
+    def calc_population(self, vars_int, vars_float, problem_results, cmpnts=None):
+        cmpnts = np.s_[:] if cmpnts is None else cmpnts
+        xy = problem_results[:, cmpnts]
         r = np.linalg.norm(xy, axis=-1)
         return r - self.radius
 
@@ -95,17 +97,19 @@ class MinDist(Constraint):
             deps[i, tj] = True
         return deps.reshape(self.n_components(), 2 * self.n_charges)
 
-    def calc_individual(self, vars_int, vars_float, problem_results):
+    def calc_individual(self, vars_int, vars_float, problem_results, cmpnts=None):
+        cmpnts = np.s_[:] if cmpnts is None else cmpnts
         xy = problem_results
-        a = np.take_along_axis(xy, self.i2t[:, 0, None], axis=0)
-        b = np.take_along_axis(xy, self.i2t[:, 1, None], axis=0)
+        a = np.take_along_axis(xy, self.i2t[cmpnts, 0, None], axis=0)
+        b = np.take_along_axis(xy, self.i2t[cmpnts, 1, None], axis=0)
         d = np.linalg.norm(a - b, axis=-1)
         return self.min_dist - d
 
-    def calc_population(self, vars_int, vars_float, problem_results):
+    def calc_population(self, vars_int, vars_float, problem_results, cmpnts=None):
+        cmpnts = np.s_[:] if cmpnts is None else cmpnts
         xy = problem_results
-        a = np.take_along_axis(xy, self.i2t[None, :, 0, None], axis=1)
-        b = np.take_along_axis(xy, self.i2t[None, :, 1, None], axis=1)
+        a = np.take_along_axis(xy, self.i2t[None, cmpnts, 0, None], axis=1)
+        b = np.take_along_axis(xy, self.i2t[None, cmpnts, 1, None], axis=1)
         d = np.linalg.norm(a - b, axis=-1)
         return self.min_dist - d
 

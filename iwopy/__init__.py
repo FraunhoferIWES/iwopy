@@ -10,6 +10,7 @@ from .wrappers import (
 from . import utils
 from . import interfaces
 from . import benchmarks
+from . import optimizers
 
 from importlib.resources import read_text
 
