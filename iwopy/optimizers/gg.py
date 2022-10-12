@@ -3,13 +3,14 @@ import numpy as np
 from iwopy.core import Optimizer, OptResults
 
 
-class SCGG(Optimizer):
+class GG(Optimizer):
     """
-    Simple Constrained Greedy Gradient (SCGG) optimizer
+    Greedy Gradient (GG) optimizer, for local optimum
+    search with constraints.
 
     Follows steepest decent, reducing step size
-    in a finite number of steps on the way. Violated
-    constaints get priority.
+    in a finite number of steps on the way. Step directions
+    that violate constraints are projected out or reversed.
 
     Parameters
     ----------
@@ -199,8 +200,14 @@ class SCGG(Optimizer):
         obs0 = obs[0]
         valid = self.problem.check_constraints_individual(cons)
 
-        print("VARS",self.problem.var_names_float())
-        
+        if verbosity > 0:
+            s = f"{'it':<5} | {'Objective':<9} | cviol"
+            hline = "-"*(len(s)+1)
+            print("\nRunning GG")
+            print(hline)
+            print(s)
+            print(hline)
+
         step = self.step_max.copy()
         count = -1
         while not np.all(step < self.step_min):
@@ -208,10 +215,8 @@ class SCGG(Optimizer):
             count += 1
             recover = not np.all(valid)
 
-            #if count == 8: quit()
-            print("\nCOUNT", count)
-            print("X",list(x))
-            print("VALID",np.sum(valid), ": RECOVER",recover)
+            if verbosity > 0:
+                print(f"{count:<5} | {obs[0]:9.3e} | {np.sum(~valid)}")
 
             # check memory:
             sel = np.max(np.abs(x[None, :] - self.memory[0][:nmem]), axis=1) < 1e-13 if nmem > 0 else np.array([False])
@@ -219,8 +224,9 @@ class SCGG(Optimizer):
                 jmem = np.where(sel)[0][0]
                 grads = self.memory[1][jmem]
                 step /= self.step_div_factor
-                print("OLD",i,list(x),self.memory[2][jmem])
             else:
+
+                # fresh calculation:
                 grads = self.problem.get_gradients(inone, x, pop=self.vectorized)
 
                 # memorize:
@@ -229,13 +235,11 @@ class SCGG(Optimizer):
                 self.memory[1][jmem] = grads
                 self.memory[2][jmem] = obs[0]
                 self.memory[3][jmem] = not recover
-                print("NEW",jmem,obs[0],not recover)
                 imem = (imem + 1) % self.memory_size
                 nmem = min(nmem + 1, self.memory_size)
 
             # project out directions of constraint violation:
             grad = grads[0].copy()
-            print("GRAD 0", list(grad))
             deltax = self._grad2deltax(-grad, step)
             ncons = cons + np.einsum('cd,d->c', grads[1:], deltax)
             nvalid = ncons <= 0 #self.problem.check_constraints_individual(ncons)
@@ -245,7 +249,6 @@ class SCGG(Optimizer):
             for ci in np.where(~valid | newbad )[0]:
                 n = grads[1+ci] / np.linalg.norm(grads[1+ci])
                 grad -= np.dot(grad, n) * n
-            print("GRAD 1", list(grad))
             
             # follow grad, but move downwards along violated directions:
             deltax = np.zeros((self.n_max_steps, n_vars), dtype=np.float64)
@@ -254,22 +257,16 @@ class SCGG(Optimizer):
                 deltax[:] += self._grad2deltax(-grads[1+ci], step)
 
             # linear approximation when crossing constraint bondary:
-            for ci in np.where(cnews)[0]:
+            for ci in np.where(newbad)[0]:
                 m = np.linalg.norm(grads[1+ci])
                 if np.abs(m) > 0:
                     deltax[0] -= grads[1+ci] * cons[ci] / m**2
             newx = self._get_newx(x, deltax)
 
-            print("STEP",list(step))
-            print("GRAD",list(grad))
-            print("DELTAX 0", list(deltax[0]))
-            if self.n_max_steps > 1:
-                print("DELTAX 1", list(deltax[1]))
-            print("NEWX", len(newx))
             if not len(newx):
-                print("GOT CAUGHT, NO NEWX FOUND")
-                break
+                continue
 
+            """ for debugging
             import matplotlib.pyplot as plt
             pres = self.problem.base_problem.apply_individual(inone, x)
             fig = self.problem.get_fig(pres)
@@ -278,6 +275,7 @@ class SCGG(Optimizer):
                 ax.annotate(str(i), xy)
             plt.show()
             plt.close(fig)
+            """
 
             if self.vectorized:
 
@@ -286,7 +284,6 @@ class SCGG(Optimizer):
                 obsp, consp = self.problem.evaluate_population(inonep, newx)
                 validp = self.problem.check_constraints_population(consp)
                 valc = np.all(validp, axis=1)
-                print("A",n_vars,len(valc),recover,np.any(valc))
 
                 # evaluate population results:
                 if np.any(valc):
@@ -296,7 +293,6 @@ class SCGG(Optimizer):
                         obs = obsp[i]
                         cons = consp[i]
                         valid = validp[i]
-                        print("B",i,obs[0])
 
                     else: 
 
@@ -310,25 +306,23 @@ class SCGG(Optimizer):
                             i = np.argmin(obsp)
                             if obsp[i][0] >= obs[0]:
                                 i = -1
-                        print("C",obsp[i][0],i)
 
                         if i >= 0:
                             x = newx[valc][i]
                             obs = obsp[i]
                             cons = consp[valc][i]
                             valid = validp[valc][i]
-                            print("D",i,obs[0])
                     
                 else:
                     x = newx[0]
                     obs = obsp[0]
                     cons = consp[0]
                     valid = validp[0]    
-                    print("E",obs[0],np.sum(~valid))
                 
 
             # non-vectorized:
             else:
+                raise NotImplementedError
                 for si in range(self.n_max_steps):
 
                     if si > 0:
@@ -364,6 +358,9 @@ class SCGG(Optimizer):
                     elif not recover:
                         break
         
+        if verbosity > 0:
+            print(f"{hline}\n")
+
         # final evaluation:
         pres, obs, cons = self.problem.finalize_individual(inone, x, verbosity)
         valid = self.problem.check_constraints_individual(cons, verbosity)

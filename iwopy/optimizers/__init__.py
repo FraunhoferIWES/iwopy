@@ -1,1 +1,1 @@
-from .scgg import SCGG
+from .gg import GG

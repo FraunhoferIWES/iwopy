@@ -3,7 +3,7 @@ import argparse
 import matplotlib.pyplot as plt
 
 from iwopy import DiscretizeRegGrid
-from iwopy.optimizers import SCGG
+from iwopy.optimizers import GG
 from model import ChargesProblem
 
 if __name__ == "__main__":
@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-n", "--n_points", help="The number of points", type=int, default=5
+        "-n", "--n_points", help="The number of points", type=int, default=10
     )
     parser.add_argument("-r", "--radius", help="The radius", type=float, default=5.0)
     parser.add_argument("-d", "--min_dist", help="The minimal charges distance", type=float, default=None)
@@ -34,14 +34,14 @@ if __name__ == "__main__":
     plt.close(fig)
 
     gproblem = DiscretizeRegGrid(
-        problem, deltas=1e-6, fd_order=args.order, fd_bounds_order=1, tol=1e-6, interpolation=args.interpolation
+        problem, deltas=1e-8, fd_order=args.order, fd_bounds_order=1, tol=1e-10, interpolation=args.interpolation
     )
     gproblem.initialize()
 
-    solver = SCGG(
+    solver = GG(
         gproblem,
         step_max=0.1,
-        step_min=1e-5,
+        step_min=1e-6,
         vectorized=not args.no_pop,
     )
     solver.initialize()
