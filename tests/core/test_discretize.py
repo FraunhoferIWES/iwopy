@@ -18,11 +18,11 @@ class Obj1(iwopy.Objective):
     def maximize(self):
         return [False]
 
-    def calc_individual(self, vars_int, vars_float, problem_results):
+    def calc_individual(self, vars_int, vars_float, problem_results, cmpnts=None):
         x, y = vars_float
         return [f(x, y)]
 
-    def calc_population(self, vars_int, vars_float, problem_results):
+    def calc_population(self, vars_int, vars_float, problem_results, cmpnts=None):
         x, y = vars_float[:, 0], vars_float[:, 1]
         return f(x, y)[:, None]
 
