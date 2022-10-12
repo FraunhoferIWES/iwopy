@@ -312,10 +312,9 @@ class OptFunction(Base, metaclass=ABCMeta):
         Returns
         -------
         values : np.array
-            The component values, shape: (n_pop, n_sel_components,)
+            The component values, shape: (n_pop, n_sel_components)
 
         """
-
         if problem_results is not None:
             raise NotImplementedError(
                 f"Not implemented for class {type(self).__name__}, results type {type(problem_results).__name__}"

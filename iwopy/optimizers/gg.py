@@ -67,7 +67,7 @@ class GG(Optimizer):
             vectorized=True, 
             n_max_steps=400,
             memory_size=500,
-            name="SGG",
+            name="GG",
         ):
         super().__init__(problem, name)
         self.step_max = step_max
@@ -145,7 +145,7 @@ class GG(Optimizer):
         hline = "-"*len(s)
         print(hline)
         for i, vname in enumerate(self.problem.var_names_float()):
-            print(f" ({i}) {vname}: step size {self.step_min:.2e} -- {self.step_max:.2e}")
+            print(f" ({i}) {vname}: step size {self.step_min[i]:.2e} -- {self.step_max[i]:.2e}")
         print(hline)
 
     def _get_newx(self, x, deltax):
@@ -317,8 +317,7 @@ class GG(Optimizer):
                     x = newx[0]
                     obs = obsp[0]
                     cons = consp[0]
-                    valid = validp[0]    
-                
+                    valid = validp[0]        
 
             # non-vectorized:
             else:
