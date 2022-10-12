@@ -17,12 +17,12 @@ class Obj1(iwopy.Objective):
     def f(cls, a, x, y):
         return [a, x, y]
 
-    def calc_individual(self, vars_int, vars_float, problem_results):
+    def calc_individual(self, vars_int, vars_float, problem_results, cmpnts=None):
         a = vars_int[0]
         x, y = vars_float
         return np.array(self.f(a, x, y))
 
-    def calc_population(self, vars_int, vars_float, problem_results):
+    def calc_population(self, vars_int, vars_float, problem_results, cmpnts=None):
         a = vars_int[:, 0]
         x, y = vars_float[:, 0], vars_float[:, 1]
         return np.column_stack(self.f(a, x, y))
@@ -42,12 +42,12 @@ class Con1(iwopy.Constraint):
     def f(cls, n, a, x, k, p):
         return n + a - x + k - p
 
-    def calc_individual(self, vars_int, vars_float, problem_results):
+    def calc_individual(self, vars_int, vars_float, problem_results, cmpnts=None):
         n, a = vars_int
         x, k, p = vars_float
         return np.array(self.f(n, a, x, k, p))
 
-    def calc_population(self, vars_int, vars_float, problem_results):
+    def calc_population(self, vars_int, vars_float, problem_results, cmpnts=None):
         n, a = vars_int[:, 0], vars_int[:, 1]
         x, k, p = vars_float[:, 0], vars_float[:, 1], vars_float[:, 2]
         return self.f(n, a, x, k, p)[:, None]

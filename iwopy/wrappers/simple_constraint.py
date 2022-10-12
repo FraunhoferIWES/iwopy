@@ -135,7 +135,7 @@ class SimpleConstraint(Constraint):
         """
         return self._n_comps
 
-    def calc_individual(self, vars_int, vars_float, problem_results):
+    def calc_individual(self, vars_int, vars_float, problem_results, components=None):
         """
         Calculate values for a single individual of the
         underlying problem.
@@ -149,17 +149,19 @@ class SimpleConstraint(Constraint):
         problem_results : Any
             The results of the variable application
             to the problem
+        components : list of int, optional
+            The selected components or None for all
 
         Returns
         -------
         values : np.array
-            The component values, shape: (n_components,)
+            The component values, shape: (n_sel_components,)
 
         """
         results = np.array(self.f(*vars_int, *vars_float), dtype=np.float64)
         return np.atleast_1d(results)
 
-    def calc_population(self, vars_int, vars_float, problem_results):
+    def calc_population(self, vars_int, vars_float, problem_results, components=None):
         """
         Calculate values for all individuals of a population.
 
@@ -172,11 +174,13 @@ class SimpleConstraint(Constraint):
         problem_results : Any
             The results of the variable application
             to the problem
+        components : list of int, optional
+            The selected components or None for all
 
         Returns
         -------
         values : np.array
-            The component values, shape: (n_pop, n_components,)
+            The component values, shape: (n_pop, n_sel_components,)
 
         """
         varsi = (vars_int[:, vi] for vi in range(self.n_vars_int))
