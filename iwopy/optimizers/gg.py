@@ -65,8 +65,8 @@ class GG(Optimizer):
             step_min, 
             step_div_factor=10.,
             vectorized=True, 
-            n_max_steps=400,
-            memory_size=500,
+            n_max_steps=100,
+            memory_size=100,
             name="GG",
         ):
         super().__init__(problem, name)
@@ -159,10 +159,14 @@ class GG(Optimizer):
             newx[i] += np.sum(deltax[:i+1], axis=0)
 
         mi = self.problem.min_values_float()[None, :]
-        ma = self.problem.max_values_float()[None, :]
-        sel = np.all(newx >= mi, axis=1) & np.all(newx <= ma, axis=1)
+        sel = np.where(newx < mi)
+        newx[sel[0], sel[1]] = mi[0, sel[1]]
 
-        return newx[sel]
+        ma = self.problem.max_values_float()[None, :]
+        sel = np.where(newx > ma)
+        newx[sel[0], sel[1]] = ma[0, sel[1]]
+
+        return newx
     
     def _grad2deltax(self, grad, step):
         """
@@ -228,6 +232,7 @@ class GG(Optimizer):
 
                 # fresh calculation:
                 grads = self.problem.get_gradients(inone, x, pop=self.vectorized)
+                step = self.step_max.copy()
 
                 # memorize:
                 jmem = imem
@@ -246,18 +251,18 @@ class GG(Optimizer):
             newbad = valid & ~nvalid
             newgood = ~valid & nvalid
             cnews = newgood | newbad
-            for ci in np.where(~valid | newbad )[0]:
+            for ci in np.where(~valid | cnews )[0]:
                 n = grads[1+ci] / np.linalg.norm(grads[1+ci])
                 grad -= np.dot(grad, n) * n
             
             # follow grad, but move downwards along violated directions:
             deltax = np.zeros((self.n_max_steps, n_vars), dtype=np.float64)
             deltax[:] = self._grad2deltax(-grad, step)[None, :]
-            for ci in np.where(~valid)[0]:
+            for ci in np.where(~valid & ~cnews)[0]:
                 deltax[:] += self._grad2deltax(-grads[1+ci], step)
 
             # linear approximation when crossing constraint bondary:
-            for ci in np.where(newbad)[0]:
+            for ci in np.where(cnews)[0]:
                 m = np.linalg.norm(grads[1+ci])
                 if np.abs(m) > 0:
                     deltax[0] -= grads[1+ci] * cons[ci] / m**2
@@ -266,7 +271,8 @@ class GG(Optimizer):
             if not len(newx):
                 continue
 
-            """ for debugging
+            """
+            # for debugging
             import matplotlib.pyplot as plt
             pres = self.problem.base_problem.apply_individual(inone, x)
             fig = self.problem.get_fig(pres)
@@ -321,21 +327,22 @@ class GG(Optimizer):
 
             # non-vectorized:
             else:
-                raise NotImplementedError
-                for si in range(self.n_max_steps):
+                anygood = False
+                for i, hx in enumerate(newx):
 
-                    if si > 0:
-                        newx += deltax
-
-                    obsh, consh = self.problem.evaluate_individual(inone, newx)
+                    obsh, consh = self.problem.evaluate_individual(inone, hx)
                     validh = self.problem.check_constraints_individual(consh)
-                    print("NEWX",list(newx))
-                    print("OBSH",obsh[0])
-                    quit()
                     
+                    if i == 0:
+                        hx0 = hx
+                        obsh0 = obsh
+                        consh0 = consh
+                        validh0 = validh
+
                     if np.all(validh):
+                        anygood = True
                         if recover:
-                            x = newx
+                            x = hx
                             obs = obsh
                             cons = consh
                             valid = validh
@@ -347,15 +354,16 @@ class GG(Optimizer):
                             else:
                                 better = obsh[0] < obs[0]
                             if better:
-                                x = newx
+                                x = hx
                                 obs = obsh
-                                consh = consh
+                                cons = consh
                                 valid = validh
-                            else:
-                                break
 
-                    elif not recover:
-                        break
+                if not anygood:
+                    x = hx0
+                    obs = obsh0
+                    cons = consh0
+                    valid = validh0
         
         if verbosity > 0:
             print(f"{hline}\n")
