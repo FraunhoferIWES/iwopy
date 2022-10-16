@@ -2,6 +2,7 @@ from .core import Problem, Objective, Constraint, Memory
 from .wrappers import (
     ProblemWrapper,
     DiscretizeRegGrid,
+    LocalFD,
     SimpleProblem,
     SimpleObjective,
     SimpleConstraint,
