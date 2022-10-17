@@ -116,11 +116,6 @@ class LocalFD(ProblemWrapper):
         """
         Helper function that provides gradient coeffs
         """
-        print("LOCALFD GRAD COEFFS")
-        print(list(varsf))
-        print(list(gvars))
-        print(list(order))
-        print(list(orderb))
         
         # prepare:
         n_vars = len(gvars)
@@ -128,42 +123,50 @@ class LocalFD(ProblemWrapper):
         vmax = np.array(self.max_values_float(), dtype=np.float64)[gvars]
         x0 = varsf
         d = self._d[gvars]
-        xplus = x0 + d
-        xminus = x0 - d
+
+        xplus = np.zeros((self.n_vars_float, self.n_vars_float), dtype=np.float64)
+        np.fill_diagonal(xplus, d)
+        xplus += x0[None, :]
+        xminus = np.zeros((self.n_vars_float, self.n_vars_float), dtype=np.float64)
+        np.fill_diagonal(xminus, -d)
+        xminus += x0[None, :]
+        xminus2 = None
+        xplus2 = None
+
         pts = np.zeros((n_vars, 2, self.n_vars_float), dtype=np.float64)
         cfs = np.zeros((n_vars, n_vars, 2), dtype=np.float64)
         cf0 = np.zeros(n_vars, dtype=np.float64)
 
         # domain, order 1:
-        sel = (order == 1) & (xplus <= vmax) 
+        sel = (order == 1) & (xplus.diagonal() <= vmax) 
         if np.any(sel):
             pts[sel, 0] = xplus[sel]
             cfs[sel, sel, 0] = 1/d[sel]
             cf0[sel] = -1/d[sel]
 
         # right boundary, order 1:
-        sel = (orderb == 1) & (xplus > vmax)
+        sel = (orderb == 1) & (xplus.diagonal() > vmax)
         if np.any(sel):
             pts[sel, 0] = xminus[sel]
             cfs[sel, sel, 0] = -1/d[sel]
             cf0[sel] = 1/d[sel]
 
         # domain, order -1:
-        sel = (order == -1) & (xminus >= vmin) 
+        sel = (order == -1) & (xminus.diagonal() >= vmin) 
         if np.any(sel):
             pts[sel, 0] = xminus[sel]
             cfs[sel, sel, 0] = -1/d[sel]
             cf0[sel] = 1/d[sel]
 
         # left boundary, order -1:
-        sel = (orderb == -1) & (xminus < vmin)
+        sel = (orderb == -1) & (xminus.diagonal() < vmin)
         if np.any(sel):
             pts[sel, 0] = xplus[sel]
             cfs[sel, sel, 0] = 1/d[sel]
             cf0[sel] = -1/d[sel]
 
         # domain, order 2:
-        sel = (order == 2) & (xplus <= vmax)  & (xminus >= vmin) 
+        sel = (order == 2) & (xplus.diagonal() <= vmax)  & (xminus.diagonal() >= vmin) 
         if np.any(sel):
             pts[sel, 0] = xplus[sel]
             pts[sel, 1] = xminus[sel]
@@ -171,23 +174,30 @@ class LocalFD(ProblemWrapper):
             cfs[sel, sel, 1] = -0.5/d[sel]
 
         # right boundary, order 2:
-        sel = (order == 2) & (xplus > vmax) 
+        sel = (order == 2) & (xplus.diagonal() > vmax) 
         if np.any(sel):
+            if xminus2 is None:
+                xminus2 = np.zeros_like(xminus)
+                np.fill_diagonal(xminus2, -2*d)
+                xminus2 += x0[None, :]
             pts[sel, 0] = xminus[sel]
-            pts[sel, 1] = xminus[sel] - d[sel]
+            pts[sel, 1] = xminus2[sel]
             cf0[sel] = 1.5/d[sel]
             cfs[sel, sel, 0] = -2/d[sel]
             cfs[sel, sel, 1] = 0.5/d[sel]
 
         # left boundary, order 2:
-        sel = (order == 2) & (xminus < vmax) 
+        sel = (order == 2) & (xminus.diagonal() < vmax) 
         if np.any(sel):
+            if xplus2 is None:
+                xplus2 = np.zeros_like(xplus)
+                np.fill_diagonal(xplus2, 2*d)
+                xplus2 += x0[None, :]
             pts[sel, 0] = xplus[sel]
-            pts[sel, 1] = xplus[sel] + d[sel]
+            pts[sel, 1] = xplus2[sel]
             cf0[sel] = -1.5/d[sel]
             cfs[sel, sel, 0] = 2/d[sel]
             cfs[sel, sel, 1] = -0.5/d[sel]
-        print(f"PTS\n{pts}")
         
         # reduce and reorganize:
         sel = np.any(np.abs(cfs) > 1e-13, axis=0)
@@ -199,13 +209,6 @@ class LocalFD(ProblemWrapper):
         if np.any(sel):
             pts = np.append(pts, x0[None, :], axis=0)
             cfs = np.append(cfs, cf0[:, None], axis=1)
-        
-        print(f"PTS\n{pts}")
-        print("CFS",cfs)
-        print(d)
-        print(x0)
-        print(xplus)
-        quit()
         
         return pts, cfs
 
@@ -317,8 +320,5 @@ class LocalFD(ProblemWrapper):
 
         # recombine results:
         gradients[:, gvars] = np.einsum("pc,vp->cv", values, coeffs)
-        print("VALUES",values)
-        print("GRADIENTS",gradients)
-        quit()
 
         return gradients
