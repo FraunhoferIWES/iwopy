@@ -198,3 +198,57 @@ class ProblemWrapper(Problem):
 
         """
         return self.base_problem.apply_population(vars_int, vars_float)
+
+    def finalize_individual(self, vars_int, vars_float, verbosity=1):
+        """
+        Finalization, given the champion data.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The optimal integer variable values, shape: (n_vars_int,)
+        vars_float : np.array
+            The optimal float variable values, shape: (n_vars_float,)
+        verbosity : int
+            The verbosity level, 0 = silent
+
+        Returns
+        -------
+        problem_results : Any
+            The results of the variable application
+            to the problem
+        objs : np.array
+            The objective function values, shape: (n_objectives,)
+        cons : np.array
+            The constraints values, shape: (n_constraints,)
+
+        """
+        return self.base_problem.finalize_individual(vars_int, vars_float, verbosity)
+
+    def finalize_population(self, vars_int, vars_float, verbosity=0):
+        """
+        Finalization, given the final population data.
+
+        Parameters
+        ----------
+        vars_int : np.array
+            The integer variable values of the final
+            generation, shape: (n_pop, n_vars_int)
+        vars_float : np.array
+            The float variable values of the final
+            generation, shape: (n_pop, n_vars_float)
+        verbosity : int
+            The verbosity level, 0 = silent
+
+        Returns
+        -------
+        problem_results : Any
+            The results of the variable application
+            to the problem
+        objs : np.array
+            The final objective function values, shape: (n_pop, n_components)
+        cons : np.array
+            The final constraint values, shape: (n_pop, n_constraints)
+
+        """
+        return self.base_problem.finalize_population(vars_int, vars_float, verbosity)
