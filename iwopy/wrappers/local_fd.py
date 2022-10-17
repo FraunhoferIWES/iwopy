@@ -112,6 +112,13 @@ class LocalFD(ProblemWrapper):
         self._orderb = np.array(self._orderb, dtype=np.int32)
         self._d = np.array(self._d, dtype=np.float64)
 
+        sel = (self._order == -1) | (self._order == 1) | (self._order == 2)
+        if not np.all(sel):
+            raise NotImplementedError(f'Order(s) {list(np.unique(self._order[~sel]))} not implemented.')
+        sel = (self._orderb == -1) | (self._orderb == 1) | (self._orderb == 2)
+        if not np.all(sel):
+            raise NotImplementedError(f'Boundary order(s) {list(np.unique(self._orderb[~sel]))} not implemented.')
+
     def _grad_coeffs(self, varsf, gvars, order, orderb):
         """
         Helper function that provides gradient coeffs
