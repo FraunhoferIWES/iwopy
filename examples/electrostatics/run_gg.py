@@ -2,7 +2,7 @@ import numpy as np
 import argparse
 import matplotlib.pyplot as plt
 
-from iwopy import DiscretizeRegGrid, LocalFD
+from iwopy import LocalFD
 from iwopy.optimizers import GG
 from model import ChargesProblem
 
@@ -33,14 +33,7 @@ if __name__ == "__main__":
     plt.show()
     plt.close(fig)
 
-    """
-    gproblem = DiscretizeRegGrid(
-        problem, deltas=1e-8, fd_order=args.order, fd_bounds_order=1, tol=1e-10, interpolation=args.interpolation
-    )
-    """
-    gproblem = LocalFD(
-        problem, deltas=1e-2, fd_order=args.order, fd_bounds_order=1
-    )
+    gproblem = LocalFD(problem, deltas=1e-2, fd_order=args.order)
     gproblem.initialize()
 
     solver = GG(
