@@ -39,7 +39,7 @@ if __name__ == "__main__":
     )
     """
     gproblem = LocalFD(
-        problem, deltas=1e-8, fd_order=args.order, fd_bounds_order=1
+        problem, deltas=1e-2, fd_order=args.order, fd_bounds_order=1
     )
     gproblem.initialize()
 
