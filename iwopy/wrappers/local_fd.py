@@ -46,7 +46,7 @@ class LocalFD(ProblemWrapper):
         base_problem,
         deltas,
         fd_order=1,
-        fd_bounds_order=1,
+        fd_bounds_order=None,
         name=None,
     ):
         name = base_problem.name + "_fd" if name is None else name
@@ -174,7 +174,7 @@ class LocalFD(ProblemWrapper):
             cfs[sel, sel, 1] = -0.5/d[sel]
 
         # right boundary, order 2:
-        sel = (order == 2) & (xplus.diagonal() > vmax) 
+        sel = (orderb == 2) & (xplus.diagonal() > vmax) 
         if np.any(sel):
             if xminus2 is None:
                 xminus2 = np.zeros_like(xminus)
@@ -187,7 +187,7 @@ class LocalFD(ProblemWrapper):
             cfs[sel, sel, 1] = 0.5/d[sel]
 
         # left boundary, order 2:
-        sel = (order == 2) & (xminus.diagonal() < vmax) 
+        sel = (orderb == 2) & (xminus.diagonal() < vmax) 
         if np.any(sel):
             if xplus2 is None:
                 xplus2 = np.zeros_like(xplus)

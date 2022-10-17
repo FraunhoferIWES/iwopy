@@ -47,6 +47,8 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 - Utils:
     - `RegularDiscretizationGrid` now with interpolation parameter: None, nearest or linear
+- Wrappers:
+    - New wrapper: `LocalFD`, Local Finite Difference. Calculates function derivatives by applying local finite difference rules. Currently orders 1 and 2 are implemented, more could be added later.
 - Optimizers:
     - New optimizer: `GG`, Greedy Gradient. A pretty straight forward gradient based local optimizer that projects out (or reverses) directions of constraint violation. Mostly implemented for the purpose of testing gradients, but maybe worth a try also for problem solving.
 - Examples:
