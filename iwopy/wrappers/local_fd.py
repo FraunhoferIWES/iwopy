@@ -187,6 +187,7 @@ class LocalFD(ProblemWrapper):
             cf0[sel] = -1.5/d[sel]
             cfs[sel, sel, 0] = 2/d[sel]
             cfs[sel, sel, 1] = -0.5/d[sel]
+        print(f"PTS\n{pts}")
         
         # reduce and reorganize:
         sel = np.any(np.abs(cfs) > 1e-13, axis=0)
@@ -198,6 +199,13 @@ class LocalFD(ProblemWrapper):
         if np.any(sel):
             pts = np.append(pts, x0[None, :], axis=0)
             cfs = np.append(cfs, cf0[:, None], axis=1)
+        
+        print(f"PTS\n{pts}")
+        print("CFS",cfs)
+        print(d)
+        print(x0)
+        print(xplus)
+        quit()
         
         return pts, cfs
 
@@ -309,5 +317,8 @@ class LocalFD(ProblemWrapper):
 
         # recombine results:
         gradients[:, gvars] = np.einsum("pc,vp->cv", values, coeffs)
+        print("VALUES",values)
+        print("GRADIENTS",gradients)
+        quit()
 
         return gradients
