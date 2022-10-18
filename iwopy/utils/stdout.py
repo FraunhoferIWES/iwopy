@@ -16,8 +16,8 @@ def suppress_stdout(silent=True):
     Source:
     https://stackoverflow.com/questions/2125702/how-to-suppress-console-output-in-python
 
-    Paramters
-    ---------
+    Parameters
+    ----------
     silent: bool
         Flag for the silent treatment.
 
