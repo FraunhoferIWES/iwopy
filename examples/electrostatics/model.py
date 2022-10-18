@@ -28,7 +28,9 @@ class MinPotential(Objective):
         n_pop = len(xy)
         value = np.zeros((n_pop, 1))
         for i in range(1, self.n_charges):
-            dist = np.maximum(np.linalg.norm(xy[:, i - 1, None] - xy[:, i:], axis=-1), 1e-10)
+            dist = np.maximum(
+                np.linalg.norm(xy[:, i - 1, None] - xy[:, i:], axis=-1), 1e-10
+            )
             value[:, 0] += 2 * np.sum(1 / dist, axis=1)
         return value
 
@@ -73,8 +75,8 @@ class MinDist(Constraint):
 
     def initialize(self, verbosity=0):
         N = self.n_charges
-        self.i2t = [] # i --> (ti, tj)
-        self.t2i = np.full([N, N], -1) # (ti, tj) --> i
+        self.i2t = []  # i --> (ti, tj)
+        self.t2i = np.full([N, N], -1)  # (ti, tj) --> i
         i = 0
         for ti in range(N):
             for tj in range(N):

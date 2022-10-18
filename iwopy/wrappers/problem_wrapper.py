@@ -24,7 +24,7 @@ class ProblemWrapper(Problem):
     def __init__(self, base_problem, name, **kwargs):
         super().__init__(name, **kwargs)
         self.base_problem = base_problem
-    
+
     def __getattr__(self, name):
         return super().__getattribute__("base_problem").__getattribute__(name)
 

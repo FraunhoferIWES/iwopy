@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.spatial.distance import cdist
 
+
 class RegularDiscretizationGrid:
     """
     A lightweight regular grid in n dimensions,
@@ -44,14 +45,14 @@ class RegularDiscretizationGrid:
     INT_INF = -999999
 
     def __init__(
-            self, 
-            origin, 
-            deltas, 
-            n_steps, 
-            interpolation=None,
-            tol=None, 
-            digits=12,
-            ):
+        self,
+        origin,
+        deltas,
+        n_steps,
+        interpolation=None,
+        tol=None,
+        digits=12,
+    ):
 
         self.origin = np.array(origin, dtype=np.float64)
         self.n_steps = np.array(n_steps, dtype=np.int32)
@@ -721,7 +722,7 @@ class RegularDiscretizationGrid:
         cells[:] = self.get_corners(pts, allow_outer=False)[:, :, None]
         cells[:, :, 1] += self.deltas[None, :]
         return np.round(cells, self.digits)
-    
+
     def _get_opts(self):
         """
         Helper function that returns unit origin cell points
@@ -793,9 +794,11 @@ class RegularDiscretizationGrid:
             gpts = np.round(gpts, self.digits).reshape(2**self.n_dims, self.n_dims)
             dist = np.linalg.norm(gpts - p[None, :], axis=-1)
             return gpts[None, np.argmin(dist)], np.ones(1, dtype=np.float64)
-        
+
         elif self.interpolation == "linear":
-            qts = np.round((p[None, :] - p0[None, :]) / self.deltas[None, :], self.digits)
+            qts = np.round(
+                (p[None, :] - p0[None, :]) / self.deltas[None, :], self.digits
+            )
             try:
                 coeffs = self._interpolate_ocell(qts)[0]
             except AssertionError as e:
@@ -805,7 +808,9 @@ class RegularDiscretizationGrid:
             gpts = np.round(gpts, self.digits).reshape(2**self.n_dims, self.n_dims)
 
         else:
-            raise ValueError(f"Unknown interpolation '{self.interpolation}'. Please choose: snap, nearest, linear")
+            raise ValueError(
+                f"Unknown interpolation '{self.interpolation}'. Please choose: snap, nearest, linear"
+            )
 
         sel = np.abs(coeffs) < 1.0e-14
         if np.any(sel):
@@ -860,8 +865,10 @@ class RegularDiscretizationGrid:
             opts = self._get_opts()
             inds = np.argmin(cdist(qts, opts), axis=-1)
             gpts = np.round(
-                p0 + np.take_along_axis(opts, inds[:, None], axis=0) * self.deltas[None, :], 
-                self.digits
+                p0
+                + np.take_along_axis(opts, inds[:, None], axis=0)
+                * self.deltas[None, :],
+                self.digits,
             )[:, None, :]
             coeffs = np.ones((n_pts, 1), dtype=np.float64)
             del qts, opts, inds
@@ -876,8 +883,7 @@ class RegularDiscretizationGrid:
                 raise e
             opts = self._get_opts()
             gpts = np.round(
-                p0[:, None] + opts[None, :] * self.deltas[None, :],
-                self.digits
+                p0[:, None] + opts[None, :] * self.deltas[None, :], self.digits
             )  # shape: (n_pts, n_gp, n_dims)
             del p0, qts, opts
 

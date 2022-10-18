@@ -91,7 +91,7 @@ class DiscretizeRegGrid(LocalFD):
         vmaxs = np.full(super().n_vars_float, np.nan, dtype=np.float64)
         vmaxs[:] = super().max_values_float()
         for vi in self._vinds:
-            
+
             vnam = vnms[vi]
             vmin = vmins[vi]
             vmax = vmaxs[vi]

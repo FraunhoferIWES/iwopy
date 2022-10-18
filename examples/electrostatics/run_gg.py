@@ -15,10 +15,20 @@ if __name__ == "__main__":
         "-n", "--n_points", help="The number of points", type=int, default=10
     )
     parser.add_argument("-r", "--radius", help="The radius", type=float, default=5.0)
-    parser.add_argument("-d", "--min_dist", help="The minimal charges distance", type=float, default=None)
+    parser.add_argument(
+        "-d",
+        "--min_dist",
+        help="The minimal charges distance",
+        type=float,
+        default=None,
+    )
     parser.add_argument("-o", "--order", help="Derivative order", type=int, default=1)
-    parser.add_argument("-i", "--interpolation", help="The interpolation method", default=None)
-    parser.add_argument("-nop", "--no_pop", help="Switch off vectorization", action="store_true")
+    parser.add_argument(
+        "-i", "--interpolation", help="The interpolation method", default=None
+    )
+    parser.add_argument(
+        "-nop", "--no_pop", help="Switch off vectorization", action="store_true"
+    )
     args = parser.parse_args()
     n = args.n_points
     r = args.radius

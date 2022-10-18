@@ -114,16 +114,20 @@ class LocalFD(ProblemWrapper):
 
         sel = (self._order == -1) | (self._order == 1) | (self._order == 2)
         if not np.all(sel):
-            raise NotImplementedError(f'Order(s) {list(np.unique(self._order[~sel]))} not implemented.')
+            raise NotImplementedError(
+                f"Order(s) {list(np.unique(self._order[~sel]))} not implemented."
+            )
         sel = (self._orderb == -1) | (self._orderb == 1) | (self._orderb == 2)
         if not np.all(sel):
-            raise NotImplementedError(f'Boundary order(s) {list(np.unique(self._orderb[~sel]))} not implemented.')
+            raise NotImplementedError(
+                f"Boundary order(s) {list(np.unique(self._orderb[~sel]))} not implemented."
+            )
 
     def _grad_coeffs(self, varsf, gvars, order, orderb):
         """
         Helper function that provides gradient coeffs
         """
-        
+
         # prepare:
         n_vars = len(gvars)
         vmin = np.array(self.min_values_float(), dtype=np.float64)[gvars]
@@ -145,67 +149,67 @@ class LocalFD(ProblemWrapper):
         cf0 = np.zeros(n_vars, dtype=np.float64)
 
         # domain, order 1:
-        sel = (order == 1) & (xplus.diagonal() <= vmax) 
+        sel = (order == 1) & (xplus.diagonal() <= vmax)
         if np.any(sel):
             pts[sel, 0] = xplus[sel]
-            cfs[sel, sel, 0] = 1/d[sel]
-            cf0[sel] = -1/d[sel]
+            cfs[sel, sel, 0] = 1 / d[sel]
+            cf0[sel] = -1 / d[sel]
 
         # right boundary, order 1:
         sel = (orderb == 1) & (xplus.diagonal() > vmax)
         if np.any(sel):
             pts[sel, 0] = xminus[sel]
-            cfs[sel, sel, 0] = -1/d[sel]
-            cf0[sel] = 1/d[sel]
+            cfs[sel, sel, 0] = -1 / d[sel]
+            cf0[sel] = 1 / d[sel]
 
         # domain, order -1:
-        sel = (order == -1) & (xminus.diagonal() >= vmin) 
+        sel = (order == -1) & (xminus.diagonal() >= vmin)
         if np.any(sel):
             pts[sel, 0] = xminus[sel]
-            cfs[sel, sel, 0] = -1/d[sel]
-            cf0[sel] = 1/d[sel]
+            cfs[sel, sel, 0] = -1 / d[sel]
+            cf0[sel] = 1 / d[sel]
 
         # left boundary, order -1:
         sel = (orderb == -1) & (xminus.diagonal() < vmin)
         if np.any(sel):
             pts[sel, 0] = xplus[sel]
-            cfs[sel, sel, 0] = 1/d[sel]
-            cf0[sel] = -1/d[sel]
+            cfs[sel, sel, 0] = 1 / d[sel]
+            cf0[sel] = -1 / d[sel]
 
         # domain, order 2:
-        sel = (order == 2) & (xplus.diagonal() <= vmax)  & (xminus.diagonal() >= vmin) 
+        sel = (order == 2) & (xplus.diagonal() <= vmax) & (xminus.diagonal() >= vmin)
         if np.any(sel):
             pts[sel, 0] = xplus[sel]
             pts[sel, 1] = xminus[sel]
-            cfs[sel, sel, 0] = 0.5/d[sel]
-            cfs[sel, sel, 1] = -0.5/d[sel]
+            cfs[sel, sel, 0] = 0.5 / d[sel]
+            cfs[sel, sel, 1] = -0.5 / d[sel]
 
         # right boundary, order 2:
-        sel = (orderb == 2) & (xplus.diagonal() > vmax) 
+        sel = (orderb == 2) & (xplus.diagonal() > vmax)
         if np.any(sel):
             if xminus2 is None:
                 xminus2 = np.zeros_like(xminus)
-                np.fill_diagonal(xminus2, -2*d)
+                np.fill_diagonal(xminus2, -2 * d)
                 xminus2 += x0[None, :]
             pts[sel, 0] = xminus[sel]
             pts[sel, 1] = xminus2[sel]
-            cf0[sel] = 1.5/d[sel]
-            cfs[sel, sel, 0] = -2/d[sel]
-            cfs[sel, sel, 1] = 0.5/d[sel]
+            cf0[sel] = 1.5 / d[sel]
+            cfs[sel, sel, 0] = -2 / d[sel]
+            cfs[sel, sel, 1] = 0.5 / d[sel]
 
         # left boundary, order 2:
-        sel = (orderb == 2) & (xminus.diagonal() < vmax) 
+        sel = (orderb == 2) & (xminus.diagonal() < vmax)
         if np.any(sel):
             if xplus2 is None:
                 xplus2 = np.zeros_like(xplus)
-                np.fill_diagonal(xplus2, 2*d)
+                np.fill_diagonal(xplus2, 2 * d)
                 xplus2 += x0[None, :]
             pts[sel, 0] = xplus[sel]
             pts[sel, 1] = xplus2[sel]
-            cf0[sel] = -1.5/d[sel]
-            cfs[sel, sel, 0] = 2/d[sel]
-            cfs[sel, sel, 1] = -0.5/d[sel]
-        
+            cf0[sel] = -1.5 / d[sel]
+            cfs[sel, sel, 0] = 2 / d[sel]
+            cfs[sel, sel, 1] = -0.5 / d[sel]
+
         # reduce and reorganize:
         sel = np.any(np.abs(cfs) > 1e-13, axis=0)
         pts = pts[sel]
@@ -216,7 +220,7 @@ class LocalFD(ProblemWrapper):
         if np.any(sel):
             pts = np.append(pts, x0[None, :], axis=0)
             cfs = np.append(cfs, cf0[:, None], axis=1)
-        
+
         return pts, cfs
 
     def calc_gradients(
@@ -280,7 +284,11 @@ class LocalFD(ProblemWrapper):
         pvars = np.array(fvars)[gvars]
         gvars = [vi for vi in pvars if vi in self._vinds]
         ivars = [self._vinds.index(vi) for vi in gvars]
-        cmpnts = np.arange(func.n_components()) if components is None else np.array(components)
+        cmpnts = (
+            np.arange(func.n_components())
+            if components is None
+            else np.array(components)
+        )
         cmptsi = np.unique(np.where(np.any(gnan, axis=1))[0])
         fcmpts = cmpnts[cmptsi]
         fcomps = fcmpts if components is not None else None
@@ -308,7 +316,7 @@ class LocalFD(ProblemWrapper):
                 os, cs = self.evaluate_population(varsi, varsf)
                 s = np.s_[:] if components is None else fcmpts
                 values[:] = np.c_[os, cs][:, s]
-                del os, cs, s 
+                del os, cs, s
             else:
                 results = self.apply_population(varsi, varsf)
                 values[:] = func.calc_population(varsi, varsf, results, fcomps)
@@ -319,7 +327,7 @@ class LocalFD(ProblemWrapper):
                     os, cs = self.evaluate_individual(vars_int, vf)
                     s = np.s_[:] if components is None else fcmpts
                     values[i] = np.r_[os, cs][s]
-                    del os, cs, s 
+                    del os, cs, s
                 else:
                     results = self.apply_individual(vars_int, vf)
                     values[i] = func.calc_individual(vars_int, vf, results, fcomps)

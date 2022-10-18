@@ -59,16 +59,16 @@ class GG(Optimizer):
     """
 
     def __init__(
-            self, 
-            problem, 
-            step_max, 
-            step_min, 
-            step_div_factor=10.,
-            vectorized=True, 
-            n_max_steps=100,
-            memory_size=100,
-            name="GG",
-        ):
+        self,
+        problem,
+        step_max,
+        step_min,
+        step_div_factor=10.0,
+        vectorized=True,
+        n_max_steps=100,
+        memory_size=100,
+        name="GG",
+    ):
         super().__init__(problem, name)
         self.step_max = step_max
         self.step_min = step_min
@@ -89,12 +89,18 @@ class GG(Optimizer):
 
         """
         if self.problem.n_objectives != 1:
-            raise ValueError(f"Optimizer '{self.name}': Not applicable for multi-objective problems.")
+            raise ValueError(
+                f"Optimizer '{self.name}': Not applicable for multi-objective problems."
+            )
         if self.problem.n_vars_int != 0:
-            raise ValueError(f"Optimizer '{self.name}': Not applicable for problems with integer variables.")
+            raise ValueError(
+                f"Optimizer '{self.name}': Not applicable for problems with integer variables."
+            )
         if self.problem.n_vars_float == 0:
-            raise ValueError(f"Optimizer '{self.name}': Missing float variables in problem.")
-        
+            raise ValueError(
+                f"Optimizer '{self.name}': Missing float variables in problem."
+            )
+
         n_vars = self.problem.n_vars_float
         smax = np.zeros(n_vars, dtype=np.float64)
         if isinstance(self.step_max, dict):
@@ -102,10 +108,14 @@ class GG(Optimizer):
                 if vname in self.step_max:
                     smax[i] = self.step_max[vname]
                 else:
-                    raise KeyError(f"Optimizer '{self.name}': Missing step_max entry for variable '{vname}'")
+                    raise KeyError(
+                        f"Optimizer '{self.name}': Missing step_max entry for variable '{vname}'"
+                    )
         elif isinstance(self.step_max, list) or isinstance(self.step_max, np.ndarray):
             if len(self.step_max) != n_vars:
-                raise ValueError(f"Optimizer '{self.name}': step_max has wrong size {len(self.step_max)} for {n_vars} variables")
+                raise ValueError(
+                    f"Optimizer '{self.name}': step_max has wrong size {len(self.step_max)} for {n_vars} variables"
+                )
             smax[:] = self.step_max
         else:
             smax[:] = self.step_max
@@ -117,10 +127,14 @@ class GG(Optimizer):
                 if vname in self.step_min:
                     smin[i] = self.step_min[vname]
                 else:
-                    raise KeyError(f"Optimizer '{self.name}': Missing step_min entry for variable '{vname}'")
+                    raise KeyError(
+                        f"Optimizer '{self.name}': Missing step_min entry for variable '{vname}'"
+                    )
         elif isinstance(self.step_min, list) or isinstance(self.step_min, np.ndarray):
             if len(self.step_min) != n_vars:
-                raise ValueError(f"Optimizer '{self.name}': step_max has wrong size {len(self.step_min)} for {n_vars} variables")
+                raise ValueError(
+                    f"Optimizer '{self.name}': step_max has wrong size {len(self.step_min)} for {n_vars} variables"
+                )
             smin[:] = self.step_min
         else:
             smin[:] = self.step_min
@@ -131,7 +145,7 @@ class GG(Optimizer):
             np.zeros((self.memory_size, n_vars), dtype=np.float64),
             np.zeros((self.memory_size, n_funcs, n_vars), dtype=np.float64),
             np.zeros(self.memory_size, dtype=np.float64),
-            np.zeros(self.memory_size, dtype=bool)
+            np.zeros(self.memory_size, dtype=bool),
         )
 
         super().initialize(verbosity)
@@ -142,10 +156,12 @@ class GG(Optimizer):
         """
         s = f"  Optimizer '{self.name}'  "
         print(s)
-        hline = "-"*len(s)
+        hline = "-" * len(s)
         print(hline)
         for i, vname in enumerate(self.problem.var_names_float()):
-            print(f" ({i}) {vname}: step size {self.step_min[i]:.2e} -- {self.step_max[i]:.2e}")
+            print(
+                f" ({i}) {vname}: step size {self.step_min[i]:.2e} -- {self.step_max[i]:.2e}"
+            )
         print(hline)
 
     def _get_newx(self, x, deltax):
@@ -156,7 +172,7 @@ class GG(Optimizer):
         newx = np.zeros((self.n_max_steps, n_vars), dtype=np.float64)
         newx[:] = x[None, :]
         for i in range(self.n_max_steps):
-            newx[i] += np.sum(deltax[:i+1], axis=0)
+            newx[i] += np.sum(deltax[: i + 1], axis=0)
 
         mi = self.problem.min_values_float()[None, :]
         sel = np.where(newx < mi)
@@ -167,13 +183,13 @@ class GG(Optimizer):
         newx[sel[0], sel[1]] = ma[0, sel[1]]
 
         return newx
-    
+
     def _grad2deltax(self, grad, step):
         """
         Helper function for deltax creation
         """
-        j = np.argmax(np.abs(grad)/step)
-        return grad * step[j]/np.abs(grad[j])
+        j = np.argmax(np.abs(grad) / step)
+        return grad * step[j] / np.abs(grad[j])
 
     def solve(self, verbosity=1):
         """
@@ -194,11 +210,11 @@ class GG(Optimizer):
 
         # prepare:
         inone = np.array([], dtype=np.int32)
-        n_vars = self.problem.n_vars_float   
+        n_vars = self.problem.n_vars_float
         imem = 0
         nmem = 0
 
-        # evaluate initial variables:     
+        # evaluate initial variables:
         x = np.array(self.problem.initial_values_float(), dtype=np.float64)
         obs, cons = self.problem.evaluate_individual(inone, x)
         obs0 = obs[0]
@@ -206,7 +222,7 @@ class GG(Optimizer):
 
         if verbosity > 0:
             s = f"{'it':<5} | {'Objective':<9} | cviol | level"
-            hline = "-"*(len(s)+1)
+            hline = "-" * (len(s) + 1)
             print("\nRunning GG")
             print(hline)
             print(s)
@@ -221,7 +237,11 @@ class GG(Optimizer):
             recover = not np.all(valid)
 
             # check memory:
-            sel = np.max(np.abs(x[None, :] - self.memory[0][:nmem]), axis=1) < 1e-13 if nmem > 0 else np.array([False])
+            sel = (
+                np.max(np.abs(x[None, :] - self.memory[0][:nmem]), axis=1) < 1e-13
+                if nmem > 0
+                else np.array([False])
+            )
             if np.any(sel):
                 jmem = np.where(sel)[0][0]
                 grads = self.memory[1][jmem]
@@ -249,26 +269,26 @@ class GG(Optimizer):
             # project out directions of constraint violation:
             grad = grads[0].copy()
             deltax = self._grad2deltax(-grad, step)
-            ncons = cons + np.einsum('cd,d->c', grads[1:], deltax)
-            nvalid = ncons <= 0 #self.problem.check_constraints_individual(ncons)
+            ncons = cons + np.einsum("cd,d->c", grads[1:], deltax)
+            nvalid = ncons <= 0  # self.problem.check_constraints_individual(ncons)
             newbad = valid & ~nvalid
             newgood = ~valid & nvalid
             cnews = newgood | newbad
-            for ci in np.where(~valid | cnews )[0]:
-                n = grads[1+ci] / np.linalg.norm(grads[1+ci])
+            for ci in np.where(~valid | cnews)[0]:
+                n = grads[1 + ci] / np.linalg.norm(grads[1 + ci])
                 grad -= np.dot(grad, n) * n
-            
+
             # follow grad, but move downwards along violated directions:
             deltax = np.zeros((self.n_max_steps, n_vars), dtype=np.float64)
             deltax[:] = self._grad2deltax(-grad, step)[None, :]
             for ci in np.where(~valid & ~cnews)[0]:
-                deltax[:] += self._grad2deltax(-grads[1+ci], step)
+                deltax[:] += self._grad2deltax(-grads[1 + ci], step)
 
             # linear approximation when crossing constraint bondary:
             for ci in np.where(cnews)[0]:
-                m = np.linalg.norm(grads[1+ci])
+                m = np.linalg.norm(grads[1 + ci])
                 if np.abs(m) > 0:
-                    deltax[0] -= grads[1+ci] * cons[ci] / m**2
+                    deltax[0] -= grads[1 + ci] * cons[ci] / m**2
             newx = self._get_newx(x, deltax)
 
             if not len(newx):
@@ -303,7 +323,7 @@ class GG(Optimizer):
                         cons = consp[i]
                         valid = validp[i]
 
-                    else: 
+                    else:
 
                         # find best:
                         obsp = obsp[valc]
@@ -321,12 +341,12 @@ class GG(Optimizer):
                             obs = obsp[i]
                             cons = consp[valc][i]
                             valid = validp[valc][i]
-                    
+
                 else:
                     x = newx[0]
                     obs = obsp[0]
                     cons = consp[0]
-                    valid = validp[0]        
+                    valid = validp[0]
 
             # non-vectorized:
             else:
@@ -335,7 +355,7 @@ class GG(Optimizer):
 
                     obsh, consh = self.problem.evaluate_individual(inone, hx)
                     validh = self.problem.check_constraints_individual(consh)
-                    
+
                     if i == 0:
                         hx0 = hx
                         obsh0 = obsh
@@ -367,7 +387,7 @@ class GG(Optimizer):
                     obs = obsh0
                     cons = consh0
                     valid = validh0
-        
+
         if verbosity > 0:
             print(f"{hline}\n")
 

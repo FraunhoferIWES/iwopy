@@ -62,7 +62,7 @@ class UDP:
         # apply new variables:
         values = np.zeros(self.n_fitness, dtype=np.float64)
         objs, cons = self.problem.evaluate_individual(xi, xf)
-        objs *= np.where(self.problem.maximize_objs, -1., 1.)
+        objs *= np.where(self.problem.maximize_objs, -1.0, 1.0)
         values[: self.problem.n_objectives] = objs
         values[self.problem.n_objectives :] = cons
 
@@ -82,7 +82,7 @@ class UDP:
         # apply new variables:
         values = np.zeros((n_pop, self.n_fitness), dtype=np.float64)
         objs, cons = self.problem.evaluate_population(xi, xf)
-        objs *= np.where(self.problem.maximize_objs, -1., 1.)[None, :]
+        objs *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
         values[:, : self.problem.n_objectives] = objs
         values[:, self.problem.n_objectives :] = cons
 

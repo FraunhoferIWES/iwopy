@@ -471,7 +471,9 @@ class Problem(Base, metaclass=ABCMeta):
         gradients = np.full((n_cmpnts, n_vars), np.nan, dtype=np.float64)
         for vi, v in enumerate(vrs):
             if v in fvars:
-                gradients[:, vi] = func.ana_deriv(varsi, varsf, fvars.index(v), components)
+                gradients[:, vi] = func.ana_deriv(
+                    varsi, varsf, fvars.index(v), components
+                )
             else:
                 gradients[:, vi] = 0
 
@@ -651,7 +653,7 @@ class Problem(Base, metaclass=ABCMeta):
             i0 = i1
 
         super().initialize(verbosity)
-    
+
     @property
     def maximize_objs(self):
         """
@@ -942,6 +944,7 @@ class Problem(Base, metaclass=ABCMeta):
         cons = self.cons.finalize_population(varsi, varsf, results, verbosity)
 
         return results, objs, cons
+
 
 class ProblemDefaultFunc(OptFunctionList):
     """

@@ -264,7 +264,11 @@ class OptFunctionList(OptFunction):
         j0 = 0
         for fi, f in enumerate(self.functions):
             i1 = i0 + self.sizes[fi]
-            cts = None if components is None else [i-i0 for i in cmpnts if i >= i0 and i < i1]
+            cts = (
+                None
+                if components is None
+                else [i - i0 for i in cmpnts if i >= i0 and i < i1]
+            )
             if cts is None or len(cts):
                 j1 = j0 + (self.sizes[fi] if cts is None else len(cts))
                 varsi = vars_int[self.func_vars_int[fi]]
@@ -305,7 +309,11 @@ class OptFunctionList(OptFunction):
         j0 = 0
         for fi, f in enumerate(self.functions):
             i1 = i0 + self.sizes[fi]
-            cts = None if components is None else [i-i0 for i in cmpnts if i >= i0 and i < i1]
+            cts = (
+                None
+                if components is None
+                else [i - i0 for i in cmpnts if i >= i0 and i < i1]
+            )
             if cts is None or len(cts):
                 j1 = j0 + (self.sizes[fi] if cts is None else len(cts))
                 varsi = vars_int[:, self.func_vars_int[fi]]
@@ -422,7 +430,11 @@ class OptFunctionList(OptFunction):
         for fi, f in enumerate(self.functions):
             i1 = i0 + self.sizes[fi]
             if var in list(self.func_vars_float[fi]):
-                cts = None if components is None else [i-i0 for i in cmpnts if i >= i0 and i < i1]
+                cts = (
+                    None
+                    if components is None
+                    else [i - i0 for i in cmpnts if i >= i0 and i < i1]
+                )
                 if cts is None or len(cts):
                     j1 = j0 + (self.sizes[fi] if cts is None else len(cts))
                     varsi = vars_int[self.func_vars_int[fi]]

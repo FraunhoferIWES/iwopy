@@ -121,8 +121,12 @@ class OptFunctionSubset(OptFunction):
             The component values, shape: (n_sel_components,)
 
         """
-        cmpts = self.subset if components is None else [self.subset[i] for i in components]
-        return self.func_org.calc_individual(vars_int, vars_float, problem_results, cmpts)
+        cmpts = (
+            self.subset if components is None else [self.subset[i] for i in components]
+        )
+        return self.func_org.calc_individual(
+            vars_int, vars_float, problem_results, cmpts
+        )
 
     def calc_population(self, vars_int, vars_float, problem_results, components=None):
         """
@@ -146,8 +150,12 @@ class OptFunctionSubset(OptFunction):
             The component values, shape: (n_pop, n_sel_components,)
 
         """
-        cmpts = self.subset if components is None else [self.subset[i] for i in components]
-        return self.func_org.calc_population(vars_int, vars_float, problem_results, cmpts)
+        cmpts = (
+            self.subset if components is None else [self.subset[i] for i in components]
+        )
+        return self.func_org.calc_population(
+            vars_int, vars_float, problem_results, cmpts
+        )
 
     def ana_deriv(self, vars_int, vars_float, var, components=None):
         """
@@ -172,5 +180,7 @@ class OptFunctionSubset(OptFunction):
             The derivative values, shape: (n_sel_components,)
 
         """
-        cmpts = self.subset if components is None else [self.subset[i] for i in components]
+        cmpts = (
+            self.subset if components is None else [self.subset[i] for i in components]
+        )
         return self.func_org.ana_deriv(vars_int, vars_float, var, cmpts)

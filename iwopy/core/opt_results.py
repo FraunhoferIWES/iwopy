@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class OptResults:
     """
     Container for optimization results.
@@ -85,7 +86,7 @@ class OptResults:
     def __str__(self):
 
         s = f"Results problem '{self.pname}':\n"
-        hline = "-"*len(s) + "\n"
+        hline = "-" * len(s) + "\n"
         if len(self.vnames_int):
             s += hline
             L = len(max(self.vnames_int, key=len))
@@ -115,4 +116,3 @@ class OptResults:
         s += hline
 
         return s
-        

@@ -62,7 +62,9 @@ def test_grad():
         obj1 = Obj1(p, "f")
         p.add_objective(obj1, varmap_float={"x": "x", "y": "y"})
 
-        gp = iwopy.DiscretizeRegGrid(p, {"x": dx, "y": dy}, fd_order={"x": ox, "y": oy}, interpolation="linear")
+        gp = iwopy.DiscretizeRegGrid(
+            p, {"x": dx, "y": dy}, fd_order={"x": ox, "y": oy}, interpolation="linear"
+        )
         gp.initialize(verbosity=1)
 
         for p0 in np.random.uniform(1.0, 2.0, (N, 2)):
