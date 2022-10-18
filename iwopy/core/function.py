@@ -268,7 +268,7 @@ class OptFunction(Base, metaclass=ABCMeta):
         """
         self._rename_vars(varmap, self._vnamesf, "float")
 
-    def calc_individual(self, vars_int, vars_float, problem_results):
+    def calc_individual(self, vars_int, vars_float, problem_results, components=None):
         """
         Calculate values for a single individual of the
         underlying problem.
@@ -282,16 +282,18 @@ class OptFunction(Base, metaclass=ABCMeta):
         problem_results : Any
             The results of the variable application
             to the problem
+        components : list of int, optional
+            The selected components or None for all
 
         Returns
         -------
         values : np.array
-            The component values, shape: (n_components,)
+            The component values, shape: (n_sel_components,)
 
         """
         raise NotImplementedError(f"Not implemented for class {type(self).__name__}")
 
-    def calc_population(self, vars_int, vars_float, problem_results):
+    def calc_population(self, vars_int, vars_float, problem_results, components=None):
         """
         Calculate values for all individuals of a population.
 
@@ -304,14 +306,15 @@ class OptFunction(Base, metaclass=ABCMeta):
         problem_results : Any
             The results of the variable application
             to the problem
+        components : list of int, optional
+            The selected components or None for all
 
         Returns
         -------
         values : np.array
-            The component values, shape: (n_pop, n_components,)
+            The component values, shape: (n_pop, n_sel_components)
 
         """
-
         if problem_results is not None:
             raise NotImplementedError(
                 f"Not implemented for class {type(self).__name__}, results type {type(problem_results).__name__}"

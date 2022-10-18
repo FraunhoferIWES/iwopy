@@ -101,9 +101,11 @@ class Pymoo_problem(Problem):
             if self.is_intprob:
                 dummies = np.zeros((n_pop, 0), dtype=np.float64)
                 out["F"], out["G"] = self.problem.evaluate_population(x, dummies)
+                out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
             else:
                 dummies = np.zeros((n_pop, 0), dtype=np.int32)
                 out["F"], out["G"] = self.problem.evaluate_population(dummies, x)
+                out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
 
             if self.problem.n_constraints:
 
@@ -120,9 +122,11 @@ class Pymoo_problem(Problem):
                 dummies = np.zeros(0, dtype=np.float64)
                 for i in range(n_pop):
                     out["F"], out["G"] = self.problem.evaluate_individual(x, dummies)
+                    out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)
             else:
                 dummies = np.zeros(0, dtype=np.int32)
                 out["F"], out["G"] = self.problem.evaluate_individual(dummies, x)
+                out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)
 
             if self.problem.n_constraints:
 
@@ -170,7 +174,7 @@ class Pymoo_problem(Problem):
                 xf = np.zeros(0, dtype=np.float64)
             else:
                 xi = np.zeros(0, dtype=int)
-                xf = r.X
+                xf = np.array(r.X, dtype=np.float64)
 
             if self.vectorize:
 

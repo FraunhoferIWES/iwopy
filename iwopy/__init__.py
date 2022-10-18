@@ -2,6 +2,7 @@ from .core import Problem, Objective, Constraint, Memory
 from .wrappers import (
     ProblemWrapper,
     DiscretizeRegGrid,
+    LocalFD,
     SimpleProblem,
     SimpleObjective,
     SimpleConstraint,
@@ -10,6 +11,7 @@ from .wrappers import (
 from . import utils
 from . import interfaces
 from . import benchmarks
+from . import optimizers
 
 from importlib.resources import read_text
 

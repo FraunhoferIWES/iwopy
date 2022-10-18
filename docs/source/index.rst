@@ -7,14 +7,20 @@ Welcome to IWOPY
 
 *Fraunhofer IWES optimization tools in Python*
 
-The `iwopy` package is in fact a meta package that provides interfaces to other open-source Python optimization packages out there. Currently this includes
+The `iwopy` package is in fact mainly a meta package that provides interfaces to other open-source Python optimization packages out there. Currently this includes
 
-* https://pymoo.org/index.html
-* https://esa.github.io/pygmo2/index.html
-
-The basic idea of `iwopy` is to provide abstract base classes, that can be concretized for any kind of problem by the users, and the corresponding solver interfaces.
+* `pymoo <https://pymoo.org/index.html>`_
+* `pygmo <https://esa.github.io/pygmo2/index.html>`_
 
 `iwopy` can thus be understood as an attempt to provide *the best of all worlds* when it comes to solving optimization problems with Python. Obviously all the credit for implementing the invoked optimizers goes to the original package providers.
+
+The basic idea of `iwopy` is to provide abstract base classes, that can be concretized for any kind of problem by the users, and the corresponding solver interfaces. However, also some helpful problem wrappers and an original optimizer are provided:
+
+* Problem wrapper *LocalFD*: Calculates derivatives by finite differences
+* Problem wrapper *RegularDiscretizationGrid*: Puts the problem on a Grid 
+* Optimizer *GG*: *Greedy Gradient* optimization with constraints
+
+All calculations support vectorized evaluation of a complete population of parameters. This is useful for heuristic approaches like genetic algorithms, but also for evaluating gradients. It can lead to a vast speed-up and should be invoked whenever possible. Check the examples (or the API) for details.
 
 **Quick Start**::
 
@@ -40,7 +46,7 @@ Contents:
     .. toctree::
         :maxdepth: 2
 
-        notebooks/examples
+        examples
         
     .. toctree::
         :maxdepth: 1

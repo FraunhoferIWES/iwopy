@@ -27,6 +27,9 @@ if __name__ == "__main__":
         "-i", "--interpolation", help="The interpolation method", default=None
     )
     parser.add_argument(
+        "-a", "--opt_algo", help="The optimization algorithm", default="ccsaq"
+    )
+    parser.add_argument(
         "-nop", "--no_pop", help="Switch off vectorization", action="store_true"
     )
     args = parser.parse_args()
@@ -49,7 +52,14 @@ if __name__ == "__main__":
     solver = Optimizer_pygmo(
         gproblem,
         problem_pars=dict(pop=not args.no_pop),
-        algo_pars=dict(type="ipopt", tol=1e-4),
+        algo_pars=dict(
+            type="nlopt",
+            optimizer=args.opt_algo,
+            ftol_abs=1e-6,
+            ftol_rel=0,
+            xtol_abs=1e-6,
+            xtol_rel=0,
+        ),
     )
     solver.initialize()
 

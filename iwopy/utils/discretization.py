@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.spatial.distance import cdist
 
 
 class RegularDiscretizationGrid:
@@ -15,6 +16,8 @@ class RegularDiscretizationGrid:
     n_steps : array-like
         The number of steps, len: n_dims. Use
         INT_INF for infinite.
+    interpolation : str
+        The interpolation method: None, nearest, linear
     tol : list of float, optional
         The tolerances for grid bounds, default is 0,
         shape: (n_dims,)
@@ -29,6 +32,8 @@ class RegularDiscretizationGrid:
         The step sizes, shape: (n_dims,)
     n_steps : numpy.ndarray
         The number of steps, shape: (n_dims,)
+    interpolation : str
+        The interpolation method: None, nearest, linear
     tol : numpy.ndarray
         The tolerances for grid bounds, shape: (n_dims,),
         or None
@@ -39,12 +44,21 @@ class RegularDiscretizationGrid:
 
     INT_INF = -999999
 
-    def __init__(self, origin, deltas, n_steps, tol=None, digits=12):
+    def __init__(
+        self,
+        origin,
+        deltas,
+        n_steps,
+        interpolation=None,
+        tol=None,
+        digits=12,
+    ):
 
         self.origin = np.array(origin, dtype=np.float64)
         self.n_steps = np.array(n_steps, dtype=np.int32)
         self.deltas = np.array(deltas, dtype=np.float64)
         self.digits = digits
+        self.interpolation = interpolation
 
         if tol is not None:
             self.tol = np.zeros(self.n_dims, dtype=np.float64)
@@ -388,7 +402,7 @@ class RegularDiscretizationGrid:
             return qts
         return pts
 
-    def is_gridpoint(self, p, ret_inds=False):
+    def is_gridpoint(self, p, allow_outer=True, ret_inds=False):
         """
         Checks if a point is on grid.
 
@@ -396,6 +410,9 @@ class RegularDiscretizationGrid:
         ----------
         p : numpy.ndarray
             The point, shape: (n_dims,)
+        allow_outer : bool
+            Allow outermost point indices, else
+            reduce those to lower-left cell corner
         ret_inds : bool
             Additionally return indices
 
@@ -409,7 +426,7 @@ class RegularDiscretizationGrid:
         """
         p = self.apply_tol(p)
 
-        inds = self._gp2i(p)
+        inds = self._gp2i(p, allow_outer)
         if not self.is_gridi(inds):
             if ret_inds:
                 return False, inds
@@ -538,7 +555,7 @@ class RegularDiscretizationGrid:
             The lower-left grid corner point indices, shape: (n_dims,)
 
         """
-        isgp, inds = self.is_gridpoint(gp, ret_inds=True)
+        isgp, inds = self.is_gridpoint(gp, allow_outer, ret_inds=True)
 
         if isgp:
             if error:
@@ -706,6 +723,18 @@ class RegularDiscretizationGrid:
         cells[:, :, 1] += self.deltas[None, :]
         return np.round(cells, self.digits)
 
+    def _get_opts(self):
+        """
+        Helper function that returns unit origin cell points
+        """
+        if self._opts is None:
+            ocell = np.zeros((self.n_dims, 2), dtype=np.int8)
+            ocell[:, 1] += 1
+            self._opts = np.stack(np.meshgrid(*ocell, indexing="ij"), axis=-1)
+            self._opts = self._opts.reshape(2**self.n_dims, self.n_dims)
+            del ocell
+        return self._opts
+
     def _interpolate_ocell(self, qts):
         """
         Helper function for interpolation weights in
@@ -715,14 +744,6 @@ class RegularDiscretizationGrid:
         http://dx.doi.org/10.1088/0004-6256/139/2/342
 
         """
-
-        if self._opts is None:
-            ocell = np.zeros((self.n_dims, 2), dtype=np.int8)
-            ocell[:, 1] += 1
-            self._opts = np.stack(np.meshgrid(*ocell, indexing="ij"), axis=-1)
-            self._opts = self._opts.reshape(2**self.n_dims, self.n_dims)
-            del ocell
-
         assert (
             qts >= 0.0
         ).all(), f"Found coordinates below 0: {qts[np.any(qts<0., axis=-1)].tolist()}"
@@ -730,7 +751,8 @@ class RegularDiscretizationGrid:
             qts <= 1.0
         ).all(), f"Found coordinates above 1: {qts[np.any(qts>1., axis=-1)].tolist()}"
 
-        return np.product(1 - np.abs(qts[:, None] - self._opts[None, :]), axis=-1)
+        opts = self._get_opts()
+        return np.product(1 - np.abs(qts[:, None] - opts[None, :]), axis=-1)
 
     def interpolation_coeffs_point(self, p):
         """
@@ -763,16 +785,32 @@ class RegularDiscretizationGrid:
 
         cell = self.get_cell(p)
         p0 = cell[:, 0]
-        n_dims = len(p0)
-        qts = np.round((p[None, :] - p0[None, :]) / self.deltas[None, :], self.digits)
 
-        try:
-            coeffs = self._interpolate_ocell(qts)[0]
-        except AssertionError as e:
-            self._error_info(p, for_ocell=True)
-            raise e
-        gpts = np.stack(np.meshgrid(*cell, indexing="ij"), axis=-1)
-        gpts = np.round(gpts, self.digits).reshape(2**n_dims, n_dims)
+        if self.interpolation is None:
+            return p0[None, :], np.ones(1, dtype=np.float64)
+
+        elif self.interpolation == "nearest":
+            gpts = np.stack(np.meshgrid(*cell, indexing="ij"), axis=-1)
+            gpts = np.round(gpts, self.digits).reshape(2**self.n_dims, self.n_dims)
+            dist = np.linalg.norm(gpts - p[None, :], axis=-1)
+            return gpts[None, np.argmin(dist)], np.ones(1, dtype=np.float64)
+
+        elif self.interpolation == "linear":
+            qts = np.round(
+                (p[None, :] - p0[None, :]) / self.deltas[None, :], self.digits
+            )
+            try:
+                coeffs = self._interpolate_ocell(qts)[0]
+            except AssertionError as e:
+                self._error_info(p, for_ocell=True)
+                raise e
+            gpts = np.stack(np.meshgrid(*cell, indexing="ij"), axis=-1)
+            gpts = np.round(gpts, self.digits).reshape(2**self.n_dims, self.n_dims)
+
+        else:
+            raise ValueError(
+                f"Unknown interpolation '{self.interpolation}'. Please choose: snap, nearest, linear"
+            )
 
         sel = np.abs(coeffs) < 1.0e-14
         if np.any(sel):
@@ -814,18 +852,40 @@ class RegularDiscretizationGrid:
 
         """
         pts = self.apply_tols(pts)
-        p0 = self.get_corners(pts, allow_outer=False)
-        qts = np.round((pts - p0) / self.deltas[None, :], self.digits)
+        n_pts = len(pts)
 
-        try:
-            coeffs = self._interpolate_ocell(qts)  # shape: (n_pts, n_gp)
-        except AssertionError as e:
-            self._error_infos(qts, for_ocell=True)
-            raise e
+        if self.interpolation is None:
+            p0 = self.get_corners(pts, allow_outer=True)
+            coeffs = np.ones((n_pts, 1), dtype=np.float64)
+            gpts = p0[:, None, :]
 
-        gpts = np.round(
-            p0[:, None] + self._opts[None, :] * self.deltas[None, :], self.digits
-        )  # shape: (n_pts, n_gp, n_dims)
+        elif self.interpolation == "nearest":
+            p0 = self.get_corners(pts, allow_outer=True)
+            qts = np.round((pts - p0) / self.deltas[None, :], self.digits)
+            opts = self._get_opts()
+            inds = np.argmin(cdist(qts, opts), axis=-1)
+            gpts = np.round(
+                p0
+                + np.take_along_axis(opts, inds[:, None], axis=0)
+                * self.deltas[None, :],
+                self.digits,
+            )[:, None, :]
+            coeffs = np.ones((n_pts, 1), dtype=np.float64)
+            del qts, opts, inds
+
+        elif self.interpolation == "linear":
+            p0 = self.get_corners(pts, allow_outer=False)
+            qts = np.round((pts - p0) / self.deltas[None, :], self.digits)
+            try:
+                coeffs = self._interpolate_ocell(qts)  # shape: (n_pts, n_gp)
+            except AssertionError as e:
+                self._error_infos(qts, for_ocell=True)
+                raise e
+            opts = self._get_opts()
+            gpts = np.round(
+                p0[:, None] + opts[None, :] * self.deltas[None, :], self.digits
+            )  # shape: (n_pts, n_gp, n_dims)
+            del p0, qts, opts
 
         # remove points with zero weights:
         sel = np.all(np.abs(coeffs) < 1.0e-14, axis=0)

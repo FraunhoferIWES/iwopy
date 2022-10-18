@@ -14,18 +14,28 @@ if __name__ == "__main__":
     parser.add_argument("-a", "--algo", help="The algorithm choice", default="ga")
     parser.add_argument("-r", "--radius", help="The radius", type=float, default=5.0)
     parser.add_argument(
-        "--n_gen", help="The number of generations", type=int, default=200
+        "-d",
+        "--min_dist",
+        help="The minimal charges distance",
+        type=float,
+        default=None,
     )
-    parser.add_argument("--n_pop", help="The population size", type=int, default=50)
+    parser.add_argument(
+        "--n_gen", help="The number of generations", type=int, default=100
+    )
+    parser.add_argument("--n_pop", help="The population size", type=int, default=100)
     parser.add_argument("--seed", help="The seed", type=int, default=None)
-    parser.add_argument("--pop", help="Run in vectorized form", action="store_true")
+    parser.add_argument(
+        "-nop", "--no_pop", help="Switch off vectorization", action="store_true"
+    )
     args = parser.parse_args()
     n = args.n_points
     r = args.radius
+    d = args.min_dist
 
     xy = np.random.uniform(-r / 10.0, r / 10.0, (n, 2))
 
-    problem = ChargesProblem(xy, r)
+    problem = ChargesProblem(xy, r, d, ctol=1e-2)
     problem.initialize()
 
     fig = problem.get_fig(xy)
@@ -35,7 +45,7 @@ if __name__ == "__main__":
     solver = Optimizer_pymoo(
         problem,
         problem_pars=dict(
-            vectorize=args.pop,
+            vectorize=not args.no_pop,
         ),
         algo_pars=dict(
             type=args.algo,

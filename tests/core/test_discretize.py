@@ -18,11 +18,11 @@ class Obj1(iwopy.Objective):
     def maximize(self):
         return [False]
 
-    def calc_individual(self, vars_int, vars_float, problem_results):
+    def calc_individual(self, vars_int, vars_float, problem_results, cmpnts=None):
         x, y = vars_float
         return [f(x, y)]
 
-    def calc_population(self, vars_int, vars_float, problem_results):
+    def calc_population(self, vars_int, vars_float, problem_results, cmpnts=None):
         x, y = vars_float[:, 0], vars_float[:, 1]
         return f(x, y)[:, None]
 
@@ -62,7 +62,9 @@ def test_grad():
         obj1 = Obj1(p, "f")
         p.add_objective(obj1, varmap_float={"x": "x", "y": "y"})
 
-        gp = iwopy.DiscretizeRegGrid(p, {"x": dx, "y": dy}, fd_order={"x": ox, "y": oy})
+        gp = iwopy.DiscretizeRegGrid(
+            p, {"x": dx, "y": dy}, fd_order={"x": ox, "y": oy}, interpolation="linear"
+        )
         gp.initialize(verbosity=1)
 
         for p0 in np.random.uniform(1.0, 2.0, (N, 2)):

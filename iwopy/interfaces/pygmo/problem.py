@@ -1,6 +1,6 @@
 import numpy as np
 
-from iwopy.core import OptResults, Problem
+from iwopy.core import OptResults, Problem, OptFunctionList, OptFunctionSubset
 
 
 class UDP:
@@ -40,7 +40,6 @@ class UDP:
     def __init__(
         self,
         problem,
-        c_tol=0.0,
         pop=False,
         verbosity=0,
     ):
@@ -49,7 +48,7 @@ class UDP:
         self.n_vars_all = problem.n_vars_float + problem.n_vars_int
         self.n_fitness = problem.n_objectives + problem.n_constraints
 
-        self.c_tol = [c_tol] * problem.n_constraints
+        self.c_tol = problem.constraints_tol
 
         self.pop = pop
         self.verbosity = verbosity
@@ -63,6 +62,7 @@ class UDP:
         # apply new variables:
         values = np.zeros(self.n_fitness, dtype=np.float64)
         objs, cons = self.problem.evaluate_individual(xi, xf)
+        objs *= np.where(self.problem.maximize_objs, -1.0, 1.0)
         values[: self.problem.n_objectives] = objs
         values[self.problem.n_objectives :] = cons
 
@@ -82,6 +82,7 @@ class UDP:
         # apply new variables:
         values = np.zeros((n_pop, self.n_fitness), dtype=np.float64)
         objs, cons = self.problem.evaluate_population(xi, xf)
+        objs *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
         values[:, : self.problem.n_objectives] = objs
         values[:, self.problem.n_objectives :] = cons
 
@@ -133,6 +134,17 @@ class UDP:
         cmpnts = np.unique(spars[:, 0])
         vrs = np.unique(spars[:, 1])
 
+        if len(cmpnts) != self.problem.n_objectives + self.problem.n_constraints:
+            func = OptFunctionList(self.problem, "objs_cons")
+            for f in self.problem.objs.functions:
+                func.append(f)
+            for f in self.problem.cons.functions:
+                func.append(f)
+            func = OptFunctionSubset(func, cmpnts)
+            func.initialize()
+        else:
+            func = None
+
         varsf = x[: self.problem.n_vars_float]
         varsi = x[self.problem.n_vars_float :].astype(np.int32)
 
@@ -140,7 +152,7 @@ class UDP:
             varsi,
             varsf,
             vars=vrs,
-            components=cmpnts,
+            func=func,
             verbosity=self.verbosity,
             pop=self.pop,
         )

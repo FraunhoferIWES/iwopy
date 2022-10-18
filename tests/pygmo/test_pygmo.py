@@ -32,7 +32,7 @@ class RC(SimpleConstraint):
 def run_branin_ipopt(init_vals, dx, dy, tol, pop):
 
     prob = BraninProblem(initial_values=init_vals)
-    gprob = DiscretizeRegGrid(prob, deltas={"x": dx, "y": dy})
+    gprob = DiscretizeRegGrid(prob, deltas={"x": dx, "y": dy}, interpolation="linear")
     gprob.initialize()
 
     solver = Optimizer_pygmo(
@@ -221,7 +221,12 @@ def run_rosen0_ipopt(lower, upper, inits, dx, dy, tol, pop, ana):
     prob = RosenbrockProblem(lower=lower, upper=upper, initial=inits, ana_deriv=ana)
 
     gprob = DiscretizeRegGrid(
-        prob, deltas={"x": dx, "y": dy}, fd_order=2, fd_bounds_order=1, tol=1e-6
+        prob,
+        deltas={"x": dx, "y": dy},
+        fd_order=2,
+        fd_bounds_order=1,
+        tol=1e-6,
+        interpolation="linear",
     )
     gprob.initialize()
 
@@ -318,7 +323,12 @@ def run_rosen_ipopt(lower, upper, inits, dx, dy, tol, pop, ana):
     prob.add_constraint(RC(prob, ana_deriv=ana))
 
     gprob = DiscretizeRegGrid(
-        prob, deltas={"x": dx, "y": dy}, fd_order=2, fd_bounds_order=2, tol=1e-6
+        prob,
+        deltas={"x": dx, "y": dy},
+        fd_order=2,
+        fd_bounds_order=2,
+        tol=1e-6,
+        interpolation="linear",
     )
     gprob.initialize(verbosity=0)
 

@@ -3,7 +3,7 @@ import argparse
 import matplotlib.pyplot as plt
 
 from iwopy import LocalFD
-from iwopy.interfaces.pygmo import Optimizer_pygmo
+from iwopy.optimizers import GG
 from model import ChargesProblem
 
 if __name__ == "__main__":
@@ -46,10 +46,11 @@ if __name__ == "__main__":
     gproblem = LocalFD(problem, deltas=1e-2, fd_order=args.order)
     gproblem.initialize()
 
-    solver = Optimizer_pygmo(
+    solver = GG(
         gproblem,
-        problem_pars=dict(pop=not args.no_pop),
-        algo_pars=dict(type="ipopt", tol=1e-4),
+        step_max=0.1,
+        step_min=1e-6,
+        vectorized=not args.no_pop,
     )
     solver.initialize()
 

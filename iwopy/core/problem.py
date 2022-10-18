@@ -47,6 +47,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         self._cons_mi = None
         self._cons_ma = None
+        self._cons_tol = None
 
     def var_names_int(self):
         """
@@ -287,12 +288,16 @@ class Problem(Base, metaclass=ABCMeta):
         self.cons.append(constraint)
 
         cmi, cma = constraint.get_bounds()
+        ctol = np.zeros(constraint.n_components(), dtype=np.float64)
+        ctol[:] = constraint.tol
         if self._cons_mi is None:
             self._cons_mi = cmi
             self._cons_ma = cma
+            self._cons_tol = ctol
         else:
             self._cons_mi = np.append(self._cons_mi, cmi, axis=0)
             self._cons_ma = np.append(self._cons_ma, cma, axis=0)
+            self._cons_tol = np.append(self._cons_tol, ctol, axis=0)
 
     @property
     def min_values_constraints(self):
@@ -319,6 +324,19 @@ class Problem(Base, metaclass=ABCMeta):
 
         """
         return self._cons_ma
+
+    @property
+    def constraints_tol(self):
+        """
+        Gets the tolerance values of constraints
+
+        Returns
+        -------
+        ctol : numpy.ndarray
+            The constraint tolerance values, shape: (n_constraints,)
+
+        """
+        return self._cons_tol
 
     @property
     def n_objectives(self):
@@ -400,15 +418,16 @@ class Problem(Base, metaclass=ABCMeta):
         vars_int,
         vars_float,
         func,
+        components,
         ivars,
         fvars,
         vrs,
-        components,
         pop=False,
         verbosity=0,
     ):
         """
-        The actual gradient calculation.
+        The actual gradient calculation, not to be called directly
+        (call `get_gradients` instead).
 
         Can be overloaded in derived classes, the base class only considers
         analytic derivatives.
@@ -423,6 +442,8 @@ class Problem(Base, metaclass=ABCMeta):
             The functions to be differentiated, or None
             for a list of all objectives and all constraints
             (in that order)
+        components : list of int, optional
+            The function's component selection, or None for all
         ivars : list of int
             The indices of the function int variables in the problem
         fvars : list of int
@@ -430,8 +451,6 @@ class Problem(Base, metaclass=ABCMeta):
         vrs : list of int
             The function float variable indices wrt which the
             derivatives are to be calculated
-        components : list of int
-            The selected components of func, or None for all
         pop : bool
             Flag for vectorizing calculations via population
         verbosity : int
@@ -441,14 +460,15 @@ class Problem(Base, metaclass=ABCMeta):
         -------
         gradients : numpy.ndarray
             The gradients of the functions, shape:
-            (n_func_cmpnts, n_vrs)
+            (n_components, n_vrs)
 
         """
         n_vars = len(vrs)
+        n_cmpnts = func.n_components() if components is None else len(components)
         varsi = vars_int[ivars] if len(vars_int) else np.array([])
         varsf = vars_float[fvars] if len(vars_float) else np.array([])
 
-        gradients = np.full((func.n_components(), n_vars), np.nan, dtype=np.float64)
+        gradients = np.full((n_cmpnts, n_vars), np.nan, dtype=np.float64)
         for vi, v in enumerate(vrs):
             if v in fvars:
                 gradients[:, vi] = func.ana_deriv(
@@ -464,8 +484,8 @@ class Problem(Base, metaclass=ABCMeta):
         vars_int,
         vars_float,
         func=None,
-        vars=None,
         components=None,
+        vars=None,
         pop=False,
         verbosity=0,
     ):
@@ -477,7 +497,7 @@ class Problem(Base, metaclass=ABCMeta):
         object that contains a selection of objectives and/or constraints
         that were previously added to this problem. By default all
         objectives and constraints (and all their components) are
-        being considered.
+        being considered, cf. class `ProblemDefaultFunc`.
 
         Parameters
         ----------
@@ -489,12 +509,12 @@ class Problem(Base, metaclass=ABCMeta):
             The functions to be differentiated, or None
             for a list of all objectives and all constraints
             (in that order)
+        components : list of int, optional
+            The function's component selection, or None for all
         vars : list of int or str, optional
             The float variables wrt which the
             derivatives are to be calculated, or
             None for all
-        components : list of int
-            The selected components of func, or None for all
         verbosity : int
             The verbosity level, 0 = silent
         pop : bool
@@ -504,16 +524,12 @@ class Problem(Base, metaclass=ABCMeta):
         -------
         gradients : numpy.ndarray
             The gradients of the functions, shape:
-            (n_func_cmpnts, n_vrs)
+            (n_components, n_vars)
 
         """
         # set and check func:
         if func is None:
-            func = OptFunctionList(self, "objs_cons")
-            for f in self.objs.functions:
-                func.append(f)
-            for f in self.cons.functions:
-                func.append(f)
+            func = ProblemDefaultFunc(self)
         if func.problem is not self:
             raise ValueError(
                 f"Problem '{self.name}': Attempt to calculate gradient for function '{func.name}' which is linked to different problem '{func.problem.name}'"
@@ -560,19 +576,15 @@ class Problem(Base, metaclass=ABCMeta):
                 )
             vrs.append(hvnmsf.index(v))
 
-        # update components:
-        if components is None:
-            components = np.arange(func.n_components())
-
         # calculate gradients:
         gradients = self.calc_gradients(
             vars_int,
             vars_float,
             func,
+            components,
             ivars,
             fvars,
             vrs,
-            components,
             pop=pop,
             verbosity=verbosity,
         )
@@ -580,7 +592,7 @@ class Problem(Base, metaclass=ABCMeta):
         # check success:
         nog = np.where(np.isnan(gradients))[1]
         if len(nog):
-            nvrs = np.array(vars)[nog].tolist()
+            nvrs = np.unique(np.array(vars)[nog]).tolist()
             raise ValueError(
                 f"Problem '{self.name}': Failed to calculate derivatives for variables {nvrs}. Maybe wrap this problem into DiscretizeRegGrid?"
             )
@@ -637,10 +649,24 @@ class Problem(Base, metaclass=ABCMeta):
         i0 = 0
         for f in self.objs.functions:
             i1 = i0 + f.n_components()
-            self._maximize[i0:i1] = np.array(f.maximize(), dtype=bool)
+            self._maximize[i0:i1] = f.maximize()
             i0 = i1
 
         super().initialize(verbosity)
+
+    @property
+    def maximize_objs(self):
+        """
+        Flags for objective maximization
+
+        Returns
+        -------
+        maximize : numpy.ndarray
+            Boolean flag for maximization of objective,
+            shape: (n_objectives,)
+
+        """
+        return self._maximize
 
     def apply_individual(self, vars_int, vars_float):
         """
@@ -918,3 +944,23 @@ class Problem(Base, metaclass=ABCMeta):
         cons = self.cons.finalize_population(varsi, varsf, results, verbosity)
 
         return results, objs, cons
+
+
+class ProblemDefaultFunc(OptFunctionList):
+    """
+    The default function of a problem
+    for gradient calculations.
+
+    Parameters
+    ----------
+    problem : iwopy.core.Problem
+        The problem
+
+    """
+
+    def __init__(self, problem):
+        super().__init__(problem, "objs_cons")
+        for f in problem.objs.functions:
+            self.append(f)
+        for f in problem.cons.functions:
+            self.append(f)

@@ -4,11 +4,20 @@ This example finds a minimum of the electrostatic potential of `N` particles wit
 
 ## Solve with pygmo.IPOPT
 
-For default radius and N = 4 particles, run
+For default radius and N = 10 particles, run
 ```
-python run_pygmo_ipopt.py -n 4 --pop
+python run_pygmo_ipopt.py -n 10
 ```
-The `--pop` is optional and might speed up the gradient calculation.
+
+Check the options by adding the `-h` flag.
+
+## Solve with pygmo.NLOPT.CCSAQ
+
+For default radius and N = 10 particles, run
+```
+python run_pygmo_nlopt.py -n 10 -a ccsaq
+```
+Other algorithms from `NLOPT` are available using different choices for `-a` (or `--opt_algo`).
 
 Check the options by adding the `-h` flag.
 
@@ -16,9 +25,8 @@ Check the options by adding the `-h` flag.
 
 For default radius and N = 20 particles, run
 ```
-python run_pymoo.py -n 20 -a ga --pop
+python run_pymoo.py -n 20 -a ga
 ```
-The `--pop` is optional and vecctorizes the population calculation.
 
 Check the options by adding the `-h` flag.
 
@@ -26,8 +34,7 @@ Check the options by adding the `-h` flag.
 
 For default radius and N = 20 particles, run
 ```
-python run_pymoo.py -n 20 -a pso --pop
+python run_pymoo.py -n 20 -a pso 
 ```
-The `--pop` is optional and vecctorizes the population calculation.
 
 Check the options by adding the `-h` flag.
