@@ -55,3 +55,9 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
     - `electrostatics`: New optional constraint `MinDist`, forcing charges to keep a minimal distance. Also adding a script that demonstrates how to solve this problem using `NLOPT` via `pygmo`, and another for solving the problem using the `GG` algorithm.
 
 **Full Changelog**: https://github.com/FraunhoferIWES/iwopy/commits/v0.0.15
+
+## v0.0.16-alpha
+
+
+
+**Full Changelog**: https://github.com/FraunhoferIWES/iwopy/commits/v0.0.16

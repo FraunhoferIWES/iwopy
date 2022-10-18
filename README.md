@@ -1,7 +1,7 @@
 # iwopy
 Fraunhofer IWES optimization tools in Python
 
-![](Logo_IWOPY.svg)
+![](Logo_IWOPY_white.svg)
 
 ## Overview
 The `iwopy` package is in fact a meta package that provides interfaces to other open-source Python optimization packages out there. Currently this includes
@@ -9,9 +9,16 @@ The `iwopy` package is in fact a meta package that provides interfaces to other 
 - [pymoo](https://pymoo.org/index.html)
 - [pygmo](https://esa.github.io/pygmo2/index.html)
 
-The basic idea of `iwopy` is to provide abstract base classes, that can be concretized for any kind of problem by the users, and the corresponding solver interfaces.
+`iwopy` can thus be understood as an attempt to provide *the best of all worlds* when it comes to solving optimization problems with Python. Obviously all the credit for implementing the invoked optimizers goes to the original package providers.
 
-`iwopy` can thus be understood as an attempt to provide _the best of all worlds_ when it comes to solving optimization problems with Python. Obviously all the credit for implementing the invoked optimizers goes to the original package providers.
+The basic idea of `iwopy` is to provide abstract base classes, that can be concretized for any kind of problem by the users, and the corresponding solver interfaces. However, also some helpful problem wrappers and an original optimizer are provided:
+
+- Problem wrapper `LocalFD`: Calculates derivatives by finite differences
+- Problem wrapper `RegularDiscretizationGrid`: Puts the problem on a Grid
+- Optimizer `GG`: *Greedy Gradient* optimization with constraints
+
+All calculations support vectorized evaluation of a complete population of parameters. This is useful for heuristic approaches like genetic algorithms, but also for evaluating gradients. It can lead to a vast speed-up and should be invoked whenever possible. Check the examples (or the API) for details.
+
 
 Documentation: [https://fraunhoferiwes.github.io/iwopy.docs/index.html](https://fraunhoferiwes.github.io/iwopy.docs/index.html)
 
@@ -40,7 +47,7 @@ source /path/to/my_venv/bin/activate
 ```
 Note that in the above commands `/path/to/my_venv` is a placeholder that should be replaced by a path to a (non-existing) folder of your choice, for example `~/venv/iwopy`.
 
-All subsequent installation commands via `pip` can then be executed directly within the active environment without changes. After your work with `iwopy` is done you can leave the environment by the command `deactivate`. 
+All subsequent installation commands via `pip` can then be executed directly within the active environment without changes. After your work with `iwopy` is done you can leave the environment by the command `deactivate`.
 
 ### Standard users
 
