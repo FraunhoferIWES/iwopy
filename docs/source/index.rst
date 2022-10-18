@@ -40,7 +40,7 @@ Contents:
     .. toctree::
         :maxdepth: 2
 
-        notebooks/examples
+        examples
         
     .. toctree::
         :maxdepth: 1
