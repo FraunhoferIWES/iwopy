@@ -205,7 +205,7 @@ class GG(Optimizer):
         valid = self.problem.check_constraints_individual(cons)
 
         if verbosity > 0:
-            s = f"{'it':<5} | {'Objective':<9} | cviol"
+            s = f"{'it':<5} | {'Objective':<9} | cviol | level"
             hline = "-"*(len(s)+1)
             print("\nRunning GG")
             print(hline)
@@ -214,13 +214,11 @@ class GG(Optimizer):
 
         step = self.step_max.copy()
         count = -1
+        level = 0
         while not np.all(step < self.step_min):
 
             count += 1
             recover = not np.all(valid)
-
-            if verbosity > 0:
-                print(f"{count:<5} | {obs[0]:9.3e} | {np.sum(~valid)}")
 
             # check memory:
             sel = np.max(np.abs(x[None, :] - self.memory[0][:nmem]), axis=1) < 1e-13 if nmem > 0 else np.array([False])
@@ -228,11 +226,13 @@ class GG(Optimizer):
                 jmem = np.where(sel)[0][0]
                 grads = self.memory[1][jmem]
                 step /= self.step_div_factor
+                level += 1
             else:
 
                 # fresh calculation:
                 grads = self.problem.get_gradients(inone, x, pop=self.vectorized)
                 step = self.step_max.copy()
+                level = 0
 
                 # memorize:
                 jmem = imem
@@ -242,6 +242,9 @@ class GG(Optimizer):
                 self.memory[3][jmem] = not recover
                 imem = (imem + 1) % self.memory_size
                 nmem = min(nmem + 1, self.memory_size)
+
+            if verbosity > 0:
+                print(f"{count:>5} | {obs[0]:9.3e} | {np.sum(~valid):>5} | {level:>5}")
 
             # project out directions of constraint violation:
             grad = grads[0].copy()
