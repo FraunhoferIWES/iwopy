@@ -1,7 +1,7 @@
 # iwopy
 Fraunhofer IWES optimization tools in Python
 
-![](Logo_IWOPY.svg)
+![](Logo_IWOPY_white.svg)
 
 ## Overview
 The `iwopy` package is in fact a meta package that provides interfaces to other open-source Python optimization packages out there. Currently this includes
