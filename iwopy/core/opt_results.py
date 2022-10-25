@@ -93,19 +93,19 @@ class OptResults:
             s += "  Integer variables:\n"
             for i, vname in enumerate(self.vnames_int):
                 s += f"    {i}: {vname:<{L}} = {self.vars_int[i]}\n"
-        if len(self.vnames_float):
+        if self.vars_float is not None and len(self.vnames_float):
             s += hline
             L = len(max(self.vnames_float, key=len))
             s += "  Float variables:\n"
             for i, vname in enumerate(self.vnames_float):
                 s += f"    {i}: {vname:<{L}} = {self.vars_float[i]:.6e}\n"
-        if len(self.onames):
+        if self.objs is not None and len(self.onames):
             s += hline
             L = len(max(self.onames, key=len))
             s += "  Objectives:\n"
             for i, vname in enumerate(self.onames):
                 s += f"    {i}: {vname:<{L}} = {self.objs[i]:.6e}\n"
-        if len(self.cnames):
+        if self.cons is not None and len(self.cnames):
             s += hline
             L = len(max(self.cnames, key=len))
             s += "  Constraints:\n"

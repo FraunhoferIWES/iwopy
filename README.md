@@ -8,6 +8,7 @@ The `iwopy` package is in fact a meta package that provides interfaces to other 
 
 - [pymoo](https://pymoo.org/index.html)
 - [pygmo](https://esa.github.io/pygmo2/index.html)
+- (more to come with future versions)
 
 `iwopy` can thus be understood as an attempt to provide *the best of all worlds* when it comes to solving optimization problems with Python. Obviously all the credit for implementing the invoked optimizers goes to the original package providers.
 
