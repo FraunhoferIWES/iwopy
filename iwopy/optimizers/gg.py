@@ -211,6 +211,7 @@ class GG(Optimizer):
         # prepare:
         inone = np.array([], dtype=np.int32)
         n_vars = self.problem.n_vars_float
+        maximize = self.problem.maximize_objs[0]
         imem = 0
         nmem = 0
 
@@ -267,7 +268,7 @@ class GG(Optimizer):
                 print(f"{count:>5} | {obs[0]:9.3e} | {np.sum(~valid):>5} | {level:>5}")
 
             # project out directions of constraint violation:
-            grad = grads[0].copy()
+            grad = grads[0].copy() if not maximize else -grads[0]
             deltax = self._grad2deltax(-grad, step)
             ncons = cons + np.einsum("cd,d->c", grads[1:], deltax)
             nvalid = ncons <= 0  # self.problem.check_constraints_individual(ncons)
@@ -327,7 +328,7 @@ class GG(Optimizer):
 
                         # find best:
                         obsp = obsp[valc]
-                        if self.problem.maximize_objs[0]:
+                        if maximize:
                             i = np.argmax(obsp)
                             if obsp[i][0] <= obs[0]:
                                 i = -1
@@ -372,7 +373,7 @@ class GG(Optimizer):
                             break
 
                         else:
-                            if self.problem.maximize_objs[0]:
+                            if maximize:
                                 better = obsh[0] > obs[0]
                             else:
                                 better = obsh[0] < obs[0]
@@ -394,7 +395,7 @@ class GG(Optimizer):
         # final evaluation:
         pres, obs, cons = self.problem.finalize_individual(inone, x, verbosity)
         valid = self.problem.check_constraints_individual(cons, verbosity)
-        if self.problem.maximize_objs[0]:
+        if maximize:
             better = obs[0] > obs0
         else:
             better = obs[0] < obs0
