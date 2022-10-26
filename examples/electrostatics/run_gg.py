@@ -24,9 +24,6 @@ if __name__ == "__main__":
     )
     parser.add_argument("-o", "--order", help="Derivative order", type=int, default=1)
     parser.add_argument(
-        "-i", "--interpolation", help="The interpolation method", default=None
-    )
-    parser.add_argument(
         "-nop", "--no_pop", help="Switch off vectorization", action="store_true"
     )
     args = parser.parse_args()
@@ -50,6 +47,7 @@ if __name__ == "__main__":
         gproblem,
         step_max=0.1,
         step_min=1e-6,
+        f_tol=1e-4,
         vectorized=not args.no_pop,
     )
     solver.initialize()
