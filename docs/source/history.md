@@ -8,56 +8,55 @@ So far not many models have been transferred from the Fraunhofer IWES in-house p
 
 Enjoy - we are awaiting comments and issues, thanks for testing.
 
-**Full Changelog**: https://github.com/FraunhoferIWES/iwopy/commits/v0.0.11
+**Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.0.11)
 
 ## v0.0.12-alpha
 
 - Benchmarks:
-    - New benchmark `rosenbrock` added
-
+  - New benchmark `rosenbrock` added
 - Tests:
-    - Extended tests for pygmo and pymoo
-
+  - Extended tests for pygmo and pymoo
 - Fixes:
-    - Bugs fixed with discretization
-    
-**Full Changelog**: https://github.com/FraunhoferIWES/iwopy/commits/v0.0.12
+  - Bugs fixed with discretization
+
+**Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.0.12)
 
 ## v0.0.13-alpha
 
 - Wrappers:
-    - Introducing `SimpleObjective` and `SimpleConstraint`, for functions of simple numeric types like `f(x, y, ...)`
+  - Introducing `SimpleObjective` and `SimpleConstraint`, for functions of simple numeric types like `f(x, y, ...)`
 - Examples:
-    - New example: `electrostatics`, solvable with IPOPT, GA, PSO
+  - New example: `electrostatics`, solvable with IPOPT, GA, PSO
 - Notebooks:
-    - Work on `examples.ipynb`: Adding section on simple function minimization
-    
-**Full Changelog**: https://github.com/FraunhoferIWES/iwopy/commits/v0.0.13
+  - Work on `examples.ipynb`: Adding section on simple function minimization
+
+**Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.0.13)
 
 ## v0.0.14-alpha
 
 - Notebooks:
-    - Work on `examples.ipynb`: Adding electrostatics example
+  - Work on `examples.ipynb`: Adding electrostatics example
 - Core:
-    - `OptResults` can now be printed
+  - `OptResults` can now be printed
 
-**Full Changelog**: https://github.com/FraunhoferIWES/iwopy/commits/v0.0.14
+**Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.0.14)
 
 ## v0.0.15-alpha
 
 - Utils:
-    - `RegularDiscretizationGrid` now with interpolation parameter: None, nearest or linear
+  - `RegularDiscretizationGrid` now with interpolation parameter: None, nearest or linear
 - Wrappers:
-    - New wrapper: `LocalFD`, Local Finite Difference. Calculates function derivatives by applying local finite difference rules. Currently orders 1 and 2 are implemented, more could be added later.
+  - New wrapper: `LocalFD`, Local Finite Difference. Calculates function derivatives by applying local finite difference rules. Currently orders 1 and 2 are implemented, more could be added later.
 - Optimizers:
-    - New optimizer: `GG`, Greedy Gradient. A pretty straight forward gradient based local optimizer that projects out (or reverses) directions of constraint violation. Mostly implemented for the purpose of testing gradients, but maybe worth a try also for problem solving.
+  - New optimizer: `GG`, Greedy Gradient. A pretty straight forward gradient based local optimizer that projects out (or reverses) directions of constraint violation. Mostly implemented for the purpose of testing gradients, but maybe worth a try also for problem solving.
 - Examples:
-    - `electrostatics`: New optional constraint `MinDist`, forcing charges to keep a minimal distance. Also adding a script that demonstrates how to solve this problem using `NLOPT` via `pygmo`, and another for solving the problem using the `GG` algorithm.
+  - `electrostatics`: New optional constraint `MinDist`, forcing charges to keep a minimal distance. Also adding a script that demonstrates how to solve this problem using `NLOPT` via `pygmo`, and another for solving the problem using the `GG` algorithm.
 
-**Full Changelog**: https://github.com/FraunhoferIWES/iwopy/commits/v0.0.15
+**Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.0.15)
 
-## v0.0.16-alpha
+## v0.1.0-alpha
 
+- Bug fixes
+- Updated documentation
 
-
-**Full Changelog**: https://github.com/FraunhoferIWES/iwopy/commits/v0.0.16
+**Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.0)

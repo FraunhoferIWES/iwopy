@@ -13,7 +13,7 @@ The `iwopy` package is in fact mainly a meta package that provides interfaces to
 * `pygmo <https://esa.github.io/pygmo2/index.html>`_
 * (more to come with future versions)
 
-`iwopy` can thus be understood as an attempt to provide *the best of all worlds* when it comes to solving optimization problems with Python. Obviously all the credit for implementing the invoked optimizers goes to the original package providers.
+`iwopy` can thus be understood as an attempt to provide *the best of all worlds* when it comes to solving optimization problems with Python. This has not yet been achieved, since above list of accessable optimization packages is obviously incomplete, but it's a start. All the credit for implementing the invoked optimizers goes to the original package providers.
 
 The basic idea of `iwopy` is to provide abstract base classes, that can be concretized for any kind of problem by the users, and the corresponding solver interfaces. However, also some helpful problem wrappers and an original optimizer are provided:
 
