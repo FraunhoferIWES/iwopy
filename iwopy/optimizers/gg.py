@@ -26,6 +26,8 @@ class GG(Optimizer):
         or dict with entry for each variable
     step_div_factor : float
         Step size division factor until step_min is reached
+    f_tol : float
+        The objective function tolerance
     vectorized : bool
         Flag for running in vectorized mode
     n_max_steps : int
@@ -45,6 +47,8 @@ class GG(Optimizer):
         shape: (n_vars_float,)
     step_div_factor : float
         Step size division factor until step_min is reached
+    f_tol : float
+        The objective function tolerance
     vectorized : bool
         Flag for running in vectorized mode
     n_max_steps : int
@@ -64,6 +68,7 @@ class GG(Optimizer):
         step_max,
         step_min,
         step_div_factor=10.0,
+        f_tol=1e-8,
         vectorized=True,
         n_max_steps=100,
         memory_size=100,
@@ -73,6 +78,7 @@ class GG(Optimizer):
         self.step_max = step_max
         self.step_min = step_min
         self.step_div_factor = step_div_factor
+        self.f_tol = f_tol
         self.vectorized = vectorized
         self.n_max_steps = n_max_steps
         self.memory_size = memory_size
@@ -211,6 +217,7 @@ class GG(Optimizer):
         # prepare:
         inone = np.array([], dtype=np.int32)
         n_vars = self.problem.n_vars_float
+        maximize = self.problem.maximize_objs[0]
         imem = 0
         nmem = 0
 
@@ -267,7 +274,7 @@ class GG(Optimizer):
                 print(f"{count:>5} | {obs[0]:9.3e} | {np.sum(~valid):>5} | {level:>5}")
 
             # project out directions of constraint violation:
-            grad = grads[0].copy()
+            grad = grads[0].copy() if not maximize else -grads[0]
             deltax = self._grad2deltax(-grad, step)
             ncons = cons + np.einsum("cd,d->c", grads[1:], deltax)
             nvalid = ncons <= 0  # self.problem.check_constraints_individual(ncons)
@@ -327,7 +334,7 @@ class GG(Optimizer):
 
                         # find best:
                         obsp = obsp[valc]
-                        if self.problem.maximize_objs[0]:
+                        if maximize:
                             i = np.argmax(obsp)
                             if obsp[i][0] <= obs[0]:
                                 i = -1
@@ -338,9 +345,12 @@ class GG(Optimizer):
 
                         if i >= 0:
                             x = newx[valc][i]
+                            done = np.abs(obs[0] - obsp[i][0]) <= self.f_tol
                             obs = obsp[i]
                             cons = consp[valc][i]
                             valid = validp[valc][i]
+                            if done:
+                                break
 
                 else:
                     x = newx[0]
@@ -351,6 +361,7 @@ class GG(Optimizer):
             # non-vectorized:
             else:
                 anygood = False
+                done = False
                 for i, hx in enumerate(newx):
 
                     obsh, consh = self.problem.evaluate_individual(inone, hx)
@@ -372,15 +383,18 @@ class GG(Optimizer):
                             break
 
                         else:
-                            if self.problem.maximize_objs[0]:
+                            if maximize:
                                 better = obsh[0] > obs[0]
                             else:
                                 better = obsh[0] < obs[0]
                             if better:
                                 x = hx
+                                done = np.abs(obs[0] - obsh[0]) <= self.f_tol
                                 obs = obsh
                                 cons = consh
                                 valid = validh
+                    if done:
+                        break
 
                 if not anygood:
                     x = hx0
@@ -394,7 +408,7 @@ class GG(Optimizer):
         # final evaluation:
         pres, obs, cons = self.problem.finalize_individual(inone, x, verbosity)
         valid = self.problem.check_constraints_individual(cons, verbosity)
-        if self.problem.maximize_objs[0]:
+        if maximize:
             better = obs[0] > obs0
         else:
             better = obs[0] < obs0
