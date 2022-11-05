@@ -67,3 +67,13 @@ Contents:
         :maxdepth: 2
 
         history
+
+Contributing
+============
+
+#. Fork *iwopy* on *github*.
+#. Create a branch (`git checkout -b new_branch`)
+#. Commit your changes (`git commit -am "your awesome message"`)
+#. Push to the branch (`git push origin new_branch`)
+#. Create a pull request
+
