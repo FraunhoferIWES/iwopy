@@ -63,6 +63,7 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 ## v0.1.1-alpha
 
-
+- Tests:
+  - pygmo: Increased ngen and npop, intended for osx systems to pass tests
 
 **Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.1)
