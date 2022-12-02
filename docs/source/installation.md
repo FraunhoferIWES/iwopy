@@ -9,7 +9,17 @@ The supported Python versions are:
 - `Python 3.9`
 - `Python 3.10`
 
-## Virtual Python environment
+## Installation via conda
+
+The `iwopy` package is available on the channel [conda-forge](https://anaconda.org/conda-forge/iwopy). You can install the latest version by
+
+```console
+conda install -c conda-forge iwopy
+```
+
+## Installation via pip
+
+### Virtual Python environment
 
 We recommend working in a Python virtual environment and install `iwopy` there. Such an environment can be created by
 
@@ -27,7 +37,7 @@ Note that in the above commands `/path/to/my_venv` is a placeholder that should 
 
 All subsequent installation commands via `pip` can then be executed directly within the active environment without changes. After your work with `iwopy` is done you can leave the environment by the command `deactivate`.
 
-## Standard users
+### Standard users
 
 As a standard user, you can install the latest release via [pip](https://pypi.org/project/iwopy/) by
 
@@ -41,7 +51,7 @@ This in general corresponds to the `main` branch at [github](https://github.com/
 pip install git+https://github.com/FraunhoferIWES/iwopy@dev#egg=iwopy
 ```
 
-## Developers
+### Developers
 
 The first step as a developer is to clone the `iwopy` repository by
 
@@ -49,20 +59,14 @@ The first step as a developer is to clone the `iwopy` repository by
 git clone https://github.com/FraunhoferIWES/iwopy.git
 ```
 
-Enter the root directory by `cd iwopy`. Then you can either install from this directory via
+Enter the root directory by
+
+```console
+cd iwopy
+```
+
+Then you can either install from this directory via
 
 ```console
 pip install -e .
-```
-
-Alternatively, add the `iwopy` directory to your `PYTHONPATH`, e.g. by running
-
-```console
-export PYTHONPATH=`pwd`:$PYTHONPATH
-```
-
-from the root `iwopy` directory, and then
-
-```console
-pip install -r requirements.txt
 ```
