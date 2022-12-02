@@ -1,5 +1,5 @@
 
-.. image:: ../../Logo_IWOPY.svg
+.. image:: ../../Logo_IWOPY_white.svg
     :align: center
 
 Welcome to IWOPY
@@ -31,10 +31,6 @@ All calculations support vectorized evaluation of a complete population of
 parameters. This is useful for heuristic approaches like genetic algorithms, 
 but also for evaluating gradients. It can lead to a vast speed-up and should be 
 invoked whenever possible. Check the examples (or the API) for details.
-
-**Quick Start**::
-
-    pip install iwopy
 
 Source code repository (and issue tracker):
     https://github.com/FraunhoferIWES/iwopy
@@ -75,5 +71,4 @@ Contributing
 #. Create a branch (`git checkout -b new_branch`)
 #. Commit your changes (`git commit -am "your awesome message"`)
 #. Push to the branch (`git push origin new_branch`)
-#. Create a pull request
-
+#. Create a pull request `here <https://github.com/FraunhoferIWES/iwopy/pulls>`_

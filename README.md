@@ -28,6 +28,8 @@ Source code: [https://github.com/FraunhoferIWES/iwopy](https://github.com/Fraunh
 
 PyPi reference: [https://pypi.org/project/iwopy/](https://pypi.org/project/iwopy/)
 
+Anaconda reference: [https://anaconda.org/conda-forge/iwopy](https://anaconda.org/conda-forge/iwopy)
+
 ## Requirements
 
 The supported Python versions are:
@@ -37,7 +39,15 @@ The supported Python versions are:
 - `Python 3.9`
 - `Python 3.10`
 
-## Installation
+## Installation via conda
+
+The `iwopy` package is available on the channel [conda-forge](https://anaconda.org/conda-forge/iwopy). You can install the latest version by
+
+```console
+conda install -c conda-forge iwopy
+```
+
+## Installation via pip
 
 ### Virtual Python environment
 
@@ -79,22 +89,16 @@ The first step as a developer is to clone the `iwopy` repository by
 git clone https://github.com/FraunhoferIWES/iwopy.git
 ```
 
-Enter the root directory by `cd iwopy`. Then you can either install from this directory via
+Enter the root directory by
+
+```console
+cd iwopy
+```
+
+Then you can either install from this directory via
 
 ```console
 pip install -e .
-```
-
-Alternatively, add the `iwopy` directory to your `PYTHONPATH`, e.g. by running
-
-```console
-export PYTHONPATH=`pwd`:$PYTHONPATH
-```
-
-from the root `iwopy` directory, and then
-
-```console
-pip install -r requirements.txt
 ```
 
 ## Contributing
@@ -103,4 +107,4 @@ pip install -r requirements.txt
 2. Create a branch (`git checkout -b new_branch`)
 3. Commit your changes (`git commit -am "your awesome message"`)
 4. Push to the branch (`git push origin new_branch`)
-5. Create a pull request
+5. Create a pull request [here](https://github.com/FraunhoferIWES/iwopy/pulls)
