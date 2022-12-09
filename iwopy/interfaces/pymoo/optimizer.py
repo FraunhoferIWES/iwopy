@@ -19,14 +19,15 @@ class DefaultCallback(Callback):
     def notify(self, algorithm):
         fvals = algorithm.pop.get("F")
         cvals = algorithm.pop.get("CV")
-        i = np.argmin(fvals)
+        n_obj = fvals.shape[1]
+        n_con = cvals.shape[1]
+        i = np.argmin(fvals, axis=0)
         if self.data["f_best"] is None:
-            self.data["f_best"] = fvals[i]
-            self.data["cv_best"] = cvals[i]
+            self.data["f_best"] = fvals[None, i, range(n_obj)]
+            self.data["cv_best"] = cvals[None, i, range(n_con)]
         else:
-            self.data["f_best"] = np.append(self.data["f_best"], fvals[i])
-            self.data["cv_best"] = np.append(self.data["cv_best"], cvals[i])
-
+            self.data["f_best"] = np.append(self.data["f_best"], fvals[None, i, range(n_obj)], axis=0)
+            self.data["cv_best"] = np.append(self.data["cv_best"], cvals[None, i, range(n_con)], axis=0)
 
 class Optimizer_pymoo(Optimizer):
     """
