@@ -204,6 +204,7 @@ class SingleObjProblem(Problem):
 
         return SingleObjOptResults(self.problem, suc, xi, xf, objs, cons, res)
 
+
 class MultiObjProblem(SingleObjProblem):
     """
     Wrapper around the pymoo problem for a multiple

@@ -16,7 +16,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "-N", "--n_gen", help="The number of generations", type=int, default=200
     )
-    parser.add_argument("-P", "--n_pop", help="The population size", type=int, default=100)
+    parser.add_argument(
+        "-P", "--n_pop", help="The population size", type=int, default=100
+    )
     parser.add_argument("--seed", help="The seed", type=int, default=None)
     parser.add_argument(
         "-nop", "--no_pop", help="Switch off vectorization", action="store_true"
@@ -26,13 +28,17 @@ if __name__ == "__main__":
     n = args.n_points
     r = args.radius
 
-    radii = np.random.uniform(r/2., r, n)
-    chain = ChainPopulation(n_pop, n, radii, alpha=45.)
+    radii = np.random.uniform(r / 2.0, r, n)
+    chain = ChainPopulation(n_pop, n, radii, alpha=45.0)
 
     problem = ChainProblem(chain)
     problem.add_constraint(NoCrossing(problem))
-    problem.add_objective(MaxStretch(problem, direction=np.array([1.,0.]), name="stretch_x"))
-    problem.add_objective(MaxStretch(problem, direction=np.array([0.,1.]), name="stretch_y"))
+    problem.add_objective(
+        MaxStretch(problem, direction=np.array([1.0, 0.0]), name="stretch_x")
+    )
+    problem.add_objective(
+        MaxStretch(problem, direction=np.array([0.0, 1.0]), name="stretch_y")
+    )
     problem.initialize()
 
     solver = Optimizer_pymoo(
@@ -43,7 +49,7 @@ if __name__ == "__main__":
         algo_pars=dict(
             type=args.algo,
             pop_size=args.n_pop,
-            #seed=args.seed,
+            # seed=args.seed,
         ),
         setup_pars=dict(),
         term_pars=dict(

@@ -26,8 +26,13 @@ class DefaultCallback(Callback):
             self.data["f_best"] = fvals[None, i, range(n_obj)]
             self.data["cv_best"] = cvals[None, i, range(n_con)]
         else:
-            self.data["f_best"] = np.append(self.data["f_best"], fvals[None, i, range(n_obj)], axis=0)
-            self.data["cv_best"] = np.append(self.data["cv_best"], cvals[None, i, range(n_con)], axis=0)
+            self.data["f_best"] = np.append(
+                self.data["f_best"], fvals[None, i, range(n_obj)], axis=0
+            )
+            self.data["cv_best"] = np.append(
+                self.data["cv_best"], cvals[None, i, range(n_con)], axis=0
+            )
+
 
 class Optimizer_pymoo(Optimizer):
     """

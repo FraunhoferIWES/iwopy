@@ -120,7 +120,7 @@ class Optimizer(Base, metaclass=ABCMeta):
                             print(f"  Best {o.name} = {val}")
                         else:
                             for i in range(n):
-                                if self.problem.maximize_objs[i0+1]:
+                                if self.problem.maximize_objs[i0 + 1]:
                                     val = np.max(opt_results.objs[:, i0 + i])
                                 else:
                                     val = np.min(opt_results.objs[:, i0 + i])

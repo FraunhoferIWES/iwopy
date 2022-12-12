@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 class SingleObjOptResults:
     """
     Container for optimization results for single objective
@@ -75,7 +76,9 @@ class SingleObjOptResults:
         self.cnames = problem.cons.component_names
 
         if problem.n_objectives > 1:
-            raise ValueError(f"Wrong opt results class '{type(self).__name__}' for multi objective problem. Use 'MultiObjOptResults' instead.")
+            raise ValueError(
+                f"Wrong opt results class '{type(self).__name__}' for multi objective problem. Use 'MultiObjOptResults' instead."
+            )
 
     def __str__(self):
 
@@ -110,6 +113,7 @@ class SingleObjOptResults:
         s += hline
 
         return s
+
 
 class MultiObjOptResults:
     """
@@ -185,12 +189,14 @@ class MultiObjOptResults:
         self.cnames = problem.cons.component_names
 
         if problem.n_objectives <= 1:
-            raise ValueError(f"Wrong opt results class '{type(self).__name__}' for single objective problem. Use 'SingleObjOptResults' instead.")
+            raise ValueError(
+                f"Wrong opt results class '{type(self).__name__}' for single objective problem. Use 'SingleObjOptResults' instead."
+            )
 
     def __str__(self):
 
         s = f"Results problem '{self.pname}':\n"
-        hline = "-" * 2*len(s) + "\n"
+        hline = "-" * 2 * len(s) + "\n"
         if len(self.vnames_int):
             s += hline
             L = len(max(self.vnames_int, key=len))
@@ -210,7 +216,7 @@ class MultiObjOptResults:
             L = len(max(self.onames, key=len))
             s += "  Objectives:\n"
             for i, vname in enumerate(self.onames):
-                v = self.objs[:,i]
+                v = self.objs[:, i]
                 s += f"    {i}: {vname:<{L}} = {np.min(v):.6e} --> {np.max(v):.6e}\n"
         if self.cons is not None and len(self.cnames):
             s += hline
@@ -227,16 +233,16 @@ class MultiObjOptResults:
         return s
 
     def plot_pareto(
-            self, 
-            obj_0=0, 
-            obj_1=1,
-            ax=None,
-            figsize=(5, 5),
-            s=50,
-            color_val="orange",
-            color_ival="red",
-            title=None,
-        ):
+        self,
+        obj_0=0,
+        obj_1=1,
+        ax=None,
+        figsize=(5, 5),
+        s=50,
+        color_val="orange",
+        color_ival="red",
+        title=None,
+    ):
         """
         Get figure that shows the pareto front
 
@@ -267,12 +273,24 @@ class MultiObjOptResults:
         """
         if ax is None:
             __, ax = plt.subplots(figsize=figsize)
-        
+
         sel = self.success
-        ax.scatter(self.objs[sel, obj_0], self.objs[sel, obj_1], s=s, c=color_val, label="valid")
+        ax.scatter(
+            self.objs[sel, obj_0],
+            self.objs[sel, obj_1],
+            s=s,
+            c=color_val,
+            label="valid",
+        )
 
         sel = ~self.success
-        ax.scatter(self.objs[sel, obj_0], self.objs[sel, obj_1], s=s, c=color_ival, label="invalid")
+        ax.scatter(
+            self.objs[sel, obj_0],
+            self.objs[sel, obj_1],
+            s=s,
+            c=color_ival,
+            label="invalid",
+        )
 
         if np.any(sel):
             ax.legend(loc="best")
@@ -295,7 +313,7 @@ class MultiObjOptResults:
         max : bool
             Find the maximal value of the weighted result
             (otherwise find the minimal value)
-        
+
         Returns
         -------
         index : int
@@ -303,5 +321,5 @@ class MultiObjOptResults:
 
         """
         w = np.array(obj_weights, dtype=np.float64)
-        res = np.einsum('po,o->p', self.objs, w)
+        res = np.einsum("po,o->p", self.objs, w)
         return np.argmax(res) if max else np.argmin(res)
