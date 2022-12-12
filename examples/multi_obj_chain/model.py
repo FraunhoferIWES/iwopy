@@ -33,7 +33,7 @@ class ChainPopulation:
             d = self.xy - self.xy[:, i, None]
             self.dists[:, i] = np.linalg.norm(d, axis=-1)
 
-    def get_fig(self, i=0):
+    def get_fig(self, i=0, title=None):
         fig, ax = plt.subplots()
         xy = self.xy[i]
         for i, pxy in enumerate(xy):
@@ -48,7 +48,7 @@ class ChainPopulation:
         ax.set_aspect("equal", adjustable="box")
         ax.set_xlabel("x")
         ax.set_ylabel("y")
-        ax.set_title(f"N = {self.N}")
+        ax.set_title(f"N = {self.N}" if title is None else title)
         return fig
 
 class ChainProblem(Problem):

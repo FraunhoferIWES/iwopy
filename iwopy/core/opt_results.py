@@ -1,5 +1,5 @@
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 class SingleObjOptResults:
     """
@@ -225,3 +225,83 @@ class MultiObjOptResults:
         s += hline
 
         return s
+
+    def plot_pareto(
+            self, 
+            obj_0=0, 
+            obj_1=1,
+            ax=None,
+            figsize=(5, 5),
+            s=50,
+            color_val="orange",
+            color_ival="red",
+            title=None,
+        ):
+        """
+        Get figure that shows the pareto front
+
+        Parameters
+        ----------
+        obj_0 : int
+            The objective on the x axis
+        obj_1 : int
+            The objective on the y axis
+        ax : pyplot.Axis, optional
+            The axis to plot on
+        figsize : tuple
+            The figure size, if ax is not given
+        s : float
+            Scatter point size
+        color_val : str
+            Color choice for valid points
+        color_ival : str
+            Color choice for invalid points
+        title : str, optional
+            The plot title
+
+        Returns
+        -------
+        ax : pyplot.axis
+            The plot axis
+
+        """
+        if ax is None:
+            __, ax = plt.subplots(figsize=figsize)
+        
+        sel = self.success
+        ax.scatter(self.objs[sel, obj_0], self.objs[sel, obj_1], s=s, c=color_val, label="valid")
+
+        sel = ~self.success
+        ax.scatter(self.objs[sel, obj_0], self.objs[sel, obj_1], s=s, c=color_ival, label="invalid")
+
+        if np.any(sel):
+            ax.legend(loc="best")
+        ax.set_xlabel(self.onames[obj_0])
+        ax.set_ylabel(self.onames[obj_1])
+        ax.set_title(self.pname if title is None else title)
+        ax.grid()
+
+        return ax
+
+    def find_pareto_objmix(self, obj_weights, max=False):
+        """
+        Find the point on the pareto front that
+        approximates best the given weights of objectives
+
+        Paramters
+        ---------
+        obj_weights : list of float
+            The weights of the objectives
+        max : bool
+            Find the maximal value of the weighted result
+            (otherwise find the minimal value)
+        
+        Returns
+        -------
+        index : int
+            The index in the pareto front results
+
+        """
+        w = np.array(obj_weights, dtype=np.float64)
+        res = np.einsum('po,o->p', self.objs, w)
+        return np.argmax(res) if max else np.argmin(res)

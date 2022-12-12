@@ -14,7 +14,7 @@ if __name__ == "__main__":
     parser.add_argument("-a", "--algo", help="The algorithm choice", default="nsga2")
     parser.add_argument("-r", "--radius", help="The radius", type=float, default=5.0)
     parser.add_argument(
-        "-N", "--n_gen", help="The number of generations", type=int, default=100
+        "-N", "--n_gen", help="The number of generations", type=int, default=200
     )
     parser.add_argument("-P", "--n_pop", help="The population size", type=int, default=100)
     parser.add_argument("--seed", help="The seed", type=int, default=None)
@@ -28,10 +28,6 @@ if __name__ == "__main__":
 
     radii = np.random.uniform(r/2., r, n)
     chain = ChainPopulation(n_pop, n, radii, alpha=45.)
-
-    fig = chain.get_fig()
-    plt.show()
-    plt.close(fig)
 
     problem = ChainProblem(chain, ctol=1e-3)
     problem.add_constraint(NoCrossing(problem))
@@ -65,6 +61,14 @@ if __name__ == "__main__":
     print()
     print(results)
 
-    fig = chain.get_fig()
+    ax = results.plot_pareto()
     plt.show()
-    plt.close(fig)
+
+    mai = np.argmax(results.objs, axis=0)
+
+    for w in [[1, 0], [0.5, 0.5], [0, 1]]:
+        i = results.find_pareto_objmix(w, max=True)
+
+        fig = chain.get_fig(i, title=f"Weights stretch x, y: {w}")
+        plt.show()
+        plt.close(fig)
