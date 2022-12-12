@@ -29,7 +29,7 @@ if __name__ == "__main__":
     radii = np.random.uniform(r/2., r, n)
     chain = ChainPopulation(n_pop, n, radii, alpha=45.)
 
-    problem = ChainProblem(chain, ctol=1e-3)
+    problem = ChainProblem(chain)
     problem.add_constraint(NoCrossing(problem))
     problem.add_objective(MaxStretch(problem, direction=np.array([1.,0.]), name="stretch_x"))
     problem.add_objective(MaxStretch(problem, direction=np.array([0.,1.]), name="stretch_y"))
@@ -43,7 +43,7 @@ if __name__ == "__main__":
         algo_pars=dict(
             type=args.algo,
             pop_size=args.n_pop,
-            seed=args.seed,
+            #seed=args.seed,
         ),
         setup_pars=dict(),
         term_pars=dict(
@@ -63,8 +63,6 @@ if __name__ == "__main__":
 
     ax = results.plot_pareto()
     plt.show()
-
-    mai = np.argmax(results.objs, axis=0)
 
     for w in [[1, 0], [0.5, 0.5], [0, 1]]:
         i = results.find_pareto_objmix(w, max=True)
