@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from iwopy.core import Optimizer
-from .problem import Pymoo_problem
+from .problem import SingleObjProblem, MultiObjProblem
 from .imports import IMPORT_OK, check_import, Callback
 from .factory import Factory
 
@@ -54,7 +54,7 @@ class Optimizer_pymoo(Optimizer):
         Parameters for the calculation setup
     term_pars : dict
         Parameters for the termination conditions
-    pymoo_problem : iwopy.interfaces.pymoo.Pymoo_problem
+    pymoo_problem : iwopy.interfaces.pymoo.SingleObjProblem
         The pygmo problem
     algo : pygmo.algo
         The pygmo algorithm
@@ -119,7 +119,10 @@ class Optimizer_pymoo(Optimizer):
             The verbosity level, 0 = silent
 
         """
-        self.pymoo_problem = Pymoo_problem(self.problem, **self.problem_pars)
+        if self.problem.n_objectives <= 1:
+            self.pymoo_problem = SingleObjProblem(self.problem, **self.problem_pars)
+        else:
+            self.pymoo_problem = MultiObjProblem(self.problem, **self.problem_pars)
 
         if verbosity:
             print("Initializing", type(self).__name__)
@@ -143,7 +146,7 @@ class Optimizer_pymoo(Optimizer):
 
         Returns
         -------
-        results: iwopy.OptResults
+        results: iwopy.SingleObjOptResults or iwopy.MultiObjOptResults
             The optimization results object
 
         """

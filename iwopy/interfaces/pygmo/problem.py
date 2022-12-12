@@ -1,6 +1,6 @@
 import numpy as np
 
-from iwopy.core import OptResults, Problem, OptFunctionList, OptFunctionSubset
+from iwopy.core import SingleObjOptResults, Problem, OptFunctionList, OptFunctionSubset
 
 
 class UDP:
@@ -220,7 +220,7 @@ class UDP:
 
         Returns
         -------
-        results: iwopy.OptResults
+        results: iwopy.SingleObjOptResults
             The optimization results object
 
         """
@@ -243,4 +243,4 @@ class UDP:
         if verbosity:
             print()
 
-        return OptResults(self.problem, suc, xi, xf, objs, cons, res)
+        return SingleObjOptResults(self.problem, suc, xi, xf, objs, cons, res)

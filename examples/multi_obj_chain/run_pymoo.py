@@ -35,8 +35,8 @@ if __name__ == "__main__":
 
     problem = ChainProblem(chain, ctol=1e-3)
     problem.add_constraint(NoCrossing(problem))
-    problem.add_objective(MaxStretch(problem, direction=np.array([1.,0.])))
-    problem.add_objective(MaxStretch(problem, direction=np.array([0.,1.])))
+    problem.add_objective(MaxStretch(problem, direction=np.array([1.,0.]), name="stretch_x"))
+    problem.add_objective(MaxStretch(problem, direction=np.array([0.,1.]), name="stretch_y"))
     problem.initialize()
 
     solver = Optimizer_pymoo(

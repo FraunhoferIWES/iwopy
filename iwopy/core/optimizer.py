@@ -81,7 +81,11 @@ class Optimizer(Base, metaclass=ABCMeta):
         if verbosity:
 
             print(f"{type(self).__name__}: Optimization run finished")
-            print(f"  Success: {opt_results.success}")
+            if len(opt_results.success.flat) == 1:
+                print(f"  Success: {opt_results.success}")
+            else:
+                v = np.sum(opt_results.success) / len(opt_results.success.flat)
+                print(f"  Success: {100*v:.2f} %")
 
             if opt_results is not None and opt_results.objs is not None:
 
@@ -109,10 +113,16 @@ class Optimizer(Base, metaclass=ABCMeta):
                         i1 = i0 + n
                         names = o.component_names
                         if n == 1:
-                            val = np.min(opt_results.objs[:, i0])
+                            if self.problem.maximize_objs[i0]:
+                                val = np.max(opt_results.objs[:, i0])
+                            else:
+                                val = np.min(opt_results.objs[:, i0])
                             print(f"  Best {o.name} = {val}")
                         else:
                             for i in range(n):
-                                val = np.min(opt_results.objs[:, i0 + i])
+                                if self.problem.maximize_objs[i0+1]:
+                                    val = np.max(opt_results.objs[:, i0 + i])
+                                else:
+                                    val = np.min(opt_results.objs[:, i0 + i])
                                 print(f"  Best {names[i]} = {val}")
                         i0 = i1

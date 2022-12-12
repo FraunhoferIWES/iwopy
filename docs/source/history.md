@@ -77,5 +77,10 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 ## v0.1.3-alpha
 
+- Core:
+  - Support for multi objective optimizations
+  - Splitting `OptResults` into `SingleObjOptResults` and `MultiObjOptResults`
+Examples:
+  - New: `multi_obj_chain`, demonstrating multi objective optimization using pymoo's NSGA2
 
 **Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.3)

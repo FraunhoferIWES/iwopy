@@ -111,8 +111,8 @@ class NoCrossing(Constraint):
         return values
 
 class MaxStretch(Objective):
-    def __init__(self, problem, direction=np.array([0., 1.])):
-        super().__init__(problem, "stretch", vnames_float=problem.var_names_float())
+    def __init__(self, problem, direction=np.array([0., 1.]), name="stretch"):
+        super().__init__(problem, name, vnames_float=problem.var_names_float())
         self.chain = problem.chain
         self.direction = direction
 
