@@ -88,3 +88,7 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
   - New: `multi_obj_chain.ipynb`, demonstrating multi objective optimization using pymoo's NSGA2
   
 **Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.3)
+
+## v0.1.4-alpha
+  
+**Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.4)
