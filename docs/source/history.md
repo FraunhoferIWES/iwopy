@@ -74,3 +74,17 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
   - pygmo: Fixing test such that it passes on all systems
 
 **Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.2)
+
+## v0.1.3-alpha
+
+- Core:
+  - Support for multi objective optimizations
+  - Splitting `OptResults` into `SingleObjOptResults` and `MultiObjOptResults`
+- Interfaces:
+  - `pymoo`: Adding `nsga2`
+- Examples:
+  - New: `multi_obj_chain`, demonstrating multi objective optimization using pymoo's NSGA2
+- Notebooks:
+  - New: `multi_obj_chain.ipynb`, demonstrating multi objective optimization using pymoo's NSGA2
+  
+**Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.3)

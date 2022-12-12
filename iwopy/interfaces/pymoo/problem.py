@@ -1,12 +1,13 @@
 import numpy as np
 
-from iwopy.core import OptResults
+from iwopy.core import SingleObjOptResults, MultiObjOptResults
 from .imports import check_import, Problem
 
 
-class Pymoo_problem(Problem):
+class SingleObjProblem(Problem):
     """
-    Wrapper around the pymoo problem.
+    Wrapper around the pymoo problem for a single
+    objective.
 
     At the moment this interface only supports
     pure int or pure float problems (not mixed).
@@ -149,7 +150,7 @@ class Pymoo_problem(Problem):
 
         Returns
         -------
-        results: iwopy.OptResults
+        results: iwopy.SingleObjOptResults
             The optimization results object
 
         """
@@ -201,4 +202,87 @@ class Pymoo_problem(Problem):
             if verbosity:
                 print()
 
-        return OptResults(self.problem, suc, xi, xf, objs, cons, res)
+        return SingleObjOptResults(self.problem, suc, xi, xf, objs, cons, res)
+
+
+class MultiObjProblem(SingleObjProblem):
+    """
+    Wrapper around the pymoo problem for a multiple
+    objectives.
+
+    At the moment this interface only supports
+    pure int or pure float problems (not mixed).
+
+    Parameters
+    ----------
+    problem : iwopy.core.Problem
+        The iwopy problem to solve
+    vectorize : bool, optional
+        Switch for vectorized calculations, wrt
+        population individuals
+
+    Attributes
+    ----------
+    problem : iwopy.core.Problem
+        The iwopy problem to solve
+    vectorize : bool
+        Switch for vectorized calculations, wrt
+        population individuals
+    is_intprob : bool
+        Flag for integer problems
+
+    """
+
+    def __init__(self, problem, vectorize):
+        super().__init__(problem, vectorize)
+
+    def finalize(self, pymoo_results, verbosity=1):
+        """
+        Finalize the problem.
+
+        Parameters
+        ----------
+        pymoo_results: pymoo.Results
+            The results from the solver
+        verbosity : int
+            The verbosity level, 0 = silent
+
+        Returns
+        -------
+        results: iwopy.SingleObjOptResults
+            The optimization results object
+
+        """
+
+        # prepare:
+        r = pymoo_results
+        suc = True
+
+        # case no solution from pymoo:
+        if r.X is None:
+            suc = False
+            xi = None
+            xf = None
+            res = None
+            objs = None
+            cons = None
+
+        # evaluate pymoo final solution:
+        else:
+            n_pop = len(r.pop)
+
+            if self.is_intprob:
+                xi = r.X
+                xf = np.zeros((n_pop, 0), dtype=np.float64)
+            else:
+                xi = np.zeros((n_pop, 0), dtype=int)
+                xf = r.X
+
+            res, objs, cons = self.problem.finalize_population(xi, xf, verbosity)
+            if verbosity:
+                print()
+            suc = np.all(self.problem.check_constraints_population(cons, False), axis=1)
+            if verbosity:
+                print()
+
+        return MultiObjOptResults(self.problem, suc, xi, xf, objs, cons, res)

@@ -1,6 +1,6 @@
 import numpy as np
 
-from iwopy.core import Optimizer, OptResults
+from iwopy.core import Optimizer, SingleObjOptResults
 
 
 class GG(Optimizer):
@@ -208,7 +208,7 @@ class GG(Optimizer):
 
         Returns
         -------
-        results: iwopy.core.OptResults
+        results: iwopy.core.SingleObjOptResults
             The optimization results object
 
         """
@@ -414,7 +414,7 @@ class GG(Optimizer):
             better = obs[0] < obs0
         success = np.all(valid) and better
 
-        return OptResults(
+        return SingleObjOptResults(
             self.problem,
             success,
             inone,

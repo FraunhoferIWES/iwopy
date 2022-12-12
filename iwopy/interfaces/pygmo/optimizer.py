@@ -118,7 +118,7 @@ class Optimizer_pygmo(Optimizer):
 
         Returns
         -------
-        results: iwopy.OptResults
+        results: iwopy.SingleObjOptResults
             The optimization results object
 
         """

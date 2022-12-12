@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from iwopy.core import Optimizer
-from .problem import Pymoo_problem
+from .problem import SingleObjProblem, MultiObjProblem
 from .imports import IMPORT_OK, check_import, Callback
 from .factory import Factory
 
@@ -19,13 +19,19 @@ class DefaultCallback(Callback):
     def notify(self, algorithm):
         fvals = algorithm.pop.get("F")
         cvals = algorithm.pop.get("CV")
-        i = np.argmin(fvals)
+        n_obj = fvals.shape[1]
+        n_con = cvals.shape[1]
+        i = np.argmin(fvals, axis=0)
         if self.data["f_best"] is None:
-            self.data["f_best"] = fvals[i]
-            self.data["cv_best"] = cvals[i]
+            self.data["f_best"] = fvals[None, i, range(n_obj)]
+            self.data["cv_best"] = cvals[None, i, range(n_con)]
         else:
-            self.data["f_best"] = np.append(self.data["f_best"], fvals[i])
-            self.data["cv_best"] = np.append(self.data["cv_best"], cvals[i])
+            self.data["f_best"] = np.append(
+                self.data["f_best"], fvals[None, i, range(n_obj)], axis=0
+            )
+            self.data["cv_best"] = np.append(
+                self.data["cv_best"], cvals[None, i, range(n_con)], axis=0
+            )
 
 
 class Optimizer_pymoo(Optimizer):
@@ -53,7 +59,7 @@ class Optimizer_pymoo(Optimizer):
         Parameters for the calculation setup
     term_pars : dict
         Parameters for the termination conditions
-    pymoo_problem : iwopy.interfaces.pymoo.Pymoo_problem
+    pymoo_problem : iwopy.interfaces.pymoo.SingleObjProblem
         The pygmo problem
     algo : pygmo.algo
         The pygmo algorithm
@@ -118,7 +124,10 @@ class Optimizer_pymoo(Optimizer):
             The verbosity level, 0 = silent
 
         """
-        self.pymoo_problem = Pymoo_problem(self.problem, **self.problem_pars)
+        if self.problem.n_objectives <= 1:
+            self.pymoo_problem = SingleObjProblem(self.problem, **self.problem_pars)
+        else:
+            self.pymoo_problem = MultiObjProblem(self.problem, **self.problem_pars)
 
         if verbosity:
             print("Initializing", type(self).__name__)
@@ -142,7 +151,7 @@ class Optimizer_pymoo(Optimizer):
 
         Returns
         -------
-        results: iwopy.OptResults
+        results: iwopy.SingleObjOptResults or iwopy.MultiObjOptResults
             The optimization results object
 
         """

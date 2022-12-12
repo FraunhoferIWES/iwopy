@@ -11,6 +11,7 @@ if IMPORT_OK:
     from pymoo.operators.crossover.sbx import SBX
     from pymoo.operators.mutation.pm import PM
     from pymoo.algorithms.soo.nonconvex.ga import GA
+    from pymoo.algorithms.moo.nsga2 import NSGA2
     from pymoo.algorithms.soo.nonconvex.pso import PSO
     from pymoo.termination.default import (
         DefaultSingleObjectiveTermination,
@@ -144,8 +145,33 @@ class Factory:
 
             out = PSO(**pars)
 
+        # NSGA2:
+        elif typ == "nsga2":
+
+            samp_name = pars.get("sampling", None)
+            samp_pars = pars.get("sampling_pars", {})
+            if "sampling_pars" in pars:
+                del pars["sampling_pars"]
+            pars["sampling"] = self.get_sampling(samp_name, **samp_pars)
+
+            cross_pars = pars.get("crossover_pars", {})
+            if "crossover_pars" in pars:
+                del pars["crossover_pars"]
+            if "crossover" in pars and isinstance(pars["crossover"], str):
+                cross = pars["crossover"]
+                pars["crossover"] = self.get_crossover(cross, **cross_pars)
+
+            mut_pars = pars.get("mutation_pars", {})
+            if "mutation_pars" in pars:
+                del pars["mutation_pars"]
+            if "mutation" in pars and isinstance(pars["mutation"], str):
+                mut = pars["mutation"]
+                pars["mutation"] = self.get_mutation(mut, **mut_pars)
+
+            out = NSGA2(**pars)
+
         else:
-            raise KeyError(f"Unknown algorithm '{typ}', please choose: ga, pso")
+            raise KeyError(f"Unknown algorithm '{typ}', please choose: ga, pso, nsga2")
 
         self.print(f"Selecting algorithm: {typ} ({type(out).__name__})")
 

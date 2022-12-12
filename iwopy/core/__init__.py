@@ -7,4 +7,4 @@ from .constraint import Constraint
 from .memory import Memory
 from .problem import Problem, ProblemDefaultFunc
 from .optimizer import Optimizer
-from .opt_results import OptResults
+from .opt_results import SingleObjOptResults, MultiObjOptResults
