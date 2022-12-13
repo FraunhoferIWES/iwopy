@@ -22,6 +22,8 @@ def check_import():
     raises error otherwise.
     """
     if not IMPORT_OK:
-        print("\n\nFailed to import pymoo. Please install, e.g. via pip:")
-        print("  pip install pymoo\n\n")
+        print("\n\nFailed to import pmoo. Please install, either via pip:\n")
+        print("  pip install pymoo\n")
+        print("or via conda:\n")
+        print("  conda install -c conda-forge pymoo\n")
         raise ImportError("Failed to import pymoo")
