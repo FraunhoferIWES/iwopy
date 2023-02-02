@@ -47,12 +47,7 @@ def run_branin_ga(type, init_vals, ngen, npop, pop):
             seed=42,
         ),
         setup_pars=dict(),
-        term_pars=dict(
-            type="default",
-            n_max_gen=ngen,
-            ftol=0,
-            xtol=0,
-        ),
+        term_pars=('n_gen', ngen),
     )
     solver.initialize()
     solver.print_info()
@@ -114,12 +109,7 @@ def run_rosen0_ga(type, inits, ngen, npop, pop):
             seed=42,
         ),
         setup_pars=dict(),
-        term_pars=dict(
-            type="default",
-            n_max_gen=ngen,
-            ftol=0,
-            xtol=0,
-        ),
+        term_pars=('n_gen', ngen),
     )
     solver.initialize()
     solver.print_info()
@@ -147,12 +137,7 @@ def run_rosen_ga(type, lower, upper, inits, ngen, npop, pop):
             seed=42,
         ),
         setup_pars=dict(),
-        term_pars=dict(
-            type="default",
-            n_max_gen=ngen,
-            ftol=0,
-            xtol=0,
-        ),
+        term_pars=('n_gen', ngen),
     )
     solver.initialize()
     solver.print_info()
