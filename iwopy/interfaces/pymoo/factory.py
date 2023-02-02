@@ -13,6 +13,7 @@ if IMPORT_OK:
     from pymoo.algorithms.soo.nonconvex.ga import GA
     from pymoo.algorithms.moo.nsga2 import NSGA2
     from pymoo.algorithms.soo.nonconvex.pso import PSO
+    from pymoo.core.mixed import MixedVariableGA
     from pymoo.termination.default import (
         DefaultSingleObjectiveTermination,
         DefaultMultiObjectiveTermination,
@@ -95,7 +96,7 @@ class Factory:
         typ = pars["type"]
 
         # Genetic Algorithm:
-        if typ == "ga":
+        if typ == "GA":
 
             samp_name = pars.get("sampling", None)
             samp_pars = pars.get("sampling_pars", {})
@@ -120,7 +121,7 @@ class Factory:
             out = GA(**pars)
 
         # Particle Swarm:
-        elif typ == "pso":
+        elif typ == "PSO":
 
             if "samplig" in pars:
                 samp_name = pars.get("sampling", None)
@@ -146,7 +147,7 @@ class Factory:
             out = PSO(**pars)
 
         # NSGA2:
-        elif typ == "nsga2":
+        elif typ == "NSGA2":
 
             samp_name = pars.get("sampling", None)
             samp_pars = pars.get("sampling_pars", {})
@@ -170,14 +171,36 @@ class Factory:
 
             out = NSGA2(**pars)
 
+        # MixedVariableGA:
+        elif typ == "MixedVariableGA":
+
+            cross_pars = pars.get("crossover_pars", {})
+            if "crossover_pars" in pars:
+                del pars["crossover_pars"]
+            if "crossover" in pars and isinstance(pars["crossover"], str):
+                cross = pars["crossover"]
+                pars["crossover"] = self.get_crossover(cross, **cross_pars)
+
+            mut_pars = pars.get("mutation_pars", {})
+            if "mutation_pars" in pars:
+                del pars["mutation_pars"]
+            if "mutation" in pars and isinstance(pars["mutation"], str):
+                mut = pars["mutation"]
+                pars["mutation"] = self.get_mutation(mut, **mut_pars)
+
+            out = MixedVariableGA(**pars)
+
         else:
-            raise KeyError(f"Unknown algorithm '{typ}', please choose: ga, pso, nsga2")
+            raise KeyError(f"Unknown algorithm '{typ}', please choose: GA, PSO, NSGA2, MixedVariableGA")
 
         self.print(f"Selecting algorithm: {typ} ({type(out).__name__})")
 
         return out
 
     def get_termination(self, term_pars):
+
+        if isinstance(term_pars, tuple):
+            return term_pars
 
         typ = term_pars.pop("type", None)
         if typ is None:

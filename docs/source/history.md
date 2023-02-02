@@ -8,7 +8,7 @@ So far not many models have been transferred from the Fraunhofer IWES in-house p
 
 Enjoy - we are awaiting comments and issues, thanks for testing.
 
-**Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.0.11)
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.0.11](https://github.com/FraunhoferIWES/iwopy/commits/v0.0.11)
 
 ## v0.0.12-alpha
 
@@ -19,7 +19,7 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Fixes:
   - Bugs fixed with discretization
 
-**Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.0.12)
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.0.12](https://github.com/FraunhoferIWES/iwopy/commits/v0.0.12)
 
 ## v0.0.13-alpha
 
@@ -30,7 +30,7 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Notebooks:
   - Work on `examples.ipynb`: Adding section on simple function minimization
 
-**Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.0.13)
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.0.13](https://github.com/FraunhoferIWES/iwopy/commits/v0.0.13)
 
 ## v0.0.14-alpha
 
@@ -39,7 +39,7 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Core:
   - `OptResults` can now be printed
 
-**Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.0.14)
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.0.14](https://github.com/FraunhoferIWES/iwopy/commits/v0.0.14)
 
 ## v0.0.15-alpha
 
@@ -52,28 +52,28 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Examples:
   - `electrostatics`: New optional constraint `MinDist`, forcing charges to keep a minimal distance. Also adding a script that demonstrates how to solve this problem using `NLOPT` via `pygmo`, and another for solving the problem using the `GG` algorithm.
 
-**Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.0.15)
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.0.15](https://github.com/FraunhoferIWES/iwopy/commits/v0.0.15)
 
 ## v0.1.0-alpha
 
 - Bug fixes
 - Updated documentation
 
-**Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.0)
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.0](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.0)
 
 ## v0.1.1-alpha
 
 - Tests:
   - pygmo: Increased ngen and npop, intended for osx systems to pass tests
 
-**Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.1)
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.1)
 
 ## v0.1.2-alpha
 
 - Tests:
   - pygmo: Fixing test such that it passes on all systems
 
-**Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.2)
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.2](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.2)
 
 ## v0.1.3-alpha
 
@@ -87,4 +87,16 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Notebooks:
   - New: `multi_obj_chain.ipynb`, demonstrating multi objective optimization using pymoo's NSGA2
   
-**Full Changelog**: [](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.3)
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.3](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.3)
+
+## v0.1.4-alpha
+
+- Interfaces:
+  - Improved: `pymoo` now supports mixed int/float problems and algorithm `MixedVariableGA`
+  - Changed: `pymoo`algorithms now selectable via same name as in package, i.e., GA, PSO, NSGA2, MixedVariableGA
+- Examples:
+  - New: `mixed`, demonstrating how to solve a mixed int/float problem with pymoo
+- Notebook:
+  - New: `mixed`, demonstrating how to solve a mixed int/float problem with pymoo
+  
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.4](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.4)

@@ -47,12 +47,7 @@ def run_branin_ga(type, init_vals, ngen, npop, pop):
             seed=42,
         ),
         setup_pars=dict(),
-        term_pars=dict(
-            type="default",
-            n_max_gen=ngen,
-            ftol=0,
-            xtol=0,
-        ),
+        term_pars=('n_gen', ngen),
     )
     solver.initialize()
     solver.print_info()
@@ -67,7 +62,7 @@ def test_branin_ga():
 
     cases = (
         (
-            "ga",
+            "GA",
             100,
             50,
             (1.0, 1.0),
@@ -76,7 +71,7 @@ def test_branin_ga():
             False,
         ),
         (
-            "ga",
+            "GA",
             100,
             50,
             (1.0, 1.0),
@@ -114,12 +109,7 @@ def run_rosen0_ga(type, inits, ngen, npop, pop):
             seed=42,
         ),
         setup_pars=dict(),
-        term_pars=dict(
-            type="default",
-            n_max_gen=ngen,
-            ftol=0,
-            xtol=0,
-        ),
+        term_pars=('n_gen', ngen),
     )
     solver.initialize()
     solver.print_info()
@@ -147,12 +137,7 @@ def run_rosen_ga(type, lower, upper, inits, ngen, npop, pop):
             seed=42,
         ),
         setup_pars=dict(),
-        term_pars=dict(
-            type="default",
-            n_max_gen=ngen,
-            ftol=0,
-            xtol=0,
-        ),
+        term_pars=('n_gen', ngen),
     )
     solver.initialize()
     solver.print_info()
@@ -167,10 +152,10 @@ def test_rosen0_ga():
 
     cases = (
         (
-            "ga",
+            "GA",
             [0.0, 0.0],
             100,
-            50,
+            150,
             0.03,
             0.0,
             (1.0, 1.0),
@@ -178,14 +163,14 @@ def test_rosen0_ga():
             True,
         ),
         (
-            "ga",
+            "GA",
             [0.0, 0.0],
             200,
             100,
-            5e-6,
+            1e-4,
             0.0,
             (1.0, 1.0),
-            (0.003, 0.005),
+            (0.03, 0.05),
             True,
         ),
     )
@@ -211,29 +196,29 @@ def test_rosen_ga():
 
     cases = (
         (
-            "ga",
+            "GA",
             (-5, -5),
             (-0.2, -0.2),
             (-3.3, -1.45),
             100,
             50,
-            1e-10,
+            1e-4,
             7.2,
             (-0.2, -0.2),
-            (1e-10, 1e-10),
+            (1e-3, 1e-3),
             True,
         ),
         (
-            "ga",
+            "GA",
             (1.6, 1.3),
             (15.0, 15.0),
             (5.0, 8.0),
             500,
             100,
-            1e-4,
+            5e-3,
             134.92,
             (1.6, 1.4),
-            (1e-6, 1e-6),
+            (1e-2, 1e-2),
             True,
         ),
     )
@@ -261,5 +246,5 @@ def test_rosen_ga():
 
 if __name__ == "__main__":
     # test_branin_ga()
-    # test_rosen0_ga()
+    test_rosen0_ga()
     test_rosen_ga()

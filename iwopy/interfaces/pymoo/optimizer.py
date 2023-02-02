@@ -109,9 +109,12 @@ class Optimizer_pymoo(Optimizer):
         if len(self.term_pars):
             print("\nTermination:")
             print("------------")
-            for k, v in self.term_pars.items():
-                if isinstance(v, int) or isinstance(v, float) or isinstance(v, str):
-                    print(f"  {k}: {v}")
+            if isinstance(self.term_pars, tuple):
+                print(f"  {self.term_pars[0]}: {self.term_pars[1]}")
+            else:
+                for k, v in self.term_pars.items():
+                    if isinstance(v, int) or isinstance(v, float) or isinstance(v, str):
+                        print(f"  {k}: {v}")
         print()
 
     def initialize(self, verbosity=1):

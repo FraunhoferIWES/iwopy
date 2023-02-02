@@ -13,6 +13,8 @@ def check_import():
     raises error otherwise.
     """
     if not IMPORT_OK:
-        print("\n\nFailed to import pygmo. Please install, e.g. via pip:")
-        print("  pip install pygmo\n\n")
+        print("\n\nFailed to import pygmo. Please install, either via pip:\n")
+        print("  pip install pygmo\n")
+        print("or via conda:\n")
+        print("  conda install -c conda-forge pygmo\n")
         raise ImportError("Failed to import pygmo")
