@@ -29,8 +29,8 @@ class GridProblem(Problem):
         super().__init__(name="grid_problem")
 
         self.n_row_max = n_row_max
-        self.radius = radius
-        self.min_dist = min_dist
+        self.radius = float(radius)
+        self.min_dist = float(min_dist)
         self.max_dist = 2*radius
 
         self.xy = None

@@ -96,5 +96,7 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
   - Changed: `pymoo`algorithms now selectable via same name as in package, i.e., GA, PSO, NSGA2, MixedVariableGA
 - Examples:
   - New: `mixed`, demonstrating how to solve a mixed int/float problem with pymoo
+- Notebook:
+  - New: `mixed`, demonstrating how to solve a mixed int/float problem with pymoo
   
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.4](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.4)
