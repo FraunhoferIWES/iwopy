@@ -35,7 +35,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install .[test]
         python -m pip install pymoo
-        python -m pip install pygmo<2.19
+        python -m pip install "pygmo>=2.0,<2.19"
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
