@@ -35,8 +35,7 @@ invoked whenever possible. Check the examples (or the API) for details.
 Source code repository (and issue tracker):
     https://github.com/FraunhoferIWES/iwopy
 
-Contact (please report code issues under the github link above):
-    :email:`Jonas Schmidt <jonas.schmidt@iwes.fraunhofer.de>`
+Please report code issues under the github link above.
     
 License:
     MIT_
