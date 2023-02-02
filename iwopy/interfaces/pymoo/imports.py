@@ -2,6 +2,7 @@ try:
 
     from pymoo.core.callback import Callback
     from pymoo.core.problem import Problem
+    from pymoo.core.variable import Real, Integer
 
     IMPORT_OK = True
 
