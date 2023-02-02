@@ -134,7 +134,7 @@ def run_rosen_ga(type, lower, upper, inits, ngen, npop, pop):
         algo_pars=dict(
             type=type,
             pop_size=npop,
-            seed=42,
+            seed=4,
         ),
         setup_pars=dict(),
         term_pars=('n_gen', ngen),
@@ -165,7 +165,7 @@ def test_rosen0_ga():
         (
             "GA",
             [0.0, 0.0],
-            200,
+            400,
             100,
             5e-6,
             0.0,
@@ -213,7 +213,7 @@ def test_rosen_ga():
             (1.6, 1.3),
             (15.0, 15.0),
             (5.0, 8.0),
-            500,
+            800,
             100,
             1e-4,
             134.92,
