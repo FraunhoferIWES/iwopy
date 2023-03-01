@@ -106,3 +106,8 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Small bug fixes
   
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.5](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.5)
+
+## v0.1.6-alpha
+
+  
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.6](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.6)
