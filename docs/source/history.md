@@ -103,6 +103,6 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 ## v0.1.5-alpha
 
-
+- Small bug fixes
   
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.5](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.5)
