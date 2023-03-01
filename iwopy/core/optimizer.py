@@ -81,7 +81,7 @@ class Optimizer(Base, metaclass=ABCMeta):
         if verbosity:
 
             print(f"{type(self).__name__}: Optimization run finished")
-            if len(opt_results.success.flat) == 1:
+            if isinstance(opt_results.success, bool) or len(opt_results.success.flat) == 1:
                 print(f"  Success: {opt_results.success}")
             else:
                 v = np.sum(opt_results.success) / len(opt_results.success.flat)

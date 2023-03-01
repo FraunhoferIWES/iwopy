@@ -100,3 +100,9 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
   - New: `mixed`, demonstrating how to solve a mixed int/float problem with pymoo
   
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.4](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.4)
+
+## v0.1.5-alpha
+
+- Small bug fixes
+  
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.5](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.5)
