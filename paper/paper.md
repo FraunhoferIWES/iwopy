@@ -1,5 +1,5 @@
 ---
-title: 'Fraunhofer IWES optimization tools in Python'
+title: 'IWOPY: Fraunhofer IWES optimization tools in Python'
 tags:
   - Python
   - Optimization
