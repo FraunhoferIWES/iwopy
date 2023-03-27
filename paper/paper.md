@@ -26,7 +26,7 @@ bibliography: paper.bib
 
 # Summary
 
-Optimization problems are described by optimization variables, which are scalars that are modified during the process of optimization, objective functions, which depend on the variables and whose values define the metric for rating the choices of the latter, and constraints, which are also functions of the optimization variables and define validity of
+Optimization problems are described by optimization variables, which are scalars that are modified during the process of optimization; objective functions, which depend on the variables and whose values define the metric for rating the choices of the latter; and constraints, which are also functions of the optimization variables and define validity of
 the solution. The variables can be discrete or continuous, bounded or unbounded; the number of objectives can be one or many; and constraints can require equality or inequality. Many Python packages formulate a framework for the description of such problems, accompanied by
 a library of optimizers. Hence, switching from one to another optimization package can often 
 be tedious and a meta-solution is required that can serve as a single interface to multiple
@@ -55,6 +55,6 @@ one-by-one evaluation through a loop.
 
 # Acknowledgements
 
-The development of `foxes` and its predecessors flapFOAM and flappy (internal - non public) has been supported through multiple publicly funded research projects. We acknowledge in particular the funding by the Federal Ministry of Economic Affairs and Climate Action (BMWK) through the projects Smart Wind Farms (grant no. 0325851B), GW-Wakes (0325397B) and X-Wakes (03EE3008A) as well as the funding by the Federal Ministry of Education and Research (BMBF) in the framework of the project H2Digital (03SF0635).
+The development of `iwopy` and has been supported through multiple publicly funded research projects. We acknowledge in particular the funding by the Federal Ministry of Economic Affairs and Climate Action (BMWK) through the projects Smart Wind Farms (grant no. 0325851B) and GW-Wakes (0325397B) as well as the funding by the Federal Ministry of Education and Research (BMBF) in the framework of the project H2Digital (03SF0635).
 
 # References
