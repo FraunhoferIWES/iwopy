@@ -15,7 +15,7 @@ authors:
 affiliations:
  - name: Fraunhofer IWES, Küpkersweg 70, 26129 Oldenburg, Germany
    index: 1
-date: 24 March 2023
+date: 27 March 2023
 bibliography: paper.bib
 
 # Optional fields if submitting to a AAS journal too, see this blog post:
