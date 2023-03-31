@@ -186,7 +186,7 @@ class DiscretizeRegGrid(LocalFD):
                 f"Problem '{self.name}' cannot apply non-grid points to problem"
             )
 
-    def evaluate_individual(self, vars_int, vars_float):
+    def evaluate_individual(self, vars_int, vars_float, ret_prob_res=False):
         """
         Evaluate a single individual of the problem.
 
@@ -196,6 +196,8 @@ class DiscretizeRegGrid(LocalFD):
             The integer variable values, shape: (n_vars_int,)
         vars_float : np.array
             The float variable values, shape: (n_vars_float,)
+        ret_prob_res : bool
+            Flag for additionally returning of problem results
 
         Returns
         -------
@@ -203,11 +205,13 @@ class DiscretizeRegGrid(LocalFD):
             The objective function values, shape: (n_objectives,)
         con : np.array
             The constraints values, shape: (n_constraints,)
+        prob_res : object, optional
+            The problem results
 
         """
         varsf = vars_float[self._vinds]
         if self.grid.is_gridpoint(varsf):
-            return super().evaluate_individual(vars_int, vars_float)
+            return super().evaluate_individual(vars_int, vars_float, ret_prob_res)
 
         else:
             gpts, coeffs = self.grid.interpolation_coeffs_point(varsf)
@@ -216,16 +220,30 @@ class DiscretizeRegGrid(LocalFD):
             objs = np.zeros((n_gpts, self.n_objectives), dtype=np.float64)
             cons = np.zeros((n_gpts, self.n_constraints), dtype=np.float64)
 
+            res = [None for __ in range(n_gpts)]
             for gi, gp in enumerate(gpts):
                 varsf = vars_float.copy()
                 varsf[self._vinds] = gp
-                objs[gi], cons[gi] = super().evaluate_individual(vars_int, varsf)
+                if ret_prob_res:
+                    objs[gi], cons[gi], res[gi] = super().evaluate_individual(
+                                                        vars_int, varsf, ret_prob_res)
+                else:
+                    objs[gi], cons[gi] = super().evaluate_individual(
+                                                    vars_int, varsf, ret_prob_res)
 
-            return np.einsum("go,g->o", objs, coeffs), np.einsum(
-                "gc,g->c", cons, coeffs
-            )
+            if ret_prob_res:
+                return (
+                    np.einsum("go,g->o", objs, coeffs), 
+                    np.einsum("gc,g->c", cons, coeffs),
+                    self.prob_res_einsum_individual(res, coeffs)
+                )
+            else:
+                return (
+                    np.einsum("go,g->o", objs, coeffs), 
+                    np.einsum("gc,g->c", cons, coeffs)
+                )
 
-    def evaluate_population(self, vars_int, vars_float):
+    def evaluate_population(self, vars_int, vars_float, ret_prob_res=False):
         """
         Evaluate all individuals of a population.
 
@@ -235,6 +253,8 @@ class DiscretizeRegGrid(LocalFD):
             The integer variable values, shape: (n_pop, n_vars_int)
         vars_float : np.array
             The float variable values, shape: (n_pop, n_vars_float)
+        ret_prob_res : bool
+            Flag for additionally returning of problem results
 
         Returns
         -------
@@ -242,13 +262,15 @@ class DiscretizeRegGrid(LocalFD):
             The objective function values, shape: (n_pop, n_objectives)
         cons : np.array
             The constraints values, shape: (n_pop, n_constraints)
+        prob_res : object, optional
+            The problem results
 
         """
         varsf = vars_float[:, self._vinds]
 
         # case all points on grid:
         if self.grid.all_gridpoints(varsf):
-            return super().evaluate_population(vars_int, vars_float)
+            return super().evaluate_population(vars_int, vars_float, ret_prob_res)
 
         # case all vars are grid vars:
         elif self.n_vars_int == 0 and len(self._vinds) == self.n_vars_float:
@@ -262,11 +284,24 @@ class DiscretizeRegGrid(LocalFD):
             varsf[:] = vars_float[0, None, :]
             varsf[:, self._vinds] = gpts
 
-            objs, cons = self.evaluate_population(varsi, varsf)
+            if ret_prob_res:
 
-            return np.einsum("go,pg->po", objs, coeffs), np.einsum(
-                "gc,pg->pc", cons, coeffs
-            )
+                objs, cons, res = self.evaluate_population(varsi, varsf, ret_prob_res)
+                
+                return (
+                    np.einsum("go,pg->po", objs, coeffs), 
+                    np.einsum("gc,pg->pc", cons, coeffs),
+                    self.prob_res_einsum_population(res, coeffs)
+                )
+            
+            else:
+
+                objs, cons = self.evaluate_population(varsi, varsf, ret_prob_res)
+
+                return (
+                    np.einsum("go,pg->po", objs, coeffs), 
+                    np.einsum("gc,pg->pc", cons, coeffs)
+                )
 
         # mixed case:
         else:
@@ -297,7 +332,10 @@ class DiscretizeRegGrid(LocalFD):
             del apts, upts
 
             # calculate results for pop3:
-            objs, cons = self.evaluate_population(varsi, varsf)
+            if ret_prob_res:
+                objs, cons, res = self.evaluate_population(varsi, varsf, ret_prob_res)
+            else:
+                objs, cons = self.evaluate_population(varsi, varsf, ret_prob_res)
             del varsi, varsf
 
             # reconstruct results for pop2:
@@ -308,10 +346,18 @@ class DiscretizeRegGrid(LocalFD):
             objs = objs.reshape(n_pop, n_gp, self.n_objectives)
             cons = cons.reshape(n_pop, n_gp, self.n_objectives)
             coeffs = np.take_along_axis(coeffs, gmap, axis=1)
-            return (
-                np.einsum("pgo,pg->po", objs, coeffs),
-                np.einsum("pgc,pg->pc", cons, coeffs),
-            )
+
+            if ret_prob_res:
+                return (
+                    np.einsum("pgo,pg->po", objs, coeffs),
+                    np.einsum("pgc,pg->pc", cons, coeffs),
+                    self.prob_res_einsum_population(res, coeffs)
+                )
+            else:
+                return (
+                    np.einsum("pgo,pg->po", objs, coeffs),
+                    np.einsum("pgc,pg->pc", cons, coeffs),
+                )
 
     def finalize_individual(self, vars_int, vars_float, verbosity=1):
         """

@@ -109,5 +109,7 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 ## v0.1.6-alpha
 
+- Interfaces
+  - New interface to `scipy`: Calling the `scipy.optimize.minimize` function
   
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.6](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.6)

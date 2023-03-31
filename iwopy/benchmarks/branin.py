@@ -7,7 +7,7 @@ class BraninObjective(SimpleObjective):
     """
     The objective function for the Branin problem.
 
-    The Branin, or Branin-Hoo function is defined as
+    The Branin (or Branin-Hoo) function is defined as
 
     f(x,y) = a(y-bx^2+cx-r)^2 + s(1-t)cos(x)+s
 

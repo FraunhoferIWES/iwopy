@@ -12,6 +12,7 @@ other open-source Python optimization packages out there. Currently this include
 
 * `pymoo <https://pymoo.org/index.html>`_
 * `pygmo <https://esa.github.io/pygmo2/index.html>`_
+* `scipy <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_
 * (more to come with future versions)
 
 `iwopy` can thus be understood as an attempt to provide *the best of all worlds* 

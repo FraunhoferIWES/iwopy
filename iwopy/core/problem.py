@@ -709,7 +709,7 @@ class Problem(Base, metaclass=ABCMeta):
         """
         return None
 
-    def evaluate_individual(self, vars_int, vars_float):
+    def evaluate_individual(self, vars_int, vars_float, ret_prob_res=False):
         """
         Evaluate a single individual of the problem.
 
@@ -728,10 +728,12 @@ class Problem(Base, metaclass=ABCMeta):
             The objective function values, shape: (n_objectives,)
         con : np.array
             The constraints values, shape: (n_constraints,)
+        prob_res : object, optional
+            The problem results
 
         """
         objs, cons = None, None
-        if self.memory is not None:
+        if not ret_prob_res and self.memory is not None:
             memres = self.memory.lookup_individual(vars_int, vars_float)
             if memres is not None:
                 objs, cons = memres
@@ -750,9 +752,12 @@ class Problem(Base, metaclass=ABCMeta):
             if self.memory is not None:
                 self.memory.store_individual(vars_int, vars_float, objs, cons)
 
-        return objs, cons
+        if ret_prob_res:
+            return objs, cons, results
+        else:
+            return objs, cons
 
-    def evaluate_population(self, vars_int, vars_float):
+    def evaluate_population(self, vars_int, vars_float, ret_prob_res=False):
         """
         Evaluate all individuals of a population.
 
@@ -762,6 +767,8 @@ class Problem(Base, metaclass=ABCMeta):
             The integer variable values, shape: (n_pop, n_vars_int)
         vars_float : np.array
             The float variable values, shape: (n_pop, n_vars_float)
+        ret_prob_res : bool
+            Flag for additionally returning of problem results
 
         Returns
         -------
@@ -769,11 +776,13 @@ class Problem(Base, metaclass=ABCMeta):
             The objective function values, shape: (n_pop, n_objectives)
         cons : np.array
             The constraints values, shape: (n_pop, n_constraints)
-
+        prob_res : object, optional
+            The problem results
+            
         """
 
         from_mem = False
-        if self.memory is not None:
+        if not ret_prob_res and self.memory is not None:
             memres = self.memory.lookup_population(vars_int, vars_float)
             if memres is not None:
                 todo = np.any(np.isnan(memres), axis=1)
@@ -814,7 +823,10 @@ class Problem(Base, metaclass=ABCMeta):
             if self.memory is not None:
                 self.memory.store_population(vars_int, vars_float, objs, cons)
 
-        return objs, cons
+        if ret_prob_res:
+            return objs, cons, results
+        else:
+            return objs, cons
 
     def check_constraints_individual(self, constraint_values, verbosity=0):
         """
@@ -944,6 +956,50 @@ class Problem(Base, metaclass=ABCMeta):
         cons = self.cons.finalize_population(varsi, varsf, results, verbosity)
 
         return results, objs, cons
+
+    def prob_res_einsum_individual(self, prob_res_list, coeffs):
+        """
+        Calculate the einsum of problem results
+
+        Parameters
+        ----------
+        prob_res_list : list
+            The problem results
+        coeffs : numpy.ndarray
+            The coefficients
+        
+        Returns
+        -------
+        prob_res : object
+            The weighted sum of problem results
+
+        """
+        if not len(prob_res_list) or prob_res_list[0] is None:
+            return None
+        
+        raise NotImplementedError(f"Problem '{self.name}': Einsum not implemented for problem results type '{type(prob_res_list[0]).__name__}'")
+
+    def prob_res_einsum_population(self, prob_res_list, coeffs):
+        """
+        Calculate the einsum of problem results
+
+        Parameters
+        ----------
+        prob_res_list : list
+            The problem results
+        coeffs : numpy.ndarray
+            The coefficients
+        
+        Returns
+        -------
+        prob_res : object
+            The weighted sum of problem results
+
+        """
+        if not len(prob_res_list) or prob_res_list[0] is None:
+            return None
+        
+        raise NotImplementedError(f"Problem '{self.name}': Einsum not implemented for problem results type '{type(prob_res_list[0]).__name__}'")
 
 
 class ProblemDefaultFunc(OptFunctionList):
