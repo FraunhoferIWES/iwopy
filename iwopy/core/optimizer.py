@@ -12,19 +12,22 @@ class Optimizer(Base, metaclass=ABCMeta):
     ----------
     problem: iwopy.Problem
         The problem to optimize
-    name: str, optional
+    name: str
         The name
 
     Attributes
     ----------
     problem: iwopy.Problem
         The problem to optimize
-
+    name: str
+        The name
+        
     """
 
-    def __init__(self, problem, name=None):
+    def __init__(self, problem, name="optimizer"):
         super().__init__(name)
         self.problem = problem
+        self.name = name
 
     def print_info(self):
         """
