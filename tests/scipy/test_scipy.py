@@ -31,7 +31,7 @@ class RC(SimpleConstraint):
 
 def run_branin_slsqp(init_vals, tol):
 
-    prob = BraninProblem(initial_values=init_vals,ana_deriv=True)
+    prob = BraninProblem(initial_values=init_vals, ana_deriv=True)
     prob.initialize()
 
     solver = Optimizer_scipy(
@@ -99,4 +99,3 @@ def test_branin_slsqp():
 if __name__ == "__main__":
 
     test_branin_slsqp()
-

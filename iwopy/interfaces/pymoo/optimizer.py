@@ -6,6 +6,7 @@ from .problem import get_single_obj_class, get_multi_obj_class
 from .factory import Factory
 from . import imports
 
+
 def get_default_callback_class(verbosity=1):
 
     imports.load(verbosity)
@@ -34,6 +35,7 @@ def get_default_callback_class(verbosity=1):
                 )
 
     return DefaultCallback
+
 
 class Optimizer_pymoo(Optimizer):
     """
@@ -66,7 +68,7 @@ class Optimizer_pymoo(Optimizer):
         The pygmo algorithm
 
     """
-    
+
     def __init__(self, problem, problem_pars, algo_pars, setup_pars={}, term_pars={}):
         super().__init__(problem)
 
@@ -127,9 +129,13 @@ class Optimizer_pymoo(Optimizer):
 
         """
         if self.problem.n_objectives <= 1:
-            self.pymoo_problem = get_single_obj_class(verbosity)(self.problem, **self.problem_pars)
+            self.pymoo_problem = get_single_obj_class(verbosity)(
+                self.problem, **self.problem_pars
+            )
         else:
-            self.pymoo_problem = get_multi_obj_class(verbosity)(self.problem, **self.problem_pars)
+            self.pymoo_problem = get_multi_obj_class(verbosity)(
+                self.problem, **self.problem_pars
+            )
 
         if verbosity:
             print("Initializing", type(self).__name__)
