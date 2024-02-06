@@ -1,5 +1,4 @@
-from .imports import pygmo, check_import
-
+from . import imports
 
 class AlgoFactory:
     """
@@ -22,17 +21,17 @@ class AlgoFactory:
 
         Returns
         -------
-        pygmo.algo :
+        imports.pygmo.algo :
             The pygmo algorithm object
 
         """
 
-        check_import()
+        imports.load()
 
         def set_bfe(uda):
             if pop:
                 try:
-                    bfe = pygmo.bfe()
+                    bfe = imports.pygmo.bfe()
                     uda.set_bfe(bfe)
                 except AttributeError:
                     print(
@@ -42,28 +41,28 @@ class AlgoFactory:
         # nlopt:
         if type == "nlopt":
 
-            uda = pygmo.nlopt(kwargs["optimizer"])
+            uda = imports.pygmo.nlopt(kwargs["optimizer"])
             set_bfe(uda)
 
-            algo = pygmo.algorithm(uda)
+            algo = imports.pygmo.algorithm(uda)
 
             if "ftol_rel" in kwargs:
-                algo.extract(pygmo.nlopt).ftol_rel = kwargs["ftol_rel"]
+                algo.extract(imports.pygmo.nlopt).ftol_rel = kwargs["ftol_rel"]
             if "ftol_abs" in kwargs:
-                algo.extract(pygmo.nlopt).ftol_abs = kwargs["ftol_abs"]
+                algo.extract(imports.pygmo.nlopt).ftol_abs = kwargs["ftol_abs"]
             if "xtol_rel" in kwargs:
-                algo.extract(pygmo.nlopt).xtol_rel = kwargs["xtol_rel"]
+                algo.extract(imports.pygmo.nlopt).xtol_rel = kwargs["xtol_rel"]
             if "xtol_abs" in kwargs:
-                algo.extract(pygmo.nlopt).xtol_abs = kwargs["xtol_abs"]
+                algo.extract(imports.pygmo.nlopt).xtol_abs = kwargs["xtol_abs"]
             if "maxeval" in kwargs:
-                algo.extract(pygmo.nlopt).maxeval = kwargs["maxeval"]
+                algo.extract(imports.pygmo.nlopt).maxeval = kwargs["maxeval"]
             if "maxtime" in kwargs:
-                algo.extract(pygmo.nlopt).maxtime = kwargs["maxtime"]
+                algo.extract(imports.pygmo.nlopt).maxtime = kwargs["maxtime"]
 
         # ipopt:
         elif type == "ipopt":
 
-            uda = pygmo.ipopt()
+            uda = imports.pygmo.ipopt()
             set_bfe(uda)
 
             for k, a in kwargs.items():
@@ -77,7 +76,7 @@ class AlgoFactory:
                 else:
                     uda.set_string_option(k, a)
 
-            algo = pygmo.algorithm(uda)
+            algo = imports.pygmo.algorithm(uda)
 
         # sga:
         elif type == "sga":
@@ -109,10 +108,10 @@ class AlgoFactory:
                 *Crossover*: four different crossover schemes are provided:``single``, ``exponential``, ``binomial``, ``sbx``. The
                 ``single`` point crossover, works selecting a random point in the parent chromosome and, with probability *cr*, inserting the
                 partner chromosome thereafter. The ``exponential`` crossover is taken from the algorithm differential evolution,
-                implemented, in pygmo, as :class:`~pygmo.de`. It essentially selects a random point in the parent chromosome and inserts,
+                implemented, in pygmo, as :class:`~imports.pygmo.de`. It essentially selects a random point in the parent chromosome and inserts,
                 in each successive gene, the partner values with probability  *cr* up to when it stops. The binomial crossover
                 inserts each gene from the partner with probability *cr*. The simulated binary crossover (called ``sbx``), is taken
-                from the NSGA-II algorithm, implemented in pygmo as :class:`~pygmo.nsga2`, and makes use of an additional parameter called
+                from the NSGA-II algorithm, implemented in pygmo as :class:`~imports.pygmo.nsga2`, and makes use of an additional parameter called
                 distribution index *eta_c*.
 
                 *Mutation*: three different mutations schemes are provided: ``uniform``, ``gaussian`` and ``polynomial``. Uniform mutation
@@ -125,10 +124,10 @@ class AlgoFactory:
 
             """
 
-            uda = pygmo.sga(**kwargs)
+            uda = imports.pygmo.sga(**kwargs)
             set_bfe(uda)
 
-            algo = pygmo.algorithm(uda)
+            algo = imports.pygmo.algorithm(uda)
 
         # pso:
         elif type == "pso":
@@ -171,10 +170,10 @@ class AlgoFactory:
 
             """
 
-            uda = pygmo.pso(**kwargs)
+            uda = imports.pygmo.pso(**kwargs)
             set_bfe(uda)
 
-            algo = pygmo.algorithm(uda)
+            algo = imports.pygmo.algorithm(uda)
 
         # bee_colony:
         elif type == "bee_colony":
@@ -193,10 +192,10 @@ class AlgoFactory:
 
             """
 
-            uda = pygmo.bee_colony(**kwargs)
+            uda = imports.pygmo.bee_colony(**kwargs)
             set_bfe(uda)
 
-            algo = pygmo.algorithm(uda)
+            algo = imports.pygmo.algorithm(uda)
 
         # nsga2:
         elif type == "nsga2":
@@ -219,10 +218,10 @@ class AlgoFactory:
 
             """
 
-            uda = pygmo.nsga2(**kwargs)
+            uda = imports.pygmo.nsga2(**kwargs)
             set_bfe(uda)
 
-            algo = pygmo.algorithm(uda)
+            algo = imports.pygmo.algorithm(uda)
 
         # unknown driver:
         else:

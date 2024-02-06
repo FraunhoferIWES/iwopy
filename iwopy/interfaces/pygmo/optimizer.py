@@ -4,7 +4,7 @@ from iwopy.core import Optimizer
 from iwopy.utils import suppress_stdout
 from .problem import UDP
 from .algos import AlgoFactory
-from .imports import pygmo, check_import
+from . import imports
 
 
 class Optimizer_pygmo(Optimizer):
@@ -31,9 +31,9 @@ class Optimizer_pygmo(Optimizer):
         Parameters for the alorithm
     setup_pars : dict
         Parameters for the calculation setup
-    udp : iwopy.interfaces.pygmo.UDA
+    udp : iwopy.interfaces.imports.pygmo.UDA
         The pygmo problem
-    algo : pygmo.algo
+    algo : imports.pygmo.algo
         The pygmo algorithm
 
     """
@@ -41,7 +41,7 @@ class Optimizer_pygmo(Optimizer):
     def __init__(self, problem, problem_pars, algo_pars, setup_pars={}):
         super().__init__(problem)
 
-        check_import()
+        imports.load()
 
         self.problem_pars = problem_pars
         self.algo_pars = algo_pars
@@ -72,7 +72,7 @@ class Optimizer_pygmo(Optimizer):
         psize = self.setup_pars.get("pop_size", 1)
         pseed = self.setup_pars.get("seed", None)
         pnrfi = self.setup_pars.get("norandom_first", psize == 1)
-        self.pop = pygmo.population(self.udp, size=psize, seed=pseed)
+        self.pop = imports.pygmo.population(self.udp, size=psize, seed=pseed)
         self.pop.problem.c_tol = [
             self.setup_pars.get("c_tol", 1e-4)
         ] * self.pop.problem.get_nc()
