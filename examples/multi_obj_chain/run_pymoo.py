@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-n", "--n_points", help="The number of points", type=int, default=10
     )
-    parser.add_argument("-a", "--algo", help="The algorithm choice", default="nsga2")
+    parser.add_argument("-a", "--algo", help="The algorithm choice", default="NSGA2")
     parser.add_argument("-r", "--radius", help="The radius", type=float, default=5.0)
     parser.add_argument(
         "-N", "--n_gen", help="The number of generations", type=int, default=200

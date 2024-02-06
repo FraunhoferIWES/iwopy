@@ -1,20 +1,20 @@
-try:
-    import pygmo
+from iwopy.utils import import_module
 
-    IMPORT_OK = True
-except ImportError:
-    pygmo = None
-    IMPORT_OK = False
+pygmo = None
+loaded = False
 
+def load(verbosity=1):
 
-def check_import():
-    """
-    Checks if library import worked,
-    raises error otherwise.
-    """
-    if not IMPORT_OK:
-        print("\n\nFailed to import pygmo. Please install, either via pip:\n")
-        print("  pip install pygmo\n")
-        print("or via conda:\n")
-        print("  conda install -c conda-forge pygmo\n")
-        raise ImportError("Failed to import pygmo")
+    global pygmo, loaded
+
+    if not loaded:
+        
+        if verbosity:
+            print("Loading pygmo")
+
+        pygmo = import_module("pygmo", hint="pip install pygmo")
+
+        loaded = True
+
+        if verbosity:
+            print("pygmo successfully loaded")
