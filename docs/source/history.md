@@ -128,3 +128,8 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Bug fixed in setup.cfg
   
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.8](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.8)
+
+## v0.1.9-beta
+
+
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.9](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.9)
