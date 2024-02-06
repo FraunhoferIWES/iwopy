@@ -17,7 +17,7 @@ class Optimizer_scipy(Optimizer):
     problem : iwopy.Problem
         The problem to optimize
     scipy_pars : dict
-        Additional parameters for 
+        Additional parameters for
         scipy.optimze.minimize()
     mem_size : int
         The memory size, number of
@@ -28,7 +28,7 @@ class Optimizer_scipy(Optimizer):
     Attributes
     ----------
     scipy_pars : dict
-        Additional parameters for 
+        Additional parameters for
         scipy.optimze.minimize()
     mem_size : int
         The memory size, number of
@@ -67,20 +67,18 @@ class Optimizer_scipy(Optimizer):
             The verbosity level, 0 = silent
 
         """
-        
+
         # Check objectives:
         if self.problem.n_objectives > 1:
-            raise RuntimeError('Scipy minimize does not support multi-objective optimization.')
+            raise RuntimeError(
+                "Scipy minimize does not support multi-objective optimization."
+            )
 
         # Define constraints:
         cons = list()
         for i in range(self.problem.n_constraints):
-            cons.append({
-                'type': 'ineq', 
-                'fun': self._constraints,
-                'args': (i,)
-            })
-        self.scipy_pars['constraints'] = cons
+            cons.append({"type": "ineq", "fun": self._constraints, "args": (i,)})
+        self.scipy_pars["constraints"] = cons
 
         if verbosity:
             print(f"Using optimizer memory, size: {self.mem_size}")
@@ -105,30 +103,31 @@ class Optimizer_scipy(Optimizer):
             The constraints values, shape: (n_constraints,)
         prob_results : object
             The problem results
-        
+
         """
         key = tuple(x)
         if key not in self._mem:
-            
+
             i0 = self.problem.n_vars_int
             vars_int = x[:i0].astype(np.int32)
             vars_float = x[i0:]
 
             data = self.problem.evaluate_individual(
-                        vars_int, vars_float, ret_prob_res=True)
+                vars_int, vars_float, ret_prob_res=True
+            )
 
             if len(self._mem) > self.mem_size:
                 key0 = next(iter(self._mem.keys()))
                 del self._mem[key0]
-            
+
             self._mem[key] = data
-        
+
         return self._mem[key]
 
     def _objective(self, x):
         """
-        Function which converts array from scipy 
-        to readable variables for the problem and 
+        Function which converts array from scipy
+        to readable variables for the problem and
         evaluates the objective function.
 
         Parameters
@@ -148,7 +147,7 @@ class Optimizer_scipy(Optimizer):
 
     def _constraints(self, x, ci):
         """
-        Function which converts array from scipy 
+        Function which converts array from scipy
         to readable variables for the problem and
         evaluates the constraints.
 
@@ -186,17 +185,25 @@ class Optimizer_scipy(Optimizer):
 
         # check problem initialization:
         super().solve()
-        
+
         # Initial values:
         x0 = np.array(self.problem.initial_values_int(), dtype=np.float64)
-        x0 = np.append(x0, np.array(self.problem.initial_values_float(), dtype=np.float64))
+        x0 = np.append(
+            x0, np.array(self.problem.initial_values_float(), dtype=np.float64)
+        )
 
         # Find bounds:
-        mini   = [x if x != -self.problem.INT_INF else None for x in self.problem.min_values_int()]
-        maxi   = [x if x != self.problem.INT_INF else None for x in self.problem.max_values_int()]
+        mini = [
+            x if x != -self.problem.INT_INF else None
+            for x in self.problem.min_values_int()
+        ]
+        maxi = [
+            x if x != self.problem.INT_INF else None
+            for x in self.problem.max_values_int()
+        ]
         bounds = [(mini[i], maxi[i]) for i in range(len(mini))]
-        minf   = [x if x != -np.inf else None for x in self.problem.min_values_float()]
-        maxf   = [x if x != np.inf else None for x in self.problem.max_values_float()]
+        minf = [x if x != -np.inf else None for x in self.problem.min_values_float()]
+        maxf = [x if x != np.inf else None for x in self.problem.max_values_float()]
         bounds = [(minf[i], maxf[i]) for i in range(len(minf))]
 
         # Run minimization:
@@ -210,8 +217,9 @@ class Optimizer_scipy(Optimizer):
             vars_int = x[:i0].astype(np.int32)
             vars_float = x[i0:]
             prob_res, objs, cons = self.problem.finalize_individual(
-                                        vars_int, vars_float, verbosity=verbosity)
-        
+                vars_int, vars_float, verbosity=verbosity
+            )
+
         else:
             prob_res = None
             vars_int = None
@@ -219,6 +227,6 @@ class Optimizer_scipy(Optimizer):
             objs = None
             cons = None
 
-        return SingleObjOptResults(self.problem, results.success, 
-                                    vars_int, vars_float, objs, cons, prob_res)
-    
+        return SingleObjOptResults(
+            self.problem, results.success, vars_int, vars_float, objs, cons, prob_res
+        )

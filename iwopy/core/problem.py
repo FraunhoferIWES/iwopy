@@ -778,7 +778,7 @@ class Problem(Base, metaclass=ABCMeta):
             The constraints values, shape: (n_pop, n_constraints)
         prob_res : object, optional
             The problem results
-            
+
         """
 
         from_mem = False
@@ -967,7 +967,7 @@ class Problem(Base, metaclass=ABCMeta):
             The problem results
         coeffs : numpy.ndarray
             The coefficients
-        
+
         Returns
         -------
         prob_res : object
@@ -976,8 +976,10 @@ class Problem(Base, metaclass=ABCMeta):
         """
         if not len(prob_res_list) or prob_res_list[0] is None:
             return None
-        
-        raise NotImplementedError(f"Problem '{self.name}': Einsum not implemented for problem results type '{type(prob_res_list[0]).__name__}'")
+
+        raise NotImplementedError(
+            f"Problem '{self.name}': Einsum not implemented for problem results type '{type(prob_res_list[0]).__name__}'"
+        )
 
     def prob_res_einsum_population(self, prob_res_list, coeffs):
         """
@@ -989,7 +991,7 @@ class Problem(Base, metaclass=ABCMeta):
             The problem results
         coeffs : numpy.ndarray
             The coefficients
-        
+
         Returns
         -------
         prob_res : object
@@ -998,8 +1000,10 @@ class Problem(Base, metaclass=ABCMeta):
         """
         if not len(prob_res_list) or prob_res_list[0] is None:
             return None
-        
-        raise NotImplementedError(f"Problem '{self.name}': Einsum not implemented for problem results type '{type(prob_res_list[0]).__name__}'")
+
+        raise NotImplementedError(
+            f"Problem '{self.name}': Einsum not implemented for problem results type '{type(prob_res_list[0]).__name__}'"
+        )
 
 
 class ProblemDefaultFunc(OptFunctionList):

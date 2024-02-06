@@ -47,7 +47,7 @@ def run_branin_ga(type, init_vals, ngen, npop, pop):
             seed=42,
         ),
         setup_pars=dict(),
-        term_pars=('n_gen', ngen),
+        term_pars=("n_gen", ngen),
     )
     solver.initialize()
     solver.print_info()
@@ -109,7 +109,7 @@ def run_rosen0_ga(type, inits, ngen, npop, pop):
             seed=42,
         ),
         setup_pars=dict(),
-        term_pars=('n_gen', ngen),
+        term_pars=("n_gen", ngen),
     )
     solver.initialize()
     solver.print_info()
@@ -137,7 +137,7 @@ def run_rosen_ga(type, lower, upper, inits, ngen, npop, pop):
             seed=42,
         ),
         setup_pars=dict(),
-        term_pars=('n_gen', ngen),
+        term_pars=("n_gen", ngen),
     )
     solver.initialize()
     solver.print_info()
@@ -246,5 +246,5 @@ def test_rosen_ga():
 
 if __name__ == "__main__":
     # test_branin_ga()
-    #test_rosen0_ga()
+    # test_rosen0_ga()
     test_rosen_ga()

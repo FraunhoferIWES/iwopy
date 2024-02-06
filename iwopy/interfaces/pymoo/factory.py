@@ -1,5 +1,6 @@
 from . import imports
 
+
 class Factory:
     """
     A factory for pymoo components
@@ -172,7 +173,9 @@ class Factory:
             out = imports.MixedVariableGA(**pars)
 
         else:
-            raise KeyError(f"Unknown algorithm '{typ}', please choose: GA, PSO, NSGA2, MixedVariableGA")
+            raise KeyError(
+                f"Unknown algorithm '{typ}', please choose: GA, PSO, NSGA2, MixedVariableGA"
+            )
 
         self.print(f"Selecting algorithm: {typ} ({type(out).__name__})")
 

@@ -1,5 +1,6 @@
 from . import imports
 
+
 class AlgoFactory:
     """
     Creates a pygmo algorithm from parameters
