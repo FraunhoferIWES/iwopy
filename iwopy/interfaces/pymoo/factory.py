@@ -1,24 +1,4 @@
-from .imports import IMPORT_OK, check_import
-
-if IMPORT_OK:
-    from pymoo.operators.sampling.rnd import (
-        IntegerRandomSampling,
-        FloatRandomSampling,
-        BinaryRandomSampling,
-        PermutationRandomSampling,
-    )
-    from pymoo.operators.sampling.lhs import LatinHypercubeSampling
-    from pymoo.operators.crossover.sbx import SBX
-    from pymoo.operators.mutation.pm import PM
-    from pymoo.algorithms.soo.nonconvex.ga import GA
-    from pymoo.algorithms.moo.nsga2 import NSGA2
-    from pymoo.algorithms.soo.nonconvex.pso import PSO
-    from pymoo.core.mixed import MixedVariableGA
-    from pymoo.termination.default import (
-        DefaultSingleObjectiveTermination,
-        DefaultMultiObjectiveTermination,
-    )
-
+from . import imports
 
 class Factory:
     """
@@ -26,9 +6,10 @@ class Factory:
     """
 
     def __init__(self, pymoo_problem, verbosity):
-        check_import()
         self.pymoo_problem = pymoo_problem
         self.verbosity = verbosity
+
+        imports.load(verbosity)
 
     def print(self, *args, **kwargs):
         if self.verbosity:
@@ -45,15 +26,15 @@ class Factory:
                 samp_name = "float_random"
 
         if samp_name == "int_random":
-            out = IntegerRandomSampling(**kwargs)
+            out = imports.IntegerRandomSampling(**kwargs)
         elif samp_name == "float_random":
-            out = FloatRandomSampling(**kwargs)
+            out = imports.FloatRandomSampling(**kwargs)
         elif samp_name == "binary_random":
-            out = BinaryRandomSampling(**kwargs)
+            out = imports.BinaryRandomSampling(**kwargs)
         elif samp_name == "permutation_random":
-            out = PermutationRandomSampling(**kwargs)
+            out = imports.PermutationRandomSampling(**kwargs)
         elif samp_name == "lhs":
-            out = LatinHypercubeSampling(**kwargs)
+            out = imports.LatinHypercubeSampling(**kwargs)
         else:
             raise KeyError(
                 f"Unknown sampling '{samp_name}', please choose: int_random, float_random, binary_random, permutation_random, lhs"
@@ -68,7 +49,7 @@ class Factory:
         Crossover factory function
         """
         if cross == "sbx":
-            out = SBX(**pars)
+            out = imports.SBX(**pars)
         else:
             raise KeyError(f"Unknown crossover '{cross}', please choose: sbx")
 
@@ -81,7 +62,7 @@ class Factory:
         Mutation factory function
         """
         if mut == "pm":
-            out = PM(**pars)
+            out = imports.PM(**pars)
         else:
             raise KeyError(f"Unknown mutation '{mut}', please choose: pm")
 
@@ -118,7 +99,7 @@ class Factory:
                 mut = pars["mutation"]
                 pars["mutation"] = self.get_mutation(mut, **mut_pars)
 
-            out = GA(**pars)
+            out = imports.GA(**pars)
 
         # Particle Swarm:
         elif typ == "PSO":
@@ -144,7 +125,7 @@ class Factory:
                 mut = pars["mutation"]
                 pars["mutation"] = self.get_mutation(mut, **mut_pars)
 
-            out = PSO(**pars)
+            out = imports.PSO(**pars)
 
         # NSGA2:
         elif typ == "NSGA2":
@@ -169,7 +150,7 @@ class Factory:
                 mut = pars["mutation"]
                 pars["mutation"] = self.get_mutation(mut, **mut_pars)
 
-            out = NSGA2(**pars)
+            out = imports.NSGA2(**pars)
 
         # MixedVariableGA:
         elif typ == "MixedVariableGA":
@@ -188,7 +169,7 @@ class Factory:
                 mut = pars["mutation"]
                 pars["mutation"] = self.get_mutation(mut, **mut_pars)
 
-            out = MixedVariableGA(**pars)
+            out = imports.MixedVariableGA(**pars)
 
         else:
             raise KeyError(f"Unknown algorithm '{typ}', please choose: GA, PSO, NSGA2, MixedVariableGA")
@@ -210,9 +191,9 @@ class Factory:
             return typ
         elif typ == "default":
             if self.pymoo_problem.problem.n_objectives > 1:
-                out = DefaultMultiObjectiveTermination(**term_pars)
+                out = imports.DefaultMultiObjectiveTermination(**term_pars)
             else:
-                out = DefaultSingleObjectiveTermination(**term_pars)
+                out = imports.DefaultSingleObjectiveTermination(**term_pars)
         else:
             raise KeyError(f"Unknown termination '{type}', please choose: default")
 

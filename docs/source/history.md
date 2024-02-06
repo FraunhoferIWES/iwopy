@@ -113,3 +113,12 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
   - New interface to `scipy`: Calling the `scipy.optimize.minimize` function
   
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.6](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.6)
+
+## v0.1.7-beta
+
+- Utils
+  - New `import_module` utility, dynamically loading packages and modules
+- Interfaces
+  - Improved dynamic imports of `pygmo` and `pymoo`
+  
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.7](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.7)

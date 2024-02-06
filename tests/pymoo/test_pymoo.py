@@ -214,7 +214,7 @@ def test_rosen_ga():
             (15.0, 15.0),
             (5.0, 8.0),
             500,
-            100,
+            200,
             5e-3,
             134.92,
             (1.6, 1.4),
@@ -246,5 +246,5 @@ def test_rosen_ga():
 
 if __name__ == "__main__":
     # test_branin_ga()
-    test_rosen0_ga()
+    #test_rosen0_ga()
     test_rosen_ga()

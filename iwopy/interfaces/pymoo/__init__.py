@@ -1,1 +1,1 @@
-from .optimizer import Optimizer_pymoo, DefaultCallback
+from .optimizer import Optimizer_pymoo
