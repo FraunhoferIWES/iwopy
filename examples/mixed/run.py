@@ -10,7 +10,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "-n", "--n_row_max", help="The max points per row", type=int, default=1000
     )
-    parser.add_argument("-a", "--algo", help="The algorithm choice", default="MixedVariableGA")
+    parser.add_argument(
+        "-a", "--algo", help="The algorithm choice", default="MixedVariableGA"
+    )
     parser.add_argument("-r", "--radius", help="The radius", type=float, default=5.0)
     parser.add_argument(
         "-d",
@@ -47,9 +49,8 @@ if __name__ == "__main__":
             pop_size=args.n_pop,
             seed=args.seed,
         ),
-        setup_pars=dict(
-        ),
-        term_pars=('n_evals', 1000),
+        setup_pars=dict(),
+        term_pars=("n_evals", 1000),
     )
     solver.initialize()
 

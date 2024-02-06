@@ -6,8 +6,12 @@ from iwopy import Problem, Constraint, Objective
 
 class MaxN(Objective):
     def __init__(self, problem):
-        super().__init__(problem, "maxN", vnames_int=problem.var_names_int(), 
-            vnames_float=problem.var_names_float())
+        super().__init__(
+            problem,
+            "maxN",
+            vnames_int=problem.var_names_int(),
+            vnames_float=problem.var_names_float(),
+        )
 
     def n_components(self):
         return 1
@@ -31,11 +35,11 @@ class GridProblem(Problem):
         self.n_row_max = n_row_max
         self.radius = float(radius)
         self.min_dist = float(min_dist)
-        self.max_dist = 2*radius
+        self.max_dist = 2 * radius
 
         self.xy = None
         self.valid = None
-    
+
     def initialize(self, verbosity=1):
         super().initialize(verbosity)
         self.apply_individual(self.initial_values_int(), self.initial_values_float())
@@ -56,13 +60,13 @@ class GridProblem(Problem):
         return ["x0", "y0", "dx", "dy", "alpha"]
 
     def initial_values_float(self):
-        return [0., 0., self.min_dist, self.min_dist, 0.]
+        return [0.0, 0.0, self.min_dist, self.min_dist, 0.0]
 
     def min_values_float(self):
-        return [-2*self.radius, -2*self.radius, self.min_dist, self.min_dist, 0.]
+        return [-2 * self.radius, -2 * self.radius, self.min_dist, self.min_dist, 0.0]
 
     def max_values_float(self):
-        return [self.radius, self.radius, self.max_dist, self.max_dist, 90.]
+        return [self.radius, self.radius, self.max_dist, self.max_dist, 90.0]
 
     def apply_individual(self, vars_int, vars_float):
 
@@ -70,8 +74,8 @@ class GridProblem(Problem):
         x0, y0, dx, dy, alpha = vars_float
 
         a = np.deg2rad(alpha)
-        nax = np.array([np.cos(a), np.sin(a), 0.])
-        naz = np.array([0., 0., 1.])
+        nax = np.array([np.cos(a), np.sin(a), 0.0])
+        naz = np.array([0.0, 0.0, 1.0])
         nay = np.cross(naz, nax)
 
         self.xy = np.zeros((nx, ny, 2))
@@ -102,11 +106,19 @@ class GridProblem(Problem):
 
         mx = np.max(nx)
         my = np.max(ny)
-        self.xy = np.full((n_pop, mx, my, 2), -2*self.radius)
+        self.xy = np.full((n_pop, mx, my, 2), -2 * self.radius)
         for i in range(n_pop):
-            self.xy[i, :nx[i], :ny[i]] = np.array([x0[i], y0[i]])[None, None, :]
-            self.xy[i, :nx[i], :ny[i]] += np.arange(nx[i])[:, None, None] * dx[i, None, None, None] * nax[i, None, None, :2]
-            self.xy[i, :nx[i], :ny[i]] += np.arange(ny[i])[None, :, None] * dy[i, None, None, None] * nay[i, None, None, :2]
+            self.xy[i, : nx[i], : ny[i]] = np.array([x0[i], y0[i]])[None, None, :]
+            self.xy[i, : nx[i], : ny[i]] += (
+                np.arange(nx[i])[:, None, None]
+                * dx[i, None, None, None]
+                * nax[i, None, None, :2]
+            )
+            self.xy[i, : nx[i], : ny[i]] += (
+                np.arange(ny[i])[None, :, None]
+                * dy[i, None, None, None]
+                * nay[i, None, None, :2]
+            )
 
         self.valid = np.linalg.norm(self.xy, axis=-1) <= self.radius
 
@@ -120,7 +132,7 @@ class GridProblem(Problem):
             valid = self.valid
 
         nx, ny = xy.shape[:2]
-        xy = xy.reshape(nx*ny, 2)[valid.reshape(nx*ny)]
+        xy = xy.reshape(nx * ny, 2)[valid.reshape(nx * ny)]
 
         fig, ax = plt.subplots()
         ax.scatter(xy[:, 0], xy[:, 1], color="orange")

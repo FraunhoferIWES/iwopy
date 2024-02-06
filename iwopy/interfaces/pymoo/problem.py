@@ -37,7 +37,7 @@ def get_single_obj_class(verbosity=1):
             Flag for integer problems
 
         """
-        
+
         def __init__(self, problem, vectorize):
 
             self.problem = problem
@@ -86,7 +86,7 @@ def get_single_obj_class(verbosity=1):
                 maxi = self.problem.max_values_int()
                 for i, v in enumerate(nami):
                     vars[v] = imports.Integer(value=inii[i], bounds=(mini[i], maxi[i]))
-                
+
                 namf = self.problem.var_names_float()
                 inif = self.problem.initial_values_float()
                 minf = self.problem.min_values_float()
@@ -109,7 +109,9 @@ def get_single_obj_class(verbosity=1):
 
                 sel = np.isinf(self._cmi) & np.isinf(self._cma)
                 if np.any(sel):
-                    raise RuntimeError(f"Missing boundaries for constraints {cnames[sel]}")
+                    raise RuntimeError(
+                        f"Missing boundaries for constraints {cnames[sel]}"
+                    )
 
                 sel = (~np.isinf(self._cmi)) & (~np.isinf(self._cma))
                 if np.any(sel):
@@ -127,20 +129,34 @@ def get_single_obj_class(verbosity=1):
             if self.vectorize:
 
                 if self.is_mixed:
-                    xi = np.array([[dct[v] for v in self.problem.var_names_int()] for dct in x], dtype=np.int32)
-                    xf = np.array([[dct[v] for v in self.problem.var_names_float()] for dct in x], dtype=np.float64)
+                    xi = np.array(
+                        [[dct[v] for v in self.problem.var_names_int()] for dct in x],
+                        dtype=np.int32,
+                    )
+                    xf = np.array(
+                        [[dct[v] for v in self.problem.var_names_float()] for dct in x],
+                        dtype=np.float64,
+                    )
                     out["F"], out["G"] = self.problem.evaluate_population(xi, xf)
                     out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
                 else:
                     n_pop = x.shape[0]
                     if self.is_intprob:
                         dummies = np.zeros((n_pop, 0), dtype=np.float64)
-                        out["F"], out["G"] = self.problem.evaluate_population(x, dummies)
-                        out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
+                        out["F"], out["G"] = self.problem.evaluate_population(
+                            x, dummies
+                        )
+                        out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)[
+                            None, :
+                        ]
                     else:
                         dummies = np.zeros((n_pop, 0), dtype=np.int32)
-                        out["F"], out["G"] = self.problem.evaluate_population(dummies, x)
-                        out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
+                        out["F"], out["G"] = self.problem.evaluate_population(
+                            dummies, x
+                        )
+                        out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)[
+                            None, :
+                        ]
 
                 if self.problem.n_constraints:
 
@@ -154,19 +170,27 @@ def get_single_obj_class(verbosity=1):
             else:
 
                 if self.is_mixed:
-                    xi = np.array([x[v] for v in self.problem.var_names_int()], dtype=np.int32)
-                    xf = np.array([x[v] for v in self.problem.var_names_float()], dtype=np.float64)
+                    xi = np.array(
+                        [x[v] for v in self.problem.var_names_int()], dtype=np.int32
+                    )
+                    xf = np.array(
+                        [x[v] for v in self.problem.var_names_float()], dtype=np.float64
+                    )
                     out["F"], out["G"] = self.problem.evaluate_individual(xi, xf)
                     out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)
                 else:
                     n_pop = x.shape[0]
                     if self.is_intprob:
                         dummies = np.zeros(0, dtype=np.float64)
-                        out["F"], out["G"] = self.problem.evaluate_individual(x, dummies)
+                        out["F"], out["G"] = self.problem.evaluate_individual(
+                            x, dummies
+                        )
                         out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)
                     else:
                         dummies = np.zeros(0, dtype=np.int32)
-                        out["F"], out["G"] = self.problem.evaluate_individual(dummies, x)
+                        out["F"], out["G"] = self.problem.evaluate_individual(
+                            dummies, x
+                        )
                         out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)
 
                 if self.problem.n_constraints:
@@ -211,8 +235,13 @@ def get_single_obj_class(verbosity=1):
             # evaluate pymoo final solution:
             else:
                 if self.is_mixed:
-                    xi = np.array([r.X[v] for v in self.problem.var_names_int()], dtype=np.int32)
-                    xf = np.array([r.X[v] for v in self.problem.var_names_float()], dtype=np.float64)
+                    xi = np.array(
+                        [r.X[v] for v in self.problem.var_names_int()], dtype=np.int32
+                    )
+                    xf = np.array(
+                        [r.X[v] for v in self.problem.var_names_float()],
+                        dtype=np.float64,
+                    )
                 else:
                     if self.is_intprob:
                         xi = r.X
@@ -224,8 +253,20 @@ def get_single_obj_class(verbosity=1):
                 if self.vectorize:
 
                     if self.is_mixed:
-                        pxi = np.array([[p.X[v] for v in self.problem.var_names_int()] for p in r.pop], dtype=np.int32)
-                        pxf = np.array([[p.X[v] for v in self.problem.var_names_float()] for p in r.pop], dtype=np.float64)
+                        pxi = np.array(
+                            [
+                                [p.X[v] for v in self.problem.var_names_int()]
+                                for p in r.pop
+                            ],
+                            dtype=np.int32,
+                        )
+                        pxf = np.array(
+                            [
+                                [p.X[v] for v in self.problem.var_names_float()]
+                                for p in r.pop
+                            ],
+                            dtype=np.float64,
+                        )
                         self.problem.finalize_population(pxi, pxf, verbosity)
                         del pxi, pxf
 
@@ -253,7 +294,7 @@ def get_single_obj_class(verbosity=1):
                     print()
 
             return SingleObjOptResults(self.problem, suc, xi, xf, objs, cons, res)
-    
+
     return SingleObjProblem
 
 
@@ -335,7 +376,9 @@ def get_multi_obj_class(verbosity=1):
                 res, objs, cons = self.problem.finalize_population(xi, xf, verbosity)
                 if verbosity:
                     print()
-                suc = np.all(self.problem.check_constraints_population(cons, False), axis=1)
+                suc = np.all(
+                    self.problem.check_constraints_population(cons, False), axis=1
+                )
                 if verbosity:
                     print()
 

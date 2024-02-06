@@ -226,21 +226,23 @@ class DiscretizeRegGrid(LocalFD):
                 varsf[self._vinds] = gp
                 if ret_prob_res:
                     objs[gi], cons[gi], res[gi] = super().evaluate_individual(
-                                                        vars_int, varsf, ret_prob_res)
+                        vars_int, varsf, ret_prob_res
+                    )
                 else:
                     objs[gi], cons[gi] = super().evaluate_individual(
-                                                    vars_int, varsf, ret_prob_res)
+                        vars_int, varsf, ret_prob_res
+                    )
 
             if ret_prob_res:
                 return (
-                    np.einsum("go,g->o", objs, coeffs), 
+                    np.einsum("go,g->o", objs, coeffs),
                     np.einsum("gc,g->c", cons, coeffs),
-                    self.prob_res_einsum_individual(res, coeffs)
+                    self.prob_res_einsum_individual(res, coeffs),
                 )
             else:
                 return (
-                    np.einsum("go,g->o", objs, coeffs), 
-                    np.einsum("gc,g->c", cons, coeffs)
+                    np.einsum("go,g->o", objs, coeffs),
+                    np.einsum("gc,g->c", cons, coeffs),
                 )
 
     def evaluate_population(self, vars_int, vars_float, ret_prob_res=False):
@@ -287,20 +289,20 @@ class DiscretizeRegGrid(LocalFD):
             if ret_prob_res:
 
                 objs, cons, res = self.evaluate_population(varsi, varsf, ret_prob_res)
-                
+
                 return (
-                    np.einsum("go,pg->po", objs, coeffs), 
+                    np.einsum("go,pg->po", objs, coeffs),
                     np.einsum("gc,pg->pc", cons, coeffs),
-                    self.prob_res_einsum_population(res, coeffs)
+                    self.prob_res_einsum_population(res, coeffs),
                 )
-            
+
             else:
 
                 objs, cons = self.evaluate_population(varsi, varsf, ret_prob_res)
 
                 return (
-                    np.einsum("go,pg->po", objs, coeffs), 
-                    np.einsum("gc,pg->pc", cons, coeffs)
+                    np.einsum("go,pg->po", objs, coeffs),
+                    np.einsum("gc,pg->pc", cons, coeffs),
                 )
 
         # mixed case:
@@ -351,7 +353,7 @@ class DiscretizeRegGrid(LocalFD):
                 return (
                     np.einsum("pgo,pg->po", objs, coeffs),
                     np.einsum("pgc,pg->pc", cons, coeffs),
-                    self.prob_res_einsum_population(res, coeffs)
+                    self.prob_res_einsum_population(res, coeffs),
                 )
             else:
                 return (
