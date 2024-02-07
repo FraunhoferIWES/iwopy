@@ -752,7 +752,7 @@ class RegularDiscretizationGrid:
         ).all(), f"Found coordinates above 1: {qts[np.any(qts>1., axis=-1)].tolist()}"
 
         opts = self._get_opts()
-        return np.product(1 - np.abs(qts[:, None] - opts[None, :]), axis=-1)
+        return np.prod(1 - np.abs(qts[:, None] - opts[None, :]), axis=-1)
 
     def interpolation_coeffs_point(self, p):
         """

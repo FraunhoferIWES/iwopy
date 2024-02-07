@@ -13,6 +13,11 @@ from . import interfaces
 from . import benchmarks
 from . import optimizers
 
-from importlib.resources import read_text
+try:
+    from importlib.resources import files
 
-__version__ = read_text(__package__, "VERSION")
+    __version__ = files(__package__).joinpath("VERSION").read_text()
+except ImportError:
+    from importlib.resources import read_text
+
+    __version__ = read_text(__package__, "VERSION")
