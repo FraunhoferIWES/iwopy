@@ -22,7 +22,7 @@ from iwopy import __version__
 # -- Project information -----------------------------------------------------
 
 project = "iwopy"
-copyright = "2022, Fraunhofer IWES"
+copyright = "2024, Fraunhofer IWES"
 author = "Fraunhofer IWES"
 
 # The short X.Y version
