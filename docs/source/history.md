@@ -131,5 +131,7 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 ## v0.1.9-beta
 
+- Bug fixes
+  - Fixes for bugs in tests for Python 3.7 and 3.11
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.9](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.9)

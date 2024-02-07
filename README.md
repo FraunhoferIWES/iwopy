@@ -102,6 +102,16 @@ Then you can either install from this directory via
 pip install -e .
 ```
 
+## Testing
+
+For testing, please run the following steps:
+```console
+git clone https://github.com/FraunhoferIWES/iwopy.git
+cd iwopy
+pip install -e .[test]
+pytest tests
+```
+
 ## Contributing
 
 1. Fork _iwopy_ on _github_.
