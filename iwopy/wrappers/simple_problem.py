@@ -8,32 +8,7 @@ class SimpleProblem(Problem):
     A problem which simply pipes variables to its
     objectives and constraints.
 
-    Parameters
-    ----------
-    int_vars : dict or array-like
-        The integer variables, either dict with name str
-        to initial value mapping, or list of variable names
-    float_vars : dict or array-like
-        The float variables, either dict with name str
-        to initial value mapping, or list of variable names
-    init_values_int : list of float, optional
-        The initial values, in case of list type int_vars
-    init_values_float : list of float, optional
-        The initial values, in case of list type float_vars
-    min_values_int : dict or list, optional
-        The minimal values of the variables. Use `-self.INT_INF`
-        for left-unbounded cases. None sets all values as such.
-    max_values_int : dict or list, optional
-        The maximal values of the variables. Use `self.INT_INF`
-        for right-unbounded cases. None sets all values as such.
-    min_values_float : dict or list, optional
-        The minimal values of the variables. Use `-np.inf`
-        for left-unbounded cases. None sets all values as such.
-    max_values_float : dict or list, optional
-        The maximal values of the variables. Use `np.inf`
-        for right-unbounded cases. None sets all values as such.
-    kwargs : dict, optional
-        Additional parameters for the Problem class
+    :group: wrappers
 
     """
 
@@ -50,6 +25,37 @@ class SimpleProblem(Problem):
         max_values_float=None,
         **kwargs,
     ):
+        """
+        Constructor
+
+        Parameters
+        ----------
+        int_vars: dict or array-like
+            The integer variables, either dict with name str
+            to initial value mapping, or list of variable names
+        float_vars: dict or array-like
+            The float variables, either dict with name str
+            to initial value mapping, or list of variable names
+        init_values_int: list of float, optional
+            The initial values, in case of list type int_vars
+        init_values_float: list of float, optional
+            The initial values, in case of list type float_vars
+        min_values_int: dict or list, optional
+            The minimal values of the variables. Use `-self.INT_INF`
+            for left-unbounded cases. None sets all values as such.
+        max_values_int: dict or list, optional
+            The maximal values of the variables. Use `self.INT_INF`
+            for right-unbounded cases. None sets all values as such.
+        min_values_float: dict or list, optional
+            The minimal values of the variables. Use `-np.inf`
+            for left-unbounded cases. None sets all values as such.
+        max_values_float: dict or list, optional
+            The maximal values of the variables. Use `np.inf`
+            for right-unbounded cases. None sets all values as such.
+        kwargs: dict, optional
+            Additional parameters for the Problem class
+
+        """
         super().__init__(name, **kwargs)
 
         if int_vars is None and float_vars is None:
@@ -129,7 +135,7 @@ class SimpleProblem(Problem):
 
         Returns
         -------
-        names : list of str
+        names: list of str
             The names of the integer variables
 
         """
@@ -141,7 +147,7 @@ class SimpleProblem(Problem):
 
         Returns
         -------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Initial int values, shape: (n_vars_int,)
 
         """
@@ -155,7 +161,7 @@ class SimpleProblem(Problem):
 
         Returns
         -------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Minimal int values, shape: (n_vars_int,)
 
         """
@@ -171,7 +177,7 @@ class SimpleProblem(Problem):
 
         Returns
         -------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Maximal int values, shape: (n_vars_int,)
 
         """
@@ -185,7 +191,7 @@ class SimpleProblem(Problem):
 
         Returns
         -------
-        names : list of str
+        names: list of str
             The names of the float variables
 
         """
@@ -197,7 +203,7 @@ class SimpleProblem(Problem):
 
         Returns
         -------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Initial float values, shape: (n_vars_float,)
 
         """
@@ -211,7 +217,7 @@ class SimpleProblem(Problem):
 
         Returns
         -------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Minimal float values, shape: (n_vars_float,)
 
         """
@@ -227,7 +233,7 @@ class SimpleProblem(Problem):
 
         Returns
         -------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Maximal float values, shape: (n_vars_float,)
 
         """

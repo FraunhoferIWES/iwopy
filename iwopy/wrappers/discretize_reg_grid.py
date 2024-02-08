@@ -11,41 +11,18 @@ class DiscretizeRegGrid(LocalFD):
     differentiation on a regular grid for
     selected or all problem float variables.
 
-    Parameters
-    ----------
-    base_problem : iwopy.Problem
-        The underlying concrete problem
-    deltas : dict
-        The step sizes. Key: variable name str,
-        Value: step size. Will be adjusted to the
-        variable bounds if necessary.
-    fd_order : dict or int
-        Finite difference order. Either a dict with
-        key: variable name str, value: order int, or
-        a global integer order for all variables.
-        1 = forward, -1 = backward, 2 = centre
-    fd_bounds_order : dict or int
-        Finite difference order of boundary points.
-        Either a dict with key: variable name str,
-        value: order int, or a global integer order
-        for all variables. Default is same as fd_order
-    mem_size : int, optional
-        The memory size, default no memory
-    name : str, optional
-        The problem name
-    dpars : dict, optional
-        Additional parameters for `RegularDiscretizationGrid`
-
     Attributes
     ----------
-    grid : iwopy.tools.RegularDiscretizationGrid
+    grid: iwopy.tools.RegularDiscretizationGrid
         The discretization grid
-    order : dict
+    order: dict
         Finite difference order. Key: variable name
         str, value: 1 = forward, -1 = backward, 2 = centre
-    orderb : dict or int
+    orderb: dict or int
         Finite difference order of boundary points.
         Key: variable name str, value: order int
+
+    :group: wrappers
 
     """
 
@@ -59,6 +36,35 @@ class DiscretizeRegGrid(LocalFD):
         name=None,
         **dpars,
     ):
+        """
+        Constructor
+
+        Parameters
+        ----------
+        base_problem: iwopy.Problem
+            The underlying concrete problem
+        deltas: dict
+            The step sizes. Key: variable name str,
+            Value: step size. Will be adjusted to the
+            variable bounds if necessary.
+        fd_order: dict or int
+            Finite difference order. Either a dict with
+            key: variable name str, value: order int, or
+            a global integer order for all variables.
+            1 = forward, -1 = backward, 2 = centre
+        fd_bounds_order: dict or int
+            Finite difference order of boundary points.
+            Either a dict with key: variable name str,
+            value: order int, or a global integer order
+            for all variables. Default is same as fd_order
+        mem_size: int, optional
+            The memory size, default no memory
+        name: str, optional
+            The problem name
+        dpars: dict, optional
+            Additional parameters for `RegularDiscretizationGrid`
+
+        """
         name = base_problem.name + "_grid" if name is None else name
         super().__init__(base_problem, deltas, fd_order, fd_bounds_order, name)
 
@@ -72,7 +78,7 @@ class DiscretizeRegGrid(LocalFD):
 
         Parameters
         ----------
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         """
@@ -141,14 +147,14 @@ class DiscretizeRegGrid(LocalFD):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
 
         Returns
         -------
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
 
@@ -167,14 +173,14 @@ class DiscretizeRegGrid(LocalFD):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_pop, n_vars_float)
 
         Returns
         -------
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
 
@@ -192,20 +198,20 @@ class DiscretizeRegGrid(LocalFD):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
-        ret_prob_res : bool
+        ret_prob_res: bool
             Flag for additionally returning of problem results
 
         Returns
         -------
-        objs : np.array
+        objs: np.array
             The objective function values, shape: (n_objectives,)
-        con : np.array
+        con: np.array
             The constraints values, shape: (n_constraints,)
-        prob_res : object, optional
+        prob_res: object, optional
             The problem results
 
         """
@@ -251,20 +257,20 @@ class DiscretizeRegGrid(LocalFD):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_pop, n_vars_float)
-        ret_prob_res : bool
+        ret_prob_res: bool
             Flag for additionally returning of problem results
 
         Returns
         -------
-        objs : np.array
+        objs: np.array
             The objective function values, shape: (n_pop, n_objectives)
-        cons : np.array
+        cons: np.array
             The constraints values, shape: (n_pop, n_constraints)
-        prob_res : object, optional
+        prob_res: object, optional
             The problem results
 
         """
@@ -367,21 +373,21 @@ class DiscretizeRegGrid(LocalFD):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The optimal integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The optimal float variable values, shape: (n_vars_float,)
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns
         -------
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
-        objs : np.array
+        objs: np.array
             The objective function values, shape: (n_objectives,)
-        cons : np.array
+        cons: np.array
             The constraints values, shape: (n_constraints,)
 
         """
@@ -395,23 +401,23 @@ class DiscretizeRegGrid(LocalFD):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values of the final
             generation, shape: (n_pop, n_vars_int)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values of the final
             generation, shape: (n_pop, n_vars_float)
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns
         -------
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
-        objs : np.array
+        objs: np.array
             The final objective function values, shape: (n_pop, n_components)
-        cons : np.array
+        cons: np.array
             The final constraint values, shape: (n_pop, n_constraints)
 
         """

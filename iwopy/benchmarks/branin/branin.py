@@ -31,21 +31,26 @@ class BraninObjective(SimpleObjective):
 
     f(x,y) = 0.397887
 
-    Parameters
-    ----------
-    problem: iwopy.Problem
-        The underlying optimization problem
-    ana_deriv : bool
-        Switch for analytical derivatives
-    name: str
-        The function name
+    :group: benchmarks.branin
 
     """
 
     def __init__(self, problem, ana_deriv=False, name="f"):
+        """
+        Constructor
+
+        Parameters
+        ----------
+        problem: iwopy.Problem
+            The underlying optimization problem
+        ana_deriv: bool
+            Switch for analytical derivatives
+        name: str
+            The function name
+
+        """
         super().__init__(problem, name, n_components=1, has_ana_derivs=ana_deriv)
 
-        # Parameters of branin function,
         # (a, b, c, r, s, t)
         self._pars = (
             1,
@@ -82,24 +87,29 @@ class BraninProblem(SimpleProblem):
     """
     Problem definition of benchmark function Branin.
 
-    Parameters
-    ----------
-    name : str
-        The name of the problem
-    ana_deriv : bool
-        Switch for analytical derivatives
-    initial_values : list of float
-        The initial values
-
     Attributes
     ----------
-    initial_values : list of float
+    initial_values: list of float
         The initial values
+
+    :group: benchmarks.branin
 
     """
 
     def __init__(self, name="branin", initial_values=[1.0, 1.0], ana_deriv=False):
+        """
+        Constructor
 
+        Parameters
+        ----------
+        name: str
+            The name of the problem
+        ana_deriv: bool
+            Switch for analytical derivatives
+        initial_values: list of float
+            The initial values
+
+        """
         super().__init__(
             name,
             float_vars={"x": initial_values[0], "y": initial_values[1]},

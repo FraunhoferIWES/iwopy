@@ -4,6 +4,9 @@ from . import imports
 class AlgoFactory:
     """
     Creates a pygmo algorithm from parameters
+
+    :group: interfaces.pygmo
+
     """
 
     @staticmethod
@@ -15,9 +18,9 @@ class AlgoFactory:
 
         Parameters
         ----------
-        type : str
+        type: str
             Name of the driver type
-        kwargs : dict, optional
+        kwargs: dict, optional
             Additional parameters, type dependent
 
         Returns

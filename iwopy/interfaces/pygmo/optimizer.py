@@ -12,33 +12,39 @@ class Optimizer_pygmo(Optimizer):
     Interface to the pygmo optimizers
     for serial runs.
 
-    Parameters
-    ----------
-    problem : iwopy.Problem
-        The problem to optimize
-    problem_pars : dict
-        Parameters for the problem
-    algo_pars : dict
-        Parameters for the alorithm
-    setup_pars : dict
-        Parameters for the calculation setup
-
     Attributes
     ----------
-    problem_pars : dict
+    problem_pars: dict
         Parameters for the problem
-    algo_pars : dict
+    algo_pars: dict
         Parameters for the alorithm
-    setup_pars : dict
+    setup_pars: dict
         Parameters for the calculation setup
-    udp : iwopy.interfaces.imports.pygmo.UDA
+    udp: iwopy.interfaces.imports.pygmo.UDA
         The pygmo problem
-    algo : imports.pygmo.algo
+    algo: imports.pygmo.algo
         The pygmo algorithm
+
+    :group: interfaces.pygmo
 
     """
 
     def __init__(self, problem, problem_pars, algo_pars, setup_pars={}):
+        """
+        Constructor
+
+        Parameters
+        ----------
+        problem: iwopy.Problem
+            The problem to optimize
+        problem_pars: dict
+            Parameters for the problem
+        algo_pars: dict
+            Parameters for the alorithm
+        setup_pars: dict
+            Parameters for the calculation setup
+
+        """
         super().__init__(problem)
 
         imports.load()
@@ -56,7 +62,7 @@ class Optimizer_pygmo(Optimizer):
 
         Parameters
         ----------
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         """
@@ -113,7 +119,7 @@ class Optimizer_pygmo(Optimizer):
 
         Parameters
         ----------
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns
