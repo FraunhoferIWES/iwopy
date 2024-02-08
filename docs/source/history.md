@@ -144,3 +144,8 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
   - Completely new sphinx style
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.2](https://github.com/FraunhoferIWES/iwopy/commits/v0.2)
+
+## v0.2.1-beta
+
+
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.2.1](https://github.com/FraunhoferIWES/iwopy/commits/v0.2.1)
