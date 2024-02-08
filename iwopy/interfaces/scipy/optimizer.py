@@ -28,7 +28,7 @@ class Optimizer_scipy(Optimizer):
     def __init__(self, problem, scipy_pars={}, mem_size=100, **kwargs):
         """
         Constructor
-        
+
         Parameters
         ----------
         problem: iwopy.Problem

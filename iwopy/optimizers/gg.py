@@ -34,7 +34,7 @@ class GG(Optimizer):
         Memorized data: (x, obj, grad, all_valid), each a
         numpy.ndarray, shapes: (memory_size, n_vars),
         (memory_size, n_vars), (memory_size,), (memory_size,)
-    
+
     :group: optimizers
 
     """
@@ -53,7 +53,7 @@ class GG(Optimizer):
     ):
         """
         Constructor
-        
+
         Parameters
         ----------
         problem: iwopy.Problem

@@ -14,7 +14,7 @@ class Base:
     def __init__(self, name):
         """
         Constructor
-        
+
         Parameters
         ----------
         name: str

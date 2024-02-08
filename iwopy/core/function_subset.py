@@ -14,7 +14,7 @@ class OptFunctionSubset(OptFunction):
         The original function
     subset: list of int
         The component choice
-    
+
     :group: core
 
     """
@@ -22,7 +22,7 @@ class OptFunctionSubset(OptFunction):
     def __init__(self, function, subset, name=None):
         """
         Constructor
-        
+
         Parameters
         ----------
         function: iwopy.OptFunction

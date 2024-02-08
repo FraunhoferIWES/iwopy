@@ -30,7 +30,7 @@ class BraninObjective(SimpleObjective):
     with a function value of
 
     f(x,y) = 0.397887
-    
+
     :group: benchmarks.branin
 
     """
@@ -38,7 +38,7 @@ class BraninObjective(SimpleObjective):
     def __init__(self, problem, ana_deriv=False, name="f"):
         """
         Constructor
-        
+
         Parameters
         ----------
         problem: iwopy.Problem
@@ -99,7 +99,7 @@ class BraninProblem(SimpleProblem):
     def __init__(self, name="branin", initial_values=[1.0, 1.0], ana_deriv=False):
         """
         Constructor
-        
+
         Parameters
         ----------
         name: str

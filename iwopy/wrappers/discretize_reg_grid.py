@@ -21,7 +21,7 @@ class DiscretizeRegGrid(LocalFD):
     orderb: dict or int
         Finite difference order of boundary points.
         Key: variable name str, value: order int
-    
+
     :group: wrappers
 
     """
@@ -38,7 +38,7 @@ class DiscretizeRegGrid(LocalFD):
     ):
         """
         Constructor
-        
+
         Parameters
         ----------
         base_problem: iwopy.Problem

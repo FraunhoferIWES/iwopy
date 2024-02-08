@@ -23,7 +23,7 @@ class UDP:
         Vectorized fitness computation
     verbosity: int
         The verbosity level, 0 = silent
-    
+
     :group: interfaces.pygmo
 
     """
@@ -36,7 +36,7 @@ class UDP:
     ):
         """
         Constructor
-        
+
         Parameters
         ----------
         problem: iwopy.Problem
@@ -88,7 +88,7 @@ class UDP:
         values = np.zeros((n_pop, self.n_fitness), dtype=np.float64)
         objs, cons = self.problem.evaluate_population(xi, xf)
         objs *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
-        values[:,: self.problem.n_objectives] = objs
+        values[:, : self.problem.n_objectives] = objs
         values[:, self.problem.n_objectives :] = cons
 
         return values.reshape(n_pop * self.n_fitness)

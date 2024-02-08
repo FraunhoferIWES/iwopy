@@ -8,7 +8,7 @@ class SimpleConstraint(Constraint):
     """
     A simple constraint that assumes the
     same variables as defined by the problem.
-    
+
     :group: wrappers
 
     """
@@ -25,7 +25,7 @@ class SimpleConstraint(Constraint):
     ):
         """
         Constructor
-        
+
         Parameters
         ----------
         problem: iwopy.Problem

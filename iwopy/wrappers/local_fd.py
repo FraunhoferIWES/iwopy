@@ -32,7 +32,7 @@ class LocalFD(ProblemWrapper):
     ):
         """
         Constructor
-        
+
         Parameters
         ----------
         base_problem: iwopy.Problem

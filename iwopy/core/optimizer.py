@@ -14,7 +14,7 @@ class Optimizer(Base, metaclass=ABCMeta):
         The problem to optimize
     name: str
         The name
-    
+
     :group: core
 
     """
@@ -22,14 +22,14 @@ class Optimizer(Base, metaclass=ABCMeta):
     def __init__(self, problem, name="optimizer"):
         """
         Constructor
-        
+
         Parameters
         ----------
         problem: iwopy.Problem
             The problem to optimize
         name: str
-            The name    
-    
+            The name
+
         """
         super().__init__(name)
         self.problem = problem

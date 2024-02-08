@@ -14,7 +14,7 @@ def get_default_keyf(digits=12):
     -------
     Function :
         The default key function
-    
+
     :group: core
 
     """
@@ -57,7 +57,7 @@ class Memory:
     keyf: Function
         The memory key function. Parameters:
         (vars_int, vars_float), returns key Object
-    
+
     :group: core
 
     """
@@ -65,7 +65,7 @@ class Memory:
     def __init__(self, size, keyf=None):
         """
         Constructor
-        
+
         Parameters
         ----------
         size: int
@@ -73,7 +73,7 @@ class Memory:
         keyf: Function, optional
             The memory key function. Parameters:
             (vars_int, vars_float), returns key Object
-        
+
         """
         self.max_size = size
         self.keyf = keyf if keyf is not None else get_default_keyf()

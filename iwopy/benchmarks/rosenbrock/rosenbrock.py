@@ -22,7 +22,7 @@ class RosenbrockObjective(SimpleObjective):
     with a function value of
 
     f(x,y) = 0
-    
+
     :group: benchmarks.rosenbrock
 
     """
@@ -36,7 +36,7 @@ class RosenbrockObjective(SimpleObjective):
     ):
         """
         Construtor
-        
+
         Parameters
         ----------
         problem: iwopy.Problem
@@ -80,7 +80,7 @@ class RosenbrockProblem(SimpleProblem):
     ----------
     initial_values: list of float
         The initial values
-    
+
     :group: benchmarks.rosenbrock
 
     """
@@ -95,7 +95,7 @@ class RosenbrockProblem(SimpleProblem):
     ):
         """
         Constructor
-        
+
         Parameters
         ----------
         lower: list of float

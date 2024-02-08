@@ -34,9 +34,9 @@ def load(verbosity=1):
     ----------
     verbosity: int
         The verbosity level, 0 = silent
-    
+
     :group: interfaces.pymoo
-    
+
     """
 
     global Callback, Problem, Real, Integer, IntegerRandomSampling, FloatRandomSampling

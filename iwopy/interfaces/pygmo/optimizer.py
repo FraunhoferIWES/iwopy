@@ -24,7 +24,7 @@ class Optimizer_pygmo(Optimizer):
         The pygmo problem
     algo: imports.pygmo.algo
         The pygmo algorithm
-    
+
     :group: interfaces.pygmo
 
     """
@@ -32,7 +32,7 @@ class Optimizer_pygmo(Optimizer):
     def __init__(self, problem, problem_pars, algo_pars, setup_pars={}):
         """
         Constructor
-        
+
         Parameters
         ----------
         problem: iwopy.Problem

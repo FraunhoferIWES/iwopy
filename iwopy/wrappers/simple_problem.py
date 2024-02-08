@@ -7,7 +7,7 @@ class SimpleProblem(Problem):
     """
     A problem which simply pipes variables to its
     objectives and constraints.
-    
+
     :group: wrappers
 
     """
@@ -27,7 +27,7 @@ class SimpleProblem(Problem):
     ):
         """
         Constructor
-        
+
         Parameters
         ----------
         int_vars: dict or array-like

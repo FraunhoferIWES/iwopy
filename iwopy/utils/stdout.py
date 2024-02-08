@@ -20,7 +20,7 @@ def suppress_stdout(silent=True):
     ----------
     silent: bool
         Flag for the silent treatment.
-    
+
     :group: utils
 
     """

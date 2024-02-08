@@ -20,7 +20,7 @@ class Problem(Base, metaclass=ABCMeta):
         The constraints
     memory: iwopy.core.Memory
         The memory, or None
-    
+
     :group: core
 
     """
@@ -30,7 +30,7 @@ class Problem(Base, metaclass=ABCMeta):
     def __init__(self, name, mem_size=None, mem_keyf=None):
         """
         Constructor
-        
+
         Parameters
         ----------
         name: str
@@ -796,7 +796,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         if from_mem:
 
-            objs = memres[:,: self.n_objectives]
+            objs = memres[:, : self.n_objectives]
             cons = memres[:, self.n_objectives :]
             del memres
 
@@ -1016,7 +1016,7 @@ class ProblemDefaultFunc(OptFunctionList):
     """
     The default function of a problem
     for gradient calculations.
-    
+
     :group: core
 
     """
@@ -1024,7 +1024,7 @@ class ProblemDefaultFunc(OptFunctionList):
     def __init__(self, problem):
         """
         Constructor
-        
+
         Parameters
         ----------
         problem: iwopy.core.Problem

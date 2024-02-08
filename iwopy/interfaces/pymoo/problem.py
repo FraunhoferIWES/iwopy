@@ -6,7 +6,7 @@ from . import imports
 
 class SingleObjProblemTemplate:
     """
-    Template for a wrapper around the pymoo problem 
+    Template for a wrapper around the pymoo problem
     for a single objective.
 
     At the moment this interface only supports
@@ -23,7 +23,7 @@ class SingleObjProblemTemplate:
         Flag for mixed integer/float problems
     is_intprob: bool
         Flag for integer problems
-    
+
     :group: interfaces.pymoo
 
     """
@@ -31,7 +31,7 @@ class SingleObjProblemTemplate:
     def __init__(self, problem, vectorize):
         """
         Constructor
-        
+
         Parameters
         ----------
         problem: iwopy.core.Problem
@@ -110,9 +110,7 @@ class SingleObjProblemTemplate:
 
             sel = np.isinf(self._cmi) & np.isinf(self._cma)
             if np.any(sel):
-                raise RuntimeError(
-                    f"Missing boundaries for constraints {cnames[sel]}"
-                )
+                raise RuntimeError(f"Missing boundaries for constraints {cnames[sel]}")
 
             sel = (~np.isinf(self._cmi)) & (~np.isinf(self._cma))
             if np.any(sel):
@@ -144,20 +142,12 @@ class SingleObjProblemTemplate:
                 n_pop = x.shape[0]
                 if self.is_intprob:
                     dummies = np.zeros((n_pop, 0), dtype=np.float64)
-                    out["F"], out["G"] = self.problem.evaluate_population(
-                        x, dummies
-                    )
-                    out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)[
-                        None, :
-                    ]
+                    out["F"], out["G"] = self.problem.evaluate_population(x, dummies)
+                    out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
                 else:
                     dummies = np.zeros((n_pop, 0), dtype=np.int32)
-                    out["F"], out["G"] = self.problem.evaluate_population(
-                        dummies, x
-                    )
-                    out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)[
-                        None, :
-                    ]
+                    out["F"], out["G"] = self.problem.evaluate_population(dummies, x)
+                    out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
 
             if self.problem.n_constraints:
 
@@ -183,15 +173,11 @@ class SingleObjProblemTemplate:
                 n_pop = x.shape[0]
                 if self.is_intprob:
                     dummies = np.zeros(0, dtype=np.float64)
-                    out["F"], out["G"] = self.problem.evaluate_individual(
-                        x, dummies
-                    )
+                    out["F"], out["G"] = self.problem.evaluate_individual(x, dummies)
                     out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)
                 else:
                     dummies = np.zeros(0, dtype=np.int32)
-                    out["F"], out["G"] = self.problem.evaluate_individual(
-                        dummies, x
-                    )
+                    out["F"], out["G"] = self.problem.evaluate_individual(dummies, x)
                     out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)
 
             if self.problem.n_constraints:
@@ -255,10 +241,7 @@ class SingleObjProblemTemplate:
 
                 if self.is_mixed:
                     pxi = np.array(
-                        [
-                            [p.X[v] for v in self.problem.var_names_int()]
-                            for p in r.pop
-                        ],
+                        [[p.X[v] for v in self.problem.var_names_int()] for p in r.pop],
                         dtype=np.int32,
                     )
                     pxf = np.array(
@@ -304,18 +287,20 @@ class SingleObjProblemTemplate:
         imports.load()
         attrb = {v: d for v, d in cls.__dict__.items()}
         init0 = cls.__init__
+
         def init1(self, *args, **kwargs):
             init0(self, *args, **kwargs)
             imports.Problem.__init__(self, **self._pargs)
+
         attrb["__init__"] = init1
         attrb["__doc__"] = attrb["__doc__"].replace("Template for a w", "W")
         del attrb["get_class"]
         return type("SingleObjProblem", (imports.Problem,), attrb)
-    
+
 
 class MultiObjProblemTemplate:
     """
-    Template for a wrapper around the pymoo problem 
+    Template for a wrapper around the pymoo problem
     for a multiple objectives problem.
 
     At the moment this interface only supports
@@ -330,7 +315,7 @@ class MultiObjProblemTemplate:
         population individuals
     is_intprob: bool
         Flag for integer problems
-    
+
     :group: interfaces.pymoo
 
     """
@@ -338,7 +323,7 @@ class MultiObjProblemTemplate:
     def __init__(self, problem, vectorize):
         """
         Constructor template, will be overwritten by get_class
-        
+
         Parameters
         ----------
         problem: iwopy.core.Problem
@@ -395,9 +380,7 @@ class MultiObjProblemTemplate:
             res, objs, cons = self.problem.finalize_population(xi, xf, verbosity)
             if verbosity:
                 print()
-            suc = np.all(
-                self.problem.check_constraints_population(cons, False), axis=1
-            )
+            suc = np.all(self.problem.check_constraints_population(cons, False), axis=1)
             if verbosity:
                 print()
 
@@ -410,8 +393,10 @@ class MultiObjProblemTemplate:
         """
         scls = SingleObjProblemTemplate.get_class()
         attrb = {v: d for v, d in cls.__dict__.items()}
+
         def init(self, *args, **kwargs):
             scls.__init__(self, *args, **kwargs)
+
         attrb["__init__"] = init
         attrb["__doc__"] = attrb["__doc__"].replace("Template for a w", "W")
         del attrb["get_class"]

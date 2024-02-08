@@ -23,7 +23,7 @@ class OptFunctionList(OptFunction):
         float variables
     sizes: list of int
         The components of each added function
-    
+
     :group: core
 
     """
@@ -31,7 +31,7 @@ class OptFunctionList(OptFunction):
     def __init__(self, problem, name):
         """
         Constructor
-        
+
         Parameters
         ----------
         problem: iwopy.Problem
@@ -122,7 +122,7 @@ class OptFunctionList(OptFunction):
             if not len(fvnames):
                 return []
             l = [vnames.index(v) for v in fvnames]
-            return np.s_[l[0]: l[-1]] if list(range(l[0], l[-1])) == l else l
+            return np.s_[l[0] : l[-1]] if list(range(l[0], l[-1])) == l else l
 
         self.func_vars_int = [
             getv(self._vnamesi, f.var_names_int) for f in self.functions

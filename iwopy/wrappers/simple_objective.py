@@ -8,7 +8,7 @@ class SimpleObjective(Objective):
     """
     A simple objective that assumes the
     same variables as defined by the problem.
-    
+
     :group: wrappers
 
     """
@@ -24,7 +24,7 @@ class SimpleObjective(Objective):
     ):
         """
         Constructor
-        
+
         Parameters
         ----------
         problem: iwopy.Problem

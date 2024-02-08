@@ -9,7 +9,7 @@ class ProblemWrapper(Problem):
     ----------
     base_problem: iwopy.Problem
         The underlying concrete problem
-    
+
     :group: wrappers
 
     """
@@ -17,7 +17,7 @@ class ProblemWrapper(Problem):
     def __init__(self, base_problem, name, **kwargs):
         """
         Constructor
-        
+
         Parameters
         ----------
         base_problem: iwopy.Problem

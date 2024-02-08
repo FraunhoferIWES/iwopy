@@ -6,7 +6,7 @@ class AlgoFactory:
     Creates a pygmo algorithm from parameters
 
     :group: interfaces.pygmo
-    
+
     """
 
     @staticmethod

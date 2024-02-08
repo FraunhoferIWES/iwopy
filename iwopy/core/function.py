@@ -31,7 +31,7 @@ class OptFunction(Base, metaclass=ABCMeta):
     ):
         """
         Constructor
-        
+
         Parameters
         ----------
         problem: iwopy.Problem

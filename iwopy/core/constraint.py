@@ -20,7 +20,7 @@ class Constraint(OptFunction):
     def __init__(self, *args, tol=1e-5, **kwargs):
         """
         Constructor
-        
+
         Parameters
         ----------
         tol: float

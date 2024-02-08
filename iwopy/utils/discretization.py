@@ -40,7 +40,7 @@ class RegularDiscretizationGrid:
     ):
         """
         Constructor
-        
+
         Parameters
         ----------
         origin: array-like

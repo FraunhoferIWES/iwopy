@@ -12,9 +12,9 @@ def load(verbosity=1):
     ----------
     verbosity: int
         The verbosity level, 0 = silent
-    
+
     :group: interfaces.pygmo
-    
+
     """
 
     global pygmo, loaded

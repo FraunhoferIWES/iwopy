@@ -6,12 +6,13 @@ from .problem import SingleObjProblemTemplate, MultiObjProblemTemplate
 from .factory import Factory
 from . import imports
 
+
 class DefaultCallbackTemplate:
     """
     Template for the default callback
 
     :group: interfaces.pymoo
-    
+
     """
 
     def __init__(self):
@@ -36,7 +37,7 @@ class DefaultCallbackTemplate:
             )
             self.data["cv_best"] = np.append(
                 self.data["cv_best"], cvals[None, i, range(n_con)], axis=0
-                )
+            )
 
     @classmethod
     def get_class(cls):
@@ -46,13 +47,16 @@ class DefaultCallbackTemplate:
         imports.load()
         attrb = {v: d for v, d in cls.__dict__.items()}
         init0 = cls.__init__
+
         def init1(self):
             imports.Callback.__init__(self)
             init0(self)
+
         attrb["__init__"] = init1
         attrb["__doc__"] = "The default callback"
         del attrb["get_class"]
         return type("DefaultCallback", (imports.Callback,), attrb)()
+
 
 class Optimizer_pymoo(Optimizer):
     """
@@ -72,7 +76,7 @@ class Optimizer_pymoo(Optimizer):
         The pygmo problem
     algo: pygmo.algo
         The pygmo algorithm
-    
+
     :group: interfaces.pymoo
 
     """
@@ -80,7 +84,7 @@ class Optimizer_pymoo(Optimizer):
     def __init__(self, problem, problem_pars, algo_pars, setup_pars={}, term_pars={}):
         """
         Constructor
-        
+
         Parameters
         ----------
         problem: iwopy.Problem

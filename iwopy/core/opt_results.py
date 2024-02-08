@@ -48,7 +48,7 @@ class SingleObjOptResults:
     ):
         """
         Constructor
-        
+
         Parameters
         ----------
         problem: iwopy.core.Problem
@@ -150,7 +150,7 @@ class MultiObjOptResults:
         The names of objectives
     cnames: list of str
         The names of constraints
-    
+
     :group: core
 
     """
@@ -167,7 +167,7 @@ class MultiObjOptResults:
     ):
         """
         Constructor
-        
+
         Parameters
         ----------
         problem: iwopy.core.Problem
