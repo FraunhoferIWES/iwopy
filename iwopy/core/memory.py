@@ -7,13 +7,15 @@ def get_default_keyf(digits=12):
 
     Parameters
     ----------
-    digits : int
+    digits: int
         The number of digits for floats
 
     Returns
     -------
     Function :
         The default key function
+
+    :group: core
 
     """
 
@@ -23,9 +25,9 @@ def get_default_keyf(digits=12):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
 
         Returns
@@ -45,28 +47,34 @@ class Memory:
     """
     Storage for function results.
 
-    Parameters
+    Attributes
     ----------
-    size : int
+    max_size: int
         The number of maximally stored results
-    keyf : Function, optional
+    data: dict
+        The stored data. Key: keyf return type,
+        Values: tuples (objs, cons)
+    keyf: Function
         The memory key function. Parameters:
         (vars_int, vars_float), returns key Object
 
-    Attributes
-    ----------
-    max_size : int
-        The number of maximally stored results
-    data : dict
-        The stored data. Key: keyf return type,
-        Values: tuples (objs, cons)
-    keyf : Function
-        The memory key function. Parameters:
-        (vars_int, vars_float), returns key Object
+    :group: core
 
     """
 
     def __init__(self, size, keyf=None):
+        """
+        Constructor
+
+        Parameters
+        ----------
+        size: int
+            The number of maximally stored results
+        keyf: Function, optional
+            The memory key function. Parameters:
+            (vars_int, vars_float), returns key Object
+
+        """
         self.max_size = size
         self.keyf = keyf if keyf is not None else get_default_keyf()
         self.data = {}
@@ -98,14 +106,14 @@ class Memory:
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
 
         Returns
         -------
-        found : bool
+        found: bool
             True if data is available
 
         """
@@ -118,14 +126,14 @@ class Memory:
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_pop, n_vars_float)
 
         Returns
         -------
-        found : numpy.ndarray of bool
+        found: numpy.ndarray of bool
             True if data is available, shape: (n_pop,)
 
         """
@@ -141,13 +149,13 @@ class Memory:
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
-        objs : np.array
+        objs: np.array
             The objective function values, shape: (n_objectives,)
-        con : np.array
+        con: np.array
             The constraints values, shape: (n_constraints,)
 
         """
@@ -163,13 +171,13 @@ class Memory:
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_pop, n_vars_float)
-        objs : np.array
+        objs: np.array
             The objective function values, shape: (n_pop, n_objectives)
-        con : np.array
+        con: np.array
             The constraints values, shape: (n_pop, n_constraints)
 
         """
@@ -182,14 +190,14 @@ class Memory:
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
 
         Returns
         -------
-        results : tuple or None
+        results: tuple or None
             The results (objs, cons) if found, None otherwise
 
         """
@@ -205,17 +213,17 @@ class Memory:
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_pop, n_vars_float)
-        target : numpy.ndarray, optional
+        target: numpy.ndarray, optional
             The results array to write to, shape:
             (n_pop, n_objs_cmpnts + n_cons_cmpnts)
 
         Returns
         -------
-        results : numpy.ndarray or None
+        results: numpy.ndarray or None
             None if no results at all found, otherwise array
             with shape: (n_pop, n_objs_cmpnts + n_cons_cmpnts)
 

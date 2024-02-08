@@ -10,35 +10,12 @@ class OptFunction(Base, metaclass=ABCMeta):
     Abstract base class for functions
     that calculate scalars based on a problem.
 
-    Parameters
-    ----------
-    problem: iwopy.Problem
-        The underlying optimization problem
-    name: str
-        The function name
-    n_vars_int : int, optional
-        The number of integer variables. If not specified
-        it is assumed that the function depends on all
-        problem int variables
-    n_vars_float : int, optional
-        The number of float variables. If not specified
-        it is assumed that the function depends on all
-        problem float variables
-    vnames_int : list of str, optional
-        The integer variable names. Useful for mapping
-        function variables to problem variables, otherwise
-        map by integer or default name
-    vnames_float : list of str, optional
-        The float variable names. Useful for mapping
-        function variables to problem variables, otherwise
-        map by integer or default name
-    cnames : list of str, optional
-        The names of the components
-
     Attributes
     ----------
     problem: iwopy.Problem
         The underlying optimization problem
+
+    :group: core
 
     """
 
@@ -52,6 +29,35 @@ class OptFunction(Base, metaclass=ABCMeta):
         vnames_float=None,
         cnames=None,
     ):
+        """
+        Constructor
+
+        Parameters
+        ----------
+        problem: iwopy.Problem
+            The underlying optimization problem
+        name: str
+            The function name
+        n_vars_int: int, optional
+            The number of integer variables. If not specified
+            it is assumed that the function depends on all
+            problem int variables
+        n_vars_float: int, optional
+            The number of float variables. If not specified
+            it is assumed that the function depends on all
+            problem float variables
+        vnames_int: list of str, optional
+            The integer variable names. Useful for mapping
+            function variables to problem variables, otherwise
+            map by integer or default name
+        vnames_float: list of str, optional
+            The float variable names. Useful for mapping
+            function variables to problem variables, otherwise
+            map by integer or default name
+        cnames: list of str, optional
+            The names of the components
+
+        """
         super().__init__(name)
 
         self.problem = problem
@@ -97,7 +103,7 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         """
@@ -124,7 +130,7 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        names : list of str
+        names: list of str
             The component names
 
         """
@@ -137,7 +143,7 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        names : list of str
+        names: list of str
             The integer variable names
 
         """
@@ -150,7 +156,7 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        n : int
+        n: int
             The number of int variables
 
         """
@@ -163,7 +169,7 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        names : list of str
+        names: list of str
             The float variable names
 
         """
@@ -176,7 +182,7 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        n : int
+        n: int
             The number of float variables
 
         """
@@ -189,7 +195,7 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        deps : numpy.ndarray of bool
+        deps: numpy.ndarray of bool
             The dependencies of components on function
             variables, shape: (n_components, n_vars_int)
 
@@ -203,7 +209,7 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        deps : numpy.ndarray of bool
+        deps: numpy.ndarray of bool
             The dependencies of components on function
             variables, shape: (n_components, n_vars_float)
 
@@ -248,7 +254,7 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        varmap : dict
+        varmap: dict
             The name mapping. Key: old name str,
             Value: new name str
 
@@ -261,7 +267,7 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        varmap : dict
+        varmap: dict
             The name mapping. Key: old name str,
             Value: new name str
 
@@ -275,19 +281,19 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
-        components : list of int, optional
+        components: list of int, optional
             The selected components or None for all
 
         Returns
         -------
-        values : np.array
+        values: np.array
             The component values, shape: (n_sel_components,)
 
         """
@@ -299,19 +305,19 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_pop, n_vars_float)
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
-        components : list of int, optional
+        components: list of int, optional
             The selected components or None for all
 
         Returns
         -------
-        values : np.array
+        values: np.array
             The component values, shape: (n_pop, n_sel_components)
 
         """
@@ -340,19 +346,19 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The optimal integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The optimal float variable values, shape: (n_vars_float,)
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns
         -------
-        values : np.array
+        values: np.array
             The component values, shape: (n_components,)
 
         """
@@ -364,21 +370,21 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values of the final
             generation, shape: (n_pop, n_vars_int)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values of the final
             generation, shape: (n_pop, n_vars_float)
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns
         -------
-        values : np.array
+        values: np.array
             The component values, shape: (n_pop, n_components)
 
         """
@@ -392,18 +398,18 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
-        var : int
+        var: int
             The index of the differentiation float variable
-        components : list of int
+        components: list of int
             The selected components, or None for all
 
         Returns
         -------
-        deriv : numpy.ndarray
+        deriv: numpy.ndarray
             The derivative values, shape: (n_sel_components,)
 
         """

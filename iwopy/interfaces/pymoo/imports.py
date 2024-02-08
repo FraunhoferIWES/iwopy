@@ -27,6 +27,17 @@ loaded = False
 
 
 def load(verbosity=1):
+    """
+    Loads the pymoo package dynamically
+
+    Parameters
+    ----------
+    verbosity: int
+        The verbosity level, 0 = silent
+
+    :group: interfaces.pymoo
+
+    """
 
     global Callback, Problem, Real, Integer, IntegerRandomSampling, FloatRandomSampling
     global BinaryRandomSampling, PermutationRandomSampling, LatinHypercubeSampling, SBX

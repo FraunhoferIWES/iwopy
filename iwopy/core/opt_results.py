@@ -7,47 +7,32 @@ class SingleObjOptResults:
     Container for optimization results for single objective
     problems.
 
-    Parameters
-    ----------
-    problem : iwopy.core.Problem
-        The problem
-    success : bool
-        Optimization success
-    vars_int : np.array
-        Optimal variables, shape: (n_vars_int,)
-    vars_float : np.array
-        Optimal variables, shape: (n_vars_float,)
-    objs : float
-        Optimal objective function value
-    cons : np.array
-        Constraint values, shape: (n_constraints,)
-    problem_results : Object
-        The results of the variable application to the problem
-
     Attributes
     ----------
-    success : bool
+    success: bool
         Optimization success
-    vars_int : np.array
+    vars_int: np.array
         Optimal variables, shape: (n_vars_int,)
-    vars_float : np.array
+    vars_float: np.array
         Optimal variables, shape: (n_vars_float,)
-    objs : float
+    objs: float
         Optimal objective function value
-    cons : np.array
+    cons: np.array
         Constraint values, shape: (n_constraints,)
-    problem_results : Object
+    problem_results: Object
         The results of the variable application to the problem
-    pname : str
+    pname: str
         The problem's name
-    vnames_int : list of str
+    vnames_int: list of str
         The int variable names
-    vnames_float : list of str
+    vnames_float: list of str
         The float variable names
-    onames : list of str
+    onames: list of str
         The names of objectives
-    cnames : list of str
+    cnames: list of str
         The names of constraints
+
+    :group: core
 
     """
 
@@ -61,6 +46,27 @@ class SingleObjOptResults:
         cons,
         problem_results,
     ):
+        """
+        Constructor
+
+        Parameters
+        ----------
+        problem: iwopy.core.Problem
+            The problem
+        success: bool
+            Optimization success
+        vars_int: np.array
+            Optimal variables, shape: (n_vars_int,)
+        vars_float: np.array
+            Optimal variables, shape: (n_vars_float,)
+        objs: float
+            Optimal objective function value
+        cons: np.array
+            Constraint values, shape: (n_constraints,)
+        problem_results: Object
+            The results of the variable application to the problem
+
+        """
 
         self.success = success
         self.vars_int = vars_int
@@ -120,47 +126,32 @@ class MultiObjOptResults:
     Container for optimization results for multi objective
     problems.
 
-    Parameters
-    ----------
-    problem : iwopy.core.Problem
-        The problem
-    success : bool
-        Optimization success
-    vars_int : np.array
-        Pareto-optimal variables, shape: (n_pop, n_vars_int)
-    vars_float : np.array
-        Pareto-optimal variables, shape: (n_pop, n_vars_float)
-    objs : np.array
-        Pareto front objective function values, shape: (n_pop, n_objectives)
-    cons : np.array
-        Parteo front Constraint values, shape: (n_pop, n_constraints)
-    problem_results : Object
-        The results of the variable application to the problem
-
     Attributes
     ----------
-    success : bool
+    success: bool
         Optimization success
-    vars_int : np.array
+    vars_int: np.array
         Pareto-optimal variables, shape: (n_pop, n_vars_int)
-    vars_float : np.array
+    vars_float: np.array
         Pareto-optimal variables, shape: (n_pop, n_vars_float)
-    objs : np.array
+    objs: np.array
         Pareto front objective function values, shape: (n_pop, n_objectives)
-    cons : np.array
+    cons: np.array
         Parteo front Constraint values, shape: (n_pop, n_constraints)
-    problem_results : Object
+    problem_results: Object
         The results of the variable application to the problem
-    pname : str
+    pname: str
         The problem's name
-    vnames_int : list of str
+    vnames_int: list of str
         The int variable names
-    vnames_float : list of str
+    vnames_float: list of str
         The float variable names
-    onames : list of str
+    onames: list of str
         The names of objectives
-    cnames : list of str
+    cnames: list of str
         The names of constraints
+
+    :group: core
 
     """
 
@@ -174,7 +165,27 @@ class MultiObjOptResults:
         cons,
         problem_results,
     ):
+        """
+        Constructor
 
+        Parameters
+        ----------
+        problem: iwopy.core.Problem
+            The problem
+        success: bool
+            Optimization success
+        vars_int: np.array
+            Pareto-optimal variables, shape: (n_pop, n_vars_int)
+        vars_float: np.array
+            Pareto-optimal variables, shape: (n_pop, n_vars_float)
+        objs: np.array
+            Pareto front objective function values, shape: (n_pop, n_objectives)
+        cons: np.array
+            Parteo front Constraint values, shape: (n_pop, n_constraints)
+        problem_results: Object
+            The results of the variable application to the problem
+
+        """
         self.success = success
         self.vars_int = vars_int
         self.vars_float = vars_float
@@ -248,26 +259,26 @@ class MultiObjOptResults:
 
         Parameters
         ----------
-        obj_0 : int
+        obj_0: int
             The objective on the x axis
-        obj_1 : int
+        obj_1: int
             The objective on the y axis
-        ax : pyplot.Axis, optional
+        ax: pyplot.Axis, optional
             The axis to plot on
-        figsize : tuple
+        figsize: tuple
             The figure size, if ax is not given
-        s : float
+        s: float
             Scatter point size
-        color_val : str
+        color_val: str
             Color choice for valid points
-        color_ival : str
+        color_ival: str
             Color choice for invalid points
-        title : str, optional
+        title: str, optional
             The plot title
 
         Returns
         -------
-        ax : pyplot.axis
+        ax: pyplot.axis
             The plot axis
 
         """
@@ -308,15 +319,15 @@ class MultiObjOptResults:
 
         Paramters
         ---------
-        obj_weights : list of float
+        obj_weights: list of float
             The weights of the objectives
-        max : bool
+        max: bool
             Find the maximal value of the weighted result
             (otherwise find the minimal value)
 
         Returns
         -------
-        index : int
+        index: int
             The index in the pareto front results
 
         """

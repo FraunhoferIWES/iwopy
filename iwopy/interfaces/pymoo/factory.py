@@ -4,6 +4,9 @@ from . import imports
 class Factory:
     """
     A factory for pymoo components
+
+    :group: interfaces.pymoo
+
     """
 
     def __init__(self, pymoo_problem, verbosity):
@@ -182,6 +185,9 @@ class Factory:
         return out
 
     def get_termination(self, term_pars):
+        """
+        Termination factory function
+        """
 
         if isinstance(term_pars, tuple):
             return term_pars

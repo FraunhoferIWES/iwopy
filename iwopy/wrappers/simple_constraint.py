@@ -9,24 +9,7 @@ class SimpleConstraint(Constraint):
     A simple constraint that assumes the
     same variables as defined by the problem.
 
-    Parameters
-    ----------
-    problem: iwopy.Problem
-        The underlying optimization problem
-    name: str
-        The function name
-    n_components : int
-        The number of components
-    mins : float or array
-        The minimal values of components,
-        shape: (n_components,)
-    maxs : float or array
-        The maximal values of components,
-        shape: (n_components,)
-    cnames : list of str, optional
-        The names of the components
-    has_ana_derivs = bool
-        Flag for analytical derivatives
+    :group: wrappers
 
     """
 
@@ -40,6 +23,29 @@ class SimpleConstraint(Constraint):
         cnames=None,
         has_ana_derivs=True,
     ):
+        """
+        Constructor
+
+        Parameters
+        ----------
+        problem: iwopy.Problem
+            The underlying optimization problem
+        name: str
+            The function name
+        n_components: int
+            The number of components
+        mins: float or array
+            The minimal values of components,
+            shape: (n_components,)
+        maxs: float or array
+            The maximal values of components,
+            shape: (n_components,)
+        cnames: list of str, optional
+            The names of the components
+        has_ana_derivs = bool
+            Flag for analytical derivatives
+
+        """
         if cnames is not None and len(cnames) != n_components:
             raise ValueError(
                 f"Wrong number of component names, found {len(cnames)}, expected {n_components}: {cnames}"
@@ -67,13 +73,13 @@ class SimpleConstraint(Constraint):
 
         Parameters
         ----------
-        x : tuple
+        x: tuple
             The int and float variables in that order. Variables are
             either scalars or numpy arrays in case of populations.
 
         Returns
         -------
-        result : float (or numpy.ndarray) or list of float (or numpy.ndarray)
+        result: float (or numpy.ndarray) or list of float (or numpy.ndarray)
             For one component, a float, else a list of floats. For
             population results, a array with shape (n_pop,) in case
             of one component or a list of such arrays otherwise.
@@ -88,17 +94,17 @@ class SimpleConstraint(Constraint):
 
         Parameters
         ----------
-        var : int
+        var: int
             The index of the derivation varibable within the function
             float variables
-        x : tuple
+        x: tuple
             The int and float variables in that order.
-        components : list of int, optional
+        components: list of int, optional
             The selected components, or None for all
 
         Returns
         -------
-        result : float or list of float
+        result: float or list of float
             For one component, a float, else a list of floats.
             The length of list is 0 or 1 in case of single component,
             or n_sel_components otherwise.
@@ -114,9 +120,9 @@ class SimpleConstraint(Constraint):
 
         Returns
         -------
-        min : np.array
+        min: np.array
             The lower bounds, shape: (n_components,)
-        max : np.array
+        max: np.array
             The upper bounds, shape: (n_components,)
 
         """
@@ -142,19 +148,19 @@ class SimpleConstraint(Constraint):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
-        components : list of int, optional
+        components: list of int, optional
             The selected components or None for all
 
         Returns
         -------
-        values : np.array
+        values: np.array
             The component values, shape: (n_sel_components,)
 
         """
@@ -167,19 +173,19 @@ class SimpleConstraint(Constraint):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_pop, n_vars_float)
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
-        components : list of int, optional
+        components: list of int, optional
             The selected components or None for all
 
         Returns
         -------
-        values : np.array
+        values: np.array
             The component values, shape: (n_pop, n_sel_components,)
 
         """
@@ -200,18 +206,18 @@ class SimpleConstraint(Constraint):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
-        var : int
+        var: int
             The index of the differentiation float variable
-        components : list of int
+        components: list of int
             The selected components, or None for all
 
         Returns
         -------
-        deriv : numpy.ndarray
+        deriv: numpy.ndarray
             The derivative values, shape: (n_sel_components,)
 
         """
