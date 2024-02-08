@@ -9,35 +9,16 @@ class LocalFD(ProblemWrapper):
     A wrapper that provides finite distance
     differentiation by local stepwise evaluation.
 
-    Parameters
-    ----------
-    base_problem : iwopy.Problem
-        The underlying concrete problem
-    deltas : dict
-        The step sizes. Key: variable name str,
-        Value: step size. Will be adjusted to the
-        variable bounds if necessary.
-    fd_order : dict or int
-        Finite difference order. Either a dict with
-        key: variable name str, value: order int, or
-        a global integer order for all variables.
-        1 = forward, -1 = backward, 2 = centre
-    fd_bounds_order : dict or int
-        Finite difference order of boundary points.
-        Either a dict with key: variable name str,
-        value: order int, or a global integer order
-        for all variables. Default is same as fd_order
-    name : str, optional
-        The problem name
-
     Attributes
     ----------
-    order : dict
+    order: dict
         Finite difference order. Key: variable name
         str, value: 1 = forward, -1 = backward, 2 = centre
-    orderb : dict or int
+    orderb: dict or int
         Finite difference order of boundary points.
         Key: variable name str, value: order int
+
+    :group: wrappers
 
     """
 
@@ -49,6 +30,31 @@ class LocalFD(ProblemWrapper):
         fd_bounds_order=None,
         name=None,
     ):
+        """
+        Constructor
+        
+        Parameters
+        ----------
+        base_problem: iwopy.Problem
+            The underlying concrete problem
+        deltas: dict
+            The step sizes. Key: variable name str,
+            Value: step size. Will be adjusted to the
+            variable bounds if necessary.
+        fd_order: dict or int
+            Finite difference order. Either a dict with
+            key: variable name str, value: order int, or
+            a global integer order for all variables.
+            1 = forward, -1 = backward, 2 = centre
+        fd_bounds_order: dict or int
+            Finite difference order of boundary points.
+            Either a dict with key: variable name str,
+            value: order int, or a global integer order
+            for all variables. Default is same as fd_order
+        name: str, optional
+            The problem name
+
+        """
         name = base_problem.name + "_fd" if name is None else name
         super().__init__(base_problem, name)
 
@@ -84,7 +90,7 @@ class LocalFD(ProblemWrapper):
 
         Parameters
         ----------
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         """
@@ -244,31 +250,31 @@ class LocalFD(ProblemWrapper):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
-        func : iwopy.core.OptFunctionList, optional
+        func: iwopy.core.OptFunctionList, optional
             The functions to be differentiated, or None
             for a list of all objectives and all constraints
             (in that order)
-        components : list of int, optional
+        components: list of int, optional
             The function's component selection, or None for all
-        ivars : list of int
+        ivars: list of int
             The indices of the function int variables in the problem
-        fvars : list of int
+        fvars: list of int
             The indices of the function float variables in the problem
-        vrs : list of int
+        vrs: list of int
             The function float variable indices wrt which the
             derivatives are to be calculated
-        pop : bool
+        pop: bool
             Flag for vectorizing calculations via population
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns
         -------
-        gradients : numpy.ndarray
+        gradients: numpy.ndarray
             The gradients of the functions, shape:
             (n_components, n_vrs)
 

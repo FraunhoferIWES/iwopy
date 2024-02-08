@@ -8,23 +8,29 @@ class Optimizer(Base, metaclass=ABCMeta):
     """
     Abstract base class for optimization solvers.
 
-    Parameters
-    ----------
-    problem: iwopy.Problem
-        The problem to optimize
-    name: str
-        The name
-
     Attributes
     ----------
     problem: iwopy.Problem
         The problem to optimize
     name: str
         The name
+    
+    :group: core
 
     """
 
     def __init__(self, problem, name="optimizer"):
+        """
+        Constructor
+        
+        Parameters
+        ----------
+        problem: iwopy.Problem
+            The problem to optimize
+        name: str
+            The name    
+    
+        """
         super().__init__(name)
         self.problem = problem
         self.name = name
@@ -42,7 +48,7 @@ class Optimizer(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns
@@ -77,7 +83,7 @@ class Optimizer(Base, metaclass=ABCMeta):
         ----------
         opt_results: iwopy.OptResults
             The optimization results object
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         """

@@ -12,53 +12,30 @@ class GG(Optimizer):
     in a finite number of steps on the way. Step directions
     that violate constraints are projected out or reversed.
 
-    Parameters
-    ----------
-    problem: iwopy.Problem
-        The problem to optimize
-    step_max : float or list or dict
-        The maximal steps. Either uniform float value
-        or list of floats for each problem variable,
-        or dict with entry for each variable
-    step_min : float or list or dict
-        The minimal steps. Either uniform float value
-        or list of floats for each problem variable,
-        or dict with entry for each variable
-    step_div_factor : float
-        Step size division factor until step_min is reached
-    f_tol : float
-        The objective function tolerance
-    vectorized : bool
-        Flag for running in vectorized mode
-    n_max_steps : int
-        The maximal number of steps without fresh gradient
-    memory_size : int
-        The number of memorized visited points
-    name: str, optional
-        The name
-
     Attributes
     ----------
-    step_max : numpy.ndarray
+    step_max: numpy.ndarray
         Maximal step size for each problem variable,
         shape: (n_vars_float,)
-    step_min : numpy.ndarray
+    step_min: numpy.ndarray
         Minimal step size for each problem variable,
         shape: (n_vars_float,)
-    step_div_factor : float
+    step_div_factor: float
         Step size division factor until step_min is reached
-    f_tol : float
+    f_tol: float
         The objective function tolerance
-    vectorized : bool
+    vectorized: bool
         Flag for running in vectorized mode
-    n_max_steps : int
+    n_max_steps: int
         The maximal number of steps without fresh gradient
-    memory_size : int
+    memory_size: int
         The number of memorized visited points
-    memory : tuple
+    memory: tuple
         Memorized data: (x, obj, grad, all_valid), each a
         numpy.ndarray, shapes: (memory_size, n_vars),
         (memory_size, n_vars), (memory_size,), (memory_size,)
+    
+    :group: optimizers
 
     """
 
@@ -74,6 +51,35 @@ class GG(Optimizer):
         memory_size=100,
         name="GG",
     ):
+        """
+        Constructor
+        
+        Parameters
+        ----------
+        problem: iwopy.Problem
+            The problem to optimize
+        step_max: float or list or dict
+            The maximal steps. Either uniform float value
+            or list of floats for each problem variable,
+            or dict with entry for each variable
+        step_min: float or list or dict
+            The minimal steps. Either uniform float value
+            or list of floats for each problem variable,
+            or dict with entry for each variable
+        step_div_factor: float
+            Step size division factor until step_min is reached
+        f_tol: float
+            The objective function tolerance
+        vectorized: bool
+            Flag for running in vectorized mode
+        n_max_steps: int
+            The maximal number of steps without fresh gradient
+        memory_size: int
+            The number of memorized visited points
+        name: str, optional
+            The name
+
+        """
         super().__init__(problem, name)
         self.step_max = step_max
         self.step_min = step_min
@@ -90,7 +96,7 @@ class GG(Optimizer):
 
         Parameters
         ----------
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         """
@@ -203,7 +209,7 @@ class GG(Optimizer):
 
         Parameters
         ----------
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns

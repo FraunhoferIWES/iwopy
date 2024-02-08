@@ -7,33 +7,24 @@ class UDP:
     """
     Generic Problem to Pygmo UserDefinedProblem adapter
 
-    Parameters
-    ----------
-    problem : iwopy.Problem
-        The problem to optimize
-    c_tol : float
-        Constraint tolerance
-    pop : bool
-        Vectorized fitness computation
-    verbosity : int
-        The verbosity level, 0 = silent
-
     Attributes
     ----------
-    problem : iwopy.Problem
+    problem: iwopy.Problem
         The problem to optimize
-    n_vars_all :  int
+    n_vars_all:  int
         The sum of int and float variable counts
-    n_fitness : int
+    n_fitness: int
         The sum of objective and constraint counts
-    c_tol : list of float
+    c_tol: list of float
         Constraint tolerances
-    values : numpy.ndarray
+    values: numpy.ndarray
         The function values, shape: (n_fitness,)
-    pop : bool
+    pop: bool
         Vectorized fitness computation
-    verbosity : int
+    verbosity: int
         The verbosity level, 0 = silent
+    
+    :group: interfaces.pygmo
 
     """
 
@@ -43,7 +34,21 @@ class UDP:
         pop=False,
         verbosity=0,
     ):
+        """
+        Constructor
+        
+        Parameters
+        ----------
+        problem: iwopy.Problem
+            The problem to optimize
+        c_tol: float
+            Constraint tolerance
+        pop: bool
+            Vectorized fitness computation
+        verbosity: int
+            The verbosity level, 0 = silent
 
+        """
         self.problem = problem
         self.n_vars_all = problem.n_vars_float + problem.n_vars_int
         self.n_fitness = problem.n_objectives + problem.n_constraints
@@ -83,7 +88,7 @@ class UDP:
         values = np.zeros((n_pop, self.n_fitness), dtype=np.float64)
         objs, cons = self.problem.evaluate_population(xi, xf)
         objs *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
-        values[:, : self.problem.n_objectives] = objs
+        values[:,: self.problem.n_objectives] = objs
         values[:, self.problem.n_objectives :] = cons
 
         return values.reshape(n_pop * self.n_fitness)
@@ -215,7 +220,7 @@ class UDP:
         ----------
         pygmo_pop: pygmo.Population
             The results from the solver
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns

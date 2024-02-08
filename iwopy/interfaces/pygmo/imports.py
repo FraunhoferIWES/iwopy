@@ -5,6 +5,17 @@ loaded = False
 
 
 def load(verbosity=1):
+    """
+    Loads the pygmo package dynamically
+
+    Parameters
+    ----------
+    verbosity: int
+        The verbosity level, 0 = silent
+    
+    :group: interfaces.pygmo
+    
+    """
 
     global pygmo, loaded
 

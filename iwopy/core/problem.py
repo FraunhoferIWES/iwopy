@@ -12,30 +12,36 @@ class Problem(Base, metaclass=ABCMeta):
     """
     Abstract base class for optimization problems.
 
-    Parameters
-    ----------
-    name: str
-        The problem's name
-    mem_size : int, optional
-        The memory size, default no memory
-    mem_keyf : Function, optional
-        The memory key function. Parameters:
-        (vars_int, vars_float), returns key Object
-
     Attributes
     ----------
-    objs : iwopy.core.OptFunctionList
+    objs: iwopy.core.OptFunctionList
         The objective functions
-    cons : iwopy.core.OptFunctionList
+    cons: iwopy.core.OptFunctionList
         The constraints
-    memory : iwopy.core.Memory
+    memory: iwopy.core.Memory
         The memory, or None
+    
+    :group: core
 
     """
 
     INT_INF = RegularDiscretizationGrid.INT_INF
 
     def __init__(self, name, mem_size=None, mem_keyf=None):
+        """
+        Constructor
+        
+        Parameters
+        ----------
+        name: str
+            The problem's name
+        mem_size: int, optional
+            The memory size, default no memory
+        mem_keyf: Function, optional
+            The memory key function. Parameters:
+            (vars_int, vars_float), returns key Object
+
+        """
         super().__init__(name)
 
         self.objs = OptFunctionList(self, "objs")
@@ -55,7 +61,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        names : list of str
+        names: list of str
             The names of the integer variables
 
         """
@@ -67,7 +73,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Initial int values, shape: (n_vars_int,)
 
         """
@@ -81,7 +87,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Minimal int values, shape: (n_vars_int,)
 
         """
@@ -95,7 +101,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Maximal int values, shape: (n_vars_int,)
 
         """
@@ -108,7 +114,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        n : int
+        n: int
             The number of int variables
 
         """
@@ -120,7 +126,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        names : list of str
+        names: list of str
             The names of the float variables
 
         """
@@ -132,7 +138,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Initial float values, shape: (n_vars_float,)
 
         """
@@ -146,7 +152,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Minimal float values, shape: (n_vars_float,)
 
         """
@@ -160,7 +166,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Maximal float values, shape: (n_vars_float,)
 
         """
@@ -173,7 +179,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        n : int
+        n: int
             The number of float variables
 
         """
@@ -235,7 +241,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        objective : iwopy.Objective
+        objective: iwopy.Objective
             The objective
         varmap_int: dict, optional
             Mapping from objective variables to
@@ -245,7 +251,7 @@ class Problem(Base, metaclass=ABCMeta):
             Mapping from objective variables to
             problem variables. Key: str or int,
             value: str or int
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         """
@@ -267,7 +273,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        constraint : iwopy.Constraint
+        constraint: iwopy.Constraint
             The constraint
         varmap_int: dict, optional
             Mapping from objective variables to
@@ -277,7 +283,7 @@ class Problem(Base, metaclass=ABCMeta):
             Mapping from objective variables to
             problem variables. Key: str or int,
             value: str or int
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         """
@@ -306,7 +312,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        cmi : numpy.ndarray
+        cmi: numpy.ndarray
             The minimal constraint values, shape: (n_constraints,)
 
         """
@@ -319,7 +325,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        cma : numpy.ndarray
+        cma: numpy.ndarray
             The maximal constraint values, shape: (n_constraints,)
 
         """
@@ -332,7 +338,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        ctol : numpy.ndarray
+        ctol: numpy.ndarray
             The constraint tolerance values, shape: (n_constraints,)
 
         """
@@ -346,7 +352,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        n_obj : int
+        n_obj: int
             The total number of objective
             functions
 
@@ -361,7 +367,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        n_con : int
+        n_con: int
             The total number of constraint
             functions
 
@@ -434,31 +440,31 @@ class Problem(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
-        func : iwopy.core.OptFunctionList, optional
+        func: iwopy.core.OptFunctionList, optional
             The functions to be differentiated, or None
             for a list of all objectives and all constraints
             (in that order)
-        components : list of int, optional
+        components: list of int, optional
             The function's component selection, or None for all
-        ivars : list of int
+        ivars: list of int
             The indices of the function int variables in the problem
-        fvars : list of int
+        fvars: list of int
             The indices of the function float variables in the problem
-        vrs : list of int
+        vrs: list of int
             The function float variable indices wrt which the
             derivatives are to be calculated
-        pop : bool
+        pop: bool
             Flag for vectorizing calculations via population
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns
         -------
-        gradients : numpy.ndarray
+        gradients: numpy.ndarray
             The gradients of the functions, shape:
             (n_components, n_vrs)
 
@@ -501,28 +507,28 @@ class Problem(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
-        func : iwopy.core.OptFunctionList, optional
+        func: iwopy.core.OptFunctionList, optional
             The functions to be differentiated, or None
             for a list of all objectives and all constraints
             (in that order)
-        components : list of int, optional
+        components: list of int, optional
             The function's component selection, or None for all
-        vars : list of int or str, optional
+        vars: list of int or str, optional
             The float variables wrt which the
             derivatives are to be calculated, or
             None for all
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
-        pop : bool
+        pop: bool
             Flag for vectorizing calculations via population
 
         Returns
         -------
-        gradients : numpy.ndarray
+        gradients: numpy.ndarray
             The gradients of the functions, shape:
             (n_components, n_vars)
 
@@ -605,7 +611,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         """
@@ -624,22 +630,22 @@ class Problem(Base, metaclass=ABCMeta):
         if self._mem_size is not None:
             self.memory = Memory(self._mem_size, self._mem_keyf)
             if verbosity:
-                print(f"  Memory size  : {self.memory.size}")
+                print(f"  Memory size : {self.memory.size}")
                 print(self._hline)
 
         n_int = self.n_vars_int
         n_float = self.n_vars_float
         if verbosity:
-            print(f"  n_vars_int   : {n_int}")
-            print(f"  n_vars_float : {n_float}")
+            print(f"  n_vars_int  : {n_int}")
+            print(f"  n_vars_float: {n_float}")
             print(self._hline)
 
         if verbosity:
-            print(f"  n_objectives : {self.objs.n_functions}")
-            print(f"  n_obj_cmptns : {self.n_objectives}")
+            print(f"  n_objectives: {self.objs.n_functions}")
+            print(f"  n_obj_cmptns: {self.n_objectives}")
             print(self._hline)
             print(f"  n_constraints: {self.cons.n_functions}")
-            print(f"  n_con_cmptns : {self.n_constraints}")
+            print(f"  n_con_cmptns: {self.n_constraints}")
             print(self._hline)
 
         if self.n_objectives == 0:
@@ -661,7 +667,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        maximize : numpy.ndarray
+        maximize: numpy.ndarray
             Boolean flag for maximization of objective,
             shape: (n_objectives,)
 
@@ -674,14 +680,14 @@ class Problem(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
 
         Returns
         -------
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
 
@@ -695,14 +701,14 @@ class Problem(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_pop, n_vars_float)
 
         Returns
         -------
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
 
@@ -715,20 +721,20 @@ class Problem(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
-        ret_prob_res : bool
+        ret_prob_res: bool
             Flag for additionally returning of problem results
 
         Returns
         -------
-        objs : np.array
+        objs: np.array
             The objective function values, shape: (n_objectives,)
-        con : np.array
+        con: np.array
             The constraints values, shape: (n_constraints,)
-        prob_res : object, optional
+        prob_res: object, optional
             The problem results
 
         """
@@ -763,20 +769,20 @@ class Problem(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_pop, n_vars_float)
-        ret_prob_res : bool
+        ret_prob_res: bool
             Flag for additionally returning of problem results
 
         Returns
         -------
-        objs : np.array
+        objs: np.array
             The objective function values, shape: (n_pop, n_objectives)
-        cons : np.array
+        cons: np.array
             The constraints values, shape: (n_pop, n_constraints)
-        prob_res : object, optional
+        prob_res: object, optional
             The problem results
 
         """
@@ -790,7 +796,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         if from_mem:
 
-            objs = memres[:, : self.n_objectives]
+            objs = memres[:,: self.n_objectives]
             cons = memres[:, self.n_objectives :]
             del memres
 
@@ -835,14 +841,14 @@ class Problem(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        constraint_values : np.array
+        constraint_values: np.array
             The constraint values, shape: (n_components,)
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns
         -------
-        values : np.array
+        values: np.array
             The boolean result, shape: (n_components,)
 
         """
@@ -864,14 +870,14 @@ class Problem(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        constraint_values : np.array
+        constraint_values: np.array
             The constraint values, shape: (n_pop, n_components)
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns
         -------
-        values : np.array
+        values: np.array
             The boolean result, shape: (n_pop, n_components)
 
         """
@@ -893,21 +899,21 @@ class Problem(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The optimal integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The optimal float variable values, shape: (n_vars_float,)
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns
         -------
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
-        objs : np.array
+        objs: np.array
             The objective function values, shape: (n_objectives,)
-        cons : np.array
+        cons: np.array
             The constraints values, shape: (n_constraints,)
 
         """
@@ -927,23 +933,23 @@ class Problem(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values of the final
             generation, shape: (n_pop, n_vars_int)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values of the final
             generation, shape: (n_pop, n_vars_float)
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns
         -------
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
-        objs : np.array
+        objs: np.array
             The final objective function values, shape: (n_pop, n_components)
-        cons : np.array
+        cons: np.array
             The final constraint values, shape: (n_pop, n_constraints)
 
         """
@@ -963,14 +969,14 @@ class Problem(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        prob_res_list : list
+        prob_res_list: list
             The problem results
-        coeffs : numpy.ndarray
+        coeffs: numpy.ndarray
             The coefficients
 
         Returns
         -------
-        prob_res : object
+        prob_res: object
             The weighted sum of problem results
 
         """
@@ -987,14 +993,14 @@ class Problem(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        prob_res_list : list
+        prob_res_list: list
             The problem results
-        coeffs : numpy.ndarray
+        coeffs: numpy.ndarray
             The coefficients
 
         Returns
         -------
-        prob_res : object
+        prob_res: object
             The weighted sum of problem results
 
         """
@@ -1010,15 +1016,21 @@ class ProblemDefaultFunc(OptFunctionList):
     """
     The default function of a problem
     for gradient calculations.
-
-    Parameters
-    ----------
-    problem : iwopy.core.Problem
-        The problem
+    
+    :group: core
 
     """
 
     def __init__(self, problem):
+        """
+        Constructor
+        
+        Parameters
+        ----------
+        problem: iwopy.core.Problem
+            The problem
+
+        """
         super().__init__(problem, "objs_cons")
         for f in problem.objs.functions:
             self.append(f)

@@ -41,14 +41,17 @@ release = __version__
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "nbsphinx",
+    "sphinx_immaterial",
+    "sphinx_immaterial.apidoc.python.apigen",
     "sphinx.ext.autodoc",
-    "sphinx.ext.autosummary",
+    "sphinx.ext.autosectionlabel",
+    # "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
-    "sphinx.ext.napoleon",
+    # "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
-    "sphinx.ext.inheritance_diagram",
-    "nbsphinx",
+    # "sphinx.ext.inheritance_diagram",
     "sphinx.ext.doctest",
     "m2r2",
 ]
@@ -60,7 +63,8 @@ intersphinx_mapping = {
 }
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
+# templates_path = ["_templates"]
+# autosummary_generate = False
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -84,16 +88,25 @@ exclude_patterns = [
     # ipynb checkpoints
     "notebooks/.ipynb_checkpoints/*.ipynb",
     "build/*",
+    # "_templates/*",
+    # DEBUG
+    # "examples.rst",
+    # "notebooks/*",
+    # "notebooks/layout_opt.ipynb",
+    # "notebooks/timelines.ipynb",
+    # "notebooks/heterogeneous.ipynb",
+    # "notebooks/timeseries.ipynb",
+    # "api.rst"
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
-autosummary_generate = True
+# autosummary_generate = True
 napolean_use_rtype = False
 
 # -- Options for sphinxcontrib.email ------------------------------------------
-email_automode = True
+# email_automode = True
 
 
 # -- Options for nbsphinx -----------------------------------------------------
@@ -113,7 +126,7 @@ nbsphinx_execute = "always"
 
 
 # Controls when a cell will time out (defaults to 30; use -1 for no timeout):
-nbsphinx_timeout = 180
+nbsphinx_timeout = 500
 
 # Default Pygments lexer for syntax highlighting in code cells:
 # nbsphinx_codecell_lexer = 'ipython3'
@@ -125,14 +138,15 @@ nbsphinx_timeout = 180
 # nbsphinx_responsive_width = '700px'
 
 # This is processed by Jinja2 and inserted before each notebook
+# Fix for issue with pyplot, cf
+# https://github.com/readthedocs/sphinx_rtd_theme/issues/788#issuecomment-585785027
 nbsphinx_prolog = r"""
-{% set docname = 'docs/' + env.doc2path(env.docname, base=None) %}
-.. only:: html
-    .. role:: raw-html(raw)
-        :format: html
-    .. nbinfo::
-        :raw-html:`<a href="https://colab.research.google.com/github/DTUWindEnergy/PyWake/blob/master/{{ docname }}"><img alt="Open and run in Colab (interactive)" src="https://colab.research.google.com/assets/colab-badge.svg" style="vertical-align:text-bottom"></a>
-        <a href="https://gitlab.windenergy.dtu.dk/TOPFARM/PyWake/-/tree/master/{{ docname }}"><img alt="Edit on Gitlab" src="https://img.shields.io/badge/Edit%20on-Gitlab-blue?style=flat&logo=gitlab" style="vertical-align:text-bottom"></a>`
+.. raw:: html
+
+    <script src='http://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js'></script>
+    <script>require=requirejs;</script>
+
+
 """
 
 # This is processed by Jinja2 and inserted after each notebook
@@ -156,7 +170,6 @@ nbsphinx_output_prompt = "Out[%s]:"
 
 # Options for loading require.js
 # nbsphinx_requirejs_options = {'async': 'async'}
-
 mathjax3_config = {
     "TeX": {"equationNumbers": {"autoNumber": "AMS", "useLabelIds": True}},
 }
@@ -179,7 +192,8 @@ autodoc_class_signature = "separated"
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
+html_theme = "sphinx_immaterial"
+
 # html_theme = 'cloud'
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -188,16 +202,21 @@ html_theme = "sphinx_rtd_theme"
 html_theme_options = {
     # TOC options
     #'navigation_depth': 2,  # only show 2 levels on left sidebar
-    "collapse_navigation": False,  # don't allow sidebar to collapse
+    # "collapse_navigation": False,  # don't allow sidebar to collapse,
+    "site_url": "https://fraunhoferiwes.github.io/iwopy.docs/index.html",
+    "repo_url": "https://github.com/FraunhoferIWES/iwopy",
+    "icon": {"repo": "fontawesome/brands/github", "edit": "material/file-edit-outline"},
+    "palette": {"primary": "teal"},
+    "toc_title_is_page_title": True,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+# html_static_path = ["_static"]
 
 # custom.css is inside one of the html_static_path folders (e.g. _static)
-html_css_files = ["custom.css"]
+# html_css_files = ["custom.css"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -213,7 +232,7 @@ html_css_files = ["custom.css"]
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "iwopydoc"
+htmlhelp_basename = "foxesdoc"
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -260,7 +279,7 @@ texinfo_documents = [
         "iwopy Documentation",
         author,
         "iwopy",
-        "One line description of project.",
+        "Fraunhofer IWES optimization tools in Python",
         "Miscellaneous",
     ),
 ]
@@ -283,5 +302,18 @@ epub_title = project
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ["search.html"]
 
+# -- python_apigen configuration -------------------------------------------------
 
-# -- Extension configuration -------------------------------------------------
+python_apigen_modules = {
+    "iwopy.benchmarks": "_iwopy/benchmarks/",
+    "iwopy.benchmarks.branin": "_iwopy/benchmarks/branin/",
+    "iwopy.benchmarks.rosenbrock": "_iwopy/benchmarks/rosenbrock/",
+    "iwopy.core": "_iwopy/core/",
+    "iwopy.interfaces": "_iwopy/interfaces/",
+    "iwopy.interfaces.pymoo": "_iwopy/interfaces/pymoo/",
+    "iwopy.interfaces.pygmo": "_iwopy/interfaces/pygmo/",
+    "iwopy.interfaces.scipy": "_iwopy/interfaces/scipy/",
+    "iwopy.optimizers": "_iwopy/optimizers/",
+    "iwopy.utils": "_iwopy/utils/",
+    "iwopy.wrappers": "_iwopy/wrappers/",
+}

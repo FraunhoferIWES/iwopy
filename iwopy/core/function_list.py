@@ -13,27 +13,33 @@ class OptFunctionList(OptFunction):
     Add functions to the list via the `append` function,
     and don't forget to initialize.
 
-    Parameters
-    ----------
-    problem: iwopy.Problem
-        The underlying optimization problem
-    name: str
-        The function name
-
     Attributes
     ----------
-    func_vars_int : list of lists of int
+    func_vars_int: list of lists of int
         For each added function, the subset of
         integer variables
-    func_vars_float : list of lists of int
+    func_vars_float: list of lists of int
         For each added function, the subset of
         float variables
-    sizes : list of int
+    sizes: list of int
         The components of each added function
+    
+    :group: core
 
     """
 
     def __init__(self, problem, name):
+        """
+        Constructor
+        
+        Parameters
+        ----------
+        problem: iwopy.Problem
+            The underlying optimization problem
+        name: str
+            The function name
+
+        """
         super().__init__(problem, name)
 
         self._functions = []
@@ -48,7 +54,7 @@ class OptFunctionList(OptFunction):
 
         Parameters
         ----------
-        function : iwopy.core.OptFunction
+        function: iwopy.core.OptFunction
             The function
 
         """
@@ -71,7 +77,7 @@ class OptFunctionList(OptFunction):
 
         Returns
         -------
-        funcs : list of iwopy.core.OptFunction
+        funcs: list of iwopy.core.OptFunction
             The list of added functions
 
         """
@@ -84,7 +90,7 @@ class OptFunctionList(OptFunction):
 
         Returns
         -------
-        n : int
+        n: int
             The total number of added functions
 
         """
@@ -96,7 +102,7 @@ class OptFunctionList(OptFunction):
 
         Parameters
         ----------
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         """
@@ -116,7 +122,7 @@ class OptFunctionList(OptFunction):
             if not len(fvnames):
                 return []
             l = [vnames.index(v) for v in fvnames]
-            return np.s_[l[0] : l[-1]] if list(range(l[0], l[-1])) == l else l
+            return np.s_[l[0]: l[-1]] if list(range(l[0], l[-1])) == l else l
 
         self.func_vars_int = [
             getv(self._vnamesi, f.var_names_int) for f in self.functions
@@ -134,7 +140,7 @@ class OptFunctionList(OptFunction):
 
         Returns
         -------
-        deps : numpy.ndarray of bool
+        deps: numpy.ndarray of bool
             The dependencies of components on function
             variables, shape: (n_components, n_vars_int)
 
@@ -156,7 +162,7 @@ class OptFunctionList(OptFunction):
 
         Returns
         -------
-        deps : numpy.ndarray of bool
+        deps: numpy.ndarray of bool
             The dependencies of components on function
             variables, shape: (n_components, n_vars_float)
 
@@ -191,12 +197,12 @@ class OptFunctionList(OptFunction):
 
         Parameters
         ----------
-        data : numpy.ndarray
+        data: numpy.ndarray
             The data, shape: (n_components,)
 
         Returns
         -------
-        fdata : list of numpy.ndarray
+        fdata: list of numpy.ndarray
             The data for each function, list entry
             shapes: (n_func_components,)
 
@@ -216,12 +222,12 @@ class OptFunctionList(OptFunction):
 
         Parameters
         ----------
-        data : numpy.ndarray
+        data: numpy.ndarray
             The data, shape: (n_pop, n_components)
 
         Returns
         -------
-        fdata : list of numpy.ndarray
+        fdata: list of numpy.ndarray
             The data for each function, list entry
             shapes: (n_pop, n_func_components)
 
@@ -241,19 +247,19 @@ class OptFunctionList(OptFunction):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
-        components : list of int, optional
+        components: list of int, optional
             The selected components or None for all
 
         Returns
         -------
-        values : np.array
+        values: np.array
             The component values, shape: (n_sel_components,)
 
         """
@@ -285,19 +291,19 @@ class OptFunctionList(OptFunction):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_pop, n_vars_float)
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
-        components : list of int, optional
+        components: list of int, optional
             The selected components or None for all
 
         Returns
         -------
-        values : np.array
+        values: np.array
             The component values, shape: (n_pop, n_sel_components,)
 
         """
@@ -330,19 +336,19 @@ class OptFunctionList(OptFunction):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The optimal integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The optimal float variable values, shape: (n_vars_float,)
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns
         -------
-        values : np.array
+        values: np.array
             The component values, shape: (n_components,)
 
         """
@@ -366,21 +372,21 @@ class OptFunctionList(OptFunction):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values of the final
             generation, shape: (n_pop, n_vars_int)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values of the final
             generation, shape: (n_pop, n_vars_float)
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns
         -------
-        values : np.array
+        values: np.array
             The component values, shape: (n_pop, n_components)
 
         """
@@ -407,18 +413,18 @@ class OptFunctionList(OptFunction):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
-        var : int
+        var: int
             The index of the differentiation float variable
-        components : list of int
+        components: list of int
             The selected components, or None for all
 
         Returns
         -------
-        deriv : numpy.ndarray
+        deriv: numpy.ndarray
             The derivative values, shape: (n_sel_components,)
 
         """

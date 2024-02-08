@@ -8,26 +8,31 @@ class OptFunctionSubset(OptFunction):
     A function composed of a subset of a function's
     components.
 
-    Parameters
-    ----------
-    function: iwopy.OptFunction
-        The original function
-    subset : list of int
-        The component choice
-    name: str, optional
-        The function name
-
     Attributes
     ----------
     func_org: iwopy.OptFunction
         The original function
-    subset : list of int
+    subset: list of int
         The component choice
+    
+    :group: core
 
     """
 
     def __init__(self, function, subset, name=None):
+        """
+        Constructor
+        
+        Parameters
+        ----------
+        function: iwopy.OptFunction
+            The original function
+        subset: list of int
+            The component choice
+        name: str, optional
+            The function name
 
+        """
         if name is None:
             name = f"{function.name}[" + ",".join([str(i) for i in subset]) + "]"
         super().__init__(function.problem, name)
@@ -41,7 +46,7 @@ class OptFunctionSubset(OptFunction):
 
         Parameters
         ----------
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         """
@@ -64,7 +69,7 @@ class OptFunctionSubset(OptFunction):
 
         Returns
         -------
-        deps : numpy.ndarray of bool
+        deps: numpy.ndarray of bool
             The dependencies of components on function
             variables, shape: (n_components, n_vars_int)
 
@@ -78,7 +83,7 @@ class OptFunctionSubset(OptFunction):
 
         Returns
         -------
-        deps : numpy.ndarray of bool
+        deps: numpy.ndarray of bool
             The dependencies of components on function
             variables, shape: (n_components, n_vars_float)
 
@@ -105,19 +110,19 @@ class OptFunctionSubset(OptFunction):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
-        components : list of int, optional
+        components: list of int, optional
             The selected components or None for all
 
         Returns
         -------
-        values : np.array
+        values: np.array
             The component values, shape: (n_sel_components,)
 
         """
@@ -134,19 +139,19 @@ class OptFunctionSubset(OptFunction):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_pop, n_vars_float)
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
-        components : list of int, optional
+        components: list of int, optional
             The selected components or None for all
 
         Returns
         -------
-        values : np.array
+        values: np.array
             The component values, shape: (n_pop, n_sel_components,)
 
         """
@@ -165,18 +170,18 @@ class OptFunctionSubset(OptFunction):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
-        var : int
+        var: int
             The index of the differentiation float variable
-        components : list of int
+        components: list of int
             The selected components, or None for all
 
         Returns
         -------
-        deriv : numpy.ndarray
+        deriv: numpy.ndarray
             The derivative values, shape: (n_sel_components,)
 
         """

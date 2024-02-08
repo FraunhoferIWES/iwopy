@@ -2,19 +2,25 @@ class Base:
     """
     Generic base for various iwopy objects.
 
-    Parameters
-    ----------
-    name : str
-        The name
-
     Attributes
     ----------
-    name : str
+    name: str
         The name
+
+    :group: core
 
     """
 
     def __init__(self, name):
+        """
+        Constructor
+        
+        Parameters
+        ----------
+        name: str
+            The name
+
+        """
         self.name = name
         self._initialized = False
         if name is None:
@@ -53,7 +59,7 @@ class Base:
 
         Parameters
         ----------
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         """
@@ -65,7 +71,7 @@ class Base:
 
         Parameters
         ----------
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         """

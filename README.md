@@ -10,6 +10,7 @@ The `iwopy` package is in fact a meta package that provides interfaces to other 
 
 - [pymoo](https://pymoo.org/index.html)
 - [pygmo](https://esa.github.io/pygmo2/index.html)
+- [scipy](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html)
 - (more to come with future versions)
 
 `iwopy` can thus be understood as an attempt to provide *the best of all worlds* when it comes to solving optimization problems with Python. This has not yet been achieved, since above list of accessable optimization packages is obviously incomplete, but it's a start. All the credit for implementing the invoked optimizers goes to the original package providers.

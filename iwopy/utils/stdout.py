@@ -20,6 +20,8 @@ def suppress_stdout(silent=True):
     ----------
     silent: bool
         Flag for the silent treatment.
+    
+    :group: utils
 
     """
     with open(os.devnull, "w") as devnull:

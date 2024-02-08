@@ -1,3 +1,7 @@
+"""
+Fraunhofer IWES optimization tools in Python
+    
+"""
 from .core import Problem, Objective, Constraint, Memory
 from .wrappers import (
     ProblemWrapper,

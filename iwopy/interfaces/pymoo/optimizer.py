@@ -2,74 +2,97 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from iwopy.core import Optimizer
-from .problem import get_single_obj_class, get_multi_obj_class
+from .problem import SingleObjProblemTemplate, MultiObjProblemTemplate
 from .factory import Factory
 from . import imports
 
+class DefaultCallbackTemplate:
+    """
+    Template for the default callback
 
-def get_default_callback_class(verbosity=1):
+    :group: interfaces.pymoo
+    
+    """
 
-    imports.load(verbosity)
+    def __init__(self):
+        """
+        Constructor
+        """
+        self.data["f_best"] = None
+        self.data["cv_best"] = None
 
-    class DefaultCallback(imports.Callback):
-        def __init__(self):
-            super().__init__()
-            self.data["f_best"] = None
-            self.data["cv_best"] = None
-
-        def notify(self, algorithm):
-            fvals = algorithm.pop.get("F")
-            cvals = algorithm.pop.get("CV")
-            n_obj = fvals.shape[1]
-            n_con = cvals.shape[1]
-            i = np.argmin(fvals, axis=0)
-            if self.data["f_best"] is None:
-                self.data["f_best"] = fvals[None, i, range(n_obj)]
-                self.data["cv_best"] = cvals[None, i, range(n_con)]
-            else:
-                self.data["f_best"] = np.append(
-                    self.data["f_best"], fvals[None, i, range(n_obj)], axis=0
+    def notify(self, algorithm):
+        fvals = algorithm.pop.get("F")
+        cvals = algorithm.pop.get("CV")
+        n_obj = fvals.shape[1]
+        n_con = cvals.shape[1]
+        i = np.argmin(fvals, axis=0)
+        if self.data["f_best"] is None:
+            self.data["f_best"] = fvals[None, i, range(n_obj)]
+            self.data["cv_best"] = cvals[None, i, range(n_con)]
+        else:
+            self.data["f_best"] = np.append(
+                self.data["f_best"], fvals[None, i, range(n_obj)], axis=0
+            )
+            self.data["cv_best"] = np.append(
+                self.data["cv_best"], cvals[None, i, range(n_con)], axis=0
                 )
-                self.data["cv_best"] = np.append(
-                    self.data["cv_best"], cvals[None, i, range(n_con)], axis=0
-                )
 
-    return DefaultCallback
-
+    @classmethod
+    def get_class(cls):
+        """
+        Creates the class, dynamically derived from pymoo.Callback
+        """
+        imports.load()
+        attrb = {v: d for v, d in cls.__dict__.items()}
+        init0 = cls.__init__
+        def init1(self):
+            imports.Callback.__init__(self)
+            init0(self)
+        attrb["__init__"] = init1
+        attrb["__doc__"] = "The default callback"
+        del attrb["get_class"]
+        return type("DefaultCallback", (imports.Callback,), attrb)()
 
 class Optimizer_pymoo(Optimizer):
     """
     Interface to the pymoo optimization solver.
 
-    Parameters
-    ----------
-    problem : iwopy.Problem
-        The problem to optimize
-    problem_pars : dict
-        Parameters for the problem
-    algo_pars : dict
-        Parameters for the alorithm
-    setup_pars : dict
-        Parameters for the calculation setup
-
     Attributes
     ----------
-    problem_pars : dict
+    problem_pars: dict
         Parameters for the problem
-    algo_pars : dict
+    algo_pars: dict
         Parameters for the alorithm
-    setup_pars : dict
+    setup_pars: dict
         Parameters for the calculation setup
-    term_pars : dict
+    term_pars: dict
         Parameters for the termination conditions
-    pymoo_problem : iwopy.interfaces.pymoo.SingleObjProblem
+    pymoo_problem: iwopy.interfaces.pymoo.SingleObjProblem
         The pygmo problem
-    algo : pygmo.algo
+    algo: pygmo.algo
         The pygmo algorithm
+    
+    :group: interfaces.pymoo
 
     """
 
     def __init__(self, problem, problem_pars, algo_pars, setup_pars={}, term_pars={}):
+        """
+        Constructor
+        
+        Parameters
+        ----------
+        problem: iwopy.Problem
+            The problem to optimize
+        problem_pars: dict
+            Parameters for the problem
+        algo_pars: dict
+            Parameters for the alorithm
+        setup_pars: dict
+            Parameters for the calculation setup
+
+        """
         super().__init__(problem)
 
         self.problem_pars = problem_pars
@@ -124,16 +147,16 @@ class Optimizer_pymoo(Optimizer):
 
         Parameters
         ----------
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         """
         if self.problem.n_objectives <= 1:
-            self.pymoo_problem = get_single_obj_class(verbosity)(
+            self.pymoo_problem = SingleObjProblemTemplate.get_class()(
                 self.problem, **self.problem_pars
             )
         else:
-            self.pymoo_problem = get_multi_obj_class(verbosity)(
+            self.pymoo_problem = MultiObjProblemTemplate.get_class()(
                 self.problem, **self.problem_pars
             )
 
@@ -152,9 +175,9 @@ class Optimizer_pymoo(Optimizer):
 
         Parameters
         ----------
-        callback : pymoo.Callback, optional
+        callback: pymoo.Callback, optional
             The callback
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns
@@ -164,7 +187,7 @@ class Optimizer_pymoo(Optimizer):
 
         """
         if callback == "default":
-            callback = get_default_callback_class(verbosity)()
+            callback = DefaultCallbackTemplate.get_class()
 
         # check problem initialization:
         super().solve()

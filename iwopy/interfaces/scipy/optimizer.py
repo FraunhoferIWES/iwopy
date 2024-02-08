@@ -12,31 +12,37 @@ class Optimizer_scipy(Optimizer):
     Note that these solvers do not support
     vectorized evaluation.
 
-    Parameters
-    ----------
-    problem : iwopy.Problem
-        The problem to optimize
-    scipy_pars : dict
-        Additional parameters for
-        scipy.optimze.minimize()
-    mem_size : int
-        The memory size, number of
-        stored obj, cons evaluations
-    kwargs : dict, optional
-        Additional parameters for base class
-
     Attributes
     ----------
-    scipy_pars : dict
+    scipy_pars: dict
         Additional parameters for
         scipy.optimze.minimize()
-    mem_size : int
+    mem_size: int
         The memory size, number of
         stored obj, cons evaluations
+
+    :group: interfaces.scipy
 
     """
 
     def __init__(self, problem, scipy_pars={}, mem_size=100, **kwargs):
+        """
+        Constructor
+        
+        Parameters
+        ----------
+        problem: iwopy.Problem
+            The problem to optimize
+        scipy_pars: dict
+            Additional parameters for
+            scipy.optimze.minimize()
+        mem_size: int
+            The memory size, number of
+            stored obj, cons evaluations
+        kwargs: dict, optional
+            Additional parameters for base class
+
+        """
         super().__init__(problem, **kwargs)
         self.scipy_pars = scipy_pars
         self.mem_size = mem_size
@@ -63,7 +69,7 @@ class Optimizer_scipy(Optimizer):
 
         Parameters
         ----------
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         """
@@ -97,11 +103,11 @@ class Optimizer_scipy(Optimizer):
 
         Returns
         -------
-        objs : np.array
+        objs: np.array
             The objective function values, shape: (n_objectives,)
-        cons : np.array
+        cons: np.array
             The constraints values, shape: (n_constraints,)
-        prob_results : object
+        prob_results: object
             The problem results
 
         """
@@ -173,7 +179,7 @@ class Optimizer_scipy(Optimizer):
 
         Parameters
         ----------
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns

@@ -1,5 +1,3 @@
-import numpy as np
-
 from iwopy import SimpleProblem, SimpleObjective
 
 
@@ -24,17 +22,8 @@ class RosenbrockObjective(SimpleObjective):
     with a function value of
 
     f(x,y) = 0
-
-    Parameters
-    ----------
-    problem : iwopy.Problem
-        The underlying optimization problem
-    pars : tuple
-        The a, b parameters
-    ana_deriv : bool
-        Switch for analytical derivatives
-    name : str
-        The function name
+    
+    :group: benchmarks.rosenbrock
 
     """
 
@@ -45,9 +34,23 @@ class RosenbrockObjective(SimpleObjective):
         ana_deriv=False,
         name="f",
     ):
+        """
+        Construtor
+        
+        Parameters
+        ----------
+        problem: iwopy.Problem
+            The underlying optimization problem
+        pars: tuple
+            The a, b parameters
+        ana_deriv: bool
+            Switch for analytical derivatives
+        name: str
+            The function name
+
+        """
         super().__init__(problem, name, n_components=1, has_ana_derivs=ana_deriv)
 
-        # Parameters of branin function,
         # (a, b)
         self._pars = pars
 
@@ -73,23 +76,12 @@ class RosenbrockProblem(SimpleProblem):
     """
     Problem definition of benchmark function Rosenbrock.
 
-    Parameters
-    ----------
-    lower : list of float
-        The minimal variable values
-    upper : list of float
-        The maximal variable values
-    initial : list of float
-        The initial values
-    ana_deriv : bool
-        Switch for analytical derivatives
-    name : str
-        The name of the problem
-
     Attributes
     ----------
-    initial_values : list of float
+    initial_values: list of float
         The initial values
+    
+    :group: benchmarks.rosenbrock
 
     """
 
@@ -101,7 +93,23 @@ class RosenbrockProblem(SimpleProblem):
         ana_deriv=False,
         name="rosenbrock",
     ):
+        """
+        Constructor
+        
+        Parameters
+        ----------
+        lower: list of float
+            The minimal variable values
+        upper: list of float
+            The maximal variable values
+        initial: list of float
+            The initial values
+        ana_deriv: bool
+            Switch for analytical derivatives
+        name: str
+            The name of the problem
 
+        """
         super().__init__(
             name,
             float_vars={"x": initial[0], "y": initial[1]},

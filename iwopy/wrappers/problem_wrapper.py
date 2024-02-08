@@ -5,23 +5,29 @@ class ProblemWrapper(Problem):
     """
     Generic abstract problem wrapper class.
 
-    Parameters
-    ----------
-    base_problem : iwopy.Problem
-        The underlying concrete problem
-    name : str
-        The problem name
-    kwargs : dict, optional
-        Additional parameters for the Problem class
-
     Attributes
     ----------
-    base_problem : iwopy.Problem
+    base_problem: iwopy.Problem
         The underlying concrete problem
+    
+    :group: wrappers
 
     """
 
     def __init__(self, base_problem, name, **kwargs):
+        """
+        Constructor
+        
+        Parameters
+        ----------
+        base_problem: iwopy.Problem
+            The underlying concrete problem
+        name: str
+            The problem name
+        kwargs: dict, optional
+            Additional parameters for the Problem class
+
+        """
         super().__init__(name, **kwargs)
         self.base_problem = base_problem
 
@@ -34,7 +40,7 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        names : list of str
+        names: list of str
             The names of the integer variables
 
         """
@@ -46,7 +52,7 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Initial int values, shape: (n_vars_int,)
 
         """
@@ -60,7 +66,7 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Minimal int values, shape: (n_vars_int,)
 
         """
@@ -74,7 +80,7 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Maximal int values, shape: (n_vars_int,)
 
         """
@@ -86,7 +92,7 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        names : list of str
+        names: list of str
             The names of the float variables
 
         """
@@ -98,7 +104,7 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Initial float values, shape: (n_vars_float,)
 
         """
@@ -112,7 +118,7 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Minimal float values, shape: (n_vars_float,)
 
         """
@@ -126,7 +132,7 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        values : numpy.ndarray
+        values: numpy.ndarray
             Maximal float values, shape: (n_vars_float,)
 
         """
@@ -138,7 +144,7 @@ class ProblemWrapper(Problem):
 
         Parameters
         ----------
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         """
@@ -164,14 +170,14 @@ class ProblemWrapper(Problem):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_vars_float,)
 
         Returns
         -------
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
 
@@ -185,14 +191,14 @@ class ProblemWrapper(Problem):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values, shape: (n_pop, n_vars_float)
 
         Returns
         -------
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
 
@@ -205,21 +211,21 @@ class ProblemWrapper(Problem):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The optimal integer variable values, shape: (n_vars_int,)
-        vars_float : np.array
+        vars_float: np.array
             The optimal float variable values, shape: (n_vars_float,)
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns
         -------
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
-        objs : np.array
+        objs: np.array
             The objective function values, shape: (n_objectives,)
-        cons : np.array
+        cons: np.array
             The constraints values, shape: (n_constraints,)
 
         """
@@ -231,23 +237,23 @@ class ProblemWrapper(Problem):
 
         Parameters
         ----------
-        vars_int : np.array
+        vars_int: np.array
             The integer variable values of the final
             generation, shape: (n_pop, n_vars_int)
-        vars_float : np.array
+        vars_float: np.array
             The float variable values of the final
             generation, shape: (n_pop, n_vars_float)
-        verbosity : int
+        verbosity: int
             The verbosity level, 0 = silent
 
         Returns
         -------
-        problem_results : Any
+        problem_results: Any
             The results of the variable application
             to the problem
-        objs : np.array
+        objs: np.array
             The final objective function values, shape: (n_pop, n_components)
-        cons : np.array
+        cons: np.array
             The final constraint values, shape: (n_pop, n_constraints)
 
         """
