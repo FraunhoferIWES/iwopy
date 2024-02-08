@@ -138,5 +138,9 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 ## v0.2-beta
 
+- Interfaces:
+  - Improved `pymoo`: Dynamical derivation from classes from optional package import
+- Documentation:
+  - Completely new sphinx style
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.2](https://github.com/FraunhoferIWES/iwopy/commits/v0.2)
