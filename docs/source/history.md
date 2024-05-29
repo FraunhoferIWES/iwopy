@@ -145,7 +145,13 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.2](https://github.com/FraunhoferIWES/iwopy/commits/v0.2)
 
-## v0.2.1-beta
+## v0.2.1
 
+- Documentation improvements
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.2.1](https://github.com/FraunhoferIWES/iwopy/commits/v0.2.1)
+
+## v0.2.2
+
+
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.2.2](https://github.com/FraunhoferIWES/iwopy/commits/v0.2.2)
