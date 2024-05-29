@@ -31,6 +31,16 @@ PyPi reference: [https://pypi.org/project/iwopy/](https://pypi.org/project/iwopy
 
 Anaconda reference: [https://anaconda.org/conda-forge/iwopy](https://anaconda.org/conda-forge/iwopy)
 
+## Contributing
+
+Please feel invited to contribute to `iwopy`! Here is how:
+
+1. Fork _iwopy_ on _github_.
+2. Create a branch (`git checkout -b new_branch`)
+3. Commit your changes (`git commit -am "your awesome message"`)
+4. Push to the branch (`git push origin new_branch`)
+5. Create a pull request [here](https://github.com/FraunhoferIWES/iwopy/pulls)
+
 ## Requirements
 
 The supported Python versions are:
@@ -40,14 +50,7 @@ The supported Python versions are:
 - `Python 3.9`
 - `Python 3.10`
 - `Python 3.11`
-
-## Installation via conda
-
-The `iwopy` package is available on the channel [conda-forge](https://anaconda.org/conda-forge/iwopy). You can install the latest version by
-
-```console
-conda install -c conda-forge iwopy
-```
+- `Python 3.12`
 
 ## Installation via pip
 
@@ -127,6 +130,44 @@ optimzer packages by installing those optoinal packages by addig `[opt]`:
 pip install -e .[opt]
 ```
 
+## Installation via conda
+
+### Preparation (optional)
+
+It is strongly recommend to use the `libmamba` dependency solver instead of the default solver. Install it once by
+
+```console
+conda install conda-libmamba-solver -n base -c conda-forge
+```
+
+We recommend that you set this to be your default solver, by
+
+```console
+conda config --set solver libmamba
+```
+
+### Standard users
+
+The `iwopy` package is available on the channel [conda-forge](https://anaconda.org/conda-forge/iwopy). You can install the latest version by
+
+```console
+conda install -c conda-forge iwopy
+```
+
+### Developers
+
+For developers using `conda`, we recommend first installing `iwopy` as described above, then removing only the `iwopy` package while keeping the dependencies, and then adding `iwopy` again from a git using `conda develop`:
+
+```console
+conda install iwopy conda-build -c conda-forge
+conda remove iwopy --force
+git clone https://github.com/FraunhoferIWES/iwopy.git
+cd iwopy
+conda develop .
+```
+
+Concerning the `git clone` line, we actually recommend that you fork `iwopy` on GitHub and then replace that command by cloning your fork instead.
+
 ## Testing
 
 For testing, please clone the repository and install the required dependencies
@@ -148,13 +189,3 @@ The tests are then run by
 ```console
 pytest tests
 ```
-
-## Contributing
-
-Please feel invited to contribute to `iwopy`! Here is how:
-
-1. Fork _iwopy_ on _github_.
-2. Create a branch (`git checkout -b new_branch`)
-3. Commit your changes (`git commit -am "your awesome message"`)
-4. Push to the branch (`git push origin new_branch`)
-5. Create a pull request [here](https://github.com/FraunhoferIWES/iwopy/pulls)

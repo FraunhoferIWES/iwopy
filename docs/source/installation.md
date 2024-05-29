@@ -9,14 +9,7 @@ The supported Python versions are:
 - `Python 3.9`
 - `Python 3.10`
 - `Python 3.11`
-
-## Installation via conda
-
-The `iwopy` package is available on the channel [conda-forge](https://anaconda.org/conda-forge/iwopy). You can install the latest version by
-
-```console
-conda install -c conda-forge iwopy
-```
+- `Python 3.12`
 
 ## Installation via pip
 
@@ -95,3 +88,41 @@ optimzer packages by installing those optoinal packages by addig `[opt]`:
 ```console
 pip install -e .[opt]
 ```
+
+## Installation via conda
+
+### Preparation (optional)
+
+It is strongly recommend to use the `libmamba` dependency solver instead of the default solver. Install it once by
+
+```console
+conda install conda-libmamba-solver -n base -c conda-forge
+```
+
+We recommend that you set this to be your default solver, by
+
+```console
+conda config --set solver libmamba
+```
+
+### Standard users
+
+The `iwopy` package is available on the channel [conda-forge](https://anaconda.org/conda-forge/iwopy). You can install the latest version by
+
+```console
+conda install -c conda-forge iwopy
+```
+
+### Developers
+
+For developers using `conda`, we recommend first installing `iwopy` as described above, then removing only the `iwopy` package while keeping the dependencies, and then adding `iwopy` again from a git using `conda develop`:
+
+```console
+conda install iwopy conda-build -c conda-forge
+conda remove iwopy --force
+git clone https://github.com/FraunhoferIWES/iwopy.git
+cd iwopy
+conda develop .
+```
+
+Concerning the `git clone` line, we actually recommend that you fork `iwopy` on GitHub and then replace that command by cloning your fork instead.
