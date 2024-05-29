@@ -55,7 +55,17 @@ pip install git+https://github.com/FraunhoferIWES/iwopy@dev#egg=iwopy
 Notice that the above default installation does not install the third-party optimization
 packages. `iwopy` will tell you in an error message that it is missing a package, with
 a hint of installation advice. You can avoid this step by installing all supported
-optimzer packages by repla
+optimzer packages by installing those optoinal packages by addig `[opt]`:
+
+```console
+pip install iwopy[opt]
+```
+
+or
+
+```console
+pip install git+https://github.com/FraunhoferIWES/iwopy@dev#egg=iwopy[opt]
+```
 
 ### Developers
 
@@ -75,4 +85,13 @@ Then you can either install from this directory via
 
 ```console
 pip install -e .
+```
+
+Notice that the above default installation does not install the third-party optimization
+packages. `iwopy` will tell you in an error message that it is missing a package, with
+a hint of installation advice. You can avoid this step by installing all supported
+optimzer packages by installing those optoinal packages by addig `[opt]`:
+
+```console
+pip install -e .[opt]
 ```

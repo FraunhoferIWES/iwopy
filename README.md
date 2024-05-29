@@ -83,6 +83,21 @@ This in general corresponds to the `main` branch at [github](https://github.com/
 pip install git+https://github.com/FraunhoferIWES/iwopy@dev#egg=iwopy
 ```
 
+Notice that the above default installation does not install the third-party optimization
+packages. `iwopy` will tell you in an error message that it is missing a package, with
+a hint of installation advice. You can avoid this step by installing all supported
+optimzer packages by installing those optoinal packages by addig `[opt]`:
+
+```console
+pip install iwopy[opt]
+```
+
+or
+
+```console
+pip install git+https://github.com/FraunhoferIWES/iwopy@dev#egg=iwopy[opt]
+```
+
 ### Developers
 
 The first step as a developer is to clone the `iwopy` repository by
@@ -103,14 +118,31 @@ Then you can either install from this directory via
 pip install -e .
 ```
 
+Notice that the above default installation does not install the third-party optimization
+packages. `iwopy` will tell you in an error message that it is missing a package, with
+a hint of installation advice. You can avoid this step by installing all supported
+optimzer packages by installing those optoinal packages by addig `[opt]`:
+
+```console
+pip install -e .[opt]
+```
+
 ## Testing
 
-For testing, please clone the repository and install the required dependencies:
+For testing, please clone the repository and install the required dependencies
+(`flake8`, `pytest`, `pygmo`, `pymoo`):
+
 ```console
 git clone https://github.com/FraunhoferIWES/iwopy.git
 cd iwopy
+pip install .[test]
+```
+
+If you are a developer you might want to replace the last line by
+```console
 pip install -e .[test]
 ```
+for dynamic installation from the local code base.
 
 The tests are then run by
 ```console
@@ -118,6 +150,8 @@ pytest tests
 ```
 
 ## Contributing
+
+Please feel invited to contribute to `iwopy`! Here is how:
 
 1. Fork _iwopy_ on _github_.
 2. Create a branch (`git checkout -b new_branch`)
