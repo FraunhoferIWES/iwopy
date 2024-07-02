@@ -156,3 +156,14 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Restricting numpy to <2, due to dependencies
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.2.2](https://github.com/FraunhoferIWES/iwopy/commits/v0.2.2)
+
+## v0.2.3
+
+- Recovering support for Python 3.7
+
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.2.3](https://github.com/FraunhoferIWES/iwopy/commits/v0.2.3)
+
+## v0.2.4
+
+
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.2.4](https://github.com/FraunhoferIWES/iwopy/commits/v0.2.4)
