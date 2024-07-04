@@ -43,7 +43,20 @@ License:
 
 .. _MIT: https://github.com/FraunhoferIWES/iwopy/blob/main/LICENSE
 
-Contents:
+Contributing
+------------
+
+Please feel invited to contribute to `iwopy`! Here is how:
+
+#. Fork *iwopy* on *github*.
+#. Create a branch (`git checkout -b new_branch`)
+#. Commit your changes (`git commit -am "your awesome message"`)
+#. Push to the branch (`git push origin new_branch`)
+#. Create a pull request `here <https://github.com/FraunhoferIWES/iwopy/pulls>`_
+
+Contents
+--------
+
     .. toctree::
         :maxdepth: 2
     
@@ -68,12 +81,3 @@ Contents:
         :maxdepth: 2
 
         history
-
-Contributing
-============
-
-#. Fork *iwopy* on *github*.
-#. Create a branch (`git checkout -b new_branch`)
-#. Commit your changes (`git commit -am "your awesome message"`)
-#. Push to the branch (`git push origin new_branch`)
-#. Create a pull request `here <https://github.com/FraunhoferIWES/iwopy/pulls>`_
