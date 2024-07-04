@@ -9,9 +9,6 @@ authors:
     #equal-contrib: true
     affiliation: 1 # (Multiple affiliations must be quoted)
     corresponding: true # (This is how to denote the corresponding author)
-  - name: Bernhard Stoevesandt
-    orcid: 0000-0001-6626-1084
-    affiliation: 1
 affiliations:
  - name: Fraunhofer IWES, Küpkersweg 70, 26129 Oldenburg, Germany
    index: 1
@@ -27,10 +24,9 @@ bibliography: paper.bib
 # Summary
 
 Optimization problems are described by optimization variables, which are scalars that are modified during the process of optimization; objective functions, which depend on the variables and whose values define the metric for rating the choices of the latter; and constraints, which are also functions of the optimization variables and define validity of
-the solution. The variables can be discrete or continuous, bounded or unbounded; the number of objectives can be one or many; and constraints can require equality or inequality. Many Python packages formulate a framework for the description of such problems, accompanied by
-a library of optimizers. Hence, switching from one to another optimization package can often 
+the solution. The variables can be discrete or continuous, bounded or unbounded; the number of objectives can be one or many; and constraints can require equality or inequality. Many Python packages formulate a framework for the description of such problems, accompanied by a library of optimizers. Hence, switching from one to another optimization package can often 
 be tedious and a meta-solution is required that can serve as a single interface to multiple
-optimization packages.
+optimization packages. The package `iwopy` solves this problem by providing a convenient and flexible interface which is general enough to be applicable to a wide range of optimization problems.
 
 # Statement of need
 
@@ -43,9 +39,16 @@ science and engineering problems, and it supports single, multi and many objecti
 optimization problems.
 
 The core functionality of `iwopy` is to provide interfaces to other existing Python
-optimization packages, like `pymoo` [@pymoo] or `pygmo` [@pygmo]. Once the problem is
-formulated within the framework sketched above, the optimizers from the supported
-liked packages can be selected and switched easily. 
+optimization packages, like `pymoo` [@pymoo], `pygmo` [@pygmo], or `scipy [@scipy]`. Once the 
+problem is formulated within the framework sketched above, all individual optimizers from the 
+supported linked packages can be selected and switched easily. 
+
+Note that more optimization packages are available which are not yet supported,
+like `pyomo [@pyomo]`, `Platypus [@platypus]`, `DEAP [@deap]` and others.
+Each package is well suited for solving a wide range of optimization problems, and they 
+all come with extensive user interfaces. However, `iwopy`
+addresses a unification of those interfaces, enabling the user to benefit from all supported
+optimizers without the need of extensive changes of the code base.
 
 The design of `iwopy` has a focus on vectorized evaluation approaches, as for example often
 provided by heuristic algorithms that rely on the concept of populations. If the vectorized
