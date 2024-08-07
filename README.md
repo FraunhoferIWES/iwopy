@@ -31,16 +31,6 @@ PyPi reference: [https://pypi.org/project/iwopy/](https://pypi.org/project/iwopy
 
 Anaconda reference: [https://anaconda.org/conda-forge/iwopy](https://anaconda.org/conda-forge/iwopy)
 
-## Contributing
-
-Please feel invited to contribute to `iwopy`! Here is how:
-
-1. Fork _iwopy_ on _github_.
-2. Create a branch (`git checkout -b new_branch`)
-3. Commit your changes (`git commit -am "your awesome message"`)
-4. Push to the branch (`git push origin new_branch`)
-5. Create a pull request [here](https://github.com/FraunhoferIWES/iwopy/pulls)
-
 ## Requirements
 
 The supported Python versions are:
@@ -189,3 +179,22 @@ The tests are then run by
 ```console
 pytest tests
 ```
+
+## Contributing
+
+Please feel invited to contribute to `iwopy`! Here is how:
+
+1. Fork _iwopy_ on _github_.
+2. Create a branch (`git checkout -b new_branch`)
+3. Commit your changes (`git commit -am "your awesome message"`)
+4. Push to the branch (`git push origin new_branch`)
+5. Create a pull request [here](https://github.com/FraunhoferIWES/iwopy/pulls)
+
+## Support
+
+For trouble shooting and support, please 
+- raise an issue [here](https://github.com/FraunhoferIWES/iwopy/issues),
+- or start a discussion [here](https://github.com/FraunhoferIWES/iwopy/discussions),
+- or contact the contributers.
+
+Thanks for your help with improving *iwopy*!
