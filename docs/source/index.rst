@@ -54,6 +54,16 @@ Please feel invited to contribute to `iwopy`! Here is how:
 #. Push to the branch (`git push origin new_branch`)
 #. Create a pull request `here <https://github.com/FraunhoferIWES/iwopy/pulls>`_
 
+Support
+-------
+For trouble shooting and support, please 
+
+* raise an issue `here <https://github.com/FraunhoferIWES/iwopy/issues>`_,
+* or start a discussion `here <https://github.com/FraunhoferIWES/iwopy/discussions>`_,
+* or contact the contributers.
+
+Thanks for your help with improving *iwopy*!
+
 Contents
 --------
 
