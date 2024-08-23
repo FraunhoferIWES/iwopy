@@ -1,6 +1,78 @@
 # pyproject.toml file specified at the root of the directory
 
 [build-system]
-requires = ["setuptools>=42", "wheel"]   # PEP 508 specifications.
-build-backend = "setuptools.build_meta"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
+[project]
+name = "iwopy"
+version = "0.3"
+authors = [
+  {name = "Jonas Schulte"},
+  {name = "Bernhard Stoevesandt"},
+]
+maintainers = [
+  {name = "Jonas Schulte"}
+]
+description = "Fraunhofer IWES optimization tools in Python"
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["Optimization", "Interface"]
+classifiers = [
+    "Topic :: Scientific/Engineering",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 4 - Beta",
+]
+requires-python = ">=3.7"
+dependencies = [
+    "matplotlib",
+    "numpy",
+    "scipy",
+]
+
+[project.optional-dependencies]
+opt = [
+    "pygmo",
+    "pymoo>=0.6"
+]
+test = [
+    "flake8", 
+    "pytest",
+    "pymoo>=0.6",
+]
+doc = [
+    "sphinx",
+    "sphinx-immaterial",
+    "nbsphinx",
+    "ipykernel",
+    "ipywidgets",
+    "m2r2",
+    "lxml_html_clean",
+]
+dev = [
+    "flake8",
+    "pytest",
+    "pymoo>=0.6",
+    "jupyter",
+    "objsize",
+]
+
+[project.urls]
+Homepage = "https://github.com/FraunhoferIWES/iwopy"
+Documentation = "https://fraunhoferiwes.github.io/iwopy.docs/index.html"
+Repository = "https://github.com/FraunhoferIWES/iwopy.git"
+"Bug Tracker" = "https://github.com/FraunhoferIWES/iwopy/issues"
+Changelog = "https://github.com/FraunhoferIWES/iwopy/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+exclude = ["notebooks", "conda", "examples", "tests", "docs"]
