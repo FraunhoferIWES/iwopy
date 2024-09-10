@@ -29,7 +29,6 @@ test:
   requires:
     - pip
     - pytest
-    - pygmo
     - pymoo
   source_files:
     - tests

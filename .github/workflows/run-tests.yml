@@ -66,7 +66,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install .[test]
-        python -m pip install pymoo pygmo
+        python -m pip install pymoo
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -76,9 +76,6 @@ jobs:
     - name: Test core
       run: |
         pytest tests/core
-    - name: Test pygmo
-      run: |
-        pytest tests/pygmo
     - name: Test pymoo
       run: |
         pytest tests/pymoo
@@ -102,7 +99,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install .[test]
-        python -m pip install pygmo pymoo
+        python -m pip install pymoo
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -112,9 +109,6 @@ jobs:
     - name: Test core
       run: |
         pytest tests/core
-    - name: Test pygmo
-      run: |
-        pytest tests/pygmo
     - name: Test pymoo
       run: |
         pytest tests/pymoo
@@ -138,7 +132,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install .[test]
-        python -m pip install pygmo pymoo
+        python -m pip install pymoo
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -148,9 +142,6 @@ jobs:
     - name: Test core
       run: |
         pytest tests/core
-    - name: Test pygmo
-      run: |
-        pytest tests/pygmo
     - name: Test pymoo
       run: |
         pytest tests/pymoo
@@ -174,7 +165,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install .[test]
-        python -m pip install pygmo pymoo
+        python -m pip install pymoo
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -184,9 +175,6 @@ jobs:
     - name: Test core
       run: |
         pytest tests/core
-    - name: Test pygmo
-      run: |
-        pytest tests/pygmo
     - name: Test pymoo
       run: |
         pytest tests/pymoo
