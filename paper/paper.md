@@ -39,12 +39,12 @@ science and engineering problems, and it supports single, multi and many objecti
 optimization problems.
 
 The core functionality of `iwopy` is to provide interfaces to other existing Python
-optimization packages, like `pymoo` [@pymoo], `pygmo` [@pygmo], or `scipy [@scipy]`. Once the 
+optimization packages, like `pymoo` [@pymoo], `pygmo` [@pygmo], or `scipy` [@scipy]. Once the 
 problem is formulated within the framework sketched above, all individual optimizers from the 
 supported linked packages can be selected and switched easily. 
 
 Note that more optimization packages are available which are not yet supported,
-like `pyomo [@pyomo]`, `Platypus [@platypus]`, `DEAP [@deap]` and others.
+like `pyomo` [@pyomo], `Platypus` [@platypus], `DEAP` [@deap] and others.
 Each package is well suited for solving a wide range of optimization problems, and they 
 all come with extensive user interfaces. However, `iwopy`
 addresses a unification of those interfaces, enabling the user to benefit from all supported
