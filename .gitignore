@@ -134,3 +134,4 @@ veri_*
 log.*
 .vscode/
 docs/source/_*
+.pdm-build/

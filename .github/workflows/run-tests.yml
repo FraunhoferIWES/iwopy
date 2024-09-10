@@ -15,38 +15,6 @@ on:
       - 'dev'
 
 jobs:
-  tests37:
-    name: run-tests-py3.7
-
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.7"]
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install . pytest flake8 pymoo
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        #flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test core
-      run: |
-        pytest tests/core
-    - name: Test pymoo
-      run: |
-        pytest tests/pymoo
-
   tests38:
     name: run-tests-py3.8
 
@@ -66,7 +34,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install .[test]
-        python -m pip install pymoo pygmo
+        python -m pip install pymoo
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -76,9 +44,6 @@ jobs:
     - name: Test core
       run: |
         pytest tests/core
-    - name: Test pygmo
-      run: |
-        pytest tests/pygmo
     - name: Test pymoo
       run: |
         pytest tests/pymoo
@@ -102,7 +67,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install .[test]
-        python -m pip install pygmo pymoo
+        python -m pip install pymoo
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -112,9 +77,6 @@ jobs:
     - name: Test core
       run: |
         pytest tests/core
-    - name: Test pygmo
-      run: |
-        pytest tests/pygmo
     - name: Test pymoo
       run: |
         pytest tests/pymoo
@@ -138,7 +100,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install .[test]
-        python -m pip install pygmo pymoo
+        python -m pip install pymoo
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -148,9 +110,6 @@ jobs:
     - name: Test core
       run: |
         pytest tests/core
-    - name: Test pygmo
-      run: |
-        pytest tests/pygmo
     - name: Test pymoo
       run: |
         pytest tests/pymoo
@@ -174,7 +133,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install .[test]
-        python -m pip install pygmo pymoo
+        python -m pip install pymoo
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -184,9 +143,39 @@ jobs:
     - name: Test core
       run: |
         pytest tests/core
-    - name: Test pygmo
+    - name: Test pymoo
       run: |
-        pytest tests/pygmo
+        pytest tests/pymoo
+
+  tests312:
+    name: run-tests-py3.12
+
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install .[test]
+        python -m pip install pymoo
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        #flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Test core
+      run: |
+        pytest tests/core
     - name: Test pymoo
       run: |
         pytest tests/pymoo
