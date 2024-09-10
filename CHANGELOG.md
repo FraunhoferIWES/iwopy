@@ -168,3 +168,8 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - removing restriction numpy <2, since now latest numpy is supported again by indirect dependency `autograd`
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.3](https://github.com/FraunhoferIWES/iwopy/commits/v0.3)
+
+## v0.3.1
+
+
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.3.1](https://github.com/FraunhoferIWES/iwopy/commits/v0.3.1)
