@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "iwopy"
-version = "0.3.0.1"
+version = "0.3.0.2"
 authors = [
   {name = "Jonas Schulte"},
   {name = "Bernhard Stoevesandt"},
