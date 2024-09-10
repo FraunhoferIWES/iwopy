@@ -4,7 +4,7 @@ tags:
   - Python
   - Optimization
 authors:
-  - name: Jonas Schmidt
+  - name: Jonas Schulte
     orcid: 0000-0002-8191-8141
     #equal-contrib: true
     affiliation: 1 # (Multiple affiliations must be quoted)
