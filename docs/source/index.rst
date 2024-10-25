@@ -66,7 +66,11 @@ Thanks for your help with improving *iwopy*!
 
 Contents
 --------
-
+    .. toctree::
+        :maxdepth: 2
+    
+        citation
+        
     .. toctree::
         :maxdepth: 2
     

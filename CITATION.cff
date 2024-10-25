@@ -1,0 +1,26 @@
+cff-version: "1.2.0"
+authors:
+- family-names: Schulte
+  given-names: Jonas
+  orcid: "https://orcid.org/0000-0002-8191-8141"
+doi: 10.21105/joss.06014
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - family-names: Schulte
+    given-names: Jonas
+    orcid: "https://orcid.org/0000-0002-8191-8141"
+  date-published: 2024-10-09
+  doi: 10.21105/joss.06014
+  issue: 102
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 6014
+  title: "IWOPY: Fraunhofer IWES optimization tools in Python"
+  type: article
+  url: "https://doi.org/10.21105/joss.06014"
+  volume: 9
+title: "IWOPY: Fraunhofer IWES optimization tools in Python"
+
