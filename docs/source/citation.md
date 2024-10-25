@@ -3,12 +3,10 @@
 ## Journal paper
 
 Please cite the JOSS paper [IWOPY: Fraunhofer IWES optimization tools in
-Python](https://doi.org/10.21105/joss.06014)
+Python](https://doi.org/10.21105/joss.06014).
 
- [![DOI](https://joss.theoj.org/papers/10.21105/joss.06014/status.svg)](https://doi.org/10.21105/joss.06014)
-
- Bibtex:
- ```
+Bibtex:
+```
 @article{Schulte2024, 
     doi = {10.21105/joss.06014}, 
     url = {https://doi.org/10.21105/joss.06014}, 
