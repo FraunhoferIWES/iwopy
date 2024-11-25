@@ -191,7 +191,9 @@ class Factory:
 
         if isinstance(term_pars, tuple):
             return term_pars
-
+        elif isinstance(term_pars, list):
+            return tuple(term_pars)
+        
         typ = term_pars.pop("type", None)
         if typ is None:
             return None

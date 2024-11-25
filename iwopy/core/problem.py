@@ -5,7 +5,7 @@ from abc import ABCMeta
 from .base import Base
 from .function_list import OptFunctionList
 from .memory import Memory
-from iwopy.utils import RegularDiscretizationGrid
+from iwopy.utils import RegularDiscretizationGrid, new_instance
 
 
 class Problem(Base, metaclass=ABCMeta):
@@ -1011,6 +1011,23 @@ class Problem(Base, metaclass=ABCMeta):
             f"Problem '{self.name}': Einsum not implemented for problem results type '{type(prob_res_list[0]).__name__}'"
         )
 
+    @classmethod
+    def new(cls, problem_type, *args, **kwargs):
+        """
+        Run-time problem factory.
+
+        Parameters
+        ----------
+        problem_type: str
+            The selected derived class name
+        args: tuple, optional
+            Additional parameters for constructor
+        kwargs: dict, optional
+            Additional parameters for constructor
+
+        """
+        return new_instance(cls, problem_type, *args, **kwargs)
+    
 
 class ProblemDefaultFunc(OptFunctionList):
     """

@@ -137,7 +137,7 @@ class Optimizer_pymoo(Optimizer):
         if len(self.term_pars):
             print("\nTermination:")
             print("------------")
-            if isinstance(self.term_pars, tuple):
+            if isinstance(self.term_pars, (tuple, list)):
                 print(f"  {self.term_pars[0]}: {self.term_pars[1]}")
             else:
                 for k, v in self.term_pars.items():
