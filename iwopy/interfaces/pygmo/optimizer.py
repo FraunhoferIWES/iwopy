@@ -29,7 +29,7 @@ class Optimizer_pygmo(Optimizer):
 
     """
 
-    def __init__(self, problem, problem_pars, algo_pars, setup_pars={}):
+    def __init__(self, problem, problem_pars={}, algo_pars={}, setup_pars={}):
         """
         Constructor
 
