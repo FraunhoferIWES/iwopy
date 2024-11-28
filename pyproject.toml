@@ -42,12 +42,12 @@ dependencies = [
 [project.optional-dependencies]
 opt = [
     "pygmo",
-    "pymoo>=1"
+    "pymoo>=0.6"
 ]
 test = [
     "flake8", 
     "pytest",
-    "pymoo>=1",
+    "pymoo>=0.6",
 ]
 doc = [
     "sphinx",
@@ -61,7 +61,7 @@ doc = [
 dev = [
     "flake8",
     "pytest",
-    "pymoo>=1",
+    "pymoo>=0.6",
     "jupyter",
     "objsize",
 ]
