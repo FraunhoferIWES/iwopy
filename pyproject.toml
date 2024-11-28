@@ -42,12 +42,12 @@ dependencies = [
 [project.optional-dependencies]
 opt = [
     "pygmo",
-    "pymoo>=0.6"
+    "pymoo>=1"
 ]
 test = [
     "flake8", 
     "pytest",
-    "pymoo>=0.6",
+    "pymoo>=1",
 ]
 doc = [
     "sphinx",
@@ -61,7 +61,7 @@ doc = [
 dev = [
     "flake8",
     "pytest",
-    "pymoo>=0.6",
+    "pymoo>=1",
     "jupyter",
     "objsize",
 ]
@@ -74,4 +74,4 @@ Repository = "https://github.com/FraunhoferIWES/iwopy.git"
 Changelog = "https://github.com/FraunhoferIWES/iwopy/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
-exclude = ["notebooks", "conda", "examples", "tests", "docs"]
+exclude = ["notebooks", "examples", "tests", "docs"]
