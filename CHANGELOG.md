@@ -174,3 +174,9 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Added factories for allowing automatized setups
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.3.1](https://github.com/FraunhoferIWES/iwopy/commits/v0.3.1)
+
+## v0.3.2
+
+
+
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.3.2](https://github.com/FraunhoferIWES/iwopy/commits/v0.3.2)
