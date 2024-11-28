@@ -1,6 +1,7 @@
 import numpy as np
 from abc import ABCMeta, abstractmethod
 
+from iwopy.utils import new_instance
 from .base import Base
 
 
@@ -138,3 +139,22 @@ class Optimizer(Base, metaclass=ABCMeta):
                                     val = np.min(opt_results.objs[:, i0 + i])
                                 print(f"  Best {names[i]} = {val}")
                         i0 = i1
+
+
+    @classmethod
+    def new(cls, optimizer_type, *args, **kwargs):
+        """
+        Run-time optimizer factory.
+
+        Parameters
+        ----------
+        optimizer_type: str
+            The selected derived class name
+        args: tuple, optional
+            Additional parameters for constructor
+        kwargs: dict, optional
+            Additional parameters for constructor
+
+        """
+        return new_instance(cls, optimizer_type, *args, **kwargs)
+        

@@ -74,4 +74,4 @@ Repository = "https://github.com/FraunhoferIWES/iwopy.git"
 Changelog = "https://github.com/FraunhoferIWES/iwopy/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
-exclude = ["notebooks", "conda", "examples", "tests", "docs"]
+exclude = ["notebooks", "examples", "tests", "docs"]

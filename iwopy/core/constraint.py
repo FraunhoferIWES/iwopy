@@ -1,5 +1,6 @@
 import numpy as np
 
+from iwopy.utils import new_instance
 from .function import OptFunction
 
 
@@ -114,3 +115,21 @@ class Constraint(OptFunction):
                 print(f"  Constraint {cnames[ci]:<20} {suc}")
 
         return out
+
+    @classmethod
+    def new(cls, constraint_type, *args, **kwargs):
+        """
+        Run-time constraint factory.
+
+        Parameters
+        ----------
+        constraint_type: str
+            The selected derived class name
+        args: tuple, optional
+            Additional parameters for constructor
+        kwargs: dict, optional
+            Additional parameters for constructor
+
+        """
+        return new_instance(cls, constraint_type, *args, **kwargs)
+    
