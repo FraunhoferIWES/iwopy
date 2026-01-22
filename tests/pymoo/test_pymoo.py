@@ -236,4 +236,4 @@ def test_rosen_ga():
 if __name__ == "__main__":
     # test_branin_ga()
     test_rosen0_ga()
-    #test_rosen_ga()
+    # test_rosen_ga()
