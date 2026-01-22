@@ -68,7 +68,7 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/FraunhoferIWES/iwopy"
-Documentation = "https://fraunhoferiwes.github.io/iwopy.docs/index.html"
+Documentation = "https://fraunhoferiwes.github.io/iwopy"
 Repository = "https://github.com/FraunhoferIWES/iwopy.git"
 "Bug Tracker" = "https://github.com/FraunhoferIWES/iwopy/issues"
 Changelog = "https://github.com/FraunhoferIWES/iwopy/blob/main/CHANGELOG.md"

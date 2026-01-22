@@ -23,7 +23,7 @@ The basic idea of `iwopy` is to provide abstract base classes, that can be concr
 
 All calculations support vectorized evaluation of a complete population of parameters. This is useful for heuristic approaches like genetic algorithms, but also for evaluating gradients. It can lead to a vast speed-up and should be invoked whenever possible. Check the examples (or the API) for details.
 
-Documentation: [https://fraunhoferiwes.github.io/iwopy.docs/index.html](https://fraunhoferiwes.github.io/iwopy.docs/index.html)
+Documentation: [https://fraunhoferiwes.github.io/iwopy](https://fraunhoferiwes.github.io/iwopy)
 
 Source code: [https://github.com/FraunhoferIWES/iwopy](https://github.com/FraunhoferIWES/iwopy)
 
