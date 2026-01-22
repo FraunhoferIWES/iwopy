@@ -86,7 +86,7 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
   - New: `multi_obj_chain`, demonstrating multi objective optimization using pymoo's NSGA2
 - Notebooks:
   - New: `multi_obj_chain.ipynb`, demonstrating multi objective optimization using pymoo's NSGA2
-  
+
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.3](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.3)
 
 ## v0.1.4-alpha
@@ -98,20 +98,20 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
   - New: `mixed`, demonstrating how to solve a mixed int/float problem with pymoo
 - Notebook:
   - New: `mixed`, demonstrating how to solve a mixed int/float problem with pymoo
-  
+
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.4](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.4)
 
 ## v0.1.5-alpha
 
 - Small bug fixes
-  
+
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.5](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.5)
 
 ## v0.1.6-alpha
 
 - Interfaces
   - New interface to `scipy`: Calling the `scipy.optimize.minimize` function
-  
+
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.6](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.6)
 
 ## v0.1.7-beta
@@ -120,13 +120,13 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
   - New `import_module` utility, dynamically loading packages and modules
 - Interfaces
   - Improved dynamic imports of `pygmo` and `pymoo`
-  
+
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.7](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.7)
 
 ## v0.1.8-beta
 
 - Bug fixed in setup.cfg
-  
+
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.1.8](https://github.com/FraunhoferIWES/iwopy/commits/v0.1.8)
 
 ## v0.1.9-beta
@@ -177,6 +177,6 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 ## v0.3.2
 
-
+- Dropping support for Python 3.8
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.3.2](https://github.com/FraunhoferIWES/iwopy/commits/v0.3.2)

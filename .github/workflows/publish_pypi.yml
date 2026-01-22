@@ -1,9 +1,9 @@
 name: Publish 🐍 to PyPI 📦
 
-on: 
+on:
   push:
-    tags:        
-      - 'v*'  
+    tags:
+      - 'v*'
 
 jobs:
   tests:
@@ -69,7 +69,7 @@ jobs:
       url: https://test.pypi.org/p/iwopy
 
     permissions:
-      id-token: write 
+      id-token: write
 
     steps:
     - name: Download all the dists
@@ -92,9 +92,9 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/iwopy  
+      url: https://pypi.org/p/iwopy
     permissions:
-      id-token: write  
+      id-token: write
 
     steps:
     - name: Download all the dists
@@ -114,8 +114,8 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write  
-      id-token: write  
+      contents: write
+      id-token: write
 
     steps:
     - name: Download all the dists

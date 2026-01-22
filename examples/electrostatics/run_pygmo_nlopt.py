@@ -7,7 +7,6 @@ from iwopy.interfaces.pygmo import Optimizer_pygmo
 from model import ChargesProblem
 
 if __name__ == "__main__":
-
     # np.random.seed(42)
 
     parser = argparse.ArgumentParser()

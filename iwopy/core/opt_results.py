@@ -87,7 +87,6 @@ class SingleObjOptResults:
             )
 
     def __str__(self):
-
         s = f"Results problem '{self.pname}':\n"
         hline = "-" * len(s) + "\n"
         if len(self.vnames_int):
@@ -205,7 +204,6 @@ class MultiObjOptResults:
             )
 
     def __str__(self):
-
         s = f"Results problem '{self.pname}':\n"
         hline = "-" * 2 * len(s) + "\n"
         if len(self.vnames_int):
@@ -238,7 +236,7 @@ class MultiObjOptResults:
                 s += f"    {i}: {vname:<{L}} = {np.min(v):.6e} --> {np.max(v):.6e}\n"
         s += hline
         v = np.sum(self.success) / len(self.success.flat)
-        s += f"  Success: {100*v:.2f} %\n"
+        s += f"  Success: {100 * v:.2f} %\n"
         s += hline
 
         return s

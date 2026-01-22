@@ -20,7 +20,6 @@ def load(verbosity=1):
     global pygmo, loaded
 
     if not loaded:
-
         if verbosity:
             print("Loading pygmo")
 

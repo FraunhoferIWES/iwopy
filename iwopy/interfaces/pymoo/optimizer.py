@@ -239,13 +239,12 @@ class Optimizer_pymoo(Optimizer):
 
         """
         if self.problem.n_objectives() == 1:
-
             if fig is None and ax is None:
                 fig, ax = plt.subplots()
             elif ax is None:
                 ax = fig.add_subplot(111)
             else:
-                raise TypeError(f"Impossible fig/ax input")
+                raise TypeError("Impossible fig/ax input")
 
             fname = self.problem.objs[0].base_name
             fvals = self.callback.data["f_best"]

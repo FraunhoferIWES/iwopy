@@ -4,11 +4,9 @@ import iwopy
 
 
 def test_interp_point():
-
     D = 6
 
     for dims in range(1, D + 1):
-
         print("\nINTERP_POINT: Entering dims =", dims, "\n")
 
         o = np.random.uniform(0.0, 0.01, dims)
@@ -35,12 +33,10 @@ def test_interp_point():
 
 
 def test_interp_points():
-
     D = 6
     N = 100
 
     for dims in range(1, D + 1):
-
         print("\nINTERP_POINTS: Entering dims =", dims, "\n")
 
         o = np.random.uniform(0.0, 0.05, dims)
@@ -66,7 +62,6 @@ def test_interp_points():
 
 
 def test_deriv_gp():
-
     dnl = (
         (0.01, 2, 2, 0.00015),
         (0.01, 2, 1, 0.01),
@@ -83,7 +78,6 @@ def test_deriv_gp():
         return 1 + np.cos(2 * x)
 
     for step, order, orderb, lim in dnl:
-
         print("\nENTERING", (step, order, orderb, lim), "\n")
 
         o = [0.0]
@@ -122,7 +116,6 @@ def test_deriv_gp():
 
 
 def test_deriv():
-
     dnl = (
         (0.01, 2, 2, 0.00015),
         (0.01, 2, 1, 0.01),
@@ -139,7 +132,6 @@ def test_deriv():
         return 1 + np.cos(2 * x)
 
     for step, order, orderb, lim in dnl:
-
         print("\nENTERING", (step, order, orderb, lim), "\n")
 
         o = [0.0]
@@ -176,7 +168,6 @@ def test_deriv():
 
 
 def test_grad_gp():
-
     dnl = (
         (None, 0.001, 2, 1, [0.001, 0.005, 0.005]),
         (None, 0.01, 2, 2, [0.0001, 0.0002, 0.001]),
@@ -203,7 +194,6 @@ def test_grad_gp():
         return out
 
     for vars, step, order, orderb, lim in dnl:
-
         print("\nENTERING", (vars, step, order, orderb, lim), "\n")
 
         o = [0.0, 1.0, 0.0]
@@ -248,7 +238,6 @@ def test_grad_gp():
 
 
 def test_grad():
-
     dnl = (
         (None, 0.001, 2, 1, [0.001, 0.0008, 0.005]),
         (None, 0.01, 2, 2, [0.001, 0.001, 0.001]),
@@ -275,7 +264,6 @@ def test_grad():
         return out
 
     for vars, step, order, orderb, lim in dnl:
-
         print("\nENTERING", (vars, step, order, orderb, lim), "\n")
 
         o = [0.0, 1.0, 0.0]

@@ -1,7 +1,7 @@
 iwopy.benchmarks
 ================
 
-    .. table:: 
+    .. table::
         :widths: auto
 
         ================================== =================================================
@@ -22,4 +22,3 @@ iwopy.benchmarks.rosenbrock
 The Rosenbrock benchmark
 
     .. python-apigen-group:: benchmarks.rosenbrock
-        

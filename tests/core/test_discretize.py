@@ -32,7 +32,6 @@ class Obj1(iwopy.Objective):
 
 
 def test_grad():
-
     np.random.seed(42)
 
     dsl = (
@@ -49,7 +48,6 @@ def test_grad():
     N = 50
 
     for ox, oy, pop, dx, dy, lim in dsl:
-
         print("\nENTERING", (ox, oy, pop, dx, dy, lim), "\n")
 
         p = iwopy.SimpleProblem(
@@ -68,7 +66,6 @@ def test_grad():
         gp.initialize(verbosity=1)
 
         for p0 in np.random.uniform(1.0, 2.0, (N, 2)):
-
             print("p0 =", p0)
 
             g = gp.get_gradients(vars_int=[], vars_float=p0, pop=pop)[0]

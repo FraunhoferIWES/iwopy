@@ -132,4 +132,3 @@ class Constraint(OptFunction):
 
         """
         return new_instance(cls, constraint_type, *args, **kwargs)
-    

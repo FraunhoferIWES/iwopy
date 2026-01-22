@@ -40,30 +40,29 @@ Python](https://doi.org/10.21105/joss.06014)
 
  Bibtex:
  ```
-@article{Schulte2024, 
-    doi = {10.21105/joss.06014}, 
-    url = {https://doi.org/10.21105/joss.06014}, 
-    year = {2024}, 
-    publisher = {The Open Journal}, 
-    volume = {9}, 
-    number = {102}, 
-    pages = {6014}, 
-    author = {Jonas Schulte}, 
-    title = {IWOPY: Fraunhofer IWES optimization tools in Python}, 
-    journal = {Journal of Open Source Software} 
+@article{Schulte2024,
+    doi = {10.21105/joss.06014},
+    url = {https://doi.org/10.21105/joss.06014},
+    year = {2024},
+    publisher = {The Open Journal},
+    volume = {9},
+    number = {102},
+    pages = {6014},
+    author = {Jonas Schulte},
+    title = {IWOPY: Fraunhofer IWES optimization tools in Python},
+    journal = {Journal of Open Source Software}
 }
  ```
- 
+
 ## Requirements
 
 The supported Python versions are:
 
-- `Python 3.7`
-- `Python 3.8`
 - `Python 3.9`
 - `Python 3.10`
 - `Python 3.11`
 - `Python 3.12`
+- `Python 3.13`
 
 ## Installation via pip
 
@@ -215,7 +214,7 @@ Please feel invited to contribute to `iwopy`! Here is how:
 
 ## Support
 
-For trouble shooting and support, please 
+For trouble shooting and support, please
 - raise an issue [here](https://github.com/FraunhoferIWES/iwopy/issues),
 - or start a discussion [here](https://github.com/FraunhoferIWES/iwopy/discussions),
 - or contact the contributers.

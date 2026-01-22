@@ -89,7 +89,6 @@ class Optimizer(Base, metaclass=ABCMeta):
 
         """
         if verbosity:
-
             print(f"{type(self).__name__}: Optimization run finished")
             if (
                 isinstance(opt_results.success, bool)
@@ -98,12 +97,10 @@ class Optimizer(Base, metaclass=ABCMeta):
                 print(f"  Success: {opt_results.success}")
             else:
                 v = np.sum(opt_results.success) / len(opt_results.success.flat)
-                print(f"  Success: {100*v:.2f} %")
+                print(f"  Success: {100 * v:.2f} %")
 
             if opt_results is not None and opt_results.objs is not None:
-
                 if self.problem.n_objectives == 1:
-
                     i0 = 0
                     for o in self.problem.objs.functions:
                         n = o.n_components()
@@ -119,7 +116,6 @@ class Optimizer(Base, metaclass=ABCMeta):
                         i0 = i1
 
                 else:
-
                     i0 = 0
                     for o in self.problem.objs.functions:
                         n = o.n_components()
@@ -140,7 +136,6 @@ class Optimizer(Base, metaclass=ABCMeta):
                                 print(f"  Best {names[i]} = {val}")
                         i0 = i1
 
-
     @classmethod
     def new(cls, optimizer_type, *args, **kwargs):
         """
@@ -157,4 +152,3 @@ class Optimizer(Base, metaclass=ABCMeta):
 
         """
         return new_instance(cls, optimizer_type, *args, **kwargs)
-        

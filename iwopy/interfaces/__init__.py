@@ -1,3 +1,3 @@
-from . import pygmo
-from . import pymoo
-from . import scipy
+from . import pygmo as pygmo
+from . import pymoo as pymoo
+from . import scipy as scipy

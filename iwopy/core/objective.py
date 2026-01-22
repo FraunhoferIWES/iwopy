@@ -42,4 +42,3 @@ class Objective(OptFunction):
 
         """
         return new_instance(cls, objective_type, *args, **kwargs)
-    

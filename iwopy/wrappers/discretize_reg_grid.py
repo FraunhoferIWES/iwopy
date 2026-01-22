@@ -2,7 +2,7 @@ import numpy as np
 
 from iwopy.utils import RegularDiscretizationGrid
 from .local_fd import LocalFD
-from iwopy.core import Memory, ProblemDefaultFunc
+from iwopy.core import Memory
 
 
 class DiscretizeRegGrid(LocalFD):
@@ -85,7 +85,7 @@ class DiscretizeRegGrid(LocalFD):
         super().initialize(verbosity)
 
         if verbosity > 1:
-            print(f"  Finite difference grid:")
+            print("  Finite difference grid:")
 
         origin = []
         deltas = []
@@ -97,7 +97,6 @@ class DiscretizeRegGrid(LocalFD):
         vmaxs = np.full(super().n_vars_float, np.nan, dtype=np.float64)
         vmaxs[:] = super().max_values_float()
         for vi in self._vinds:
-
             vnam = vnms[vi]
             vmin = vmins[vi]
             vmax = vmaxs[vi]
@@ -188,7 +187,7 @@ class DiscretizeRegGrid(LocalFD):
         if self.grid.all_gridpoints(vars_float[:, self._vinds]):
             return super().apply_population(vars_int, vars_float)
         else:
-            raise NotImplemented(
+            raise NotImplementedError(
                 f"Problem '{self.name}' cannot apply non-grid points to problem"
             )
 
@@ -282,7 +281,6 @@ class DiscretizeRegGrid(LocalFD):
 
         # case all vars are grid vars:
         elif self.n_vars_int == 0 and len(self._vinds) == self.n_vars_float:
-
             gpts, coeffs = self.grid.interpolation_coeffs_points(varsf)
 
             n_gpts = len(gpts)
@@ -293,7 +291,6 @@ class DiscretizeRegGrid(LocalFD):
             varsf[:, self._vinds] = gpts
 
             if ret_prob_res:
-
                 objs, cons, res = self.evaluate_population(varsi, varsf, ret_prob_res)
 
                 return (
@@ -303,7 +300,6 @@ class DiscretizeRegGrid(LocalFD):
                 )
 
             else:
-
                 objs, cons = self.evaluate_population(varsi, varsf, ret_prob_res)
 
                 return (
@@ -313,7 +309,6 @@ class DiscretizeRegGrid(LocalFD):
 
         # mixed case:
         else:
-
             gpts, coeffs, gmap = self.grid.interpolation_coeffs_points(
                 varsf, ret_pmap=True
             )

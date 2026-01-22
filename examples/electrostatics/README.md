@@ -1,6 +1,6 @@
 # IWOPY Example: Electrostatics
 
-This example finds a minimum of the electrostatic potential of `N` particles with unit charge, constraint to a radius of size `r`. 
+This example finds a minimum of the electrostatic potential of `N` particles with unit charge, constraint to a radius of size `r`.
 
 ## Solve with pygmo.IPOPT
 
@@ -34,7 +34,7 @@ Check the options by adding the `-h` flag.
 
 For default radius and N = 20 particles, run
 ```
-python run_pymoo.py -n 20 -a pso 
+python run_pymoo.py -n 20 -a pso
 ```
 
 Check the options by adding the `-h` flag.

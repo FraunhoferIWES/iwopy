@@ -88,7 +88,6 @@ class Optimizer_pygmo(Optimizer):
 
         # set first indiviual to initial values:
         if pnrfi:
-
             x = np.zeros(self.udp.n_vars_all)
 
             if self.problem.n_vars_float:
@@ -136,7 +135,6 @@ class Optimizer_pygmo(Optimizer):
         # general silencing for Python prints:
         silent = verbosity <= 0
         with suppress_stdout(silent):
-
             # Run solver:
             pop = self.algo.evolve(self.pop)
 

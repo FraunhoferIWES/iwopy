@@ -121,8 +121,8 @@ class OptFunctionList(OptFunction):
         def getv(vnames, fvnames):
             if not len(fvnames):
                 return []
-            l = [vnames.index(v) for v in fvnames]
-            return np.s_[l[0] : l[-1]] if list(range(l[0], l[-1])) == l else l
+            ls = [vnames.index(v) for v in fvnames]
+            return np.s_[ls[0] : ls[-1]] if list(range(ls[0], ls[-1])) == ls else ls
 
         self.func_vars_int = [
             getv(self._vnamesi, f.var_names_int) for f in self.functions

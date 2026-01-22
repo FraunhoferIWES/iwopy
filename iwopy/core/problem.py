@@ -746,7 +746,6 @@ class Problem(Base, metaclass=ABCMeta):
                 results = None
 
         if objs is None:
-
             results = self.apply_individual(vars_int, vars_float)
 
             varsi, varsf = self._find_vars(vars_int, vars_float, self.objs)
@@ -795,13 +794,11 @@ class Problem(Base, metaclass=ABCMeta):
                 from_mem = not np.all(todo)
 
         if from_mem:
-
             objs = memres[:, : self.n_objectives]
             cons = memres[:, self.n_objectives :]
             del memres
 
             if np.any(todo):
-
                 vals_int = vars_int[todo]
                 vals_float = vars_float[todo]
 
@@ -1027,7 +1024,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         """
         return new_instance(cls, problem_type, *args, **kwargs)
-    
+
 
 class ProblemDefaultFunc(OptFunctionList):
     """

@@ -6,7 +6,6 @@ from iwopy.interfaces.pymoo import Optimizer_pymoo
 from model import ChargesProblem
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-n", "--n_points", help="The number of points", type=int, default=10

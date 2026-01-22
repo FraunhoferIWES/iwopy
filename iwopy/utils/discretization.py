@@ -358,7 +358,6 @@ class RegularDiscretizationGrid:
 
         """
         if self.tol is not None:
-
             q = p.copy()
 
             dlo = q - self.p_min
@@ -388,7 +387,6 @@ class RegularDiscretizationGrid:
 
         """
         if self.tol is not None:
-
             qts = pts.copy()
 
             dlo = qts - self.p_min[None, :]
@@ -750,12 +748,12 @@ class RegularDiscretizationGrid:
         http://dx.doi.org/10.1088/0004-6256/139/2/342
 
         """
-        assert (
-            qts >= 0.0
-        ).all(), f"Found coordinates below 0: {qts[np.any(qts<0., axis=-1)].tolist()}"
-        assert (
-            qts <= 1.0
-        ).all(), f"Found coordinates above 1: {qts[np.any(qts>1., axis=-1)].tolist()}"
+        assert (qts >= 0.0).all(), (
+            f"Found coordinates below 0: {qts[np.any(qts < 0.0, axis=-1)].tolist()}"
+        )
+        assert (qts <= 1.0).all(), (
+            f"Found coordinates above 1: {qts[np.any(qts > 1.0, axis=-1)].tolist()}"
+        )
 
         opts = self._get_opts()
         return np.prod(1 - np.abs(qts[:, None] - opts[None, :]), axis=-1)
@@ -970,7 +968,6 @@ class RegularDiscretizationGrid:
 
         # coeffs for left boundary points:
         if np.any(sel_bleft):
-
             if orderb == 1:
                 gpts[:, 0][sel_bleft] = ipts[sel_bleft]
                 coeffs[:, 0][sel_bleft] = -1.0
@@ -998,7 +995,6 @@ class RegularDiscretizationGrid:
 
         # coeffs for right boundary points:
         if np.any(sel_bright):
-
             if orderb == 1:
                 gpts[:, 0][sel_bright] = ipts[sel_bright]
                 coeffs[:, 0][sel_bright] = 1.0
@@ -1026,7 +1022,6 @@ class RegularDiscretizationGrid:
 
         # coeffs for central points:
         if not np.all(sel_bleft | sel_bright):
-
             if order == 1:
                 gpts[:, 0][s_centre] = ipts[s_centre]
                 gpts[:, 0, var][s_centre] += self.deltas[var]
@@ -1151,7 +1146,6 @@ class RegularDiscretizationGrid:
         cfs = None
         sizes = []
         for vi, v in enumerate(vars):
-
             o = order if isinstance(order, int) else order[vi]
             ob = orderb if isinstance(orderb, int) else orderb[vi]
             hg, hc = self.deriv_coeffs_gridpoints(inds, v, o, ob)

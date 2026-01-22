@@ -32,7 +32,6 @@ class Obj1(iwopy.Objective):
 
 
 def _calc(p, f, p0, o, lim, pop):
-
     print("p0 =", p0)
 
     g = p.get_gradients(vars_int=[], vars_float=p0)[0]
@@ -48,7 +47,6 @@ def _calc(p, f, p0, o, lim, pop):
 
 
 def test_o1_indi():
-
     print("\n\nTEST order 1 INDI")
 
     p = iwopy.SimpleProblem("test", float_vars=["x", "y"], init_values_float=[0, 0])
@@ -61,7 +59,6 @@ def test_o1_indi():
 
 
 def test_om1_indi():
-
     print("\n\nTEST order -1 INDI")
 
     p = iwopy.SimpleProblem("test", float_vars=["x", "y"], init_values_float=[0, 0])
@@ -74,7 +71,6 @@ def test_om1_indi():
 
 
 def test_o2_indi():
-
     print("\n\nTEST order 1 INDI")
 
     p = iwopy.SimpleProblem("test", float_vars=["x", "y"], init_values_float=[0, 0])
@@ -87,7 +83,6 @@ def test_o2_indi():
 
 
 def test_o1_pop():
-
     print("\n\nTEST order 1 POP")
 
     p = iwopy.SimpleProblem("test", float_vars=["x", "y"], init_values_float=[0, 0])
@@ -100,7 +95,6 @@ def test_o1_pop():
 
 
 def test_om1_pop():
-
     print("\n\nTEST order -1 POP")
 
     p = iwopy.SimpleProblem("test", float_vars=["x", "y"], init_values_float=[0, 0])
@@ -113,7 +107,6 @@ def test_om1_pop():
 
 
 def test_o2_pop():
-
     print("\n\nTEST order 1 POP")
 
     p = iwopy.SimpleProblem("test", float_vars=["x", "y"], init_values_float=[0, 0])
@@ -126,6 +119,5 @@ def test_o2_pop():
 
 
 if __name__ == "__main__":
-
     test_o1_indi()
     test_om1_indi()

@@ -102,7 +102,6 @@ class LocalFD(ProblemWrapper):
         self._d = []
         vnms = list(super().var_names_float())
         for v in self._deltas.keys():
-
             if v not in vnms:
                 raise KeyError(
                     f"Problem '{self.name}': Variable '{v}' given in deltas, but not found in problem float variables {vnms}"

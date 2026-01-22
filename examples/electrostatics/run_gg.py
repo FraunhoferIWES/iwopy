@@ -7,7 +7,6 @@ from iwopy.optimizers import GG
 from model import ChargesProblem
 
 if __name__ == "__main__":
-
     # np.random.seed(42)
 
     parser = argparse.ArgumentParser()

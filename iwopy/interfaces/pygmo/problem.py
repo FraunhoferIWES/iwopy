@@ -59,7 +59,6 @@ class UDP:
         self.verbosity = verbosity
 
     def fitness(self, dv):
-
         # extract variables:
         xf = dv[: self.problem.n_vars_float]
         xi = dv[self.problem.n_vars_float :].astype(np.int32)
@@ -74,7 +73,6 @@ class UDP:
         return values
 
     def batch_fitness(self, dvs):
-
         # extract variables:
         n_vf = self.problem.n_vars_float
         n_vi = self.problem.n_vars_int
@@ -97,7 +95,6 @@ class UDP:
         return self.pop
 
     def get_bounds(self):
-
         lb = np.full(self.n_vars_all, -np.inf)
         ub = np.full(self.n_vars_all, np.inf)
 
@@ -106,7 +103,6 @@ class UDP:
             ub[: self.problem.n_vars_float] = self.problem.max_values_float()
 
         if self.problem.n_vars_int:
-
             lbi = lb[self.problem.n_vars_float :]
             ubi = ub[self.problem.n_vars_float :]
 
@@ -134,7 +130,6 @@ class UDP:
         return True
 
     def gradient(self, x):
-
         spars = np.array(self.gradient_sparsity())
         cmpnts = np.unique(spars[:, 0])
         vrs = np.unique(spars[:, 1])
@@ -168,7 +163,6 @@ class UDP:
         return True
 
     def gradient_sparsity(self):
-
         out = []
 
         # add sparsity of objectives:

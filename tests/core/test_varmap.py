@@ -54,7 +54,6 @@ class Con1(iwopy.Constraint):
 
 
 def test_indi():
-
     print("\n\nTEST INDI")
 
     problem = iwopy.SimpleProblem(
@@ -83,7 +82,6 @@ def test_indi():
         4000 + np.arange(N),
     ]
     for n in range(N):
-
         varsi = ivars[n]
         varsf = fvars[n]
 
@@ -99,7 +97,6 @@ def test_indi():
 
 
 def test_pop():
-
     print("\n\nTEST POP")
 
     problem = iwopy.SimpleProblem(
@@ -142,6 +139,5 @@ def test_pop():
 
 
 if __name__ == "__main__":
-
     test_indi()
     test_pop()

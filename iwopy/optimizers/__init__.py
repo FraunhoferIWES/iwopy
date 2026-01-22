@@ -1,1 +1,1 @@
-from .gg import GG
+from .gg import GG as GG

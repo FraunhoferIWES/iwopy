@@ -1,10 +1,12 @@
-from .base import Base
-from .function import OptFunction
-from .function_list import OptFunctionList
-from .function_subset import OptFunctionSubset
-from .objective import Objective
-from .constraint import Constraint
-from .memory import Memory
-from .problem import Problem, ProblemDefaultFunc
-from .optimizer import Optimizer
-from .opt_results import SingleObjOptResults, MultiObjOptResults
+from .base import Base as Base
+from .function import OptFunction as OptFunction
+from .function_list import OptFunctionList as OptFunctionList
+from .function_subset import OptFunctionSubset as OptFunctionSubset
+from .objective import Objective as Objective
+from .constraint import Constraint as Constraint
+from .memory import Memory as Memory
+from .problem import Problem as Problem
+from .problem import ProblemDefaultFunc as ProblemDefaultFunc
+from .optimizer import Optimizer as Optimizer
+from .opt_results import SingleObjOptResults as SingleObjOptResults
+from .opt_results import MultiObjOptResults as MultiObjOptResults

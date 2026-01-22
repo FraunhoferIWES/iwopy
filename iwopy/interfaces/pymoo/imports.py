@@ -45,7 +45,6 @@ def load(verbosity=1):
     global DefaultMultiObjectiveTermination, minimize, loaded
 
     if not loaded:
-
         if verbosity:
             print("Loading pymoo")
 

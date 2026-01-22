@@ -45,7 +45,6 @@ class SingleObjProblemTemplate:
         self.vectorize = vectorize
 
         if self.problem.n_vars_float > 0 and self.problem.n_vars_int == 0:
-
             self.is_mixed = False
             self.is_intprob = False
 
@@ -60,7 +59,6 @@ class SingleObjProblemTemplate:
             )
 
         elif self.problem.n_vars_float == 0 and self.problem.n_vars_int > 0:
-
             self.is_mixed = False
             self.is_intprob = True
 
@@ -75,7 +73,6 @@ class SingleObjProblemTemplate:
             )
 
         else:
-
             self.is_mixed = True
             self.is_intprob = False
 
@@ -103,7 +100,6 @@ class SingleObjProblemTemplate:
             )
 
         if self.problem.n_constraints:
-
             self._cmi = self.problem.min_values_constraints
             self._cma = self.problem.max_values_constraints
             cnames = self.problem.cons.component_names
@@ -126,7 +122,6 @@ class SingleObjProblemTemplate:
 
         # vectorized run:
         if self.vectorize:
-
             if self.is_mixed:
                 xi = np.array(
                     [[dct[v] for v in self.problem.var_names_int()] for dct in x],
@@ -150,7 +145,6 @@ class SingleObjProblemTemplate:
                     out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
 
             if self.problem.n_constraints:
-
                 sel = ~np.isinf(self._cma)
                 out["G"][:, sel] = out["G"][:, sel] - self._cma[None, sel]
 
@@ -159,7 +153,6 @@ class SingleObjProblemTemplate:
 
         # individual run:
         else:
-
             if self.is_mixed:
                 xi = np.array(
                     [x[v] for v in self.problem.var_names_int()], dtype=np.int32
@@ -181,7 +174,6 @@ class SingleObjProblemTemplate:
                     out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)
 
             if self.problem.n_constraints:
-
                 sel = ~np.isinf(self._cma)
                 out["G"][sel] = out["G"][sel] - self._cma[sel]
 
@@ -238,7 +230,6 @@ class SingleObjProblemTemplate:
                     xf = np.array(r.X, dtype=np.float64)
 
             if self.vectorize:
-
                 if self.is_mixed:
                     pxi = np.array(
                         [[p.X[v] for v in self.problem.var_names_int()] for p in r.pop],

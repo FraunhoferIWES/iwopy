@@ -113,7 +113,6 @@ class Optimizer_scipy(Optimizer):
         """
         key = tuple(x)
         if key not in self._mem:
-
             i0 = self.problem.n_vars_int
             vars_int = x[:i0].astype(np.int32)
             vars_float = x[i0:]
@@ -217,7 +216,6 @@ class Optimizer_scipy(Optimizer):
 
         # final evaluation:
         if results.success:
-
             x = results.x
             i0 = self.problem.n_vars_int
             vars_int = x[:i0].astype(np.int32)

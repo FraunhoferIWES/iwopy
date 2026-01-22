@@ -233,7 +233,6 @@ class Memory:
         for pi in range(n_pop):
             key = self.keyf(vars_int[pi], vars_float[pi])
             if key in self.data:
-
                 objs, cons = self.data[key]
 
                 if results is None:

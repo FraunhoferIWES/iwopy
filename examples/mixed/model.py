@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from iwopy import Problem, Constraint, Objective
+from iwopy import Problem, Objective
 
 
 class MaxN(Objective):
@@ -69,7 +69,6 @@ class GridProblem(Problem):
         return [self.radius, self.radius, self.max_dist, self.max_dist, 90.0]
 
     def apply_individual(self, vars_int, vars_float):
-
         nx, ny = vars_int
         x0, y0, dx, dy, alpha = vars_float
 
@@ -88,7 +87,6 @@ class GridProblem(Problem):
         return self.xy, self.valid
 
     def apply_population(self, vars_int, vars_float):
-
         n_pop = vars_int.shape[0]
         nx = vars_int[:, 0]
         ny = vars_int[:, 1]
@@ -125,7 +123,6 @@ class GridProblem(Problem):
         return self.xy, self.valid
 
     def get_fig(self, xy=None, valid=None):
-
         if xy is None:
             xy = self.xy
         if valid is None:

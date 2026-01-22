@@ -2,7 +2,7 @@ iwopy.interfaces
 ================
 Interfaces to external optimization packages
 
-    .. table:: 
+    .. table::
         :widths: auto
 
         ================================== =================================================

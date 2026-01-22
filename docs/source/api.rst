@@ -1,7 +1,7 @@
 API
 ===
 
-    .. table:: 
+    .. table::
         :widths: auto
 
         ======================= =================================================
@@ -15,4 +15,3 @@ API
         :ref:`iwopy.utils`      Utilities and little helpers.
         :ref:`iwopy.wrappers`   Wrappers that modify/simplify base class usage.
         ======================= =================================================
-        

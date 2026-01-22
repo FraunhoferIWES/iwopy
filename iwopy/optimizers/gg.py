@@ -245,7 +245,6 @@ class GG(Optimizer):
         count = -1
         level = 0
         while not np.all(step < self.step_min):
-
             count += 1
             recover = not np.all(valid)
 
@@ -261,7 +260,6 @@ class GG(Optimizer):
                 step /= self.step_div_factor
                 level += 1
             else:
-
                 # fresh calculation:
                 grads = self.problem.get_gradients(inone, x, pop=self.vectorized)
                 step = self.step_max.copy()
@@ -320,7 +318,6 @@ class GG(Optimizer):
             """
 
             if self.vectorized:
-
                 # calculate population:
                 inonep = np.zeros((len(newx), 0), dtype=np.int32)
                 obsp, consp = self.problem.evaluate_population(inonep, newx)
@@ -337,7 +334,6 @@ class GG(Optimizer):
                         valid = validp[i]
 
                     else:
-
                         # find best:
                         obsp = obsp[valc]
                         if maximize:
@@ -369,7 +365,6 @@ class GG(Optimizer):
                 anygood = False
                 done = False
                 for i, hx in enumerate(newx):
-
                     obsh, consh = self.problem.evaluate_individual(inone, hx)
                     validh = self.problem.check_constraints_individual(consh)
 

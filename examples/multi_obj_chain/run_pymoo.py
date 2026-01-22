@@ -3,10 +3,9 @@ import argparse
 import matplotlib.pyplot as plt
 
 from iwopy.interfaces.pymoo import Optimizer_pymoo
-from model import *
+from model import MaxStretch, NoCrossing, ChainProblem, ChainPopulation
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-n", "--n_points", help="The number of points", type=int, default=10

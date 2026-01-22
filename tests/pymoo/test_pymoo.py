@@ -14,12 +14,10 @@ class RC(SimpleConstraint):
         return [(x - 1) ** 3 - y + 1, x + y - 3]
 
     def g(self, var, x, y, components):
-
         cmpnts = [0, 1] if components is None else components
         out = np.full(len(cmpnts), np.nan, dtype=np.float64)
 
         for i, ci in enumerate(cmpnts):
-
             # (x-1)**3 - y + 1
             if ci == 0:
                 out[i] = 3 * (x - 1) ** 2 if var == 0 else -1
@@ -32,7 +30,6 @@ class RC(SimpleConstraint):
 
 
 def run_branin_ga(type, init_vals, ngen, npop, pop):
-
     prob = BraninProblem(initial_values=init_vals)
     prob.initialize()
 
@@ -59,7 +56,6 @@ def run_branin_ga(type, init_vals, ngen, npop, pop):
 
 
 def test_branin_ga():
-
     cases = (
         (
             "GA",
@@ -82,7 +78,6 @@ def test_branin_ga():
     )
 
     for typ, ngen, npop, ivals, f, limf, pop in cases:
-
         print("\nENTERING", (typ, ngen, npop, ivals, f, limf, pop), "\n")
 
         results = run_branin_ga(typ, ivals, ngen, npop, pop)
@@ -94,7 +89,6 @@ def test_branin_ga():
 
 
 def run_rosen0_ga(type, inits, ngen, npop, pop):
-
     prob = RosenbrockProblem(initial=inits, ana_deriv=False)
     prob.initialize()
 
@@ -121,7 +115,6 @@ def run_rosen0_ga(type, inits, ngen, npop, pop):
 
 
 def run_rosen_ga(type, lower, upper, inits, ngen, npop, pop):
-
     prob = RosenbrockProblem(lower=lower, upper=upper, initial=inits)
     prob.add_constraint(RC(prob, ana_deriv=False))
     prob.initialize()
@@ -149,7 +142,6 @@ def run_rosen_ga(type, lower, upper, inits, ngen, npop, pop):
 
 
 def test_rosen0_ga():
-
     cases = (
         (
             "GA",
@@ -176,7 +168,6 @@ def test_rosen0_ga():
     )
 
     for typ, inits, ngen, npop, limf, f, xy, limxy, pop in cases:
-
         print("\nENTERING", (typ, inits, ngen, npop, limf, f, xy, limxy, pop), "\n")
 
         results = run_rosen0_ga(typ, inits, ngen, npop, pop)
@@ -193,7 +184,6 @@ def test_rosen0_ga():
 
 
 def test_rosen_ga():
-
     cases = (
         (
             "GA",
@@ -224,7 +214,6 @@ def test_rosen_ga():
     )
 
     for typ, low, up, inits, ngen, npop, limf, f, xy, limxy, pop in cases:
-
         print(
             "\nENTERING",
             (typ, low, up, inits, ngen, npop, limf, f, xy, limxy, pop),

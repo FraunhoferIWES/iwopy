@@ -82,7 +82,6 @@ class Factory:
 
         # Genetic Algorithm:
         if typ == "GA":
-
             samp_name = pars.get("sampling", None)
             samp_pars = pars.get("sampling_pars", {})
             if "sampling_pars" in pars:
@@ -107,7 +106,6 @@ class Factory:
 
         # Particle Swarm:
         elif typ == "PSO":
-
             if "samplig" in pars:
                 samp_name = pars.get("sampling", None)
                 samp_pars = pars.get("sampling_pars", {})
@@ -133,7 +131,6 @@ class Factory:
 
         # NSGA2:
         elif typ == "NSGA2":
-
             samp_name = pars.get("sampling", None)
             samp_pars = pars.get("sampling_pars", {})
             if "sampling_pars" in pars:
@@ -158,7 +155,6 @@ class Factory:
 
         # MixedVariableGA:
         elif typ == "MixedVariableGA":
-
             cross_pars = pars.get("crossover_pars", {})
             if "crossover_pars" in pars:
                 del pars["crossover_pars"]
@@ -193,7 +189,7 @@ class Factory:
             return term_pars
         elif isinstance(term_pars, list):
             return tuple(term_pars)
-        
+
         typ = term_pars.pop("type", None)
         if typ is None:
             return None

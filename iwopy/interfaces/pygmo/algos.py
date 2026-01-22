@@ -44,7 +44,6 @@ class AlgoFactory:
 
         # nlopt:
         if type == "nlopt":
-
             uda = imports.pygmo.nlopt(kwargs["optimizer"])
             set_bfe(uda)
 
@@ -65,12 +64,10 @@ class AlgoFactory:
 
         # ipopt:
         elif type == "ipopt":
-
             uda = imports.pygmo.ipopt()
             set_bfe(uda)
 
             for k, a in kwargs.items():
-
                 if isinstance(a, int):
                     uda.set_integer_option(k, a)
 
@@ -84,7 +81,6 @@ class AlgoFactory:
 
         # sga:
         elif type == "sga":
-
             """
 
             Simple Genetic Algorithm
@@ -135,7 +131,6 @@ class AlgoFactory:
 
         # pso:
         elif type == "pso":
-
             """
             Args:
                 gen (``int``): number of generations
@@ -181,7 +176,6 @@ class AlgoFactory:
 
         # bee_colony:
         elif type == "bee_colony":
-
             """
             Artificial Bee Colony.
 
@@ -203,7 +197,6 @@ class AlgoFactory:
 
         # nsga2:
         elif type == "nsga2":
-
             """
             Non dominated Sorting Genetic Algorithm (NSGA-II).
 

@@ -1,8 +1,7 @@
 import numpy as np
 
-from iwopy import DiscretizeRegGrid, SimpleConstraint
+from iwopy import SimpleConstraint
 from iwopy.benchmarks.branin import BraninProblem
-from iwopy.benchmarks.rosenbrock import RosenbrockProblem
 from iwopy.interfaces.scipy import Optimizer_scipy
 
 
@@ -14,10 +13,8 @@ class RC(SimpleConstraint):
         return [(x - 1) ** 3 - y + 1, x + y - 3]
 
     def g(self, var, x, y, components):
-
         out = np.full(len(components), np.nan, dtype=np.float64)
         for i, ci in enumerate(components):
-
             # (x-1)**3 - y + 1
             if ci == 0:
                 out[i] = 3 * (x - 1) ** 2 if var == 0 else -1
@@ -30,7 +27,6 @@ class RC(SimpleConstraint):
 
 
 def run_branin_slsqp(init_vals, tol):
-
     prob = BraninProblem(initial_values=init_vals, ana_deriv=True)
     prob.initialize()
 
@@ -47,7 +43,6 @@ def run_branin_slsqp(init_vals, tol):
 
 
 def test_branin_slsqp():
-
     cases = (
         (
             1e-6,
@@ -79,7 +74,6 @@ def test_branin_slsqp():
     resx = np.array([(-np.pi, 12.275), (np.pi, 2.275), (9.42478, 2.475)])
 
     for tol, ivals, limf, limxy in cases:
-
         print("\nENTERING", (tol, ivals, limf, limxy), "\n")
 
         results = run_branin_slsqp(ivals, tol)
@@ -97,5 +91,4 @@ def test_branin_slsqp():
 
 
 if __name__ == "__main__":
-
     test_branin_slsqp()
