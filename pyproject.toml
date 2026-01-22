@@ -47,6 +47,8 @@ opt = [
 test = [
     "pytest>=7.0",
     "nbmake>1.0",
+    "pygmo>=0.1",
+    "pymoo>=0.6",
 ]
 doc = [
     "setuptools>=61.0",
