@@ -50,6 +50,7 @@ class GG(Optimizer):
         n_max_steps=100,
         memory_size=100,
         name="GG",
+        max_iterations=None
     ):
         """
         Constructor
@@ -78,6 +79,8 @@ class GG(Optimizer):
             The number of memorized visited points
         name: str, optional
             The name
+        max_iterations: int, optional
+            Exit criteria based on number of iterations, None for no limit
 
         """
         super().__init__(problem, name)
@@ -89,6 +92,7 @@ class GG(Optimizer):
         self.n_max_steps = n_max_steps
         self.memory_size = memory_size
         self.memory = None
+        self.max_iterations = max_iterations
 
     def initialize(self, verbosity=0):
         """
@@ -245,6 +249,18 @@ class GG(Optimizer):
         count = -1
         level = 0
         while not np.all(step < self.step_min):
+            # exit criteria based on number of iterations:
+            if self.max_iterations is not None and count >= self.max_iterations:
+                # check if valid solution found:
+                if np.all(valid):
+                    print(
+                        f"GG: Reached maximum number of iterations {self.max_iterations}, stopping with valid solution."
+                    )
+                    break
+                else:
+                    print(
+                        f"GG: Reached maximum number of iterations {self.max_iterations}, continuing until a valid solution is found."
+                    )
             count += 1
             recover = not np.all(valid)
 
