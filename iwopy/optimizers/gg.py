@@ -50,7 +50,7 @@ class GG(Optimizer):
         n_max_steps=100,
         memory_size=100,
         name="GG",
-        max_iterations=None
+        max_iterations=None,
     ):
         """
         Constructor
