@@ -44,7 +44,7 @@ class GG(Optimizer):
         problem,
         step_max,
         step_min,
-        step_div_factor=10.0,
+        step_div_factor=2.0,
         f_tol=1e-8,
         vectorized=True,
         n_max_steps=100,
@@ -87,7 +87,7 @@ class GG(Optimizer):
         self.step_max = step_max
         self.step_min = step_min
         self.step_div_factor = step_div_factor
-        self.f_tol = f_tol
+        self.f_tol = f_tol if f_tol is not None else 0.0
         self.vectorized = vectorized
         self.n_max_steps = n_max_steps
         self.memory_size = memory_size
@@ -238,7 +238,7 @@ class GG(Optimizer):
         valid = self.problem.check_constraints_individual(cons)
 
         if verbosity > 0:
-            s = f"{'it':<5} | {'Objective':<9} | cviol | level"
+            s = f"{'it':<5} | {'Objective':<9} | cviol | level | min step | max step"
             hline = "-" * (len(s) + 1)
             print("\nRunning GG")
             print(hline)
@@ -291,7 +291,9 @@ class GG(Optimizer):
                 nmem = min(nmem + 1, self.memory_size)
 
             if verbosity > 0:
-                print(f"{count:>5} | {obs[0]:9.3e} | {np.sum(~valid):>5} | {level:>5}")
+                print(
+                    f"{count:>5} | {obs[0]:9.3e} | {np.sum(~valid):>5} | {level:>5} | {np.min(step):>5.3e} | {np.max(step):>5.3e}"
+                )
 
             # project out directions of constraint violation:
             grad = grads[0].copy() if not maximize else -grads[0]
@@ -420,6 +422,9 @@ class GG(Optimizer):
                     valid = validh0
 
         if verbosity > 0:
+            print(f"{hline}")
+            print(f"All steps < step_min      : {np.all(step < self.step_min)}")
+            print(f"Objective within tolerance: {done}")
             print(f"{hline}\n")
 
         # final evaluation:
