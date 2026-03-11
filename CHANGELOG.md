@@ -180,3 +180,9 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Dropping support for Python 3.8
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.4.0](https://github.com/FraunhoferIWES/iwopy/commits/v0.4.0)
+
+## v0.4.1
+
+- Small improvements of optimizer `GG`
+
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.4.1](https://github.com/FraunhoferIWES/iwopy/commits/v0.4.1)
