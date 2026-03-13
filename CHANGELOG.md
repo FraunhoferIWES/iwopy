@@ -181,8 +181,11 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.4.0](https://github.com/FraunhoferIWES/iwopy/commits/v0.4.0)
 
-## v0.4.1
+## v0.5.0
 
+- Introducing extra dependencies `iwopy[scipy]`, `iwopy[pymoo]`,
+`iwopy[pygmo]`, and `iwopy[opt]` for installation of all supported optimization packages
+- Introducing the concept of optimization suites, with abstract base class `Suite`
 - Small improvements of optimizer `GG`
 
-**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.4.1](https://github.com/FraunhoferIWES/iwopy/commits/v0.4.1)
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0](https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0)

@@ -3,7 +3,7 @@ stages:
   - test
 variables:
   UV_VERSION: "0.9.24"
-  PYTHON_VERSION: "3.11"
+  PYTHON_VERSION: "3.13"
   BASE_LAYER: bookworm-slim
   UV_LINK_MODE: copy
   UV_SYSTEM_PYTHON: 1

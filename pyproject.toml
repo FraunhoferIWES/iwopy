@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "iwopy"
-version = "0.4.1"
+version = "0.5.0"
 authors = [
   {name = "Jonas Schulte"},
   {name = "Bernhard Stoevesandt"},
@@ -40,15 +40,18 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+scipy = ["scipy>=1.12"]
+pymoo = ["pymoo>=0.6"]
+pygmo = ["pygmo>=0.1"]
 opt = [
-    "pygmo>=0.1",
-    "pymoo>=0.6"
+    "iwopy[scipy]",
+    "iwopy[pymoo]",
+    "iwopy[pygmo]",
 ]
 test = [
     "pytest>=7.0",
     "nbmake>1.0",
-    "pygmo>=0.1",
-    "pymoo>=0.6",
+    "iwopy[scipy,pymoo]",
 ]
 doc = [
     "setuptools>=61.0",
