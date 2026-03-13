@@ -23,7 +23,7 @@ class Pipeline(Base, metaclass=ABCMeta):
 
     """
 
-    def __init__(self, base_dir, name="Pipeline"):
+    def __init__(self, base_dir, **kwargs):
         """
         Constructor
 
@@ -31,10 +31,11 @@ class Pipeline(Base, metaclass=ABCMeta):
         ----------
         base_dir: str
             The base directory
-        name: str
-            The name
+        kwargs: dict
+            Additional keyword arguments for the base class
+
         """
-        super().__init__(name)
+        super().__init__(**kwargs)
         self.start_stage = 0
         self.end_stage = None
 
@@ -112,7 +113,7 @@ class Pipeline(Base, metaclass=ABCMeta):
         return self.base_dir / f"{stage_index:02d}_{stage}"
 
     def __iter__(self):
-        """ Get an iterator object for the pipeline. """
+        """Get an iterator object for the pipeline."""
         self.__idx = self.start_stage - 1
         return self
 
@@ -132,8 +133,7 @@ class Pipeline(Base, metaclass=ABCMeta):
         """
         self.__idx += 1
         if self.__idx >= self.n_stages or (
-            self.end_stage is not None and 
-            self.__idx >= self.end_stage
+            self.end_stage is not None and self.__idx >= self.end_stage
         ):
             raise StopIteration
 
@@ -141,14 +141,14 @@ class Pipeline(Base, metaclass=ABCMeta):
         stage_dir = self.get_stage_dir(self.__idx)
 
         return self.__idx, stage_name, stage_dir
-    
+
     @abstractmethod
     def run_stage(
-        self, 
-        stage_index, 
-        stage_name, 
-        stage_dir, 
-        prev_results=None, 
+        self,
+        stage_index,
+        stage_name,
+        stage_dir,
+        prev_results=None,
         verbosity=1,
     ):
         """
@@ -202,7 +202,7 @@ class Pipeline(Base, metaclass=ABCMeta):
         hend = self.end_stage
         self.start_stage = start_stage
         self.end_stage = end_stage
-        
+
         success = None
         results = None
         for stage_index, stage_name, stage_dir in self:
@@ -210,18 +210,23 @@ class Pipeline(Base, metaclass=ABCMeta):
                 print(f"{self.name}: Running stage {stage_index}: {stage_name}")
             try:
                 success, results = self.run_stage(
-                    stage_index, stage_name, stage_dir, prev_results=results, verbosity=verbosity
+                    stage_index,
+                    stage_name,
+                    stage_dir,
+                    prev_results=results,
+                    verbosity=verbosity,
                 )
                 if not success:
                     print(f"{self.name}: Stage {stage_name} failed, stopping pipeline")
                     break
             except Exception as e:
-                print(f"{self.name}: Exception occurred during pipeline execution at step {stage_index}: {stage_name}")
+                print(
+                    f"{self.name}: Exception occurred during pipeline execution at step {stage_index}: {stage_name}"
+                )
                 success = False
                 raise e
 
         self.start_stage = hstart
         self.end_stage = hend
-        
+
         return success, results
-    

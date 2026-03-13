@@ -6,6 +6,7 @@ Fraunhofer IWES optimization tools in Python
 from .core import Problem as Problem
 from .core import Objective as Objective
 from .core import Constraint as Constraint
+from .core import Pipeline as Pipeline
 from .core import Memory as Memory
 
 from .wrappers import ProblemWrapper as ProblemWrapper
