@@ -12,4 +12,4 @@ from .opt_results import SingleObjOptResults as SingleObjOptResults
 from .opt_results import MultiObjOptResults as MultiObjOptResults
 
 from .pipeline import Pipeline as Pipeline
-from .pipline import PipelineStage as PipelineStage
+from .pipeline import PipelineStage as PipelineStage

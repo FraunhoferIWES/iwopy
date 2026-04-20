@@ -14,7 +14,7 @@ class PipelineStage(Base, metaclass=ABCMeta):
 
     """
 
-    def initialize(self, pipeline):
+    def initialize(self, pipeline, verbosity=0):
         """
         Initialize the stage. This method is called before running the stage.
 
@@ -22,6 +22,8 @@ class PipelineStage(Base, metaclass=ABCMeta):
         ----------
         pipeline: Pipeline
             The pipeline this stage belongs to
+        verbosity: int
+            The verbosity level, 0 = silent
 
         """
 
@@ -32,6 +34,8 @@ class PipelineStage(Base, metaclass=ABCMeta):
         self.__base_dir = pipeline.base_dir
         self.__stage_dir = self.__base_dir / f"{i:02d}_{self.name}"
         self.__stage_dir.mkdir(parents=True, exist_ok=True)
+
+        super().initialize(verbosity=verbosity)
 
     @property
     def index(self):
@@ -96,6 +100,20 @@ class PipelineStage(Base, metaclass=ABCMeta):
         """
         pass
 
+    def finalize(self, pipeline, verbosity=0):
+        """
+        Finalize the stage. This method is called after running the stage.
+
+        Parameters
+        ----------
+        pipeline: Pipeline
+            The pipeline this stage belongs to
+        verbosity: int
+            The verbosity level, 0 = silent
+
+        """
+        return super().finalize(verbosity)
+
 
 class Pipeline(Base):
     """
@@ -147,6 +165,9 @@ class Pipeline(Base):
             The stage to add
 
         """
+        assert not self.initialized, (
+            f"{self.name}: cannot add stage '{stage.name}' after pipeline has been initialized"
+        )
         assert not self.running, (
             f"{self.name}: cannot add stage '{stage.name}' while pipeline is running"
         )
@@ -157,6 +178,28 @@ class Pipeline(Base):
             f"{self.name}: stage name '{stage.name}' already exists in pipeline: {self.stage_names}"
         )
         self.__stages.append(stage)
+
+    def initialize(self, verbosity=0):
+        """
+        Initialize the object.
+
+        Parameters
+        ----------
+        verbosity: int
+            The verbosity level, 0 = silent
+
+        """
+        assert not self.running, (
+            f"{self.name}: cannot initialize pipeline while it is running"
+        )
+        assert len(self.__stages) > 0, (
+            f"{self.name}: pipeline must have at least one stage, use function 'add_stage' to add stages to the pipeline"
+        )
+
+        for stage in self.__stages:
+            stage.initialize(self, verbosity=verbosity)
+
+        super().initialize(verbosity=verbosity)
 
     @property
     def running(self):
@@ -262,6 +305,9 @@ class Pipeline(Base):
 
     def __iter__(self):
         """Get an iterator object for the pipeline."""
+        assert self.initialized, (
+            f"{self.name}: cannot iterate over pipeline before it has been initialized"
+        )
         assert not self.running, (
             f"{self.name}: cannot iterate over pipeline while it is running"
         )
@@ -296,7 +342,7 @@ class Pipeline(Base):
 
         return self.get_stage(self.__idx)
 
-    def run(self, start_stage=0, end_stage=None, verbosity=1):
+    def run(self, start_stage=0, end_stage=None, finalize=True, verbosity=1):
         """
         Run the pipeline.
 
@@ -306,6 +352,8 @@ class Pipeline(Base):
             The stage index to start from
         end_stage: int, optional
             The stage index to end at, default None (run all stages)
+        finalize: bool
+            Whether to finalize the pipeline after running, default True
         verbosity: int
             The verbosity level, 0 = silent
 
@@ -317,6 +365,11 @@ class Pipeline(Base):
             The final stage results
 
         """
+        assert not self.running, f"{self.name}: cannot run pipeline while it is running"
+
+        if not self.initialized:
+            self.initialize(verbosity=verbosity)
+
         hstart = self.start_stage
         hend = self.end_stage
         self.start_stage = start_stage
@@ -348,4 +401,26 @@ class Pipeline(Base):
         self.start_stage = hstart
         self.end_stage = hend
 
+        if finalize:
+            self.finalize(verbosity=verbosity)
+
         return success, results
+
+    def finalize(self, verbosity=0):
+        """
+        Finalize the object.
+
+        Parameters
+        ----------
+        verbosity: int
+            The verbosity level, 0 = silent
+
+        """
+        assert not self.running, (
+            f"{self.name}: cannot finalize pipeline while it is running"
+        )
+
+        for stage in self.__stages:
+            stage.finalize(self, verbosity=verbosity)
+
+        return super().finalize(verbosity=verbosity)
