@@ -10,4 +10,6 @@ from .problem import ProblemDefaultFunc as ProblemDefaultFunc
 from .optimizer import Optimizer as Optimizer
 from .opt_results import SingleObjOptResults as SingleObjOptResults
 from .opt_results import MultiObjOptResults as MultiObjOptResults
+
 from .pipeline import Pipeline as Pipeline
+from .pipline import PipelineStage as PipelineStage
