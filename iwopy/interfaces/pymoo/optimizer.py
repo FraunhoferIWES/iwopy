@@ -55,9 +55,9 @@ class DefaultCallbackTemplate:
         }
         init0 = cls.__init__
 
-        def __init(self):
+        def __init(self, *args, **kwargs):
             imports.Callback.__init__(self)
-            init0(self)
+            init0(self, *args, **kwargs)
 
         attrb["__init__"] = __init
         attrb["__doc__"] = cls.CLASS_DOC
