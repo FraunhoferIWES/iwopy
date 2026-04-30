@@ -24,6 +24,10 @@ class DefaultCallbackTemplate:
         """
         self.data["f_best"] = None
         self.data["cv_best"] = None
+        self.data["winner_i"] = None
+        self.data["winner_x"] = None
+        self.data["winner_f"] = None
+        self.data["winner_cv"] = None
 
     def notify(self, algorithm):
         fvals = algorithm.pop.get("F")
@@ -41,6 +45,10 @@ class DefaultCallbackTemplate:
             self.data["cv_best"] = np.append(
                 self.data["cv_best"], cvals[None, i, range(n_con)], axis=0
             )
+        self.data["winner_i"] = i
+        self.data["winner_x"] = algorithm.pop.get("X")[i]
+        self.data["winner_f"] = self.data["f_best"][-1]
+        self.data["winner_cv"] = self.data["cv_best"][-1]
 
     @classmethod
     def get_class(cls):
