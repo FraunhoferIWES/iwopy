@@ -28,6 +28,9 @@ class SingleObjProblemTemplate:
 
     """
 
+    CLASS_NAME = "SingleObjProblem"
+    CLASS_DOC = "The default callback"
+
     def __init__(self, problem, vectorize):
         """
         Constructor
@@ -276,17 +279,20 @@ class SingleObjProblemTemplate:
         Creates the class, dynamically derived from pymoo.Problem
         """
         imports.load()
-        attrb = {v: d for v, d in cls.__dict__.items()}
+        attrb = {
+            v: d
+            for v, d in cls.__dict__.items()
+            if v not in ["get_class", "CLASS_NAME"]
+        }
         init0 = cls.__init__
 
-        def init1(self, *args, **kwargs):
+        def __init(self, *args, **kwargs):
             init0(self, *args, **kwargs)
             imports.Problem.__init__(self, **self._pargs)
 
-        attrb["__init__"] = init1
+        attrb["__init__"] = __init
         attrb["__doc__"] = attrb["__doc__"].replace("Template for a w", "W")
-        del attrb["get_class"]
-        return type("SingleObjProblem", (imports.Problem,), attrb)
+        return type(cls.CLASS_NAME, (imports.Problem,), attrb)
 
 
 class MultiObjProblemTemplate:
@@ -310,6 +316,8 @@ class MultiObjProblemTemplate:
     :group: interfaces.pymoo
 
     """
+
+    CLASS_NAME = "MultiObjProblem"
 
     def __init__(self, problem, vectorize):
         """
@@ -383,12 +391,15 @@ class MultiObjProblemTemplate:
         Creates the class, dynamically derived from SingleObjProblem
         """
         scls = SingleObjProblemTemplate.get_class()
-        attrb = {v: d for v, d in cls.__dict__.items()}
+        attrb = {
+            v: d
+            for v, d in cls.__dict__.items()
+            if v not in ["get_class", "CLASS_NAME"]
+        }
 
         def init(self, *args, **kwargs):
             scls.__init__(self, *args, **kwargs)
 
         attrb["__init__"] = init
         attrb["__doc__"] = attrb["__doc__"].replace("Template for a w", "W")
-        del attrb["get_class"]
-        return type("MultiObjProblem", (scls,), attrb)
+        return type(cls.CLASS_NAME, (scls,), attrb)

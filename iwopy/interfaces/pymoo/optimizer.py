@@ -15,6 +15,9 @@ class DefaultCallbackTemplate:
 
     """
 
+    CLASS_NAME = "DefaultCallback"
+    CLASS_DOC = "The default callback"
+
     def __init__(self):
         """
         Constructor
@@ -45,17 +48,20 @@ class DefaultCallbackTemplate:
         Creates the class, dynamically derived from pymoo.Callback
         """
         imports.load()
-        attrb = {v: d for v, d in cls.__dict__.items()}
+        attrb = {
+            v: d
+            for v, d in cls.__dict__.items()
+            if v not in ["get_class", "CLASS_NAME", "CLASS_DOC"]
+        }
         init0 = cls.__init__
 
-        def init1(self):
+        def __init(self):
             imports.Callback.__init__(self)
             init0(self)
 
-        attrb["__init__"] = init1
-        attrb["__doc__"] = "The default callback"
-        del attrb["get_class"]
-        return type("DefaultCallback", (imports.Callback,), attrb)()
+        attrb["__init__"] = __init
+        attrb["__doc__"] = cls.CLASS_DOC
+        return type(cls.CLASS_NAME, (imports.Callback,), attrb)
 
 
 class Optimizer_pymoo(Optimizer):
@@ -191,7 +197,7 @@ class Optimizer_pymoo(Optimizer):
 
         """
         if callback == "default":
-            callback = DefaultCallbackTemplate.get_class()
+            callback = DefaultCallbackTemplate.get_class()()
 
         # check problem initialization:
         super().solve()
