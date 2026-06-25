@@ -23,6 +23,8 @@ class SingleObjProblemTemplate:
         Flag for mixed integer/float problems
     is_intprob: bool
         Flag for integer problems
+    store_prob_res: bool
+        Whether to store current problem results
 
     :group: interfaces.pymoo
 
@@ -31,7 +33,7 @@ class SingleObjProblemTemplate:
     CLASS_NAME = "SingleObjProblem"
     CLASS_DOC = "The default callback"
 
-    def __init__(self, problem, vectorize):
+    def __init__(self, problem, vectorize, store_prob_res=False):
         """
         Constructor
 
@@ -42,10 +44,15 @@ class SingleObjProblemTemplate:
         vectorize: bool, optional
             Switch for vectorized calculations, wrt
             population individuals
+        store_prob_res: bool
+            Whether to store current problem results
 
         """
         self.problem = problem
         self.vectorize = vectorize
+        self.store_prob_res = store_prob_res
+
+        self.__current_problem_results = None
 
         if self.problem.n_vars_float > 0 and self.problem.n_vars_int == 0:
             self.is_mixed = False
@@ -117,6 +124,15 @@ class SingleObjProblemTemplate:
                     f"Constraints {cnames[sel]} have both lower and upper bounds"
                 )
 
+    @property
+    def current_problem_results(self):
+        """
+        Returns the current problem results, if stored.
+        """
+        if self.store_prob_res is None:
+            raise RuntimeError("Current problem results are not stored.")
+        return self.__current_problem_results
+
     def _evaluate(self, x, out, *args, **kwargs):
         """
         Overloading the abstract evaluation function
@@ -134,18 +150,36 @@ class SingleObjProblemTemplate:
                     [[dct[v] for v in self.problem.var_names_float()] for dct in x],
                     dtype=np.float64,
                 )
-                out["F"], out["G"] = self.problem.evaluate_population(xi, xf)
+                r = self.problem.evaluate_population(
+                    xi, xf, ret_prob_res=self.store_prob_res
+                )
+                out["F"], out["G"] = r[:2]
                 out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
+                if self.store_prob_res:
+                    self.__current_problem_results = r[2:]
+                del r
             else:
                 n_pop = x.shape[0]
                 if self.is_intprob:
                     dummies = np.zeros((n_pop, 0), dtype=np.float64)
-                    out["F"], out["G"] = self.problem.evaluate_population(x, dummies)
+                    r = self.problem.evaluate_population(
+                        x, dummies, ret_prob_res=self.store_prob_res
+                    )
+                    out["F"], out["G"] = r[:2]
                     out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
+                    if self.store_prob_res:
+                        self.__current_problem_results = r[2:]
+                    del r
                 else:
                     dummies = np.zeros((n_pop, 0), dtype=np.int32)
-                    out["F"], out["G"] = self.problem.evaluate_population(dummies, x)
+                    r = self.problem.evaluate_population(
+                        dummies, x, ret_prob_res=self.store_prob_res
+                    )
+                    out["F"], out["G"] = r[:2]
                     out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
+                    if self.store_prob_res:
+                        self.__current_problem_results = r[2:]
+                    del r
 
             if self.problem.n_constraints:
                 sel = ~np.isinf(self._cma)
@@ -163,18 +197,36 @@ class SingleObjProblemTemplate:
                 xf = np.array(
                     [x[v] for v in self.problem.var_names_float()], dtype=np.float64
                 )
-                out["F"], out["G"] = self.problem.evaluate_individual(xi, xf)
+                r = self.problem.evaluate_individual(
+                    xi, xf, ret_prob_res=self.store_prob_res
+                )
+                out["F"], out["G"] = r[:2]
                 out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)
+                if self.store_prob_res:
+                    self.__current_problem_results = r[2:]
+                del r
             else:
                 n_pop = x.shape[0]
                 if self.is_intprob:
                     dummies = np.zeros(0, dtype=np.float64)
-                    out["F"], out["G"] = self.problem.evaluate_individual(x, dummies)
+                    r = self.problem.evaluate_individual(
+                        x, dummies, ret_prob_res=self.store_prob_res
+                    )
+                    out["F"], out["G"] = r[:2]
                     out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)
+                    if self.store_prob_res:
+                        self.__current_problem_results = r[2:]
+                    del r
                 else:
                     dummies = np.zeros(0, dtype=np.int32)
-                    out["F"], out["G"] = self.problem.evaluate_individual(dummies, x)
+                    r = self.problem.evaluate_individual(
+                        dummies, x, ret_prob_res=self.store_prob_res
+                    )
+                    out["F"], out["G"] = r[:2]
                     out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)
+                    if self.store_prob_res:
+                        self.__current_problem_results = r[2:]
+                    del r
 
             if self.problem.n_constraints:
                 sel = ~np.isinf(self._cma)
