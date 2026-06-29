@@ -130,6 +130,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# copilot
+Agents.md
+
 # iwopy
 dask-worker-space/
 veri_*
