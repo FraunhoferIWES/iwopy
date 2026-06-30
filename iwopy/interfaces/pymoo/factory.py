@@ -1,3 +1,5 @@
+import numpy as np
+
 from . import imports
 
 
@@ -197,6 +199,7 @@ class Factory:
             self.print(f"Selecting termination: {type(typ).__name__}")
             return typ
         elif typ == "default":
+            term_pars.setdefault("n_max_evals", np.inf)
             if self.pymoo_problem.problem.n_objectives > 1:
                 out = imports.DefaultMultiObjectiveTermination(**term_pars)
             else:
