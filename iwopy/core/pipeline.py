@@ -362,7 +362,7 @@ class Pipeline(Base):
         success: bool
             Whether all stages were successful
         results: object
-            The final stage results
+            The pipeline results
 
         """
         assert not self.running, f"{self.name}: cannot run pipeline while it is running"
