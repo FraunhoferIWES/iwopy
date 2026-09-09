@@ -187,5 +187,6 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 `iwopy[pygmo]`, and `iwopy[opt]` for installation of all supported optimization packages
 - Introducing the concept of optimization pipelines, with abstract base class `Pipeline`
 - Small improvements of optimizer `GG`
+- Dropping support for Python 3.9 and updating dependency minimums to match foxes
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0](https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0)

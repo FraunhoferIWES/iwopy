@@ -58,7 +58,6 @@ Python](https://doi.org/10.21105/joss.06014)
 
 The supported Python versions are:
 
-- `Python 3.9`
 - `Python 3.10`
 - `Python 3.11`
 - `Python 3.12`
