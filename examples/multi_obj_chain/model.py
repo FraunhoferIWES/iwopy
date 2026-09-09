@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-DEFAULT_DIRECTION = np.array([0.0, 1.0])
-
 from iwopy import Constraint, Objective, Problem
+
+DEFAULT_DIRECTION = np.array([0.0, 1.0])
 
 
 class ChainPopulation:
