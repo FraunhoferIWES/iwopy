@@ -515,9 +515,7 @@ class GG(Optimizer):
         else:
             better = obs[0] < obs0
         success = np.all(valid) and (
-            not initially_valid
-            or better
-            or np.abs(obs[0] - obs0) <= self.f_tol
+            not initially_valid or better or np.abs(obs[0] - obs0) <= self.f_tol
         )
 
         return SingleObjOptResults(
