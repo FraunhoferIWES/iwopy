@@ -1,6 +1,7 @@
 import numpy as np
 
 from iwopy.utils import new_instance
+
 from .function import OptFunction
 
 

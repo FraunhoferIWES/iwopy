@@ -1,6 +1,6 @@
 import numpy as np
 
-from iwopy.core import SingleObjOptResults, Problem, OptFunctionList, OptFunctionSubset
+from iwopy.core import OptFunctionList, OptFunctionSubset, Problem, SingleObjOptResults
 
 
 class UDP:

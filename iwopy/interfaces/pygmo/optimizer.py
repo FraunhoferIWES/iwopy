@@ -2,9 +2,10 @@ import numpy as np
 
 from iwopy.core import Optimizer
 from iwopy.utils import suppress_stdout
-from .problem import UDP
-from .algos import AlgoFactory
+
 from . import imports
+from .algos import AlgoFactory
+from .problem import UDP
 
 
 class Optimizer_pygmo(Optimizer):
@@ -29,7 +30,7 @@ class Optimizer_pygmo(Optimizer):
 
     """
 
-    def __init__(self, problem, problem_pars={}, algo_pars={}, setup_pars={}):
+    def __init__(self, problem, problem_pars=None, algo_pars=None, setup_pars=None):
         """
         Constructor
 
@@ -45,6 +46,12 @@ class Optimizer_pygmo(Optimizer):
             Parameters for the calculation setup
 
         """
+        if setup_pars is None:
+            setup_pars = {}
+        if algo_pars is None:
+            algo_pars = {}
+        if problem_pars is None:
+            problem_pars = {}
         super().__init__(problem)
 
         imports.load()

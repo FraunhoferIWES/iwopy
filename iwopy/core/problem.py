@@ -1,11 +1,13 @@
-import numpy as np
 import fnmatch
 from abc import ABCMeta
+
+import numpy as np
+
+from iwopy.utils import RegularDiscretizationGrid, new_instance
 
 from .base import Base
 from .function_list import OptFunctionList
 from .memory import Memory
-from iwopy.utils import RegularDiscretizationGrid, new_instance
 
 
 class Problem(Base, metaclass=ABCMeta):
@@ -142,7 +144,7 @@ class Problem(Base, metaclass=ABCMeta):
             Initial float values, shape: (n_vars_float,)
 
         """
-        return None
+        return
 
     def min_values_float(self):
         """
@@ -692,7 +694,7 @@ class Problem(Base, metaclass=ABCMeta):
             to the problem
 
         """
-        return None
+        return
 
     def apply_population(self, vars_int, vars_float):
         """
@@ -713,7 +715,7 @@ class Problem(Base, metaclass=ABCMeta):
             to the problem
 
         """
-        return None
+        return
 
     def evaluate_individual(self, vars_int, vars_float, ret_prob_res=False):
         """
@@ -978,7 +980,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         """
         if not len(prob_res_list) or prob_res_list[0] is None:
-            return None
+            return
 
         raise NotImplementedError(
             f"Problem '{self.name}': Einsum not implemented for problem results type '{type(prob_res_list[0]).__name__}'"
@@ -1002,7 +1004,7 @@ class Problem(Base, metaclass=ABCMeta):
 
         """
         if not len(prob_res_list) or prob_res_list[0] is None:
-            return None
+            return
 
         raise NotImplementedError(
             f"Problem '{self.name}': Einsum not implemented for problem results type '{type(prob_res_list[0]).__name__}'"

@@ -98,7 +98,6 @@ class PipelineStage(Base, metaclass=ABCMeta):
             The stage results
 
         """
-        pass
 
     def finalize(self, pipeline, verbosity=0):
         """
@@ -342,7 +341,14 @@ class Pipeline(Base):
 
         return self.get_stage(self.__idx)
 
-    def run(self, start_stage=0, end_stage=None, finalize=True, verbosity=1):
+    def run(
+        self,
+        start_stage=0,
+        end_stage=None,
+        finalize=True,
+        verbosity=1,
+        **kwargs,
+    ):
         """
         Run the pipeline.
 
@@ -356,6 +362,8 @@ class Pipeline(Base):
             Whether to finalize the pipeline after running, default True
         verbosity: int
             The verbosity level, 0 = silent
+        kwargs: dict, optional
+            Additional keyword arguments to pass to each stage's run method
 
         Returns
         -------
@@ -386,17 +394,18 @@ class Pipeline(Base):
                     prev_stage=prev_stage,
                     prev_results=results,
                     verbosity=verbosity,
+                    **kwargs,
                 )
                 if not success:
                     print(f"{self.name}: Stage {stage.name} failed, stopping pipeline")
                     break
-            except Exception as e:
+            except Exception:
                 print(
                     f"{self.name}: Exception occurred during pipeline execution at step {stage.index}: {stage.name}"
                 )
                 success = False
                 self.__running = False
-                raise e
+                raise
 
         self.start_stage = hstart
         self.end_stage = hend

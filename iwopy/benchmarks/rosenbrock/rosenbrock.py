@@ -1,4 +1,4 @@
-from iwopy import SimpleProblem, SimpleObjective
+from iwopy import SimpleObjective, SimpleProblem
 
 
 class RosenbrockObjective(SimpleObjective):
@@ -87,9 +87,9 @@ class RosenbrockProblem(SimpleProblem):
 
     def __init__(
         self,
-        lower=[-5.0, -5.0],
-        upper=[10.0, 10.0],
-        initial=[0.0, 0.0],
+        lower=None,
+        upper=None,
+        initial=None,
         ana_deriv=False,
         name="rosenbrock",
     ):
@@ -110,6 +110,12 @@ class RosenbrockProblem(SimpleProblem):
             The name of the problem
 
         """
+        if initial is None:
+            initial = [0.0, 0.0]
+        if upper is None:
+            upper = [10.0, 10.0]
+        if lower is None:
+            lower = [-5.0, -5.0]
         super().__init__(
             name,
             float_vars={"x": initial[0], "y": initial[1]},

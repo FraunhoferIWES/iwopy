@@ -1,9 +1,10 @@
-import numpy as np
 import argparse
+
 import matplotlib.pyplot as plt
+import numpy as np
+from model import ChainPopulation, ChainProblem, MaxStretch, NoCrossing
 
 from iwopy.interfaces.pymoo import Optimizer_pymoo
-from model import MaxStretch, NoCrossing, ChainProblem, ChainPopulation
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -42,21 +43,21 @@ if __name__ == "__main__":
 
     solver = Optimizer_pymoo(
         problem,
-        problem_pars=dict(
-            vectorize=not args.no_pop,
-        ),
-        algo_pars=dict(
-            type=args.algo,
-            pop_size=args.n_pop,
+        problem_pars={
+            "vectorize": not args.no_pop,
+        },
+        algo_pars={
+            "type": args.algo,
+            "pop_size": args.n_pop,
             # seed=args.seed,
-        ),
-        setup_pars=dict(),
-        term_pars=dict(
-            type="default",
-            n_max_gen=args.n_gen,
-            ftol=0,
-            xtol=0,
-        ),
+        },
+        setup_pars={},
+        term_pars={
+            "type": "default",
+            "n_max_gen": args.n_gen,
+            "ftol": 0,
+            "xtol": 0,
+        },
     )
     solver.initialize()
 

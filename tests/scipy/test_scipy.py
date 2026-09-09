@@ -32,7 +32,7 @@ def run_branin_slsqp(init_vals, tol):
 
     solver = Optimizer_scipy(
         prob,
-        scipy_pars=dict(method="SLSQP", tol=tol),
+        scipy_pars={"method": "SLSQP", "tol": tol},
     )
     solver.initialize()
 

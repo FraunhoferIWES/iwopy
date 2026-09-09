@@ -1,6 +1,7 @@
 from abc import abstractmethod
 
 from iwopy.utils import new_instance
+
 from .function import OptFunction
 
 
@@ -24,7 +25,6 @@ class Objective(OptFunction):
             shape: (n_components,)
 
         """
-        pass
 
     @classmethod
     def new(cls, objective_type, *args, **kwargs):

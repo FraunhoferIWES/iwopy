@@ -1,8 +1,9 @@
 import numpy as np
 
-from iwopy.utils import RegularDiscretizationGrid
-from .local_fd import LocalFD
 from iwopy.core import Memory
+from iwopy.utils import RegularDiscretizationGrid
+
+from .local_fd import LocalFD
 
 
 class DiscretizeRegGrid(LocalFD):

@@ -1,7 +1,8 @@
 import numpy as np
 
-from .problem_wrapper import ProblemWrapper
 from iwopy.core import ProblemDefaultFunc
+
+from .problem_wrapper import ProblemWrapper
 
 
 class LocalFD(ProblemWrapper):
@@ -63,10 +64,10 @@ class LocalFD(ProblemWrapper):
         self._deltas = deltas
 
         if isinstance(fd_order, int):
-            self.order = {v: fd_order for v in deltas.keys()}
+            self.order = {v: fd_order for v in deltas}
         else:
             self.order = fd_order
-            for v in deltas.keys():
+            for v in deltas:
                 if v not in self.order:
                     raise KeyError(
                         f"Problem '{self.name}': Missing fd_order entry for variable '{v}'"
@@ -75,10 +76,10 @@ class LocalFD(ProblemWrapper):
         if fd_bounds_order is None:
             self.orderb = {v: abs(o) for v, o in self.order.items()}
         elif isinstance(fd_bounds_order, int):
-            self.orderb = {v: fd_bounds_order for v in deltas.keys()}
+            self.orderb = {v: fd_bounds_order for v in deltas}
         else:
             self.orderb = fd_bounds_order
-            for v in deltas.keys():
+            for v in deltas:
                 if v not in self.orderb:
                     raise KeyError(
                         f"Problem '{self.name}': Missing fd_bounds_order entry for variable '{v}'"
@@ -101,7 +102,7 @@ class LocalFD(ProblemWrapper):
         self._orderb = []
         self._d = []
         vnms = list(super().var_names_float())
-        for v in self._deltas.keys():
+        for v in self._deltas:
             if v not in vnms:
                 raise KeyError(
                     f"Problem '{self.name}': Variable '{v}' given in deltas, but not found in problem float variables {vnms}"

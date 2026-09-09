@@ -1,10 +1,11 @@
-import numpy as np
 import argparse
+
 import matplotlib.pyplot as plt
+import numpy as np
+from model import ChargesProblem
 
 from iwopy import LocalFD
 from iwopy.optimizers import GG
-from model import ChargesProblem
 
 if __name__ == "__main__":
     # np.random.seed(42)

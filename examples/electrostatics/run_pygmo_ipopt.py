@@ -1,10 +1,11 @@
-import numpy as np
 import argparse
+
 import matplotlib.pyplot as plt
+import numpy as np
+from model import ChargesProblem
 
 from iwopy import LocalFD
 from iwopy.interfaces.pygmo import Optimizer_pygmo
-from model import ChargesProblem
 
 if __name__ == "__main__":
     # np.random.seed(42)
@@ -47,8 +48,8 @@ if __name__ == "__main__":
 
     solver = Optimizer_pygmo(
         gproblem,
-        problem_pars=dict(pop=not args.no_pop),
-        algo_pars=dict(type="ipopt", tol=1e-4),
+        problem_pars={"pop": not args.no_pop},
+        algo_pars={"type": "ipopt", "tol": 1e-4},
     )
     solver.initialize()
 

@@ -127,7 +127,7 @@ class GG(Optimizer):
                     raise KeyError(
                         f"Optimizer '{self.name}': Missing step_max entry for variable '{vname}'"
                     )
-        elif isinstance(self.step_max, list) or isinstance(self.step_max, np.ndarray):
+        elif isinstance(self.step_max, (list, np.ndarray)):
             if len(self.step_max) != n_vars:
                 raise ValueError(
                     f"Optimizer '{self.name}': step_max has wrong size {len(self.step_max)} for {n_vars} variables"
@@ -146,7 +146,7 @@ class GG(Optimizer):
                     raise KeyError(
                         f"Optimizer '{self.name}': Missing step_min entry for variable '{vname}'"
                     )
-        elif isinstance(self.step_min, list) or isinstance(self.step_min, np.ndarray):
+        elif isinstance(self.step_min, (list, np.ndarray)):
             if len(self.step_min) != n_vars:
                 raise ValueError(
                     f"Optimizer '{self.name}': step_max has wrong size {len(self.step_min)} for {n_vars} variables"

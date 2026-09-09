@@ -1,6 +1,6 @@
 import numpy as np
 
-from iwopy import SimpleProblem, SimpleObjective
+from iwopy import SimpleObjective, SimpleProblem
 
 
 class BraninObjective(SimpleObjective):
@@ -96,7 +96,7 @@ class BraninProblem(SimpleProblem):
 
     """
 
-    def __init__(self, name="branin", initial_values=[1.0, 1.0], ana_deriv=False):
+    def __init__(self, name="branin", initial_values=None, ana_deriv=False):
         """
         Constructor
 
@@ -110,6 +110,8 @@ class BraninProblem(SimpleProblem):
             The initial values
 
         """
+        if initial_values is None:
+            initial_values = [1.0, 1.0]
         super().__init__(
             name,
             float_vars={"x": initial_values[0], "y": initial_values[1]},

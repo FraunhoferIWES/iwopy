@@ -1,6 +1,7 @@
-import numpy as np
 import fnmatch
 from abc import ABCMeta, abstractmethod
+
+import numpy as np
 
 from .base import Base
 
@@ -95,7 +96,6 @@ class OptFunction(Base, metaclass=ABCMeta):
             The number of components.
 
         """
-        pass
 
     def initialize(self, verbosity=0):
         """

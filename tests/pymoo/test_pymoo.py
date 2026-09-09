@@ -1,9 +1,9 @@
 import numpy as np
 
 from iwopy import SimpleConstraint
-from iwopy.interfaces.pymoo import Optimizer_pymoo
 from iwopy.benchmarks.branin import BraninProblem
 from iwopy.benchmarks.rosenbrock import RosenbrockProblem
+from iwopy.interfaces.pymoo import Optimizer_pymoo
 
 
 class RC(SimpleConstraint):
@@ -35,15 +35,15 @@ def run_branin_ga(type, init_vals, ngen, npop, pop):
 
     solver = Optimizer_pymoo(
         prob,
-        problem_pars=dict(
-            vectorize=pop,
-        ),
-        algo_pars=dict(
-            type=type,
-            pop_size=npop,
-            seed=42,
-        ),
-        setup_pars=dict(),
+        problem_pars={
+            "vectorize": pop,
+        },
+        algo_pars={
+            "type": type,
+            "pop_size": npop,
+            "seed": 42,
+        },
+        setup_pars={},
         term_pars=("n_gen", ngen),
     )
     solver.initialize()
@@ -94,15 +94,15 @@ def run_rosen0_ga(type, inits, ngen, npop, pop):
 
     solver = Optimizer_pymoo(
         prob,
-        problem_pars=dict(
-            vectorize=pop,
-        ),
-        algo_pars=dict(
-            type=type,
-            pop_size=npop,
-            seed=42,
-        ),
-        setup_pars=dict(),
+        problem_pars={
+            "vectorize": pop,
+        },
+        algo_pars={
+            "type": type,
+            "pop_size": npop,
+            "seed": 42,
+        },
+        setup_pars={},
         term_pars=("n_gen", ngen),
     )
     solver.initialize()
@@ -121,15 +121,15 @@ def run_rosen_ga(type, lower, upper, inits, ngen, npop, pop):
 
     solver = Optimizer_pymoo(
         prob,
-        problem_pars=dict(
-            vectorize=pop,
-        ),
-        algo_pars=dict(
-            type=type,
-            pop_size=npop,
-            seed=42,
-        ),
-        setup_pars=dict(),
+        problem_pars={
+            "vectorize": pop,
+        },
+        algo_pars={
+            "type": type,
+            "pop_size": npop,
+            "seed": 42,
+        },
+        setup_pars={},
         term_pars=("n_gen", ngen),
     )
     solver.initialize()

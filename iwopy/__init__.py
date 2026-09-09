@@ -3,12 +3,16 @@ Fraunhofer IWES optimization tools in Python
 
 """
 
+# ruff: noqa: I001
+import importlib
+from pathlib import Path
+
 from .core import Problem as Problem
 from .core import Objective as Objective
 from .core import Constraint as Constraint
-from .core import Pipeline as Pipeline
 from .core import Memory as Memory
-
+from .core import Pipeline as Pipeline
+from .core import PipelineStage as PipelineStage
 from .wrappers import ProblemWrapper as ProblemWrapper
 from .wrappers import DiscretizeRegGrid as DiscretizeRegGrid
 from .wrappers import LocalFD as LocalFD
@@ -20,9 +24,6 @@ from . import utils as utils
 from . import interfaces as interfaces
 from . import benchmarks as benchmarks
 from . import optimizers as optimizers
-
-import importlib
-from pathlib import Path
 
 try:
     tomllib = importlib.import_module("tomllib")

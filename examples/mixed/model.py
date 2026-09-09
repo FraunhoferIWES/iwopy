@@ -1,7 +1,7 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-from iwopy import Problem, Objective
+from iwopy import Objective, Problem
 
 
 class MaxN(Objective):
@@ -20,11 +20,11 @@ class MaxN(Objective):
         return [True]
 
     def calc_individual(self, vars_int, vars_float, problem_results, cmpnts=None):
-        xy, valid = problem_results
+        _xy, valid = problem_results
         return np.sum(valid)
 
     def calc_population(self, vars_int, vars_float, problem_results, cmpnts=None):
-        xy, valid = problem_results
+        _xy, valid = problem_results
         return np.sum(valid, axis=(1, 2))[:, None]
 
 

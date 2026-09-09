@@ -1,7 +1,7 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-from iwopy import Problem, Constraint, Objective
+from iwopy import Constraint, Objective, Problem
 
 
 class MinPotential(Objective):

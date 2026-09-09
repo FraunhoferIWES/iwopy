@@ -250,10 +250,9 @@ class RegularDiscretizationGrid:
             The grid point, shape: (n_dims,)
 
         """
-        if not self.is_gridi(inds):
-            if error:
-                self.print_info()
-                raise ValueError(f"Grind indices {inds} are not on grid")
+        if not self.is_gridi(inds) and error:
+            self.print_info()
+            raise ValueError(f"Grind indices {inds} are not on grid")
 
         return np.round(self.origin + inds * self.deltas, self.digits)
 
@@ -805,9 +804,9 @@ class RegularDiscretizationGrid:
             )
             try:
                 coeffs = self._interpolate_ocell(qts)[0]
-            except AssertionError as e:
+            except AssertionError:
                 self._error_info(p, for_ocell=True)
-                raise e
+                raise
             gpts = np.stack(np.meshgrid(*cell, indexing="ij"), axis=-1)
             gpts = np.round(gpts, self.digits).reshape(2**self.n_dims, self.n_dims)
 
@@ -882,9 +881,9 @@ class RegularDiscretizationGrid:
             qts = np.round((pts - p0) / self.deltas[None, :], self.digits)
             try:
                 coeffs = self._interpolate_ocell(qts)  # shape: (n_pts, n_gp)
-            except AssertionError as e:
+            except AssertionError:
                 self._error_infos(qts, for_ocell=True)
-                raise e
+                raise
             opts = self._get_opts()
             gpts = np.round(
                 p0[:, None] + opts[None, :] * self.deltas[None, :], self.digits

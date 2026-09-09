@@ -53,9 +53,7 @@ def new_cls(base_cls, cls_name):
                 return scls
 
     else:
-        estr = "Class '{}' not found, available classes derived from '{}' are \n {}".format(
-            cls_name, base_cls.__name__, sorted([i.__name__ for i in allc])
-        )
+        estr = f"Class '{cls_name}' not found, available classes derived from '{base_cls.__name__}' are \n {sorted([i.__name__ for i in allc])}"
         raise KeyError(estr)
 
 

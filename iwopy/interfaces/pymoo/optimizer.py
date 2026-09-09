@@ -1,10 +1,11 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from iwopy.core import Optimizer
-from .problem import SingleObjProblemTemplate, MultiObjProblemTemplate
-from .factory import Factory
+
 from . import imports
+from .factory import Factory
+from .problem import MultiObjProblemTemplate, SingleObjProblemTemplate
 
 
 class DefaultCallbackTemplate:
@@ -95,7 +96,9 @@ class Optimizer_pymoo(Optimizer):
 
     """
 
-    def __init__(self, problem, problem_pars, algo_pars, setup_pars={}, term_pars={}):
+    def __init__(
+        self, problem, problem_pars, algo_pars, setup_pars=None, term_pars=None
+    ):
         """
         Constructor
 
@@ -111,6 +114,10 @@ class Optimizer_pymoo(Optimizer):
             Parameters for the calculation setup
 
         """
+        if term_pars is None:
+            term_pars = {}
+        if setup_pars is None:
+            setup_pars = {}
         super().__init__(problem)
 
         self.problem_pars = problem_pars
@@ -131,21 +138,21 @@ class Optimizer_pymoo(Optimizer):
             print("\nProblem:")
             print("--------")
             for k, v in self.problem_pars.items():
-                if isinstance(v, int) or isinstance(v, float) or isinstance(v, str):
+                if isinstance(v, (int, float, str)):
                     print(f"  {k}: {v}")
 
         if len(self.algo_pars):
             print("\nAlgorithm:")
             print("----------")
             for k, v in self.algo_pars.items():
-                if isinstance(v, int) or isinstance(v, float) or isinstance(v, str):
+                if isinstance(v, (int, float, str)):
                     print(f"  {k}: {v}")
 
         if len(self.setup_pars):
             print("\nSetup:")
             print("------")
             for k, v in self.setup_pars.items():
-                if isinstance(v, int) or isinstance(v, float) or isinstance(v, str):
+                if isinstance(v, (int, float, str)):
                     print(f"  {k}: {v}")
 
         if len(self.term_pars):
@@ -155,7 +162,7 @@ class Optimizer_pymoo(Optimizer):
                 print(f"  {self.term_pars[0]}: {self.term_pars[1]}")
             else:
                 for k, v in self.term_pars.items():
-                    if isinstance(v, int) or isinstance(v, float) or isinstance(v, str):
+                    if isinstance(v, (int, float, str)):
                         print(f"  {k}: {v}")
         print()
 

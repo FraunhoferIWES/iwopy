@@ -1,6 +1,7 @@
 import numpy as np
 
-from iwopy.core import SingleObjOptResults, MultiObjOptResults
+from iwopy.core import MultiObjOptResults, SingleObjOptResults
+
 from . import imports
 
 
@@ -58,29 +59,29 @@ class SingleObjProblemTemplate:
             self.is_mixed = False
             self.is_intprob = False
 
-            self._pargs = dict(
-                n_var=self.problem.n_vars_float,
-                n_obj=self.problem.n_objectives,
-                n_ieq_constr=self.problem.n_constraints,
-                xl=self.problem.min_values_float(),
-                xu=self.problem.max_values_float(),
-                elementwise=not vectorize,
-                type_var=np.float64,
-            )
+            self._pargs = {
+                "n_var": self.problem.n_vars_float,
+                "n_obj": self.problem.n_objectives,
+                "n_ieq_constr": self.problem.n_constraints,
+                "xl": self.problem.min_values_float(),
+                "xu": self.problem.max_values_float(),
+                "elementwise": not vectorize,
+                "type_var": np.float64,
+            }
 
         elif self.problem.n_vars_float == 0 and self.problem.n_vars_int > 0:
             self.is_mixed = False
             self.is_intprob = True
 
-            self._pargs = dict(
-                n_var=self.problem.n_vars_int,
-                n_obj=self.problem.n_objectives,
-                n_ieq_constr=self.problem.n_constraints,
-                xl=self.problem.min_values_int(),
-                xu=self.problem.max_values_int(),
-                elementwise=not vectorize,
-                type_var=np.int32,
-            )
+            self._pargs = {
+                "n_var": self.problem.n_vars_int,
+                "n_obj": self.problem.n_objectives,
+                "n_ieq_constr": self.problem.n_constraints,
+                "xl": self.problem.min_values_int(),
+                "xu": self.problem.max_values_int(),
+                "elementwise": not vectorize,
+                "type_var": np.int32,
+            }
 
         else:
             self.is_mixed = True
@@ -102,12 +103,12 @@ class SingleObjProblemTemplate:
             for i, v in enumerate(namf):
                 vars[v] = imports.Real(value=inif[i], bounds=(minf[i], maxf[i]))
 
-            self._pargs = dict(
-                vars=vars,
-                n_obj=self.problem.n_objectives,
-                n_ieq_constr=self.problem.n_constraints,
-                elementwise=not vectorize,
-            )
+            self._pargs = {
+                "vars": vars,
+                "n_obj": self.problem.n_objectives,
+                "n_ieq_constr": self.problem.n_constraints,
+                "elementwise": not vectorize,
+            }
 
         if self.problem.n_constraints:
             self._cmi = self.problem.min_values_constraints
@@ -384,7 +385,6 @@ class MultiObjProblemTemplate:
             population individuals
 
         """
-        pass
 
     def finalize(self, pymoo_results, verbosity=1):
         """

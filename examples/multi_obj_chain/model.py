@@ -1,7 +1,9 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-from iwopy import Problem, Constraint, Objective
+DEFAULT_DIRECTION = np.array([0.0, 1.0])
+
+from iwopy import Constraint, Objective, Problem
 
 
 class ChainPopulation:
@@ -141,7 +143,7 @@ class NoCrossing(Constraint):
 class MaxStretch(Objective):
     """Aim for maximal stretch along a given direction"""
 
-    def __init__(self, problem, direction=np.array([0.0, 1.0]), name="stretch"):
+    def __init__(self, problem, direction=DEFAULT_DIRECTION, name="stretch"):
         super().__init__(problem, name, vnames_float=problem.var_names_float())
         self.chain = problem.chain
         self.direction = direction

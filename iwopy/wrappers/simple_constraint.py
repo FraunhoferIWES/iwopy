@@ -1,5 +1,6 @@
-import numpy as np
 from abc import abstractmethod
+
+import numpy as np
 
 from iwopy.core import Constraint
 
@@ -85,7 +86,6 @@ class SimpleConstraint(Constraint):
             of one component or a list of such arrays otherwise.
 
         """
-        pass
 
     def g(self, var, *x, components=None):
         """
@@ -110,7 +110,6 @@ class SimpleConstraint(Constraint):
             or n_sel_components otherwise.
 
         """
-        pass
 
     def get_bounds(self):
         """

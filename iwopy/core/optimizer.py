@@ -1,7 +1,9 @@
-import numpy as np
 from abc import ABCMeta, abstractmethod
 
+import numpy as np
+
 from iwopy.utils import new_instance
+
 from .base import Base
 
 
@@ -40,7 +42,6 @@ class Optimizer(Base, metaclass=ABCMeta):
         """
         Print solver info, called before solving
         """
-        pass
 
     @abstractmethod
     def solve(self, verbosity=1):
@@ -72,8 +73,6 @@ class Optimizer(Base, metaclass=ABCMeta):
                 f"Optimizer called for problem '{self.problem.name}'"
                 + " before solver initialization"
             )
-
-        return None
 
     def finalize(self, opt_results, verbosity=1):
         """

@@ -1,5 +1,6 @@
-import numpy as np
 from abc import abstractmethod
+
+import numpy as np
 
 from iwopy.core import Objective
 
@@ -78,7 +79,6 @@ class SimpleObjective(Objective):
             of one component or a list of such arrays otherwise.
 
         """
-        pass
 
     def g(self, var, *x, components):
         """
@@ -103,7 +103,6 @@ class SimpleObjective(Objective):
             or n_sel_components otherwise.
 
         """
-        pass
 
     @property
     def has_ana_derivs(self):

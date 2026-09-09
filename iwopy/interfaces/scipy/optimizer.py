@@ -1,8 +1,7 @@
 import numpy as np
 from scipy.optimize import minimize
 
-from iwopy.core import Optimizer
-from iwopy.core import SingleObjOptResults
+from iwopy.core import Optimizer, SingleObjOptResults
 
 
 class Optimizer_scipy(Optimizer):
@@ -25,7 +24,7 @@ class Optimizer_scipy(Optimizer):
 
     """
 
-    def __init__(self, problem, scipy_pars={}, mem_size=100, **kwargs):
+    def __init__(self, problem, scipy_pars=None, mem_size=100, **kwargs):
         """
         Constructor
 
@@ -43,6 +42,8 @@ class Optimizer_scipy(Optimizer):
             Additional parameters for base class
 
         """
+        if scipy_pars is None:
+            scipy_pars = {}
         super().__init__(problem, **kwargs)
         self.scipy_pars = scipy_pars
         self.mem_size = mem_size
@@ -58,7 +59,7 @@ class Optimizer_scipy(Optimizer):
             print("\nScipy parameters:")
             print("-----------------")
             for k, v in self.scipy_pars.items():
-                if isinstance(v, int) or isinstance(v, float) or isinstance(v, str):
+                if isinstance(v, (int, float, str)):
                     print(f"  {k}: {v}")
 
         print()
@@ -81,7 +82,7 @@ class Optimizer_scipy(Optimizer):
             )
 
         # Define constraints:
-        cons = list()
+        cons = []
         for i in range(self.problem.n_constraints):
             cons.append({"type": "ineq", "fun": self._constraints, "args": (i,)})
         self.scipy_pars["constraints"] = cons

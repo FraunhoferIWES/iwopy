@@ -1,15 +1,14 @@
 from .base import Base as Base
+from .constraint import Constraint as Constraint
 from .function import OptFunction as OptFunction
 from .function_list import OptFunctionList as OptFunctionList
 from .function_subset import OptFunctionSubset as OptFunctionSubset
-from .objective import Objective as Objective
-from .constraint import Constraint as Constraint
 from .memory import Memory as Memory
-from .problem import Problem as Problem
-from .problem import ProblemDefaultFunc as ProblemDefaultFunc
-from .optimizer import Optimizer as Optimizer
-from .opt_results import SingleObjOptResults as SingleObjOptResults
+from .objective import Objective as Objective
 from .opt_results import MultiObjOptResults as MultiObjOptResults
-
+from .opt_results import SingleObjOptResults as SingleObjOptResults
+from .optimizer import Optimizer as Optimizer
 from .pipeline import Pipeline as Pipeline
 from .pipeline import PipelineStage as PipelineStage
+from .problem import Problem as Problem
+from .problem import ProblemDefaultFunc as ProblemDefaultFunc
