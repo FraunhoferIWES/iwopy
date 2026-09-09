@@ -1,7 +1,6 @@
 # Testing
 
-For testing, please clone the repository and install the required dependencies
-(`flake8`, `pytest`, `pygmo`, `pymoo`):
+For testing, please clone the repository and install the required dependencies:
 
 ```console
 git clone https://github.com/FraunhoferIWES/iwopy.git

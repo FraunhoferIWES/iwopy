@@ -2,4 +2,7 @@ iwopy.optimizers
 ----------------
 `iwopy`'s own optimizer implementations.
 
-    .. python-apigen-group:: optimizers
+.. toctree::
+    :maxdepth: 2
+
+    _autoapi/iwopy/optimizers/index

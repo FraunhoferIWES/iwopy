@@ -2,4 +2,7 @@ iwopy.interfaces.pymoo
 ----------------------
 Interface to the `pymoo` package
 
-    .. python-apigen-group:: interfaces.pymoo
+.. toctree::
+    :maxdepth: 2
+
+    _autoapi/iwopy/interfaces/pymoo/index

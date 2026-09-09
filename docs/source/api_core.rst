@@ -2,4 +2,7 @@ iwopy.core
 ----------
 Core functionality and abstract classes
 
-    .. python-apigen-group:: core
+.. toctree::
+    :maxdepth: 2
+
+    _autoapi/iwopy/core/index

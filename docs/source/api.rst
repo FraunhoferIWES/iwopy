@@ -1,17 +1,15 @@
 API
 ===
 
-    .. table::
-        :widths: auto
+The API is generated with AutoAPI.
 
-        ======================= =================================================
-        Package                 Description
-        ======================= =================================================
-        :ref:`iwopy`            Top-level package, shortcut to selected classes.
-        :ref:`iwopy.benchmarks` Classes for benchmarks data.
-        :ref:`iwopy.core`       Core functionality and abstract classes.
-        :ref:`iwopy.interfaces` Interfaces to external optimization packages.
-        :ref:`iwopy.optimizers` `iwopy`'s own optimizer implementations.
-        :ref:`iwopy.utils`      Utilities and little helpers.
-        :ref:`iwopy.wrappers`   Wrappers that modify/simplify base class usage.
-        ======================= =================================================
+.. toctree::
+    :hidden:
+
+    api_iwopy
+    api_benchmarks
+    api_core
+    api_interfaces
+    api_optimizers
+    api_utils
+    api_wrappers

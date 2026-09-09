@@ -1,6 +1,7 @@
 stages:
   - pre-commit
-  - test
+  - tests
+  - notebooks
 variables:
   UV_VERSION: "0.9.24"
   PYTHON_VERSION: "3.13"
@@ -12,16 +13,19 @@ variables:
 
 # ===== PRE-COMMIT =====
 pre-commit:
-  image: python:$PYTHON_VERSION
+  image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
   stage: pre-commit
   only:
     refs:
       - main
       - dev
+      - merge_requests
+  before_script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends git
   script:
-    - pip install --upgrade pip
-    - pip install pre-commit --break-system-packages
-    - pre-commit run --all-files
+    - uv sync --extra test --dev
+    - uv run pre-commit run --all-files
   cache:
     key: pre-commit-cache
     paths:
@@ -30,7 +34,7 @@ pre-commit:
 # ===== TEST =====
 test:
   image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
-  stage: test
+  stage: tests
   cache:
     - key:
         files:
@@ -38,14 +42,14 @@ test:
       paths:
         - $UV_CACHE_DIR
   script:
-    - uv sync --extra test --dev
+    - uv sync --extra test
     - uv run pytest tests
     - uv cache prune --ci
 
 # ===== NOTEBOOKS =====
 notebooks:
   image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
-  stage: test
+  stage: notebooks
   cache:
     - key:
         files:
@@ -53,6 +57,6 @@ notebooks:
       paths:
         - $UV_CACHE_DIR
   script:
-    - uv sync --extra test --dev
+    - uv sync --extra test
     - uv run pytest --nbmake notebooks
     - uv cache prune --ci

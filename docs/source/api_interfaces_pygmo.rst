@@ -2,4 +2,7 @@ iwopy.interfaces.pygmo
 ----------------------
 Interface to the `pygmo` package
 
-    .. python-apigen-group:: interfaces.pygmo
+.. toctree::
+    :maxdepth: 2
+
+    _autoapi/iwopy/interfaces/pygmo/index

@@ -7,18 +7,19 @@ iwopy.benchmarks
         ================================== =================================================
         Package                            Description
         ================================== =================================================
-        :ref:`iwopy.benchmarks.branin`     The Branin benchmark
-        :ref:`iwopy.benchmarks.rosenbrock` The Rosenbrock benchmark
+        Branin                               The Branin benchmark
+        Rosenbrock                           The Rosenbrock benchmark
         ================================== =================================================
 
 iwopy.benchmarks.branin
 -----------------------
 The Branin benchmark
 
-    .. python-apigen-group:: benchmarks.branin
+.. toctree::
+    :maxdepth: 2
+
+    _autoapi/iwopy/benchmarks/index
 
 iwopy.benchmarks.rosenbrock
 ---------------------------
 The Rosenbrock benchmark
-
-    .. python-apigen-group:: benchmarks.rosenbrock

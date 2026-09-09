@@ -2,4 +2,7 @@ iwopy.utils
 -----------
 Utilities and little helpers.
 
-    .. python-apigen-group:: utils
+.. toctree::
+    :maxdepth: 2
+
+    _autoapi/iwopy/utils/index

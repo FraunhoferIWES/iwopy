@@ -2,4 +2,7 @@ iwopy.wrappers
 --------------
 Wrappers that modify/simplify base class usage.
 
-    .. python-apigen-group:: wrappers
+.. toctree::
+    :maxdepth: 2
+
+    _autoapi/iwopy/wrappers/index
