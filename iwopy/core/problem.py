@@ -432,6 +432,7 @@ class Problem(Base, metaclass=ABCMeta):
         vrs,
         pop=False,
         verbosity=0,
+        func_values=None,
     ):
         """
         The actual gradient calculation, not to be called directly
@@ -459,6 +460,9 @@ class Problem(Base, metaclass=ABCMeta):
         vrs: list of int
             The function float variable indices wrt which the
             derivatives are to be calculated
+        func_values: np.array, optional
+            Previously calculated function values at the given variables,
+            shape: (n_components,)
         pop: bool
             Flag for vectorizing calculations via population
         verbosity: int
@@ -496,6 +500,7 @@ class Problem(Base, metaclass=ABCMeta):
         vars=None,
         pop=False,
         verbosity=0,
+        func_values=None,
     ):
         """
         Obtain gradients of a function that is linked to the
@@ -523,6 +528,9 @@ class Problem(Base, metaclass=ABCMeta):
             The float variables wrt which the
             derivatives are to be calculated, or
             None for all
+        func_values: np.array, optional
+            Previously calculated function values at the given variables,
+            shape: (n_components,)
         verbosity: int
             The verbosity level, 0 = silent
         pop: bool
@@ -593,6 +601,7 @@ class Problem(Base, metaclass=ABCMeta):
             ivars,
             fvars,
             vrs,
+            func_values=func_values,
             pop=pop,
             verbosity=verbosity,
         )

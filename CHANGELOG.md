@@ -191,6 +191,17 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
   convergence edge cases.
 - Added hard iteration limits, non-finite gradient checks, and stalled
   constraint detection to `GG`.
+- Added `SLSQP` and an example for continuous single-objective
+  problems with general constraints and vectorized iwopy gradient determination.
+- Added automatic dimensionless variable scaling to `SLSQP`, avoiding
+  false convergence for problems with large physical coordinate ranges.
+- Reused cached SLSQP function values in `LocalFD` gradients, avoiding duplicate
+  center-point evaluations.
+- Fixed the lower-bound second-order stencil in `LocalFD`, ensuring boundary-aware
+  finite differences use the correct one-sided stencil near the lower domain limit.
+- Added regression coverage for `LocalFD` lower-bound stencil behavior.
+- Added evaluation-free per-iteration objective and constraint progress output
+  to `SLSQP`.
 - Dropping support for Python 3.9 and updating dependency minimums to match foxes
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0](https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0)

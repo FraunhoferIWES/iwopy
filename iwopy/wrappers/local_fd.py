@@ -204,7 +204,7 @@ class LocalFD(ProblemWrapper):
             cfs[sel, sel, 1] = 0.5 / d[sel]
 
         # left boundary, order 2:
-        sel = (orderb == 2) & (xminus.diagonal() < vmax)
+        sel = (orderb == 2) & (xminus.diagonal() < vmin)
         if np.any(sel):
             if xplus2 is None:
                 xplus2 = np.zeros_like(xplus)
@@ -240,6 +240,7 @@ class LocalFD(ProblemWrapper):
         vrs,
         pop=False,
         verbosity=0,
+        func_values=None,
     ):
         """
         The actual gradient calculation, not to be called directly
@@ -267,6 +268,9 @@ class LocalFD(ProblemWrapper):
         vrs: list of int
             The function float variable indices wrt which the
             derivatives are to be calculated
+        func_values: np.array, optional
+            Previously calculated function values at the given variables,
+            shape: (n_components,)
         pop: bool
             Flag for vectorizing calculations via population
         verbosity: int
@@ -281,7 +285,14 @@ class LocalFD(ProblemWrapper):
         """
         # get analytic gradient results:
         gradients = super().calc_gradients(
-            vars_int, vars_float, func, components, ivars, fvars, vrs, verbosity
+            vars_int,
+            vars_float,
+            func,
+            components,
+            ivars,
+            fvars,
+            vrs,
+            verbosity=verbosity,
         )
 
         # find variables and components of unsolved gradients:
@@ -297,7 +308,6 @@ class LocalFD(ProblemWrapper):
         )
         cmptsi = np.unique(np.where(np.any(gnan, axis=1))[0])
         fcmpts = cmpnts[cmptsi]
-        fcomps = fcmpts if components is not None else None
         if not len(gvars) or not len(fcmpts):
             return gradients
         del gnan
@@ -307,6 +317,19 @@ class LocalFD(ProblemWrapper):
         order = self._order[ivars]
         orderb = self._orderb[ivars]
         epts, coeffs = self._grad_coeffs(varsf, gvars, order, orderb)
+
+        center_coeffs = None
+        if func_values is not None and len(epts) and np.array_equal(epts[-1], varsf):
+            func_values = np.asarray(func_values, dtype=np.float64)
+            n_cmpnts = gradients.shape[0]
+            if func_values.shape != (n_cmpnts,):
+                raise ValueError(
+                    f"Problem '{self.name}': Expected func_values shape "
+                    f"{(n_cmpnts,)}, received {func_values.shape}."
+                )
+            center_coeffs = coeffs[:, -1]
+            epts = epts[:-1]
+            coeffs = coeffs[:, :-1]
 
         # run the calculation:
         n_pop = len(epts)
@@ -320,26 +343,28 @@ class LocalFD(ProblemWrapper):
                 varsi[:] = vars_int[None, :]
             if isinstance(func, ProblemDefaultFunc):
                 os, cs = self.evaluate_population(varsi, varsf)
-                s = np.s_[:] if components is None else fcmpts
-                values[:] = np.c_[os, cs][:, s]
-                del os, cs, s
+                values[:] = np.c_[os, cs][:, fcmpts]
+                del os, cs
             else:
                 results = self.apply_population(varsi, varsf)
-                values[:] = func.calc_population(varsi, varsf, results, fcomps)
+                values[:] = func.calc_population(varsi, varsf, results, fcmpts)
                 del results
         else:
             for i, vf in enumerate(varsf):
                 if isinstance(func, ProblemDefaultFunc):
                     os, cs = self.evaluate_individual(vars_int, vf)
-                    s = np.s_[:] if components is None else fcmpts
-                    values[i] = np.r_[os, cs][s]
-                    del os, cs, s
+                    values[i] = np.r_[os, cs][fcmpts]
+                    del os, cs
                 else:
                     results = self.apply_individual(vars_int, vf)
-                    values[i] = func.calc_individual(vars_int, vf, results, fcomps)
+                    values[i] = func.calc_individual(vars_int, vf, results, fcmpts)
                     del results
 
         # recombine results:
-        gradients[:, gvars] = np.einsum("pc,vp->cv", values, coeffs)
+        gradients[np.ix_(cmptsi, gvars)] = np.einsum("pc,vp->cv", values, coeffs)
+        if center_coeffs is not None:
+            gradients[np.ix_(cmptsi, gvars)] += (
+                func_values[fcmpts, None] * center_coeffs[None, :]
+            )
 
         return gradients
