@@ -13,13 +13,19 @@ PermutationRandomSampling = None
 LatinHypercubeSampling = None
 SBX = None
 PM = None
+RoundingRepair = None
 GA = None
+DE = None
 NSGA2 = None
+NSGA3 = None
 PSO = None
+CMAES = None
 MixedVariableGA = None
+get_reference_directions = None
 
 DefaultSingleObjectiveTermination = None
 DefaultMultiObjectiveTermination = None
+SingleObjectiveOutput = None
 
 minimize = None
 
@@ -41,8 +47,11 @@ def load(verbosity=1):
 
     global Callback, Problem, Real, Integer, IntegerRandomSampling, FloatRandomSampling
     global BinaryRandomSampling, PermutationRandomSampling, LatinHypercubeSampling, SBX
-    global PM, GA, NSGA2, PSO, MixedVariableGA, DefaultSingleObjectiveTermination
-    global DefaultMultiObjectiveTermination, minimize, loaded
+    global PM, RoundingRepair, GA, DE, NSGA2, NSGA3, PSO, CMAES, MixedVariableGA
+    global get_reference_directions
+    global DefaultSingleObjectiveTermination, DefaultMultiObjectiveTermination
+    global SingleObjectiveOutput
+    global minimize, loaded
 
     if not loaded:
         if verbosity:
@@ -68,22 +77,41 @@ def load(verbosity=1):
             "pymoo.operators.crossover.sbx", hint="pip install pymoo"
         ).SBX
         PM = import_module("pymoo.operators.mutation.pm", hint="pip install pymoo").PM
+        RoundingRepair = import_module(
+            "pymoo.operators.repair.rounding", hint="pip install pymoo"
+        ).RoundingRepair
         GA = import_module(
             "pymoo.algorithms.soo.nonconvex.ga", hint="pip install pymoo"
         ).GA
+        DE = import_module(
+            "pymoo.algorithms.soo.nonconvex.de", hint="pip install pymoo"
+        ).DE
         NSGA2 = import_module(
             "pymoo.algorithms.moo.nsga2", hint="pip install pymoo"
         ).NSGA2
+        NSGA3 = import_module(
+            "pymoo.algorithms.moo.nsga3", hint="pip install pymoo"
+        ).NSGA3
         PSO = import_module(
             "pymoo.algorithms.soo.nonconvex.pso", hint="pip install pymoo"
         ).PSO
+        CMAES = import_module(
+            "pymoo.algorithms.soo.nonconvex.cmaes", hint="pip install pymoo"
+        ).CMAES
         MixedVariableGA = import_module(
             "pymoo.core.mixed", hint="pip install pymoo"
         ).MixedVariableGA
+        get_reference_directions = import_module(
+            "pymoo.util.ref_dirs", hint="pip install pymoo"
+        ).get_reference_directions
 
         ter = import_module("pymoo.termination.default", hint="pip install pymoo")
         DefaultSingleObjectiveTermination = ter.DefaultSingleObjectiveTermination
         DefaultMultiObjectiveTermination = ter.DefaultMultiObjectiveTermination
+
+        SingleObjectiveOutput = import_module(
+            "pymoo.util.display.single", hint="pip install pymoo"
+        ).SingleObjectiveOutput
 
         minimize = import_module("pymoo.optimize", hint="pip install pymoo").minimize
 

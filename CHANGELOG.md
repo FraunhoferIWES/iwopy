@@ -200,6 +200,9 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Fixed the lower-bound second-order stencil in `LocalFD`, ensuring boundary-aware
   finite differences use the correct one-sided stencil near the lower domain limit.
 - Added regression coverage for `LocalFD` lower-bound stencil behavior.
+- Added `pymoo` factory support for `DE`, `NSGA3`, and `CMAES` algorithms.
+- Fixed `pymoo` `GA` and `NSGA2` defaults for pure integer problems by applying
+  integer rounding repair to generated offspring.
 - Added evaluation-free per-iteration objective and constraint progress output
   to `SLSQP`.
 - Dropping support for Python 3.9 and updating dependency minimums to match foxes

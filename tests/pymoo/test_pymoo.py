@@ -1,6 +1,7 @@
 import numpy as np
+import pytest
 
-from iwopy import SimpleConstraint
+from iwopy import SimpleConstraint, SimpleObjective, SimpleProblem
 from iwopy.benchmarks.branin import BraninProblem
 from iwopy.benchmarks.rosenbrock import RosenbrockProblem
 from iwopy.interfaces.pymoo import Optimizer_pymoo
@@ -27,6 +28,96 @@ class RC(SimpleConstraint):
                 out[i] = 1
 
         return out
+
+
+class IntObjective(SimpleObjective):
+    def f(self, *x):
+        return sum((xi - 2) ** 2 for xi in x)
+
+
+class RecordingIntProblem(SimpleProblem):
+    def __init__(self):
+        super().__init__(
+            "int_problem",
+            int_vars={"i0": 0, "i1": 0},
+            min_values_int={"i0": 0, "i1": 0},
+            max_values_int={"i0": 4, "i1": 4},
+        )
+        self.vars_int_dtypes = []
+
+    def apply_individual(self, vars_int, vars_float):
+        self.vars_int_dtypes.append(vars_int.dtype)
+
+    def apply_population(self, vars_int, vars_float):
+        self.vars_int_dtypes.append(vars_int.dtype)
+
+
+@pytest.mark.parametrize("vectorize", [False, True])
+def test_integer_ga_keeps_integer_variables(vectorize):
+    prob = RecordingIntProblem()
+    prob.add_objective(IntObjective(prob))
+    prob.initialize()
+
+    solver = Optimizer_pymoo(
+        prob,
+        problem_pars={
+            "vectorize": vectorize,
+        },
+        algo_pars={
+            "type": "GA",
+            "pop_size": 10,
+            "seed": 42,
+        },
+        setup_pars={},
+        term_pars=("n_gen", 2),
+    )
+    solver.initialize()
+    solver.solve(verbosity=0)
+
+    assert prob.vars_int_dtypes
+    assert all(np.issubdtype(dtype, np.integer) for dtype in prob.vars_int_dtypes)
+
+
+def test_pso_factory_uses_requested_sampling():
+    prob = BraninProblem(initial_values=(1.0, 1.0))
+    prob.initialize()
+
+    solver = Optimizer_pymoo(
+        prob,
+        problem_pars={"vectorize": False},
+        algo_pars={
+            "type": "PSO",
+            "pop_size": 10,
+            "seed": 42,
+            "sampling": "float_random",
+        },
+        setup_pars={},
+        term_pars=("n_gen", 1),
+    )
+    solver.initialize()
+
+    assert hasattr(solver.algo, "initialization")
+    assert type(solver.algo.initialization.sampling).__name__ == "FloatRandomSampling"
+    assert type(solver.algo.output).__name__ == "SingleObjectiveOutput"
+
+
+@pytest.mark.parametrize("algorithm", ["DE", "CMAES", "NSGA3"])
+def test_factory_supports_additional_pymoo_algorithms(algorithm):
+    prob = BraninProblem(initial_values=(1.0, 1.0))
+    prob.initialize()
+
+    solver = Optimizer_pymoo(
+        prob,
+        problem_pars={"vectorize": False},
+        algo_pars={"type": algorithm, "pop_size": 10, "seed": 42},
+        setup_pars={},
+        term_pars=("n_gen", 1),
+    )
+    solver.initialize()
+
+    assert type(solver.algo).__name__ == algorithm
+    if algorithm == "CMAES":
+        assert solver.solve(verbosity=0).success
 
 
 def run_branin_ga(type, init_vals, ngen, npop, pop):
