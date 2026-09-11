@@ -238,6 +238,8 @@ class GG(Optimizer):
         if not np.any(np.abs(grad) > 0):
             return np.zeros_like(grad)
         j = np.argmax(np.abs(grad) / step)
+        if np.abs(grad[j]) == 0.0:
+            return np.zeros_like(grad)
         return grad * step[j] / np.abs(grad[j])
 
     def _constraint_side(self, value, minimum, maximum):
