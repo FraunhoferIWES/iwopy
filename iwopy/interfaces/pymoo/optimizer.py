@@ -134,12 +134,9 @@ class Optimizer_pymoo(Optimizer):
         """
         super().print_info()
 
-        if len(self.problem_pars):
-            print("\nProblem:")
-            print("--------")
-            for k, v in self.problem_pars.items():
-                if isinstance(v, (int, float, str)):
-                    print(f"  {k}: {v}")
+        for k, v in self.problem_pars.items():
+            if isinstance(v, (int, float, str)):
+                print(f"  {k}: {v}")
 
         if len(self.algo_pars):
             print("\nAlgorithm:")

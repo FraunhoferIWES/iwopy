@@ -84,6 +84,7 @@ class Factory:
         """
         Algorithm factory function
         """
+        pars = pars.copy()
         typ = pars["type"]
 
         # Genetic Algorithm:
@@ -116,27 +117,33 @@ class Factory:
 
         # Differential Evolution:
         elif typ == "DE":
-            if "sampling" in pars:
-                samp_name = pars.get("sampling", None)
-                samp_pars = pars.get("sampling_pars", {})
-                if "sampling_pars" in pars:
-                    del pars["sampling_pars"]
-                if isinstance(samp_name, str):
-                    pars["sampling"] = self.get_sampling(samp_name, **samp_pars)
+            samp_name = pars.get("sampling", None)
+            samp_pars = pars.get("sampling_pars", {})
+            if "sampling_pars" in pars:
+                del pars["sampling_pars"]
+            if samp_name is None and self.pymoo_problem.is_intprob:
+                samp_name = "int_random"
+            if isinstance(samp_name, str):
+                pars["sampling"] = self.get_sampling(samp_name, **samp_pars)
+            if self.pymoo_problem.is_intprob:
+                pars.setdefault("repair", imports.RoundingRepair())
 
             out = imports.DE(**pars)
 
         # Particle Swarm:
         elif typ == "PSO":
-            if "sampling" in pars:
-                samp_name = pars.get("sampling", None)
-                samp_pars = pars.get("sampling_pars", {})
-                if "sampling_pars" in pars:
-                    del pars["sampling_pars"]
-                if isinstance(samp_name, str):
-                    pars["sampling"] = self.get_sampling(samp_name, **samp_pars)
+            samp_name = pars.get("sampling", None)
+            samp_pars = pars.get("sampling_pars", {})
+            if "sampling_pars" in pars:
+                del pars["sampling_pars"]
+            if samp_name is None and self.pymoo_problem.is_intprob:
+                samp_name = "int_random"
+            if isinstance(samp_name, str):
+                pars["sampling"] = self.get_sampling(samp_name, **samp_pars)
 
             pars.setdefault("output", imports.SingleObjectiveOutput())
+            if self.pymoo_problem.is_intprob:
+                pars.setdefault("repair", imports.RoundingRepair())
 
             cross_pars = pars.get("crossover_pars", {})
             if "crossover_pars" in pars:
@@ -219,11 +226,17 @@ class Factory:
 
         # Covariance Matrix Adaptation Evolution Strategy:
         elif typ == "CMAES":
+            if self.pymoo_problem.is_intprob:
+                raise ValueError("CMAES does not support pure integer problems")
             del pars["type"]
             out = imports.CMAES(**pars)
 
         # MixedVariableGA:
         elif typ == "MixedVariableGA":
+            if self.pymoo_problem.is_intprob:
+                raise ValueError(
+                    "MixedVariableGA requires a mixed-variable problem representation"
+                )
             cross_pars = pars.get("crossover_pars", {})
             if "crossover_pars" in pars:
                 del pars["crossover_pars"]
@@ -259,8 +272,13 @@ class Factory:
         elif isinstance(term_pars, list):
             return tuple(term_pars)
 
+        term_pars = term_pars.copy()
         typ = term_pars.pop("type", None)
         if typ is None:
+            if "n_max_gen" in term_pars:
+                return ("n_gen", term_pars["n_max_gen"])
+            if "n_max_evals" in term_pars:
+                return ("n_eval", term_pars["n_max_evals"])
             return None
         elif not isinstance(typ, str):
             self.print(f"Selecting termination: {type(typ).__name__}")

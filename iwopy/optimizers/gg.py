@@ -201,6 +201,8 @@ class GG(Optimizer):
         """
         Print solver info, called before solving
         """
+        super().print_info()
+
         s = f"  Optimizer '{self.name}'  "
         print(s)
         hline = "-" * len(s)

@@ -75,6 +75,21 @@ class SLSQP(Optimizer):
         self.var_scale = None
         self.n_iterations = 0
 
+    def print_info(self):
+        """
+        Print solver info, called before solving
+        """
+        super().print_info()
+
+        if len(self.scipy_pars):
+            print("\nScipy parameters:")
+            print("-----------------")
+            for k, v in self.scipy_pars.items():
+                if isinstance(v, (int, float, str)):
+                    print(f"  {k}: {v}")
+
+        print()
+
     def initialize(self, verbosity=1):
         """
         Initialize the optimizer.

@@ -1,3 +1,7 @@
+from numbers import Integral, Real
+
+import numpy as np
+
 from . import imports
 
 
@@ -68,14 +72,19 @@ class AlgoFactory:
             set_bfe(uda)
 
             for k, a in kwargs.items():
-                if isinstance(a, int):
-                    uda.set_integer_option(k, a)
-
-                elif isinstance(a, float):
-                    uda.set_numeric_option(k, a)
-
-                else:
+                if isinstance(a, (bool, np.bool_)):
+                    uda.set_string_option(k, "yes" if a else "no")
+                elif isinstance(a, Integral):
+                    uda.set_integer_option(k, int(a))
+                elif isinstance(a, Real):
+                    uda.set_numeric_option(k, float(a))
+                elif isinstance(a, str):
                     uda.set_string_option(k, a)
+                else:
+                    raise TypeError(
+                        f"IPOPT option '{k}' has unsupported type {a.__class__.__name__}; "
+                        "expected bool, int, float, or str"
+                    )
 
             algo = imports.pygmo.algorithm(uda)
 
@@ -220,6 +229,27 @@ class AlgoFactory:
 
             algo = imports.pygmo.algorithm(uda)
 
+        # additional pygmo algorithms:
+        elif type in (
+            "de",
+            "de1220",
+            "sade",
+            "cmaes",
+            "gwo",
+            "ihs",
+            "pso_gen",
+            "xnes",
+            "sea",
+            "compass_search",
+            "moead",
+            "moead_gen",
+            "nspso",
+        ):
+            uda = getattr(imports.pygmo, type)(**kwargs)
+            set_bfe(uda)
+
+            algo = imports.pygmo.algorithm(uda)
+
         # unknown driver:
         else:
             estr = f"Unknown uda type '{type}'.\nKnown solvers:"
@@ -229,6 +259,19 @@ class AlgoFactory:
             estr += "\n  pso"
             estr += "\n  bee_colony"
             estr += "\n  nsga2"
+            estr += "\n  de"
+            estr += "\n  de1220"
+            estr += "\n  sade"
+            estr += "\n  cmaes"
+            estr += "\n  gwo"
+            estr += "\n  ihs"
+            estr += "\n  pso_gen"
+            estr += "\n  xnes"
+            estr += "\n  sea"
+            estr += "\n  compass_search"
+            estr += "\n  moead"
+            estr += "\n  moead_gen"
+            estr += "\n  nspso"
             raise KeyError(estr)
 
         algo.set_verbosity(1)

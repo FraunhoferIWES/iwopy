@@ -78,6 +78,102 @@ def test_integer_ga_keeps_integer_variables(vectorize):
     assert all(np.issubdtype(dtype, np.integer) for dtype in prob.vars_int_dtypes)
 
 
+def test_factory_does_not_mutate_reused_algorithm_parameters():
+    prob = RecordingIntProblem()
+    prob.add_objective(IntObjective(prob))
+    prob.initialize()
+    algo_pars = {
+        "type": "GA",
+        "pop_size": 10,
+        "seed": 42,
+    }
+
+    for _ in range(2):
+        solver = Optimizer_pymoo(
+            prob,
+            problem_pars={"vectorize": True},
+            algo_pars=algo_pars,
+            setup_pars={},
+            term_pars=("n_gen", 1),
+        )
+        solver.initialize()
+
+    assert algo_pars == {
+        "type": "GA",
+        "pop_size": 10,
+        "seed": 42,
+    }
+
+
+def test_dict_generation_termination_is_generation_only():
+    prob = RecordingIntProblem()
+    prob.add_objective(IntObjective(prob))
+    prob.initialize()
+    term_pars = {"n_max_gen": 2}
+
+    solver = Optimizer_pymoo(
+        prob,
+        problem_pars={"vectorize": True},
+        algo_pars={
+            "type": "GA",
+            "pop_size": 10,
+            "seed": 42,
+        },
+        setup_pars={},
+        term_pars=term_pars,
+    )
+    solver.initialize()
+    solver.solve(verbosity=0)
+
+    assert solver.term == ("n_gen", 2)
+    assert term_pars == {"n_max_gen": 2}
+
+
+@pytest.mark.parametrize("algorithm", ["GA", "DE", "PSO", "NSGA2", "NSGA3"])
+def test_integer_pymoo_algorithms_keep_integer_variables(algorithm):
+    prob = RecordingIntProblem()
+    prob.add_objective(IntObjective(prob))
+    prob.initialize()
+
+    solver = Optimizer_pymoo(
+        prob,
+        problem_pars={"vectorize": True},
+        algo_pars={
+            "type": algorithm,
+            "pop_size": 10,
+            "seed": 42,
+        },
+        setup_pars={},
+        term_pars=("n_gen", 2),
+    )
+    solver.initialize()
+    results = solver.solve(verbosity=0)
+
+    assert results.success
+    assert results.vars_int.dtype.kind in "iu"
+    assert np.all((results.vars_int >= 0) & (results.vars_int <= 4))
+    assert prob.vars_int_dtypes
+    assert all(np.issubdtype(dtype, np.integer) for dtype in prob.vars_int_dtypes)
+
+
+@pytest.mark.parametrize("algorithm", ["CMAES", "MixedVariableGA"])
+def test_integer_pymoo_algorithms_reject_incompatible_representation(algorithm):
+    prob = RecordingIntProblem()
+    prob.add_objective(IntObjective(prob))
+    prob.initialize()
+
+    solver = Optimizer_pymoo(
+        prob,
+        problem_pars={"vectorize": True},
+        algo_pars={"type": algorithm, "pop_size": 10, "seed": 42},
+        setup_pars={},
+        term_pars=("n_gen", 1),
+    )
+
+    with pytest.raises(ValueError, match="integer|variable"):
+        solver.initialize()
+
+
 def test_pso_factory_uses_requested_sampling():
     prob = BraninProblem(initial_values=(1.0, 1.0))
     prob.initialize()

@@ -97,6 +97,41 @@ def test_slsqp_is_available_from_optimizer_factory():
     assert isinstance(solver, SLSQP)
 
 
+def test_slsqp_print_info_includes_problem_name(capsys):
+    problem = make_problem()
+    problem.initialize(verbosity=0)
+    solver = SLSQP(problem, scipy_pars={"tol": 1e-10})
+    solver.initialize(verbosity=0)
+
+    solver.print_info()
+
+    output = capsys.readouterr().out
+    assert "Problem:" in output
+    assert "  name         : quadratic" in output
+    assert "  n_vars_int   : 0" in output
+    assert "  n_vars_float : 1" in output
+    assert "  n_objectives : 1" in output
+    assert "  n_obj_cmptns : 1" in output
+    assert "  n_constraints: 0" in output
+    assert "  n_con_cmptns : 0" in output
+    assert "Scipy parameters:" in output
+    assert "  tol: 1e-10" in output
+
+
+def test_problem_initialize_does_not_print_optimizer_summary(capsys):
+    problem = make_problem()
+
+    problem.initialize(verbosity=1)
+
+    output = capsys.readouterr().out
+    assert "n_vars_int" not in output
+    assert "n_vars_float" not in output
+    assert "n_objectives" not in output
+    assert "n_obj_cmptns" not in output
+    assert "n_constraints" not in output
+    assert "n_con_cmptns" not in output
+
+
 def test_slsqp_reports_progress_without_extra_evaluations(capsys, monkeypatch):
     problem = make_problem(initial=3.0, target=1.0)
     problem.initialize()

@@ -42,6 +42,15 @@ class Optimizer(Base, metaclass=ABCMeta):
         """
         Print solver info, called before solving
         """
+        print("\nProblem:")
+        print("--------")
+        print(f"  name         : {self.problem.name}")
+        print(f"  n_vars_int   : {self.problem.n_vars_int}")
+        print(f"  n_vars_float : {self.problem.n_vars_float}")
+        print(f"  n_objectives : {self.problem.objs.n_functions}")
+        print(f"  n_obj_cmptns : {self.problem.n_objectives}")
+        print(f"  n_constraints: {self.problem.cons.n_functions}")
+        print(f"  n_con_cmptns : {self.problem.n_constraints}")
 
     @abstractmethod
     def solve(self, verbosity=1):
