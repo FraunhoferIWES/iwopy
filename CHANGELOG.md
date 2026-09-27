@@ -203,6 +203,10 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Added `pymoo` factory support for `DE`, `NSGA3`, and `CMAES` algorithms.
 - Fixed `pymoo` `GA` and `NSGA2` defaults for pure integer problems by applying
   integer rounding repair to generated offspring.
+- Expanded `pygmo` algorithm support and hardened IPOPT option handling.
+- Hardened `pymoo` factories for integer problems, reusable configurations, and
+  termination limits.
+- Unified problem summaries in optimizer output.
 - Added evaluation-free per-iteration objective and constraint progress output
   to `SLSQP`.
 - Improved `pymoo` single-objective termination defaults by combining robust
