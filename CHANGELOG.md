@@ -205,6 +205,8 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
   integer rounding repair to generated offspring.
 - Added evaluation-free per-iteration objective and constraint progress output
   to `SLSQP`.
+- Improved `pymoo` single-objective termination defaults by combining robust
+  objective convergence with generation and evaluation limits.
 - Dropping support for Python 3.9 and updating dependency minimums to match foxes
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0](https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0)
