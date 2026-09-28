@@ -25,6 +25,11 @@ get_reference_directions = None
 
 DefaultSingleObjectiveTermination = None
 DefaultMultiObjectiveTermination = None
+SingleObjectiveSpaceTermination = None
+TerminationCollection = None
+MaximumGenerationTermination = None
+MaximumFunctionCallTermination = None
+RobustTermination = None
 SingleObjectiveOutput = None
 
 minimize = None
@@ -50,6 +55,9 @@ def load(verbosity=1):
     global PM, RoundingRepair, GA, DE, NSGA2, NSGA3, PSO, CMAES, MixedVariableGA
     global get_reference_directions
     global DefaultSingleObjectiveTermination, DefaultMultiObjectiveTermination
+    global SingleObjectiveSpaceTermination, TerminationCollection
+    global MaximumGenerationTermination, MaximumFunctionCallTermination
+    global RobustTermination
     global SingleObjectiveOutput
     global minimize, loaded
 
@@ -108,6 +116,21 @@ def load(verbosity=1):
         ter = import_module("pymoo.termination.default", hint="pip install pymoo")
         DefaultSingleObjectiveTermination = ter.DefaultSingleObjectiveTermination
         DefaultMultiObjectiveTermination = ter.DefaultMultiObjectiveTermination
+        SingleObjectiveSpaceTermination = import_module(
+            "pymoo.termination.ftol", hint="pip install pymoo"
+        ).SingleObjectiveSpaceTermination
+        TerminationCollection = import_module(
+            "pymoo.termination.collection", hint="pip install pymoo"
+        ).TerminationCollection
+        MaximumGenerationTermination = import_module(
+            "pymoo.termination.max_gen", hint="pip install pymoo"
+        ).MaximumGenerationTermination
+        MaximumFunctionCallTermination = import_module(
+            "pymoo.termination.max_eval", hint="pip install pymoo"
+        ).MaximumFunctionCallTermination
+        RobustTermination = import_module(
+            "pymoo.termination.robust", hint="pip install pymoo"
+        ).RobustTermination
 
         SingleObjectiveOutput = import_module(
             "pymoo.util.display.single", hint="pip install pymoo"

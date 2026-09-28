@@ -105,7 +105,7 @@ def test_factory_does_not_mutate_reused_algorithm_parameters():
     }
 
 
-def test_dict_generation_termination_is_generation_only():
+def test_dict_generation_termination_uses_iwopy_default_type():
     prob = RecordingIntProblem()
     prob.add_objective(IntObjective(prob))
     prob.initialize()
@@ -125,7 +125,12 @@ def test_dict_generation_termination_is_generation_only():
     solver.initialize()
     solver.solve(verbosity=0)
 
-    assert solver.term == ("n_gen", 2)
+    assert type(solver.term).__name__ == "TerminationCollection"
+    assert [type(t).__name__ for t in solver.term.terminations] == [
+        "RobustTermination",
+        "MaximumGenerationTermination",
+        "MaximumFunctionCallTermination",
+    ]
     assert term_pars == {"n_max_gen": 2}
 
 

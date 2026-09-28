@@ -273,16 +273,33 @@ class Factory:
             return tuple(term_pars)
 
         term_pars = term_pars.copy()
-        typ = term_pars.pop("type", None)
-        if typ is None:
-            if "n_max_gen" in term_pars:
-                return ("n_gen", term_pars["n_max_gen"])
-            if "n_max_evals" in term_pars:
-                return ("n_eval", term_pars["n_max_evals"])
-            return None
-        elif not isinstance(typ, str):
+        typ = term_pars.pop("type", "iwopy")
+        if not isinstance(typ, str):
             self.print(f"Selecting termination: {type(typ).__name__}")
             return typ
+        elif typ == "iwopy":
+            term_pars.setdefault("n_max_evals", np.inf)
+            if self.pymoo_problem.problem.n_objectives > 1:
+                out = imports.DefaultMultiObjectiveTermination(**term_pars)
+            else:
+                ftol = term_pars.pop("ftol", 1e-6)
+                period = term_pars.pop("period", 30)
+                n_max_gen = term_pars.pop("n_max_gen", 1000)
+                n_max_evals = term_pars.pop("n_max_evals", np.inf)
+                term_pars.pop("xtol", None)
+                term_pars.pop("cvtol", None)
+                if term_pars:
+                    raise KeyError(
+                        f"Unknown single-objective default termination parameter(s): {sorted(term_pars)}"
+                    )
+                out = imports.TerminationCollection(
+                    imports.RobustTermination(
+                        imports.SingleObjectiveSpaceTermination(ftol, only_feas=True),
+                        period=period,
+                    ),
+                    imports.MaximumGenerationTermination(n_max_gen),
+                    imports.MaximumFunctionCallTermination(n_max_evals),
+                )
         elif typ == "default":
             term_pars.setdefault("n_max_evals", np.inf)
             if self.pymoo_problem.problem.n_objectives > 1:
@@ -290,7 +307,9 @@ class Factory:
             else:
                 out = imports.DefaultSingleObjectiveTermination(**term_pars)
         else:
-            raise KeyError(f"Unknown termination '{type}', please choose: default")
+            raise KeyError(
+                f"Unknown termination '{type}', please choose: iwopy, default"
+            )
 
         self.print(f"Selecting termination: {typ} ({type(out).__name__})")
 
