@@ -206,5 +206,6 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Added evaluation-free per-iteration objective and constraint progress output
   to `SLSQP`.
 - Dropping support for Python 3.9 and updating dependency minimums to match foxes
+- New farm opt problem `DiscreteLocalMoveOptProblem` for a single small step for each turbine
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0](https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0)
