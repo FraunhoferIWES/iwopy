@@ -18,8 +18,7 @@ class IterationOutput(iwopy.OptimizerCallback):
         else:
             objective = f"{data.objs[0, 0]:.8f}"
         print(
-            f"iteration {data.iteration:>2}: "
-            f"x = [{variables}], objective = {objective}"
+            f"iteration {data.iteration:>2}: x = [{variables}], objective = {objective}"
         )
 
 

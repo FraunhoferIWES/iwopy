@@ -91,9 +91,13 @@ class OptimizerCallbackData:
             if self.cons is None
             else _read_only_population(self.cons, "cons", np.dtype(np.float64)),
         }
-        population_sizes = {len(values) for values in arrays.values() if values is not None}
+        population_sizes = {
+            len(values) for values in arrays.values() if values is not None
+        }
         if len(population_sizes) != 1:
-            raise ValueError("Optimizer callback population arrays have inconsistent sizes.")
+            raise ValueError(
+                "Optimizer callback population arrays have inconsistent sizes."
+            )
         for name, values in arrays.items():
             object.__setattr__(self, name, values)
 
@@ -237,7 +241,9 @@ class _OptimizerCallbackDispatcher:
         elif not isinstance(callbacks, list):
             raise TypeError("Optimizer callbacks must be supplied as a list.")
         if not all(isinstance(callback, OptimizerCallback) for callback in callbacks):
-            raise TypeError("All optimizer callbacks must derive from OptimizerCallback.")
+            raise TypeError(
+                "All optimizer callbacks must derive from OptimizerCallback."
+            )
         self.callbacks = callbacks.copy()
 
     def initialize(self, optimizer: Optimizer) -> None:
