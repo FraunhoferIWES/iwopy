@@ -1,7 +1,12 @@
 import numpy as np
 from scipy.optimize import minimize
 
-from iwopy.core import Optimizer, SingleObjOptResults
+from iwopy.core import (
+    Optimizer,
+    OptimizerCallback,
+    OptimizerCallbackData,
+    SingleObjOptResults,
+)
 
 
 class Optimizer_scipy(Optimizer):
@@ -45,9 +50,10 @@ class Optimizer_scipy(Optimizer):
         if scipy_pars is None:
             scipy_pars = {}
         super().__init__(problem, **kwargs)
-        self.scipy_pars = scipy_pars
+        self.scipy_pars = scipy_pars.copy()
         self.mem_size = mem_size
         self._mem = None
+        self._callback_iteration = 0
 
     def print_info(self):
         """
@@ -79,6 +85,10 @@ class Optimizer_scipy(Optimizer):
         if self.problem.n_objectives > 1:
             raise RuntimeError(
                 "Scipy minimize does not support multi-objective optimization."
+            )
+        if "callback" in self.scipy_pars:
+            raise ValueError(
+                f"Optimizer '{self.name}': SciPy callback is managed internally."
             )
 
         # Define constraints:
@@ -173,14 +183,64 @@ class Optimizer_scipy(Optimizer):
         __, cons, __ = self._get_results(x)
         return cons[ci]
 
-    def solve(self, verbosity=1):
+    def _dispatch_callback(self, x, scipy_state=None):
+        """Dispatch a cached SciPy iterate without evaluating the problem."""
+        self._callback_iteration += 1
+        x = np.asarray(x, dtype=np.float64)
+        cached = self._mem.get(tuple(x))
+        objs = None if cached is None else cached[0]
+        cons = None if cached is None else cached[1]
+        n_evaluations = getattr(scipy_state, "nfev", None)
+        if n_evaluations is not None:
+            n_evaluations = int(n_evaluations)
+        n_vars_int = self.problem.n_vars_int
+        self._notify_callbacks(
+            OptimizerCallbackData(
+                event="iteration",
+                iteration=self._callback_iteration,
+                n_evaluations=n_evaluations,
+                vars_int=x[:n_vars_int].astype(np.int32),
+                vars_float=x[n_vars_int:],
+                objs=objs,
+                cons=cons,
+            )
+        )
+
+    def _callback_xk(self, xk):
+        """Handle SciPy methods exposing only the current coordinates."""
+        self._dispatch_callback(xk)
+
+    def _callback_intermediate(self, intermediate_result):
+        """Handle SciPy methods exposing an intermediate result."""
+        if hasattr(intermediate_result, "x"):
+            self._dispatch_callback(intermediate_result.x, intermediate_result)
+        else:
+            self._dispatch_callback(intermediate_result)
+
+    def _scipy_callback(self):
+        """Select the callback signature required by the SciPy method."""
+        method = self.scipy_pars.get("method")
+        if callable(method):
+            return self._callback_xk
+        method_name = "" if method is None else str(method).lower()
+        if method_name in {"tnc", "cobyla", "cobyqa"}:
+            return self._callback_xk
+        return self._callback_intermediate
+
+    def solve(
+        self,
+        verbosity: int = 1,
+        callbacks: list[OptimizerCallback] | None = None,
+    ):
         """
         Run the optimization solver.
 
         Parameters
         ----------
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
+        callbacks
+            Ordered callbacks for optimizer iterates
 
         Returns
         -------
@@ -190,7 +250,8 @@ class Optimizer_scipy(Optimizer):
         """
 
         # check problem initialization:
-        super().solve()
+        super().solve(verbosity, callbacks)
+        self._callback_iteration = 0
 
         # Initial values:
         x0 = np.array(self.problem.initial_values_int(), dtype=np.float64)
@@ -213,11 +274,14 @@ class Optimizer_scipy(Optimizer):
         bounds = [(minf[i], maxf[i]) for i in range(len(minf))]
 
         # Run minimization:
-        results = minimize(self._objective, x0, bounds=bounds, **self.scipy_pars)
+        scipy_pars = self.scipy_pars.copy()
+        if self._has_callbacks:
+            scipy_pars["callback"] = self._scipy_callback()
+        scipy_results = minimize(self._objective, x0, bounds=bounds, **scipy_pars)
 
         # final evaluation:
-        if results.success:
-            x = results.x
+        if scipy_results.success:
+            x = scipy_results.x
             i0 = self.problem.n_vars_int
             vars_int = x[:i0].astype(np.int32)
             vars_float = x[i0:]
@@ -232,6 +296,13 @@ class Optimizer_scipy(Optimizer):
             objs = None
             cons = None
 
-        return SingleObjOptResults(
-            self.problem, results.success, vars_int, vars_float, objs, cons, prob_res
+        results = SingleObjOptResults(
+            self.problem,
+            scipy_results.success,
+            vars_int,
+            vars_float,
+            objs,
+            cons,
+            prob_res,
         )
+        return self._finalize_callbacks(results)

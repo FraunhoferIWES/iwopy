@@ -1,11 +1,38 @@
 import numpy as np
 
-from iwopy.core import Optimizer
+from iwopy.core import Optimizer, OptimizerCallback, OptimizerCallbackData
 from iwopy.utils import suppress_stdout
 
 from . import imports
 from .algos import AlgoFactory
 from .problem import UDP
+
+
+class _PygmoCallbackSink:
+    """Copy-stable bridge from PyGMO fitness calls to iwopy callbacks."""
+
+    def __init__(self, optimizer) -> None:
+        self.optimizer = optimizer
+        self.n_evaluations = 0
+
+    def __deepcopy__(self, memo):
+        return self
+
+    def notify(self, vars_int, vars_float, objs, cons):
+        """Dispatch one scalar or batch evaluation."""
+        n_pop = 1 if np.asarray(vars_float).ndim == 1 else len(vars_float)
+        self.n_evaluations += n_pop
+        self.optimizer._notify_callbacks(
+            OptimizerCallbackData(
+                event="evaluation",
+                iteration=None,
+                n_evaluations=self.n_evaluations,
+                vars_int=vars_int,
+                vars_float=vars_float,
+                objs=objs,
+                cons=cons,
+            )
+        )
 
 
 class Optimizer_pygmo(Optimizer):
@@ -74,6 +101,9 @@ class Optimizer_pygmo(Optimizer):
 
         """
 
+        if "callback_mode" in self.setup_pars:
+            raise ValueError("PyGMO callback_mode is not supported")
+
         # create pygmo problem:
         pop = self.problem_pars.get("pop", False)
         self.udp = UDP(self.problem, **self.problem_pars)
@@ -119,14 +149,27 @@ class Optimizer_pygmo(Optimizer):
             print()
             print(self.algo)
 
-    def solve(self, verbosity=1):
+    def _validate_callbacks(self, callbacks: list[OptimizerCallback]) -> None:
+        """Reject callbacks when PyGMO cannot expose exact progress states."""
+        if self.algo_pars.get("type") == "ipopt" and callbacks:
+            raise NotImplementedError(
+                "PyGMO IPOPT does not expose exact live iteration callbacks"
+            )
+
+    def solve(
+        self,
+        verbosity: int = 1,
+        callbacks: list[OptimizerCallback] | None = None,
+    ):
         """
         Run the optimization solver.
 
         Parameters
         ----------
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
+        callbacks
+            Ordered callbacks for intermediate optimization states
 
         Returns
         -------
@@ -135,14 +178,25 @@ class Optimizer_pygmo(Optimizer):
 
         """
 
+        super().solve(verbosity, callbacks)
+        population_udp = None
+        if self._has_callbacks:
+            population_udp = self.pop.problem.extract(UDP)
+            population_udp.callback_sink = _PygmoCallbackSink(self)
+
         # try pygmo silencing:
         if self.algo.has_set_verbosity():
             self.algo.set_verbosity(verbosity)
 
         # general silencing for Python prints:
         silent = verbosity <= 0
-        with suppress_stdout(silent):
-            # Run solver:
-            pop = self.algo.evolve(self.pop)
+        try:
+            with suppress_stdout(silent):
+                # Run solver:
+                pop = self.algo.evolve(self.pop)
+        finally:
+            if population_udp is not None:
+                population_udp.callback_sink = None
 
-        return self.udp.finalize(pop, verbosity)
+        results = self.udp.finalize(pop, verbosity)
+        return self._finalize_callbacks(results)

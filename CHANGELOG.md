@@ -204,11 +204,25 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Fixed `pymoo` `GA` and `NSGA2` defaults for pure integer problems by applying
   integer rounding repair to generated offspring.
 - Expanded `pygmo` algorithm support and hardened IPOPT option handling.
+- Fixed PyGMO gradient orientation for maximization objectives, ensuring
+  gradient-based algorithms receive derivatives consistent with fitness values.
 - Hardened `pymoo` factories for integer problems, reusable configurations, and
   termination limits.
 - Unified problem summaries in optimizer output.
 - Added evaluation-free per-iteration objective and constraint progress output
   to `SLSQP`.
+- Added iwopy-native optimizer callbacks with normalized intermediate states for
+  `GG`, `SLSQP`, SciPy, pymoo, and PyGMO interfaces except IPOPT.
+- PyGMO IPOPT now rejects callbacks because pygmo exposes neither exact live
+  iterations nor decision vectors in its progress log.
+- Added runnable SLSQP and pymoo callback examples with live output and
+  objective-history plots.
+- Scoped PyGMO callback sinks to active solves, preventing notifications after
+  successful or failed optimization runs.
+- Avoided backend callback adapters and intermediate-data construction when no
+  iwopy callbacks are registered.
+- Standardized backend callback validation and documented that callback
+  finalization occurs only after successful solver completion.
 - Improved `pymoo` single-objective termination defaults by combining robust
   objective convergence with generation and evaluation limits.
 - Dropping support for Python 3.9 and updating dependency minimums to match foxes

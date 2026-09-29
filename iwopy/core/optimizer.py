@@ -5,6 +5,11 @@ import numpy as np
 from iwopy.utils import new_instance
 
 from .base import Base
+from .optimizer_callback import (
+    OptimizerCallback,
+    OptimizerCallbackData,
+    _OptimizerCallbackDispatcher,
+)
 
 
 class Optimizer(Base, metaclass=ABCMeta):
@@ -37,6 +42,7 @@ class Optimizer(Base, metaclass=ABCMeta):
         super().__init__(name)
         self.problem = problem
         self.name = name
+        self._callback_dispatcher = _OptimizerCallbackDispatcher(None)
 
     def print_info(self):
         """
@@ -53,7 +59,11 @@ class Optimizer(Base, metaclass=ABCMeta):
         print(f"  n_con_cmptns : {self.problem.n_constraints}")
 
     @abstractmethod
-    def solve(self, verbosity=1):
+    def solve(
+        self,
+        verbosity: int = 1,
+        callbacks: list[OptimizerCallback] | None = None,
+    ):
         """
         Run the optimization solver.
 
@@ -61,6 +71,8 @@ class Optimizer(Base, metaclass=ABCMeta):
         ----------
         verbosity: int
             The verbosity level, 0 = silent
+        callbacks
+            Ordered callbacks for intermediate optimization states.
 
         Returns
         -------
@@ -82,6 +94,29 @@ class Optimizer(Base, metaclass=ABCMeta):
                 f"Optimizer called for problem '{self.problem.name}'"
                 + " before solver initialization"
             )
+
+        callback_dispatcher = _OptimizerCallbackDispatcher(callbacks)
+        self._validate_callbacks(callback_dispatcher.callbacks)
+        self._callback_dispatcher = callback_dispatcher
+        self._callback_dispatcher.initialize(self)
+
+    def _validate_callbacks(self, callbacks: list[OptimizerCallback]) -> None:
+        """Validate backend-specific callback capabilities."""
+        del callbacks
+
+    @property
+    def _has_callbacks(self) -> bool:
+        """Whether callbacks are active for the current solve."""
+        return bool(self._callback_dispatcher.callbacks)
+
+    def _notify_callbacks(self, data: OptimizerCallbackData) -> None:
+        """Notify callbacks about an intermediate optimizer state."""
+        self._callback_dispatcher.notify(data)
+
+    def _finalize_callbacks(self, results):
+        """Finalize callbacks and return the optimization results."""
+        self._callback_dispatcher.finalize(results)
+        return results
 
     def finalize(self, opt_results, verbosity=1):
         """

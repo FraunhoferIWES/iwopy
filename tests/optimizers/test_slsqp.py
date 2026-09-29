@@ -89,6 +89,23 @@ def test_slsqp_solves_analytical_quadratic():
     assert result.objs == pytest.approx([0.0], abs=1e-12)
 
 
+def test_slsqp_skips_callback_data_without_callbacks(monkeypatch):
+    problem = make_problem(initial=3.0, target=1.0)
+    problem.initialize(verbosity=0)
+    solver = SLSQP(problem, scipy_pars={"tol": 1e-10})
+    solver.initialize(verbosity=0)
+
+    def unexpected_callback_data(*args, **kwargs):
+        raise AssertionError("callback data created without callbacks")
+
+    monkeypatch.setattr(
+        "iwopy.optimizers.slsqp.OptimizerCallbackData",
+        unexpected_callback_data,
+    )
+
+    solver.solve(verbosity=0)
+
+
 def test_slsqp_is_available_from_optimizer_factory():
     problem = make_problem()
 
@@ -146,7 +163,8 @@ def test_slsqp_reports_progress_without_extra_evaluations(capsys, monkeypatch):
         return original(*args, **kwargs)
 
     monkeypatch.setattr(problem, "evaluate_individual", count_evaluations)
-    result = solver.solve(verbosity=1)
+    history = iwopy.OptimizationHistory()
+    result = solver.solve(verbosity=1, callbacks=[history])
     output = capsys.readouterr().out
 
     assert result.success
@@ -154,6 +172,13 @@ def test_slsqp_reports_progress_without_extra_evaluations(capsys, monkeypatch):
     assert "objective" in output
     assert "max constraint" in output
     assert solver.n_iterations == solver.scipy_results.nit
+    assert len(history.states) == solver.n_iterations
+    assert [state.iteration for state in history.states] == list(
+        range(1, solver.n_iterations + 1)
+    )
+    assert all(state.event == "iteration" for state in history.states)
+    assert history.states[-1].vars_float[0] == pytest.approx(result.vars_float)
+    assert history.states[-1].objs[0] == pytest.approx(result.objs)
     assert evaluations == solver.scipy_results.nfev
 
 
@@ -163,9 +188,11 @@ def test_slsqp_progress_is_silent_at_zero_verbosity(capsys):
     solver = SLSQP(problem)
     solver.initialize(verbosity=0)
 
-    solver.solve(verbosity=0)
+    history = iwopy.OptimizationHistory()
+    solver.solve(verbosity=0, callbacks=[history])
 
     assert capsys.readouterr().out == ""
+    assert len(history.states) == solver.scipy_results.nit
 
 
 def test_slsqp_scales_large_physical_variable_ranges():

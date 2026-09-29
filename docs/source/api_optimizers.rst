@@ -29,7 +29,12 @@ from both population and serial finite-difference evaluations.
 With positive ``solve`` verbosity, SLSQP reports every accepted iteration with
 the original objective value and maximum exact constraint violation. Reporting
 uses cached function values and does not trigger additional problem
-evaluations. Set ``verbosity=0`` for silent operation.
+evaluations. Set ``verbosity=0`` for silent operation. User callbacks remain
+active at every verbosity level and receive the same cached iteration state.
+
+``GG`` reports the retained current point after every counted iteration.
+Callbacks for both native optimizers and all external interfaces use the common
+iwopy callback API described in :doc:`callbacks`.
 
 A complete derivative-free constrained example using ``LocalFD`` is available
 in ``examples/slsqp/run.py``. Pass ``--no-pop`` to compare serial gradient

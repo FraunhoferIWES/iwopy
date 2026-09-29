@@ -80,6 +80,7 @@ Contents
         :maxdepth: 2
 
         examples
+        callbacks
 
     .. toctree::
         :maxdepth: 1

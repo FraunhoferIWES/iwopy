@@ -1,55 +1,26 @@
-import matplotlib.pyplot as plt
 import numpy as np
 
-from iwopy.core import Optimizer
+from iwopy.core import Optimizer, OptimizerCallback, OptimizerCallbackData
 
 from . import imports
 from .factory import Factory
 from .problem import MultiObjProblemTemplate, SingleObjProblemTemplate
 
 
-class DefaultCallbackTemplate:
-    """
-    Template for the default callback
+class _PymooCallbackTemplate:
+    """Template for the internal pymoo-to-iwopy callback adapter."""
 
-    :group: interfaces.pymoo
+    CLASS_NAME = "IwopyCallback"
+    CLASS_DOC = "Internal pymoo-to-iwopy callback adapter"
 
-    """
+    def __init__(self, optimizer):
+        self.optimizer = optimizer
 
-    CLASS_NAME = "DefaultCallback"
-    CLASS_DOC = "The default callback"
-
-    def __init__(self):
-        """
-        Constructor
-        """
-        self.data["f_best"] = None
-        self.data["cv_best"] = None
-        self.data["winner_i"] = None
-        self.data["winner_x"] = None
-        self.data["winner_f"] = None
-        self.data["winner_cv"] = None
+    def __deepcopy__(self, memo):
+        return self
 
     def notify(self, algorithm):
-        fvals = algorithm.pop.get("F")
-        cvals = algorithm.pop.get("CV")
-        n_obj = fvals.shape[1]
-        n_con = cvals.shape[1]
-        i = np.argmin(fvals, axis=0)
-        if self.data["f_best"] is None:
-            self.data["f_best"] = fvals[None, i, range(n_obj)]
-            self.data["cv_best"] = cvals[None, i, range(n_con)]
-        else:
-            self.data["f_best"] = np.append(
-                self.data["f_best"], fvals[None, i, range(n_obj)], axis=0
-            )
-            self.data["cv_best"] = np.append(
-                self.data["cv_best"], cvals[None, i, range(n_con)], axis=0
-            )
-        self.data["winner_i"] = i
-        self.data["winner_x"] = algorithm.pop.get("X")[i]
-        self.data["winner_f"] = self.data["f_best"][-1]
-        self.data["winner_cv"] = self.data["cv_best"][-1]
+        self.optimizer._notify_pymoo_callbacks(algorithm)
 
     @classmethod
     def get_class(cls):
@@ -62,11 +33,11 @@ class DefaultCallbackTemplate:
             for v, d in cls.__dict__.items()
             if v not in ["get_class", "CLASS_NAME", "CLASS_DOC"]
         }
-        init0 = cls.__init__
+        initialize_template = cls.__init__
 
         def __init(self, *args, **kwargs):
             imports.Callback.__init__(self)
-            init0(self, *args, **kwargs)
+            initialize_template(self, *args, **kwargs)
 
         attrb["__init__"] = __init
         attrb["__doc__"] = cls.CLASS_DOC
@@ -173,6 +144,10 @@ class Optimizer_pymoo(Optimizer):
             The verbosity level, 0 = silent
 
         """
+        if "callback" in self.setup_pars:
+            raise ValueError(
+                f"Optimizer '{self.name}': pymoo callback is managed internally."
+            )
         if self.problem.n_objectives <= 1:
             self.pymoo_problem = SingleObjProblemTemplate.get_class()(
                 self.problem, **self.problem_pars
@@ -191,16 +166,82 @@ class Optimizer_pymoo(Optimizer):
 
         super().initialize(verbosity)
 
-    def solve(self, callback="default", verbosity=1):
+    def _callback_variables(self, values):
+        """Convert a pymoo population to iwopy variable arrays."""
+        n_pop = len(values)
+        if self.pymoo_problem.is_mixed:
+            vars_int = np.array(
+                [
+                    [entry[name] for name in self.problem.var_names_int()]
+                    for entry in values
+                ],
+                dtype=np.int32,
+            )
+            vars_float = np.array(
+                [
+                    [entry[name] for name in self.problem.var_names_float()]
+                    for entry in values
+                ],
+                dtype=np.float64,
+            )
+        elif self.pymoo_problem.is_intprob:
+            vars_int = np.asarray(values, dtype=np.int32)
+            vars_float = np.zeros((n_pop, 0), dtype=np.float64)
+        else:
+            vars_int = np.zeros((n_pop, 0), dtype=np.int32)
+            vars_float = np.asarray(values, dtype=np.float64)
+        return vars_int, vars_float
+
+    def _callback_constraints(self, values, n_pop):
+        """Restore iwopy constraint values from pymoo's convention."""
+        if not self.problem.n_constraints:
+            return np.zeros((n_pop, 0), dtype=np.float64)
+
+        transformed = np.asarray(values, dtype=np.float64)
+        constraints = np.empty_like(transformed)
+        has_upper = np.isfinite(self.pymoo_problem._cma)
+        has_lower = np.isfinite(self.pymoo_problem._cmi)
+        constraints[:, has_upper] = (
+            transformed[:, has_upper] + self.pymoo_problem._cma[None, has_upper]
+        )
+        constraints[:, has_lower] = (
+            self.pymoo_problem._cmi[None, has_lower] - transformed[:, has_lower]
+        )
+        return constraints
+
+    def _notify_pymoo_callbacks(self, algorithm):
+        """Normalize and dispatch one completed pymoo generation."""
+        population = algorithm.pop
+        vars_int, vars_float = self._callback_variables(population.get("X"))
+        objectives = np.asarray(population.get("F"), dtype=np.float64)
+        objectives *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
+        constraints = self._callback_constraints(population.get("G"), len(objectives))
+        self._notify_callbacks(
+            OptimizerCallbackData(
+                event="iteration",
+                iteration=int(algorithm.n_gen),
+                n_evaluations=int(algorithm.evaluator.n_eval),
+                vars_int=vars_int,
+                vars_float=vars_float,
+                objs=objectives,
+                cons=constraints,
+            )
+        )
+
+    def solve(
+        self,
+        verbosity: int = 1,
+        callbacks: list[OptimizerCallback] | None = None,
+    ):
         """
         Run the optimization solver.
 
         Parameters
         ----------
-        callback: pymoo.Callback, optional
-            The callback
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
+        callbacks
+            Ordered callbacks for completed pymoo generations
 
         Returns
         -------
@@ -208,85 +249,20 @@ class Optimizer_pymoo(Optimizer):
             The optimization results object
 
         """
-        if callback == "default":
-            callback = DefaultCallbackTemplate.get_class()()
-
         # check problem initialization:
-        super().solve()
+        super().solve(verbosity, callbacks)
 
         # run pymoo solver:
-        self.callback = callback
+        setup_pars = self.setup_pars.copy()
+        if self._has_callbacks:
+            setup_pars["callback"] = _PymooCallbackTemplate.get_class()(self)
         self.results = imports.minimize(
             self.pymoo_problem,
             algorithm=self.algo,
             termination=self.term,
             verbose=verbosity > 0,
-            callback=self.callback,
-            **self.setup_pars,
+            **setup_pars,
         )
 
-        # transfer callback:
-        if self.callback is not None:
-            self.callback = self.results.algorithm.callback
-
-        return self.pymoo_problem.finalize(self.results)
-
-    def get_figure_f(self, fig=None, ax=None, valid_dict=None, **kwargs):
-        """
-        Create a figure that shows the
-        objective function development
-        during optimization.
-
-        The kwargs are forwarded to the
-        plot command.
-
-        Parameters
-        ----------
-        fig: plt.Figure, optional
-            The figure to which to add the plot
-        ax: plt.Axis, optional
-            The axis to which to add the plot
-        valid_dict: dict, optional
-            Settings for the point of first valid
-            solution, forwarded to scatter
-
-        Returns
-        -------
-        fig: plt.Figure
-            The figure
-
-        """
-        if self.problem.n_objectives() == 1:
-            if fig is None and ax is None:
-                fig, ax = plt.subplots()
-            elif ax is None:
-                ax = fig.add_subplot(111)
-            else:
-                raise TypeError("Impossible fig/ax input")
-
-            fname = self.problem.objs[0].base_name
-            fvals = self.callback.data["f_best"]
-            gens = range(len(fvals))
-
-            ax.plot(gens, fvals, label=fname, **kwargs)
-
-            if self.problem.n_constraints():
-                cv = np.array(self.callback.data["cv_best"])
-                sel = cv == 0.0
-                if np.any(sel):
-                    i = np.argwhere(sel)[0][0]
-                    vdict = {"label": "first valid", "color": "red"}
-                    if valid_dict is not None:
-                        vdict.update(valid_dict)
-                    ax.scatter(i, fvals[i], **vdict)
-                    ax.legend()
-
-            ax.set_xlabel("n_gen")
-            ax.set_ylabel(fname)
-
-            plt.tight_layout()
-
-            return fig
-
-        else:
-            raise NotImplementedError
+        results = self.pymoo_problem.finalize(self.results)
+        return self._finalize_callbacks(results)

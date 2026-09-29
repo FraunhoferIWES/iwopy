@@ -1,7 +1,12 @@
 import numpy as np
 from scipy.optimize import minimize
 
-from iwopy.core import Optimizer, SingleObjOptResults
+from iwopy.core import (
+    Optimizer,
+    OptimizerCallback,
+    OptimizerCallbackData,
+    SingleObjOptResults,
+)
 
 
 class SLSQP(Optimizer):
@@ -74,6 +79,7 @@ class SLSQP(Optimizer):
         self.var_shift = None
         self.var_scale = None
         self.n_iterations = 0
+        self._solve_verbosity = 0
 
     def print_info(self):
         """
@@ -300,20 +306,42 @@ class SLSQP(Optimizer):
         x = self._to_problem_vars(scaled)
         values = self._value_mem.get(tuple(x))
         if values is None:
-            print(f"{self.n_iterations:>5} | {'cached values unavailable':>32}")
-            return
-        objs, cons = values
-        violation = self._constraint_violation(cons)
-        print(f"{self.n_iterations:>5} | {objs[0]:>14.7e} | {violation:>14.7e}")
+            objs = None
+            cons = None
+            if self._solve_verbosity:
+                print(f"{self.n_iterations:>5} | {'cached values unavailable':>32}")
+        else:
+            objs, cons = values
+            if self._solve_verbosity:
+                violation = self._constraint_violation(cons)
+                print(f"{self.n_iterations:>5} | {objs[0]:>14.7e} | {violation:>14.7e}")
 
-    def solve(self, verbosity=1):
+        if self._has_callbacks:
+            self._notify_callbacks(
+                OptimizerCallbackData(
+                    event="iteration",
+                    iteration=self.n_iterations,
+                    vars_int=np.array([], dtype=np.int32),
+                    vars_float=x,
+                    objs=objs,
+                    cons=cons,
+                )
+            )
+
+    def solve(
+        self,
+        verbosity: int = 1,
+        callbacks: list[OptimizerCallback] | None = None,
+    ):
         """
         Run the SLSQP optimizer.
 
         Parameters
         ----------
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent.
+        callbacks
+            Ordered callbacks for accepted optimizer iterates.
 
         Returns
         -------
@@ -321,8 +349,9 @@ class SLSQP(Optimizer):
             The optimization results.
 
         """
-        super().solve(verbosity)
+        super().solve(verbosity, callbacks)
         self.n_iterations = 0
+        self._solve_verbosity = verbosity
         x0 = np.asarray(self.problem.initial_values_float(), dtype=np.float64)
         scaled0 = self._to_scaled_vars(x0)
         lower = self._to_scaled_vars(self.problem.min_values_float())
@@ -333,13 +362,12 @@ class SLSQP(Optimizer):
                 upper,
             )
         )
-        callback = None
         if verbosity:
             print("\nRunning SLSQP")
             print("--------------------+----------------+----------------")
             print("   it |      objective | max constraint")
             print("--------------------+----------------+----------------")
-            callback = self._progress_callback
+        report_progress = bool(verbosity) or self._has_callbacks
         self.scipy_results = minimize(
             self._objective,
             scaled0,
@@ -347,9 +375,11 @@ class SLSQP(Optimizer):
             jac=self._objective_jac,
             bounds=bounds,
             constraints=self._constraints_scipy,
-            callback=callback,
+            callback=self._progress_callback if report_progress else None,
             **self.scipy_pars,
         )
+        if not report_progress:
+            self.n_iterations = int(self.scipy_results.nit)
         if verbosity:
             print("--------------------+----------------+----------------")
 
@@ -361,7 +391,7 @@ class SLSQP(Optimizer):
         )
         feasible = np.all(self.problem.check_constraints_individual(cons))
         success = bool(self.scipy_results.success and feasible)
-        return SingleObjOptResults(
+        results = SingleObjOptResults(
             self.problem,
             success,
             vars_int,
@@ -370,3 +400,4 @@ class SLSQP(Optimizer):
             cons,
             problem_results,
         )
+        return self._finalize_callbacks(results)

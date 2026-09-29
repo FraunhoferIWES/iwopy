@@ -66,6 +66,68 @@ def test_gg_accepts_feasible_initial_optimum():
     assert result.objs[0] == 0.0
 
 
+def test_gg_skips_callback_data_without_callbacks(monkeypatch):
+    problem = make_problem(initial=2.0)
+    solver = GG(
+        problem,
+        step_max=0.5,
+        step_min=0.01,
+        max_iterations=1,
+    )
+    solver.initialize(verbosity=0)
+
+    def unexpected_callback_data(*args, **kwargs):
+        raise AssertionError("callback data created without callbacks")
+
+    monkeypatch.setattr(
+        "iwopy.optimizers.gg.OptimizerCallbackData",
+        unexpected_callback_data,
+    )
+
+    solver.solve(verbosity=0)
+
+
+@pytest.mark.parametrize("vectorized", [False, True])
+def test_gg_reports_completed_iterations(vectorized):
+    problem = make_problem(initial=2.0)
+    solver = GG(
+        problem,
+        step_max=0.5,
+        step_min=0.01,
+        max_iterations=2,
+        vectorized=vectorized,
+    )
+    solver.initialize()
+    history = iwopy.OptimizationHistory()
+
+    result = solver.solve(verbosity=0, callbacks=[history])
+
+    assert solver.n_iterations == 2
+    assert [state.iteration for state in history.states] == [1, 2]
+    assert all(state.event == "iteration" for state in history.states)
+    assert history.states[-1].vars_int.shape == (1, 0)
+    assert history.states[-1].vars_float[0] == pytest.approx(result.vars_float)
+    assert history.states[-1].objs[0] == pytest.approx(result.objs)
+
+
+def test_gg_zero_iteration_limit_has_no_intermediate_state():
+    problem = make_problem(initial=1.0)
+    solver = GG(
+        problem,
+        step_max=0.5,
+        step_min=0.01,
+        max_iterations=0,
+    )
+    solver.initialize()
+    history = iwopy.OptimizationHistory()
+
+    solver.solve(verbosity=0, callbacks=[history])
+
+    assert solver.n_iterations == 0
+    assert history.optimizer is solver
+    assert history.states == []
+
+
 @pytest.mark.parametrize(
     "kwargs",
     [
@@ -175,8 +237,11 @@ def test_gg_stops_on_infeasible_zero_gradient_constraint():
     problem.initialize()
     solver = GG(problem, step_max=0.5, step_min=0.01)
     solver.initialize()
+    history = iwopy.OptimizationHistory()
 
-    result = solver.solve(verbosity=0)
+    result = solver.solve(verbosity=0, callbacks=[history])
 
     assert not result.success
     assert result.vars_float[0] == 0.0
+    assert len(history.states) == 1
+    assert history.states[0].vars_float[0, 0] == 0.0

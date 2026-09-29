@@ -13,6 +13,9 @@ from .core import Constraint as Constraint
 from .core import Memory as Memory
 from .core import Pipeline as Pipeline
 from .core import PipelineStage as PipelineStage
+from .core import OptimizationHistory as OptimizationHistory
+from .core import OptimizerCallback as OptimizerCallback
+from .core import OptimizerCallbackData as OptimizerCallbackData
 from .wrappers import ProblemWrapper as ProblemWrapper
 from .wrappers import DiscretizeRegGrid as DiscretizeRegGrid
 from .wrappers import LocalFD as LocalFD

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from iwopy import SimpleConstraint, SimpleObjective, SimpleProblem
+from iwopy import OptimizationHistory, SimpleConstraint, SimpleObjective, SimpleProblem
 from iwopy.benchmarks.branin import BraninProblem
 from iwopy.benchmarks.rosenbrock import RosenbrockProblem
 from iwopy.interfaces.pymoo import Optimizer_pymoo
@@ -72,10 +72,112 @@ def test_integer_ga_keeps_integer_variables(vectorize):
         term_pars=("n_gen", 2),
     )
     solver.initialize()
-    solver.solve(verbosity=0)
+    history = OptimizationHistory()
+    solver.solve(verbosity=0, callbacks=[history])
 
     assert prob.vars_int_dtypes
     assert all(np.issubdtype(dtype, np.integer) for dtype in prob.vars_int_dtypes)
+    assert [state.iteration for state in history.states] == [1, 2]
+    for state in history.states:
+        n_pop = len(state.vars_int)
+        assert 0 < n_pop <= 10
+        assert state.vars_int.shape == (n_pop, 2)
+        assert state.vars_float.shape == (n_pop, 0)
+        assert state.objs.shape == (n_pop, 1)
+        assert state.cons.shape == (n_pop, 0)
+
+
+class TwoObjectives(SimpleObjective):
+    def __init__(self, problem):
+        super().__init__(problem, n_components=2, maximize=[False, True])
+
+    def f(self, x):
+        return [(x - 1.0) ** 2, x]
+
+
+class LowerUpperConstraints(SimpleConstraint):
+    def __init__(self, problem):
+        super().__init__(
+            problem,
+            "bounds",
+            n_components=2,
+            mins=[-np.inf, -1.0],
+            maxs=[1.0, np.inf],
+        )
+
+    def f(self, x):
+        return [x, x]
+
+
+def test_pymoo_callback_restores_iwopy_population_values():
+    problem = SimpleProblem(
+        "two_objectives",
+        float_vars=["x"],
+        init_values_float=[0.0],
+        min_values_float=[-2.0],
+        max_values_float=[2.0],
+    )
+    problem.add_objective(TwoObjectives(problem))
+    problem.add_constraint(LowerUpperConstraints(problem))
+    problem.initialize(verbosity=0)
+    solver = Optimizer_pymoo(
+        problem,
+        problem_pars={"vectorize": True},
+        algo_pars={"type": "NSGA2", "pop_size": 8, "seed": 42},
+        term_pars=("n_gen", 2),
+    )
+    solver.initialize(verbosity=0)
+    history = OptimizationHistory()
+
+    solver.solve(verbosity=0, callbacks=[history])
+
+    assert [state.iteration for state in history.states] == [1, 2]
+    for state in history.states:
+        expected_objs, expected_cons = problem.evaluate_population(
+            state.vars_int, state.vars_float
+        )
+        np.testing.assert_allclose(state.objs, expected_objs)
+        np.testing.assert_allclose(state.cons, expected_cons)
+        assert state.vars_int.shape == (8, 0)
+        assert state.vars_float.shape == (8, 1)
+        assert state.objs.shape == (8, 2)
+        assert state.cons.shape == (8, 2)
+
+
+class MixedObjective(SimpleObjective):
+    def f(self, i, x):
+        return (i - 1) ** 2 + (x - 0.5) ** 2
+
+
+def test_pymoo_callback_normalizes_mixed_variables():
+    problem = SimpleProblem(
+        "mixed",
+        int_vars=["i"],
+        float_vars=["x"],
+        init_values_int=[0],
+        init_values_float=[0.0],
+        min_values_int=[0],
+        max_values_int=[2],
+        min_values_float=[-1.0],
+        max_values_float=[1.0],
+    )
+    problem.add_objective(MixedObjective(problem))
+    problem.initialize(verbosity=0)
+    solver = Optimizer_pymoo(
+        problem,
+        problem_pars={"vectorize": True},
+        algo_pars={"type": "MixedVariableGA", "pop_size": 8, "seed": 42},
+        term_pars=("n_gen", 2),
+    )
+    solver.initialize(verbosity=0)
+    history = OptimizationHistory()
+
+    solver.solve(verbosity=0, callbacks=[history])
+
+    assert [state.iteration for state in history.states] == [1, 2]
+    assert all(state.vars_int.shape == (8, 1) for state in history.states)
+    assert all(state.vars_int.dtype == np.int32 for state in history.states)
+    assert all(state.vars_float.shape == (8, 1) for state in history.states)
 
 
 def test_factory_does_not_mutate_reused_algorithm_parameters():
@@ -105,6 +207,21 @@ def test_factory_does_not_mutate_reused_algorithm_parameters():
     }
 
 
+def test_pymoo_rejects_native_callback_parameter():
+    problem = RosenbrockProblem()
+    problem.initialize(verbosity=0)
+    solver = Optimizer_pymoo(
+        problem,
+        problem_pars={"vectorize": True},
+        algo_pars={"type": "GA", "pop_size": 8, "seed": 42},
+        setup_pars={"callback": object()},
+        term_pars=("n_gen", 1),
+    )
+
+    with pytest.raises(ValueError, match="callback is managed internally"):
+        solver.initialize(verbosity=0)
+
+
 def test_dict_generation_termination_uses_iwopy_default_type():
     prob = RecordingIntProblem()
     prob.add_objective(IntObjective(prob))
@@ -132,6 +249,25 @@ def test_dict_generation_termination_uses_iwopy_default_type():
         "MaximumFunctionCallTermination",
     ]
     assert term_pars == {"n_max_gen": 2}
+
+
+def test_pymoo_skips_callback_bridge_without_callbacks(monkeypatch):
+    problem = RosenbrockProblem()
+    problem.initialize(verbosity=0)
+    solver = Optimizer_pymoo(
+        problem,
+        problem_pars={"vectorize": True},
+        algo_pars={"type": "GA", "pop_size": 8, "seed": 42},
+        term_pars=("n_gen", 1),
+    )
+    solver.initialize(verbosity=0)
+
+    def unexpected_callback(*args, **kwargs):
+        raise AssertionError("callback bridge invoked without callbacks")
+
+    monkeypatch.setattr(solver, "_notify_pymoo_callbacks", unexpected_callback)
+
+    solver.solve(verbosity=0)
 
 
 @pytest.mark.parametrize("algorithm", ["GA", "DE", "PSO", "NSGA2", "NSGA3"])

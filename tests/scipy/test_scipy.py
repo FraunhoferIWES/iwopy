@@ -1,5 +1,7 @@
 import numpy as np
+import pytest
 
+import iwopy
 from iwopy import SimpleConstraint
 from iwopy.benchmarks.branin import BraninProblem
 from iwopy.interfaces.scipy import Optimizer_scipy
@@ -88,6 +90,87 @@ def test_branin_slsqp():
         limxy = np.array(limxy)
         print("delxy =", delxy, ", lim =", limxy)
         assert np.all(delxy < limxy)
+
+
+class Quadratic(iwopy.SimpleObjective):
+    def f(self, x):
+        return (x - 1.0) ** 2
+
+
+def make_quadratic_problem():
+    problem = iwopy.SimpleProblem(
+        "quadratic",
+        float_vars=["x"],
+        init_values_float=[3.0],
+    )
+    problem.add_objective(Quadratic(problem))
+    problem.initialize(verbosity=0)
+    return problem
+
+
+def test_scipy_skips_callback_data_without_callbacks(monkeypatch):
+    problem = make_quadratic_problem()
+    solver = Optimizer_scipy(problem, scipy_pars={"method": "L-BFGS-B"})
+    solver.initialize(verbosity=0)
+
+    def unexpected_callback_data(*args, **kwargs):
+        raise AssertionError("callback data created without callbacks")
+
+    monkeypatch.setattr(
+        "iwopy.interfaces.scipy.optimizer.OptimizerCallbackData",
+        unexpected_callback_data,
+    )
+
+    solver.solve(verbosity=0)
+
+
+@pytest.mark.parametrize("method", ["L-BFGS-B", "COBYLA", "trust-constr"])
+def test_scipy_reports_normalized_iterations(method):
+    problem = make_quadratic_problem()
+    solver = Optimizer_scipy(problem, scipy_pars={"method": method})
+    solver.initialize(verbosity=0)
+    history = iwopy.OptimizationHistory()
+
+    result = solver.solve(verbosity=0, callbacks=[history])
+
+    assert result.success
+    assert history.states
+    assert [state.iteration for state in history.states] == list(
+        range(1, len(history.states) + 1)
+    )
+    assert all(state.event == "iteration" for state in history.states)
+    assert all(state.vars_int.shape == (1, 0) for state in history.states)
+    assert all(state.vars_float.shape == (1, 1) for state in history.states)
+    assert history.states[-1].vars_float[0] == pytest.approx(result.vars_float)
+
+
+def test_scipy_rejects_native_callback_parameter():
+    problem = make_quadratic_problem()
+    solver = Optimizer_scipy(
+        problem,
+        scipy_pars={"method": "BFGS", "callback": lambda x: None},
+    )
+
+    with pytest.raises(ValueError, match="callback is managed internally"):
+        solver.initialize(verbosity=0)
+
+
+def test_scipy_callback_cache_miss_does_not_evaluate(monkeypatch):
+    problem = make_quadratic_problem()
+    solver = Optimizer_scipy(problem, scipy_pars={"method": "BFGS"})
+    solver.initialize(verbosity=0)
+    history = iwopy.OptimizationHistory()
+    solver._callback_dispatcher.callbacks = [history]
+    history.initialize(solver)
+
+    def unexpected_evaluation(*args, **kwargs):
+        raise AssertionError("callback triggered a problem evaluation")
+
+    monkeypatch.setattr(problem, "evaluate_individual", unexpected_evaluation)
+    solver._dispatch_callback(np.array([7.0]))
+
+    assert history.states[0].objs is None
+    assert history.states[0].cons is None
 
 
 if __name__ == "__main__":

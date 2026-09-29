@@ -1,6 +1,11 @@
 import numpy as np
 
-from iwopy.core import Optimizer, SingleObjOptResults
+from iwopy.core import (
+    Optimizer,
+    OptimizerCallback,
+    OptimizerCallbackData,
+    SingleObjOptResults,
+)
 
 
 class GG(Optimizer):
@@ -34,6 +39,8 @@ class GG(Optimizer):
         Memorized data: (x, obj, grad, all_valid), each a
         numpy.ndarray, shapes: (memory_size, n_vars),
         (memory_size, n_vars), (memory_size,), (memory_size,)
+    n_iterations: int
+        Number of completed iterations in the current or latest solve
 
     :group: optimizers
 
@@ -93,6 +100,7 @@ class GG(Optimizer):
         self.memory_size = memory_size
         self.memory = None
         self.max_iterations = max_iterations
+        self.n_iterations = 0
 
     def initialize(self, verbosity=0):
         """
@@ -266,14 +274,35 @@ class GG(Optimizer):
                 maximum = np.array([], dtype=np.float64)
         return minimum, maximum
 
-    def solve(self, verbosity=1):
+    def _notify_iteration(self, iteration, x, objs, cons):
+        """Notify callbacks about one completed GG iteration."""
+        if not self._has_callbacks:
+            return
+        self._notify_callbacks(
+            OptimizerCallbackData(
+                event="iteration",
+                iteration=iteration,
+                vars_int=np.array([], dtype=np.int32),
+                vars_float=x,
+                objs=objs,
+                cons=cons,
+            )
+        )
+
+    def solve(
+        self,
+        verbosity: int = 1,
+        callbacks: list[OptimizerCallback] | None = None,
+    ):
         """
         Run the optimization solver.
 
         Parameters
         ----------
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
+        callbacks
+            Ordered callbacks for completed optimizer iterations
 
         Returns
         -------
@@ -281,7 +310,7 @@ class GG(Optimizer):
             The optimization results object
 
         """
-        super().solve(verbosity)
+        super().solve(verbosity, callbacks)
 
         # prepare:
         inone = np.array([], dtype=np.int32)
@@ -307,6 +336,7 @@ class GG(Optimizer):
 
         step = self.step_max.copy()
         count = 0
+        self.n_iterations = 0
         level = 0
         done = False
         stalled = False
@@ -352,6 +382,7 @@ class GG(Optimizer):
                 nmem = min(nmem + 1, self.memory_size)
 
             count += 1
+            self.n_iterations = count
 
             if verbosity > 0:
                 print(
@@ -381,6 +412,7 @@ class GG(Optimizer):
                 grad -= np.dot(grad, n) * n
 
             if stalled:
+                self._notify_iteration(count, x, obs, cons)
                 break
 
             # follow grad, but move downwards along violated directions:
@@ -405,6 +437,7 @@ class GG(Optimizer):
             newx = self._get_newx(x, deltax)
 
             if not len(newx):
+                self._notify_iteration(count, x, obs, cons)
                 continue
 
             """
@@ -454,6 +487,7 @@ class GG(Optimizer):
                             cons = consp[valc][i]
                             valid = validp[valc][i]
                             if done:
+                                self._notify_iteration(count, x, obs, cons)
                                 break
 
                 else:
@@ -505,6 +539,8 @@ class GG(Optimizer):
                     cons = consh0
                     valid = validh0
 
+            self._notify_iteration(count, x, obs, cons)
+
         if verbosity > 0:
             print(f"{hline}")
             print(f"All steps < step_min      : {np.all(step < self.step_min)}")
@@ -522,7 +558,7 @@ class GG(Optimizer):
             not initially_valid or better or np.abs(obs[0] - obs0) <= self.f_tol
         )
 
-        return SingleObjOptResults(
+        results = SingleObjOptResults(
             self.problem,
             success,
             inone,
@@ -531,3 +567,4 @@ class GG(Optimizer):
             cons,
             pres,
         )
+        return self._finalize_callbacks(results)

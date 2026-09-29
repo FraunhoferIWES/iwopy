@@ -57,6 +57,7 @@ class UDP:
 
         self.pop = pop
         self.verbosity = verbosity
+        self.callback_sink = None
 
     def fitness(self, dv):
         # extract variables:
@@ -66,6 +67,8 @@ class UDP:
         # apply new variables:
         values = np.zeros(self.n_fitness, dtype=np.float64)
         objs, cons = self.problem.evaluate_individual(xi, xf)
+        if self.callback_sink is not None:
+            self.callback_sink.notify(xi, xf, objs, cons)
         objs *= np.where(self.problem.maximize_objs, -1.0, 1.0)
         values[: self.problem.n_objectives] = objs
         values[self.problem.n_objectives :] = cons
@@ -85,6 +88,8 @@ class UDP:
         # apply new variables:
         values = np.zeros((n_pop, self.n_fitness), dtype=np.float64)
         objs, cons = self.problem.evaluate_population(xi, xf)
+        if self.callback_sink is not None:
+            self.callback_sink.notify(xi, xf, objs, cons)
         objs *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
         values[:, : self.problem.n_objectives] = objs
         values[:, self.problem.n_objectives :] = cons
@@ -157,7 +162,13 @@ class UDP:
             pop=self.pop,
         )
 
-        return [grad[c, list(vrs).index(v)] for c, v in spars]
+        component_rows = {component: row for row, component in enumerate(cmpnts)}
+        objective_signs = np.where(self.problem.maximize_objs, -1.0, 1.0)
+        return [
+            grad[component_rows[c], list(vrs).index(v)]
+            * (objective_signs[c] if c < self.problem.n_objectives else 1.0)
+            for c, v in spars
+        ]
 
     def has_gradient_sparsity(self):
         return True
