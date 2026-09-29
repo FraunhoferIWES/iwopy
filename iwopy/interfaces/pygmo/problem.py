@@ -1,53 +1,44 @@
+from typing import Any, Protocol
+
 import numpy as np
 
-from iwopy.core import OptFunctionList, OptFunctionSubset, Problem, SingleObjOptResults
+from iwopy.core import (
+    OptFunction,
+    OptFunctionList,
+    OptFunctionSubset,
+    Problem,
+    SingleObjOptResults,
+)
+
+
+class _CallbackSink(Protocol):
+    def notify(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        objs: np.ndarray,
+        cons: np.ndarray,
+    ) -> None: ...
 
 
 class UDP:
-    """
-    Generic Problem to Pygmo UserDefinedProblem adapter
-
-    Attributes
-    ----------
-    problem: iwopy.Problem
-        The problem to optimize
-    n_vars_all:  int
-        The sum of int and float variable counts
-    n_fitness: int
-        The sum of objective and constraint counts
-    c_tol: list of float
-        Constraint tolerances
-    values: numpy.ndarray
-        The function values, shape: (n_fitness,)
-    pop: bool
-        Vectorized fitness computation
-    verbosity: int
-        The verbosity level, 0 = silent
-
-    :group: interfaces.pygmo
-
-    """
+    """Generic Problem to Pygmo UserDefinedProblem adapter"""
 
     def __init__(
         self,
-        problem,
-        pop=False,
-        verbosity=0,
-    ):
+        problem: Problem,
+        pop: bool = False,
+        verbosity: int = 0,
+    ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
-        problem: iwopy.Problem
+        problem
             The problem to optimize
-        c_tol: float
-            Constraint tolerance
-        pop: bool
+        pop
             Vectorized fitness computation
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
-
         """
         self.problem = problem
         self.n_vars_all = problem.n_vars_float + problem.n_vars_int
@@ -57,9 +48,23 @@ class UDP:
 
         self.pop = pop
         self.verbosity = verbosity
-        self.callback_sink = None
+        self.callback_sink: _CallbackSink | None = None
+        self._active = False
 
-    def fitness(self, dv):
+    def fitness(self, dv: np.ndarray) -> np.ndarray:
+        """
+        Calculate fitness values for one decision vector.
+
+        Parameters
+        ----------
+        dv
+            The decision vector
+
+        Returns
+        -------
+        fitness_values
+            The objective and constraint values
+        """
         # extract variables:
         xf = dv[: self.problem.n_vars_float]
         xi = dv[self.problem.n_vars_float :].astype(np.int32)
@@ -75,7 +80,20 @@ class UDP:
 
         return values
 
-    def batch_fitness(self, dvs):
+    def batch_fitness(self, dvs: np.ndarray) -> np.ndarray:
+        """
+        Calculate fitness values for a batch of decision vectors.
+
+        Parameters
+        ----------
+        dvs
+            The flattened decision vectors
+
+        Returns
+        -------
+        fitness_values
+            The flattened objective and constraint values
+        """
         # extract variables:
         n_vf = self.problem.n_vars_float
         n_vi = self.problem.n_vars_int
@@ -96,10 +114,21 @@ class UDP:
 
         return values.reshape(n_pop * self.n_fitness)
 
-    def has_batch_fitness(self):
+    def has_batch_fitness(self) -> bool:
+        """Check whether batch fitness evaluation is enabled."""
         return self.pop
 
-    def get_bounds(self):
+    def get_bounds(self) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Get the decision-variable bounds.
+
+        Returns
+        -------
+        lower_bounds
+            The lower decision-variable bounds
+        upper_bounds
+            The upper decision-variable bounds
+        """
         lb = np.full(self.n_vars_all, -np.inf)
         ub = np.full(self.n_vars_all, np.inf)
 
@@ -119,34 +148,59 @@ class UDP:
 
         return (lb, ub)
 
-    def get_nobj(self):
+    def get_nobj(self) -> int:
+        """Get the number of objectives."""
         return self.problem.n_objectives
 
-    def get_nec(self):
+    def get_nec(self) -> int:
+        """Get the number of equality constraints."""
         return 0
 
-    def get_nic(self):
+    def get_nic(self) -> int:
+        """Get the number of inequality constraints."""
         return self.problem.n_constraints
 
-    def get_nix(self):
+    def get_nix(self) -> int:
+        """Get the number of integer decision variables."""
         return self.problem.n_vars_int
 
-    def has_gradient(self):
+    def has_gradient(self) -> bool:
+        """Check whether gradient evaluation is available."""
         return True
 
-    def gradient(self, x):
-        spars = np.array(self.gradient_sparsity())
+    def gradient(self, x: np.ndarray) -> list[float]:
+        """
+        Calculate the flattened fitness gradient.
+
+        Parameters
+        ----------
+        x
+            The decision vector
+
+        Returns
+        -------
+        gradient
+            The gradient entries selected by the sparsity pattern
+        """
+        sparsity = self.gradient_sparsity()
+        if not sparsity:
+            return []
+
+        spars = np.array(sparsity, dtype=np.int32)
         cmpnts = np.unique(spars[:, 0])
         vrs = np.unique(spars[:, 1])
 
         if len(cmpnts) != self.problem.n_objectives + self.problem.n_constraints:
-            func = OptFunctionList(self.problem, "objs_cons")
-            for f in self.problem.objs.functions:
-                func.append(f)
-            for f in self.problem.cons.functions:
-                func.append(f)
-            func = OptFunctionSubset(func, cmpnts)
-            func.initialize()
+            function_list: OptFunctionList[OptFunction] = OptFunctionList(
+                self.problem, "objs_cons"
+            )
+            for objective in self.problem.objs.functions:
+                function_list.append(objective)
+            for constraint in self.problem.cons.functions:
+                function_list.append(constraint)
+            subset = OptFunctionSubset(function_list, cmpnts)
+            subset.initialize()
+            func: OptFunction | None = subset
         else:
             func = None
 
@@ -165,16 +219,27 @@ class UDP:
         component_rows = {component: row for row, component in enumerate(cmpnts)}
         objective_signs = np.where(self.problem.maximize_objs, -1.0, 1.0)
         return [
-            grad[component_rows[c], list(vrs).index(v)]
-            * (objective_signs[c] if c < self.problem.n_objectives else 1.0)
+            float(
+                grad[component_rows[c], list(vrs).index(v)]
+                * (objective_signs[c] if c < self.problem.n_objectives else 1.0)
+            )
             for c, v in spars
         ]
 
-    def has_gradient_sparsity(self):
+    def has_gradient_sparsity(self) -> bool:
+        """Check whether a gradient sparsity pattern is available."""
         return True
 
-    def gradient_sparsity(self):
-        out = []
+    def gradient_sparsity(self) -> list[list[int]]:
+        """
+        Get the fitness-gradient sparsity pattern.
+
+        Returns
+        -------
+        sparsity
+            The fitness-component and variable index pairs
+        """
+        out: list[list[int]] = []
 
         # add sparsity of objectives:
         out += np.argwhere(self.problem.objs.vardeps_float()).tolist()
@@ -196,43 +261,47 @@ class UDP:
 
         return sorted(out)
 
-    def has_hessians(self):
+    def has_hessians(self) -> bool:
+        """Check whether Hessian evaluation is available."""
         return False
 
     # def hessians(self, dv):
 
-    def has_hessians_sparsity(self):
+    def has_hessians_sparsity(self) -> bool:
+        """Check whether Hessian sparsity patterns are available."""
         return False
 
     # def hessians_sparsity(self):
 
-    def has_set_seed(self):
+    def has_set_seed(self) -> bool:
+        """Check whether random-seed configuration is available."""
         return False
 
     # def set_seed(self, s):
 
-    def get_name(self):
+    def get_name(self) -> str:
+        """Get the problem name."""
         return self.problem.name
 
-    def get_extra_info(self):
+    def get_extra_info(self) -> str:
+        """Get additional problem information."""
         return ""
 
-    def finalize(self, pygmo_pop, verbosity=1):
+    def finalize(self, pygmo_pop: Any, verbosity: int = 1) -> SingleObjOptResults:
         """
         Finalize the problem.
 
         Parameters
         ----------
-        pygmo_pop: pygmo.Population
+        pygmo_pop
             The results from the solver
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
         -------
-        results: iwopy.SingleObjOptResults
+        results
             The optimization results object
-
         """
 
         # extract variables:

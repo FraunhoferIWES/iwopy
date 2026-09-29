@@ -1,53 +1,52 @@
+from typing import Any
+
 from iwopy.utils import import_module
 
-Callback = None
-Problem = None
-Real = None
-Integer = None
+Callback: Any = None
+Problem: Any = None
+Real: Any = None
+Integer: Any = None
 
-IntegerRandomSampling = None
-FloatRandomSampling = None
-BinaryRandomSampling = None
-PermutationRandomSampling = None
+IntegerRandomSampling: Any = None
+FloatRandomSampling: Any = None
+BinaryRandomSampling: Any = None
+PermutationRandomSampling: Any = None
 
-LatinHypercubeSampling = None
-SBX = None
-PM = None
-RoundingRepair = None
-GA = None
-DE = None
-NSGA2 = None
-NSGA3 = None
-PSO = None
-CMAES = None
-MixedVariableGA = None
-get_reference_directions = None
+LatinHypercubeSampling: Any = None
+SBX: Any = None
+PM: Any = None
+RoundingRepair: Any = None
+GA: Any = None
+DE: Any = None
+NSGA2: Any = None
+NSGA3: Any = None
+PSO: Any = None
+CMAES: Any = None
+MixedVariableGA: Any = None
+get_reference_directions: Any = None
 
-DefaultSingleObjectiveTermination = None
-DefaultMultiObjectiveTermination = None
-SingleObjectiveSpaceTermination = None
-TerminationCollection = None
-MaximumGenerationTermination = None
-MaximumFunctionCallTermination = None
-RobustTermination = None
-SingleObjectiveOutput = None
+DefaultSingleObjectiveTermination: Any = None
+DefaultMultiObjectiveTermination: Any = None
+SingleObjectiveSpaceTermination: Any = None
+TerminationCollection: Any = None
+MaximumGenerationTermination: Any = None
+MaximumFunctionCallTermination: Any = None
+RobustTermination: Any = None
+SingleObjectiveOutput: Any = None
 
-minimize = None
+minimize: Any = None
 
-loaded = False
+loaded: bool = False
 
 
-def load(verbosity=1):
+def load(verbosity: int = 1) -> None:
     """
     Loads the pymoo package dynamically
 
     Parameters
     ----------
-    verbosity: int
+    verbosity
         The verbosity level, 0 = silent
-
-    :group: interfaces.pymoo
-
     """
 
     global Callback, Problem, Real, Integer, IntegerRandomSampling, FloatRandomSampling

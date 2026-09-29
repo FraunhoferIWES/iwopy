@@ -1,6 +1,12 @@
+from collections.abc import Sequence
+
 import numpy as np
 
-from iwopy.core import ProblemDefaultFunc
+from iwopy.core import (
+    OptFunction,
+    Problem,
+    ProblemDefaultFunc,
+)
 
 from .problem_wrapper import ProblemWrapper
 
@@ -9,52 +15,37 @@ class LocalFD(ProblemWrapper):
     """
     A wrapper that provides finite distance
     differentiation by local stepwise evaluation.
-
-    Attributes
-    ----------
-    order: dict
-        Finite difference order. Key: variable name
-        str, value: 1 = forward, -1 = backward, 2 = centre
-    orderb: dict or int
-        Finite difference order of boundary points.
-        Key: variable name str, value: order int
-
-    :group: wrappers
-
     """
 
     def __init__(
         self,
-        base_problem,
-        deltas,
-        fd_order=1,
-        fd_bounds_order=None,
-        name=None,
-    ):
+        base_problem: Problem,
+        deltas: float | dict[str, float],
+        fd_order: int | dict[str, int] = 1,
+        fd_bounds_order: int | dict[str, int] | None = None,
+        name: str | None = None,
+    ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
-        base_problem: iwopy.Problem
+        base_problem
             The underlying concrete problem
-        deltas: dict
+        deltas
             The step sizes. Key: variable name str,
             Value: step size. Will be adjusted to the
             variable bounds if necessary.
-        fd_order: dict or int
+        fd_order
             Finite difference order. Either a dict with
             key: variable name str, value: order int, or
             a global integer order for all variables.
             1 = forward, -1 = backward, 2 = centre
-        fd_bounds_order: dict or int
+        fd_bounds_order
             Finite difference order of boundary points.
             Either a dict with key: variable name str,
             value: order int, or a global integer order
             for all variables. Default is same as fd_order
-        name: str, optional
+        name
             The problem name
-
         """
         name = base_problem.name + "_fd" if name is None else name
         super().__init__(base_problem, name)
@@ -85,22 +76,26 @@ class LocalFD(ProblemWrapper):
                         f"Problem '{self.name}': Missing fd_bounds_order entry for variable '{v}'"
                     )
 
-    def initialize(self, verbosity=1):
+        self._vinds: list[int] = []
+        self._order = np.empty(0, dtype=np.int32)
+        self._orderb = np.empty(0, dtype=np.int32)
+        self._d = np.empty(0, dtype=np.float64)
+
+    def initialize(self, verbosity: int = 1) -> None:
         """
         Initialize the problem.
 
         Parameters
         ----------
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
-
         """
         super().initialize(verbosity)
 
-        self._vinds = []
-        self._order = []
-        self._orderb = []
-        self._d = []
+        vinds: list[int] = []
+        order: list[int] = []
+        orderb: list[int] = []
+        deltas: list[float] = []
         vnms = list(super().var_names_float())
         for v in self._deltas:
             if v not in vnms:
@@ -109,14 +104,15 @@ class LocalFD(ProblemWrapper):
                 )
 
             vi = vnms.index(v)
-            self._vinds.append(vi)
-            self._order.append(self.order[v])
-            self._orderb.append(self.orderb[v])
-            self._d.append(self._deltas[v])
+            vinds.append(vi)
+            order.append(self.order[v])
+            orderb.append(self.orderb[v])
+            deltas.append(self._deltas[v])
 
-        self._order = np.array(self._order, dtype=np.int32)
-        self._orderb = np.array(self._orderb, dtype=np.int32)
-        self._d = np.array(self._d, dtype=np.float64)
+        self._vinds = vinds
+        self._order = np.array(order, dtype=np.int32)
+        self._orderb = np.array(orderb, dtype=np.int32)
+        self._d = np.array(deltas, dtype=np.float64)
 
         sel = (self._order == -1) | (self._order == 1) | (self._order == 2)
         if not np.all(sel):
@@ -129,10 +125,14 @@ class LocalFD(ProblemWrapper):
                 f"Boundary order(s) {list(np.unique(self._orderb[~sel]))} not implemented."
             )
 
-    def _grad_coeffs(self, varsf, gvars, order, orderb):
-        """
-        Helper function that provides gradient coeffs
-        """
+    def _grad_coeffs(
+        self,
+        varsf: np.ndarray,
+        gvars: Sequence[int] | np.ndarray,
+        order: np.ndarray,
+        orderb: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Helper function that provides gradient coeffs"""
 
         # prepare:
         n_vars = len(gvars)
@@ -231,17 +231,17 @@ class LocalFD(ProblemWrapper):
 
     def calc_gradients(
         self,
-        vars_int,
-        vars_float,
-        func,
-        components,
-        ivars,
-        fvars,
-        vrs,
-        pop=False,
-        verbosity=0,
-        func_values=None,
-    ):
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        func: OptFunction,
+        components: Sequence[int] | np.ndarray | None,
+        ivars: list[int],
+        fvars: list[int],
+        vrs: list[int],
+        pop: bool = False,
+        verbosity: int = 0,
+        func_values: np.ndarray | None = None,
+    ) -> np.ndarray:
         """
         The actual gradient calculation, not to be called directly
         (call `get_gradients` instead).
@@ -251,37 +251,36 @@ class LocalFD(ProblemWrapper):
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_vars_float,)
-        func: iwopy.core.OptFunctionList, optional
+        func
             The functions to be differentiated, or None
             for a list of all objectives and all constraints
             (in that order)
-        components: list of int, optional
+        components
             The function's component selection, or None for all
-        ivars: list of int
+        ivars
             The indices of the function int variables in the problem
-        fvars: list of int
+        fvars
             The indices of the function float variables in the problem
-        vrs: list of int
+        vrs
             The function float variable indices wrt which the
             derivatives are to be calculated
-        func_values: np.array, optional
+        func_values
             Previously calculated function values at the given variables,
             shape: (n_components,)
-        pop: bool
+        pop
             Flag for vectorizing calculations via population
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
         -------
-        gradients: numpy.ndarray
+        gradients
             The gradients of the functions, shape:
             (n_components, n_vrs)
-
         """
         # get analytic gradient results:
         gradients = super().calc_gradients(
@@ -363,6 +362,7 @@ class LocalFD(ProblemWrapper):
         # recombine results:
         gradients[np.ix_(cmptsi, gvars)] = np.einsum("pc,vp->cv", values, coeffs)
         if center_coeffs is not None:
+            assert func_values is not None
             gradients[np.ix_(cmptsi, gvars)] += (
                 func_values[fcmpts, None] * center_coeffs[None, :]
             )

@@ -1,6 +1,9 @@
+from collections.abc import Hashable, Sequence
+from typing import Any, Literal, cast, overload
+
 import numpy as np
 
-from iwopy.core import Memory
+from iwopy.core import Memory, Problem
 from iwopy.utils import RegularDiscretizationGrid
 
 from .local_fd import LocalFD
@@ -11,86 +14,68 @@ class DiscretizeRegGrid(LocalFD):
     A wrapper that provides finite distance
     differentiation on a regular grid for
     selected or all problem float variables.
-
-    Attributes
-    ----------
-    grid: iwopy.tools.RegularDiscretizationGrid
-        The discretization grid
-    order: dict
-        Finite difference order. Key: variable name
-        str, value: 1 = forward, -1 = backward, 2 = centre
-    orderb: dict or int
-        Finite difference order of boundary points.
-        Key: variable name str, value: order int
-
-    :group: wrappers
-
     """
 
     def __init__(
         self,
-        base_problem,
-        deltas,
-        fd_order=1,
-        fd_bounds_order=1,
-        mem_size=1000,
-        name=None,
-        **dpars,
-    ):
+        base_problem: Problem,
+        deltas: float | dict[str, float],
+        fd_order: int | dict[str, int] = 1,
+        fd_bounds_order: int | dict[str, int] = 1,
+        mem_size: int | None = 1000,
+        name: str | None = None,
+        **dpars: Any,
+    ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
-        base_problem: iwopy.Problem
+        base_problem
             The underlying concrete problem
-        deltas: dict
+        deltas
             The step sizes. Key: variable name str,
             Value: step size. Will be adjusted to the
             variable bounds if necessary.
-        fd_order: dict or int
+        fd_order
             Finite difference order. Either a dict with
             key: variable name str, value: order int, or
             a global integer order for all variables.
             1 = forward, -1 = backward, 2 = centre
-        fd_bounds_order: dict or int
+        fd_bounds_order
             Finite difference order of boundary points.
             Either a dict with key: variable name str,
             value: order int, or a global integer order
             for all variables. Default is same as fd_order
-        mem_size: int, optional
+        mem_size
             The memory size, default no memory
-        name: str, optional
+        name
             The problem name
-        dpars: dict, optional
+        dpars
             Additional parameters for `RegularDiscretizationGrid`
-
         """
         name = base_problem.name + "_grid" if name is None else name
         super().__init__(base_problem, deltas, fd_order, fd_bounds_order, name)
 
-        self.grid = None
+        self.grid: RegularDiscretizationGrid | None = None
         self._msize = mem_size
         self._dpars = dpars
 
-    def initialize(self, verbosity=1):
+    def initialize(self, verbosity: int = 1) -> None:
         """
         Initialize the problem.
 
         Parameters
         ----------
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
-
         """
         super().initialize(verbosity)
 
         if verbosity > 1:
             print("  Finite difference grid:")
 
-        origin = []
-        deltas = []
-        nsteps = []
+        origin: list[float] = []
+        deltas: list[float] = []
+        nsteps: list[int | None] = []
 
         vnms = super().var_names_float()
         vmins = np.full(super().n_vars_float, np.nan, dtype=np.float64)
@@ -119,114 +104,151 @@ class DiscretizeRegGrid(LocalFD):
                 nsteps.append(int((vmax - vmin) / d))
                 deltas.append((vmax - vmin) / nsteps[-1])
 
-        self.grid = RegularDiscretizationGrid(origin, deltas, nsteps, **self._dpars)
+        grid = RegularDiscretizationGrid(origin, deltas, nsteps, **self._dpars)
+        self.grid = grid
         if verbosity > 1:
-            self.grid.print_info(4)
+            grid.print_info(4)
             print(self._hline)
 
         if self._msize is not None:
 
-            def keyf(varsi, varsf):
+            def keyf(varsi: np.ndarray, varsf: np.ndarray) -> Hashable:
                 gpts = np.atleast_2d(varsf[self._vinds])
                 li = varsi.tolist() if len(varsi) else []
-                tf = tuple(tuple(v.tolist()) for v in self.grid.gpts2inds(gpts))
+                tf = tuple(tuple(v.tolist()) for v in grid.gpts2inds(gpts))
                 return (tuple(li), tf)
 
             self.memory = Memory(self._msize, keyf)
 
-    def _grad_coeffs(self, varsf, gvars, order, orderb):
-        """
-        Helper function that provides gradient coeffs
-        """
-        gpts, coeffs = self.grid.grad_coeffs(varsf[None, :], gvars, order, orderb)
+    def _grad_coeffs(
+        self,
+        varsf: np.ndarray,
+        gvars: Sequence[int] | np.ndarray,
+        order: np.ndarray,
+        orderb: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Helper function that provides gradient coeffs"""
+        grid = self.grid
+        assert grid is not None
+        gpts, coeffs = grid.grad_coeffs(varsf[None, :], gvars, order, orderb)
         return gpts, coeffs[0]
 
-    def apply_individual(self, vars_int, vars_float):
+    def apply_individual(
+        self, vars_int: np.ndarray, vars_float: np.ndarray
+    ) -> object | None:
         """
         Apply new variables to the problem.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_vars_float,)
 
         Returns
         -------
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-
         """
-        if self.grid.is_gridpoint(vars_float[self._vinds]):
+        grid = self.grid
+        assert grid is not None
+        if grid.is_gridpoint(vars_float[self._vinds]):
             return super().apply_individual(vars_int, vars_float)
         else:
             raise NotImplementedError(
                 f"Problem '{self.name}' cannot apply non-grid point {vars_float} to problem"
             )
 
-    def apply_population(self, vars_int, vars_float):
+    def apply_population(
+        self, vars_int: np.ndarray, vars_float: np.ndarray
+    ) -> object | None:
         """
         Apply new variables to the problem,
         for a whole population.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_pop, n_vars_float)
 
         Returns
         -------
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-
         """
-        if self.grid.all_gridpoints(vars_float[:, self._vinds]):
+        grid = self.grid
+        assert grid is not None
+        if grid.all_gridpoints(vars_float[:, self._vinds]):
             return super().apply_population(vars_int, vars_float)
         else:
             raise NotImplementedError(
                 f"Problem '{self.name}' cannot apply non-grid points to problem"
             )
 
-    def evaluate_individual(self, vars_int, vars_float, ret_prob_res=False):
+    @overload
+    def evaluate_individual(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        ret_prob_res: Literal[False] = False,
+    ) -> tuple[np.ndarray, np.ndarray]: ...
+
+    @overload
+    def evaluate_individual(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        ret_prob_res: Literal[True],
+    ) -> tuple[np.ndarray, np.ndarray, object | None]: ...
+
+    def evaluate_individual(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        ret_prob_res: bool = False,
+    ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, object | None]:
         """
         Evaluate a single individual of the problem.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_vars_float,)
-        ret_prob_res: bool
+        ret_prob_res
             Flag for additionally returning of problem results
 
         Returns
         -------
-        objs: np.array
+        objs
             The objective function values, shape: (n_objectives,)
-        con: np.array
+        con
             The constraints values, shape: (n_constraints,)
-        prob_res: object, optional
+        prob_res
             The problem results
-
         """
+        grid = self.grid
+        assert grid is not None
         varsf = vars_float[self._vinds]
-        if self.grid.is_gridpoint(varsf):
-            return super().evaluate_individual(vars_int, vars_float, ret_prob_res)
+        if grid.is_gridpoint(varsf):
+            if ret_prob_res:
+                return super().evaluate_individual(vars_int, vars_float, True)
+            return super().evaluate_individual(vars_int, vars_float)
 
         else:
-            gpts, coeffs = self.grid.interpolation_coeffs_point(varsf)
+            gpts, coeffs = grid.interpolation_coeffs_point(varsf)
 
             n_gpts = len(gpts)
             objs = np.zeros((n_gpts, self.n_objectives), dtype=np.float64)
             cons = np.zeros((n_gpts, self.n_constraints), dtype=np.float64)
 
-            res = [None for __ in range(n_gpts)]
+            res: list[object | None] = [None for __ in range(n_gpts)]
             for gi, gp in enumerate(gpts):
                 varsf = vars_float.copy()
                 varsf[self._vinds] = gp
@@ -251,38 +273,62 @@ class DiscretizeRegGrid(LocalFD):
                     np.einsum("gc,g->c", cons, coeffs),
                 )
 
-    def evaluate_population(self, vars_int, vars_float, ret_prob_res=False):
+    @overload
+    def evaluate_population(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        ret_prob_res: Literal[False] = False,
+    ) -> tuple[np.ndarray, np.ndarray]: ...
+
+    @overload
+    def evaluate_population(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        ret_prob_res: Literal[True],
+    ) -> tuple[np.ndarray, np.ndarray, object | None]: ...
+
+    def evaluate_population(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        ret_prob_res: bool = False,
+    ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, object | None]:
         """
         Evaluate all individuals of a population.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_pop, n_vars_float)
-        ret_prob_res: bool
+        ret_prob_res
             Flag for additionally returning of problem results
 
         Returns
         -------
-        objs: np.array
+        objs
             The objective function values, shape: (n_pop, n_objectives)
-        cons: np.array
+        cons
             The constraints values, shape: (n_pop, n_constraints)
-        prob_res: object, optional
+        prob_res
             The problem results
-
         """
+        grid = self.grid
+        assert grid is not None
         varsf = vars_float[:, self._vinds]
 
         # case all points on grid:
-        if self.grid.all_gridpoints(varsf):
-            return super().evaluate_population(vars_int, vars_float, ret_prob_res)
+        if grid.all_gridpoints(varsf):
+            if ret_prob_res:
+                return super().evaluate_population(vars_int, vars_float, True)
+            return super().evaluate_population(vars_int, vars_float)
 
         # case all vars are grid vars:
         elif self.n_vars_int == 0 and len(self._vinds) == self.n_vars_float:
-            gpts, coeffs = self.grid.interpolation_coeffs_points(varsf)
+            gpts, coeffs = grid.interpolation_coeffs_points(varsf)
 
             n_gpts = len(gpts)
             varsi = np.zeros((n_gpts, self.n_vars_int), dtype=np.int32)
@@ -292,16 +338,18 @@ class DiscretizeRegGrid(LocalFD):
             varsf[:, self._vinds] = gpts
 
             if ret_prob_res:
-                objs, cons, res = self.evaluate_population(varsi, varsf, ret_prob_res)
+                objs, cons, res = self.evaluate_population(varsi, varsf, True)
 
                 return (
                     np.einsum("go,pg->po", objs, coeffs),
                     np.einsum("gc,pg->pc", cons, coeffs),
-                    self.prob_res_einsum_population(res, coeffs),
+                    self.prob_res_einsum_population(
+                        cast(Sequence[object | None], res), coeffs
+                    ),
                 )
 
             else:
-                objs, cons = self.evaluate_population(varsi, varsf, ret_prob_res)
+                objs, cons = self.evaluate_population(varsi, varsf)
 
                 return (
                     np.einsum("go,pg->po", objs, coeffs),
@@ -310,9 +358,7 @@ class DiscretizeRegGrid(LocalFD):
 
         # mixed case:
         else:
-            gpts, coeffs, gmap = self.grid.interpolation_coeffs_points(
-                varsf, ret_pmap=True
-            )
+            gpts, coeffs, gmap = grid.interpolation_coeffs_points(varsf, ret_pmap=True)
 
             # each pop has n_gp grid points, this yields pop2:
             n_pop = len(vars_float)
@@ -337,9 +383,9 @@ class DiscretizeRegGrid(LocalFD):
 
             # calculate results for pop3:
             if ret_prob_res:
-                objs, cons, res = self.evaluate_population(varsi, varsf, ret_prob_res)
+                objs, cons, res = self.evaluate_population(varsi, varsf, True)
             else:
-                objs, cons = self.evaluate_population(varsi, varsf, ret_prob_res)
+                objs, cons = self.evaluate_population(varsi, varsf)
             del varsi, varsf
 
             # reconstruct results for pop2:
@@ -355,7 +401,9 @@ class DiscretizeRegGrid(LocalFD):
                 return (
                     np.einsum("pgo,pg->po", objs, coeffs),
                     np.einsum("pgc,pg->pc", cons, coeffs),
-                    self.prob_res_einsum_population(res, coeffs),
+                    self.prob_res_einsum_population(
+                        cast(Sequence[object | None], res), coeffs
+                    ),
                 )
             else:
                 return (
@@ -363,60 +411,62 @@ class DiscretizeRegGrid(LocalFD):
                     np.einsum("pgc,pg->pc", cons, coeffs),
                 )
 
-    def finalize_individual(self, vars_int, vars_float, verbosity=1):
+    def finalize_individual(
+        self, vars_int: np.ndarray, vars_float: np.ndarray, verbosity: int = 1
+    ) -> tuple[object | None, np.ndarray, np.ndarray]:
         """
         Finalization, given the champion data.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The optimal integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The optimal float variable values, shape: (n_vars_float,)
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
         -------
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-        objs: np.array
+        objs
             The objective function values, shape: (n_objectives,)
-        cons: np.array
+        cons
             The constraints values, shape: (n_constraints,)
-
         """
-        if self._msize is not None:
+        if self.memory is not None:
             self.memory.clear()
         return self.base_problem.finalize_individual(vars_int, vars_float, verbosity)
 
-    def finalize_population(self, vars_int, vars_float, verbosity=0):
+    def finalize_population(
+        self, vars_int: np.ndarray, vars_float: np.ndarray, verbosity: int = 0
+    ) -> tuple[object | None, np.ndarray, np.ndarray]:
         """
         Finalization, given the final population data.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values of the final
             generation, shape: (n_pop, n_vars_int)
-        vars_float: np.array
+        vars_float
             The float variable values of the final
             generation, shape: (n_pop, n_vars_float)
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
         -------
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-        objs: np.array
+        objs
             The final objective function values, shape: (n_pop, n_components)
-        cons: np.array
+        cons
             The final constraint values, shape: (n_pop, n_constraints)
-
         """
-        if self._msize is not None:
+        if self.memory is not None:
             self.memory.clear()
         return self.base_problem.finalize_population(vars_int, vars_float, verbosity)

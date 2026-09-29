@@ -1,3 +1,6 @@
+from collections.abc import Callable
+from typing import Any
+
 import numpy as np
 from scipy.optimize import minimize
 
@@ -5,6 +8,7 @@ from iwopy.core import (
     Optimizer,
     OptimizerCallback,
     OptimizerCallbackData,
+    Problem,
     SingleObjOptResults,
 )
 
@@ -15,50 +19,42 @@ class Optimizer_scipy(Optimizer):
 
     Note that these solvers do not support
     vectorized evaluation.
-
-    Attributes
-    ----------
-    scipy_pars: dict
-        Additional parameters for
-        scipy.optimze.minimize()
-    mem_size: int
-        The memory size, number of
-        stored obj, cons evaluations
-
-    :group: interfaces.scipy
-
     """
 
-    def __init__(self, problem, scipy_pars=None, mem_size=100, **kwargs):
+    def __init__(
+        self,
+        problem: Problem,
+        scipy_pars: dict[str, Any] | None = None,
+        mem_size: int = 100,
+        **kwargs: Any,
+    ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
-        problem: iwopy.Problem
+        problem
             The problem to optimize
-        scipy_pars: dict
+        scipy_pars
             Additional parameters for
             scipy.optimze.minimize()
-        mem_size: int
+        mem_size
             The memory size, number of
             stored obj, cons evaluations
-        kwargs: dict, optional
+        kwargs
             Additional parameters for base class
-
         """
         if scipy_pars is None:
             scipy_pars = {}
         super().__init__(problem, **kwargs)
-        self.scipy_pars = scipy_pars.copy()
+        self.scipy_pars: dict[str, Any] = scipy_pars.copy()
         self.mem_size = mem_size
-        self._mem = None
+        self._mem: (
+            dict[tuple[object, ...], tuple[np.ndarray, np.ndarray, object | None]]
+            | None
+        ) = None
         self._callback_iteration = 0
 
-    def print_info(self):
-        """
-        Print solver info, called before solving
-        """
+    def print_info(self) -> None:
+        """Print solver info, called before solving"""
         super().print_info()
 
         if len(self.scipy_pars):
@@ -70,15 +66,14 @@ class Optimizer_scipy(Optimizer):
 
         print()
 
-    def initialize(self, verbosity=1):
+    def initialize(self, verbosity: int = 1) -> None:
         """
         Initialize the object.
 
         Parameters
         ----------
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
-
         """
 
         # Check objectives:
@@ -92,7 +87,7 @@ class Optimizer_scipy(Optimizer):
             )
 
         # Define constraints:
-        cons = []
+        cons: list[dict[str, object]] = []
         for i in range(self.problem.n_constraints):
             cons.append({"type": "ineq", "fun": self._constraints, "args": (i,)})
         self.scipy_pars["constraints"] = cons
@@ -103,27 +98,30 @@ class Optimizer_scipy(Optimizer):
 
         super().initialize(verbosity)
 
-    def _get_results(self, x):
+    def _get_results(
+        self, x: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, object | None]:
         """
         Evaluate obj and cons
 
         Parameters
         ----------
-        x: numpy array
+        x
             Array containing design variables
 
         Returns
         -------
-        objs: np.array
+        objs
             The objective function values, shape: (n_objectives,)
-        cons: np.array
+        cons
             The constraints values, shape: (n_constraints,)
-        prob_results: object
+        prob_results
             The problem results
-
         """
+        memory = self._mem
+        assert memory is not None
         key = tuple(x)
-        if key not in self._mem:
+        if key not in memory:
             i0 = self.problem.n_vars_int
             vars_int = x[:i0].astype(np.int32)
             vars_float = x[i0:]
@@ -132,15 +130,15 @@ class Optimizer_scipy(Optimizer):
                 vars_int, vars_float, ret_prob_res=True
             )
 
-            if len(self._mem) > self.mem_size:
-                key0 = next(iter(self._mem.keys()))
-                del self._mem[key0]
+            if len(memory) >= self.mem_size and memory:
+                key0 = next(iter(memory))
+                del memory[key0]
 
-            self._mem[key] = data
+            memory[key] = data
 
-        return self._mem[key]
+        return memory[key]
 
-    def _objective(self, x):
+    def _objective(self, x: np.ndarray) -> float:
         """
         Function which converts array from scipy
         to readable variables for the problem and
@@ -148,20 +146,18 @@ class Optimizer_scipy(Optimizer):
 
         Parameters
         ----------
-        x: numpy array
+        x
             Array containing design variables
 
         Returns
         -------
-        float:
+        objective
             Current objective function value
-
-
         """
         objs, __, __ = self._get_results(x)
-        return objs[0]
+        return float(objs[0])
 
-    def _constraints(self, x, ci):
+    def _constraints(self, x: np.ndarray, ci: int) -> float:
         """
         Function which converts array from scipy
         to readable variables for the problem and
@@ -169,25 +165,28 @@ class Optimizer_scipy(Optimizer):
 
         Parameters
         ----------
-        x: numpy array
+        x
             Array containing design variables
-        ci: int
+        ci
             Index for constraint component
 
         Returns
         -------
-        float:
+        constraints
             Value of constraint component
-
         """
         __, cons, __ = self._get_results(x)
-        return cons[ci]
+        return float(cons[ci])
 
-    def _dispatch_callback(self, x, scipy_state=None):
+    def _dispatch_callback(
+        self, x: np.ndarray, scipy_state: object | None = None
+    ) -> None:
         """Dispatch a cached SciPy iterate without evaluating the problem."""
         self._callback_iteration += 1
         x = np.asarray(x, dtype=np.float64)
-        cached = self._mem.get(tuple(x))
+        memory = self._mem
+        assert memory is not None
+        cached = memory.get(tuple(x))
         objs = None if cached is None else cached[0]
         cons = None if cached is None else cached[1]
         n_evaluations = getattr(scipy_state, "nfev", None)
@@ -206,18 +205,18 @@ class Optimizer_scipy(Optimizer):
             )
         )
 
-    def _callback_xk(self, xk):
+    def _callback_xk(self, xk: np.ndarray) -> None:
         """Handle SciPy methods exposing only the current coordinates."""
         self._dispatch_callback(xk)
 
-    def _callback_intermediate(self, intermediate_result):
+    def _callback_intermediate(self, intermediate_result: object) -> None:
         """Handle SciPy methods exposing an intermediate result."""
         if hasattr(intermediate_result, "x"):
             self._dispatch_callback(intermediate_result.x, intermediate_result)
         else:
             self._dispatch_callback(intermediate_result)
 
-    def _scipy_callback(self):
+    def _scipy_callback(self) -> Callable[..., None]:
         """Select the callback signature required by the SciPy method."""
         method = self.scipy_pars.get("method")
         if callable(method):
@@ -231,7 +230,7 @@ class Optimizer_scipy(Optimizer):
         self,
         verbosity: int = 1,
         callbacks: list[OptimizerCallback] | None = None,
-    ):
+    ) -> SingleObjOptResults:
         """
         Run the optimization solver.
 
@@ -244,9 +243,8 @@ class Optimizer_scipy(Optimizer):
 
         Returns
         -------
-        results: iwopy.SingleObjOptResults
+        results
             The optimization results object
-
         """
 
         # check problem initialization:
@@ -271,7 +269,7 @@ class Optimizer_scipy(Optimizer):
         bounds = [(mini[i], maxi[i]) for i in range(len(mini))]
         minf = [x if x != -np.inf else None for x in self.problem.min_values_float()]
         maxf = [x if x != np.inf else None for x in self.problem.max_values_float()]
-        bounds = [(minf[i], maxf[i]) for i in range(len(minf))]
+        bounds += [(minf[i], maxf[i]) for i in range(len(minf))]
 
         # Run minimization:
         scipy_pars = self.scipy_pars.copy()

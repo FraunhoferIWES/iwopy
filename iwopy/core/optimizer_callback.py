@@ -18,7 +18,7 @@ from .opt_results import MultiObjOptResults, SingleObjOptResults
 def _read_only_population(
     values: np.ndarray,
     name: str,
-    dtype: np.dtype,
+    dtype: np.dtype[np.int32] | np.dtype[np.float64],
 ) -> np.ndarray:
     """Create a read-only two-dimensional population array."""
     population = np.asarray(values, dtype=dtype)
@@ -35,28 +35,7 @@ def _read_only_population(
 
 @dataclass(frozen=True)
 class OptimizerCallbackData:
-    """Immutable intermediate optimization data supplied to callbacks.
-
-    Attributes
-    ----------
-    event
-        The backend event represented by this snapshot.
-    vars_int
-        Integer variables for the current population.
-    vars_float
-        Floating-point variables for the current population.
-    objs
-        Objective values for the current population, if available.
-    cons
-        Constraint values for the current population, if available.
-    iteration
-        The solver iteration or generation, if available.
-    n_evaluations
-        The cumulative number of evaluated individuals, if available.
-
-    :group: core
-
-    """
+    """Immutable intermediate optimization data supplied to callbacks."""
 
     event: Literal["iteration", "evaluation"]
     vars_int: np.ndarray
@@ -103,64 +82,56 @@ class OptimizerCallbackData:
 
 
 class OptimizerCallback(metaclass=ABCMeta):
-    """Base class for optimizer callbacks.
-
-    :group: core
-
-    """
+    """Base class for optimizer callbacks."""
 
     def __init__(self) -> None:
-        """Initialize the callback."""
         self.optimizer: Optimizer | None = None
 
     def initialize(self, optimizer: Optimizer) -> None:
-        """Prepare the callback for an optimization run.
+        """
+        Prepare the callback for an optimization run.
 
         Parameters
         ----------
         optimizer
             The optimizer starting the run.
-
         """
         self.optimizer = optimizer
 
     @abstractmethod
     def notify(self, data: OptimizerCallbackData) -> None:
-        """Process intermediate optimization data.
+        """
+        Process intermediate optimization data.
 
         Parameters
         ----------
         data
             The current normalized optimizer state.
-
         """
 
     def finalize(
         self,
         results: SingleObjOptResults | MultiObjOptResults,
     ) -> None:
-        """Process the completed optimization results.
+        """
+        Process the completed optimization results.
 
         Parameters
         ----------
         results
             The completed iwopy optimization results.
-
         """
 
 
 class OptimizationHistory(OptimizerCallback):
-    """Record intermediate optimization states.
+    """
+    Record intermediate optimization states.
 
     The ``states`` attribute contains the snapshots received during the
     current or latest optimization run.
-
-    :group: core
-
     """
 
     def __init__(self) -> None:
-        """Initialize the history."""
         super().__init__()
         self.states: list[OptimizerCallbackData] = []
 
@@ -177,9 +148,10 @@ class OptimizationHistory(OptimizerCallback):
         self,
         objective: int = 0,
         ax: Axes | None = None,
-        **kwargs,
+        **kwargs: object,
     ) -> Figure:
-        """Plot the best objective value in each recorded state.
+        """
+        Plot the best objective value in each recorded state.
 
         Parameters
         ----------
@@ -192,9 +164,8 @@ class OptimizationHistory(OptimizerCallback):
 
         Returns
         -------
-        matplotlib.figure.Figure
+        figure
             The figure containing the objective history.
-
         """
         if self.optimizer is None:
             raise RuntimeError("Optimization history has not been initialized.")
@@ -204,7 +175,9 @@ class OptimizationHistory(OptimizerCallback):
                 f"Objective index {objective} is outside [0, {n_objectives})."
             )
 
-        states = [state for state in self.states if state.objs is not None]
+        states = [
+            (state, state.objs) for state in self.states if state.objs is not None
+        ]
         if not states:
             raise RuntimeError("Optimization history contains no objective values.")
 
@@ -212,14 +185,14 @@ class OptimizationHistory(OptimizerCallback):
 
         maximize = self.optimizer.problem.maximize_objs[objective]
         select = np.max if maximize else np.min
-        objective_values = [select(state.objs[:, objective]) for state in states]
+        objective_values = [select(values[:, objective]) for _, values in states]
         steps = [
             state.iteration
             if state.iteration is not None
             else state.n_evaluations
             if state.n_evaluations is not None
             else index
-            for index, state in enumerate(states, start=1)
+            for index, (state, _) in enumerate(states, start=1)
         ]
         if ax is None:
             figure, ax = plt.subplots()
@@ -227,7 +200,9 @@ class OptimizationHistory(OptimizerCallback):
             figure = ax.figure
         objective_name = self.optimizer.problem.objs.component_names[objective]
         ax.plot(steps, objective_values, label=objective_name, **kwargs)
-        ax.set_xlabel("iteration" if states[0].event == "iteration" else "evaluations")
+        ax.set_xlabel(
+            "iteration" if states[0][0].event == "iteration" else "evaluations"
+        )
         ax.set_ylabel(objective_name)
         return figure
 

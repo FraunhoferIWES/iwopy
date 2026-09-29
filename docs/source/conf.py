@@ -5,15 +5,37 @@ import sys
 repository_root = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(repository_root))
 
-from iwopy import __version__  # noqa: E402
+# -- Version extraction from pyproject.toml
+pyproject_path = repository_root / "pyproject.toml"
+
+try:
+    import tomllib
+except ImportError:
+    try:
+        import tomli as tomllib  # pyright: ignore[reportMissingImports]
+    except ImportError:
+        tomllib = None
+
+
+def get_version_from_pyproject(pyproject_path):
+    if tomllib is not None and pyproject_path.exists():
+        with open(pyproject_path, "rb") as f:
+            data = tomllib.load(f)
+            return data.get("project", {}).get("version", "unknown")
+    return "unknown"
+
+
+__version__ = get_version_from_pyproject(pyproject_path)
 
 # -- Project information -----------------------------------------------------
 
 project = "iwopy"
 copyright = "2026, Fraunhofer IWES"
 author = "Fraunhofer IWES"
+
 version = __version__
 release = __version__
+
 
 # -- General configuration ---------------------------------------------------
 
@@ -44,7 +66,9 @@ source_suffix = {
 }
 
 master_doc = "index"
+
 language = "en"
+# Exclude generated files and notebooks deferred from documentation execution.
 exclude_patterns = [
     "build",
     "_iwopy",
@@ -52,14 +76,19 @@ exclude_patterns = [
     ".DS_Store",
     "**.ipynb_checkpoints",
 ]
+
 pygments_style = None
 
+# NumPy-style docstrings and stable cross-reference labels.
+# Keep class members visible so constructors and inherited API members appear in
+# the generated reference pages for the concrete classes.
 numpydoc_use_rtype = False
 numpydoc_show_class_members = True
 numpydoc_class_members_toctree = False
 autosectionlabel_prefix_document = True
 
-# -- Autodoc options ---------------------------------------------------------
+
+# -- Options for autodoc ----------------------------------------------------
 
 autodoc_typehints = "signature"
 autodoc_class_signature = "separated"
@@ -94,9 +123,11 @@ texinfo_documents = [
 epub_title = project
 epub_exclude_files = ["search.html"]
 
-# -- AutoAPI configuration --------------------------------------------------
+# -- AutoAPI configuration ------------------------------------------------------
 
-autoapi_dirs = [str(repository_root / "iwopy")]
+autoapi_dirs = [
+    str(repository_root / "iwopy"),
+]
 autoapi_root = "_autoapi"
 autoapi_add_toctree_entry = False
 autoapi_options = [
@@ -110,9 +141,13 @@ autoapi_python_class_content = "both"
 autoapi_member_order = "groupwise"
 autoapi_python_use_implicit_namespaces = False
 autoapi_keep_files = False
-autoapi_ignore = ["*/tests/*", "*/__pycache__/*"]
+autoapi_ignore = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/_version.py",
+]
 
-# -- Notebook configuration -------------------------------------------------
+# -- Notebook configuration --------------------------------------------------
 
 myst_enable_extensions = [
     "amsmath",
@@ -121,6 +156,7 @@ myst_enable_extensions = [
     "dollarmath",
     "html_image",
 ]
+
 nb_execution_mode = "auto"
 nb_execution_timeout = 300
 nb_ipywidgets_js = {

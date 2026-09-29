@@ -126,19 +126,16 @@ Enter the root directory by
 cd iwopy
 ```
 
-Then you can either install from this directory via
+Synchronize the development and test dependencies with
 
 ```console
-pip install -e .
+uv sync --extra test --extra dev
 ```
 
-Notice that the above default installation does not install the third-party optimization
-packages. `iwopy` will tell you in an error message that it is missing a package, with
-a hint of installation advice. You can avoid this step by installing all supported
-optimzer packages by installing those optoinal packages by addig `[opt]`:
+Install the pre-commit hooks with
 
 ```console
-pip install -e .[opt]
+uv run pre-commit install
 ```
 
 ## Installation via conda
@@ -181,24 +178,25 @@ Concerning the `git clone` line, we actually recommend that you fork `iwopy` on 
 
 ## Testing
 
-For testing, please clone the repository and install the required dependencies
-(`flake8`, `pytest`, `pygmo`, `pymoo`):
+For testing, please clone the repository and synchronize the required dependencies:
 
 ```console
 git clone https://github.com/FraunhoferIWES/iwopy.git
 cd iwopy
-pip install .[test]
+uv sync --extra test --extra dev
 ```
 
-If you are a developer you might want to replace the last line by
-```console
-pip install -e .[test]
-```
-for dynamic installation from the local code base.
+Run the test suite and type checker with
 
-The tests are then run by
 ```console
-pytest tests
+uv run pytest tests
+uv run mypy iwopy
+```
+
+Run all repository checks with
+
+```console
+uv run pre-commit run --all-files
 ```
 
 ## Contributing

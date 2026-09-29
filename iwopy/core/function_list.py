@@ -1,9 +1,18 @@
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Generic, TypeVar
+
 import numpy as np
 
 from .function import OptFunction
 
+if TYPE_CHECKING:
+    from .problem import Problem
 
-class OptFunctionList(OptFunction):
+
+_OptFunctionT = TypeVar("_OptFunctionT", bound=OptFunction)
+
+
+class OptFunctionList(OptFunction, Generic[_OptFunctionT]):
     """
     A list of functions.
 
@@ -12,51 +21,33 @@ class OptFunctionList(OptFunction):
 
     Add functions to the list via the `append` function,
     and don't forget to initialize.
-
-    Attributes
-    ----------
-    func_vars_int: list of lists of int
-        For each added function, the subset of
-        integer variables
-    func_vars_float: list of lists of int
-        For each added function, the subset of
-        float variables
-    sizes: list of int
-        The components of each added function
-
-    :group: core
-
     """
 
-    def __init__(self, problem, name):
+    def __init__(self, problem: "Problem", name: str) -> None:
         """
-        Constructor
-
         Parameters
         ----------
-        problem: iwopy.Problem
+        problem
             The underlying optimization problem
-        name: str
+        name
             The function name
-
         """
         super().__init__(problem, name)
 
-        self._functions = []
+        self._functions: list[_OptFunctionT] = []
         self._cnames = []
-        self.func_vars_int = []
-        self.func_vars_float = []
-        self.sizes = []
+        self.func_vars_int: list[list[int]] = []
+        self.func_vars_float: list[list[int]] = []
+        self.sizes: list[int] = []
 
-    def append(self, function):
+    def append(self, function: _OptFunctionT) -> None:
         """
         Adds a function to the list.
 
         Parameters
         ----------
-        function: iwopy.core.OptFunction
+        function
             The function
-
         """
         if self.initialized:
             raise ValueError(
@@ -68,43 +59,40 @@ class OptFunctionList(OptFunction):
                 f"FunctionList '{self.name}': Cannot add function '{function.name}' since problems don't match. Expected '{self.problem.name}', found '{function.problem.name}'"
             )
         self._functions.append(function)
-        self._cnames += list(function.component_names)
+        self.component_names.extend(function.component_names)
 
     @property
-    def functions(self):
+    def functions(self) -> list[_OptFunctionT]:
         """
         The list of added funtions
 
         Returns
         -------
-        funcs: list of iwopy.core.OptFunction
+        funcs
             The list of added functions
-
         """
         return self._functions
 
     @property
-    def n_functions(self):
+    def n_functions(self) -> int:
         """
         The number of added functions
 
         Returns
         -------
-        n: int
+        n
             The total number of added functions
-
         """
         return len(self.functions)
 
-    def initialize(self, verbosity=0):
+    def initialize(self, verbosity: int = 0) -> None:
         """
         Initialize the object.
 
         Parameters
         ----------
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
-
         """
         self._vnamesi = []
         self._vnamesf = []
@@ -118,11 +106,10 @@ class OptFunctionList(OptFunction):
         self._vnamesi = list(dict.fromkeys(self._vnamesi))
         self._vnamesf = list(dict.fromkeys(self._vnamesf))
 
-        def getv(vnames, fvnames):
+        def getv(vnames: list[str], fvnames: list[str]) -> list[int]:
             if not len(fvnames):
                 return []
-            ls = [vnames.index(v) for v in fvnames]
-            return np.s_[ls[0] : ls[-1]] if list(range(ls[0], ls[-1])) == ls else ls
+            return [vnames.index(v) for v in fvnames]
 
         self.func_vars_int = [
             getv(self._vnamesi, f.var_names_int) for f in self.functions
@@ -133,17 +120,16 @@ class OptFunctionList(OptFunction):
 
         super().initialize(verbosity)
 
-    def vardeps_int(self):
+    def vardeps_int(self) -> np.ndarray:
         """
         Gets the dependencies of all components
         on the function int variables
 
         Returns
         -------
-        deps: numpy.ndarray of bool
+        deps
             The dependencies of components on function
             variables, shape: (n_components, n_vars_int)
-
         """
         deps = np.zeros((self.n_components(), self.n_vars_int), dtype=bool)
 
@@ -155,17 +141,16 @@ class OptFunctionList(OptFunction):
 
         return deps
 
-    def vardeps_float(self):
+    def vardeps_float(self) -> np.ndarray:
         """
         Gets the dependencies of all components
         on the function float variables
 
         Returns
         -------
-        deps: numpy.ndarray of bool
+        deps
             The dependencies of components on function
             variables, shape: (n_components, n_vars_float)
-
         """
         deps = np.zeros((self.n_components(), self.n_vars_float), dtype=bool)
 
@@ -177,35 +162,33 @@ class OptFunctionList(OptFunction):
 
         return deps
 
-    def n_components(self):
+    def n_components(self) -> int:
         """
         Returns the number of components of the
         function.
 
         Returns
         -------
-        int:
+        n_components
             The number of components.
-
         """
         return sum(self.sizes)
 
-    def split_individual(self, data):
+    def split_individual(self, data: np.ndarray) -> list[np.ndarray]:
         """
         Splits result values or other data into
         individual function data.
 
         Parameters
         ----------
-        data: numpy.ndarray
+        data
             The data, shape: (n_components,)
 
         Returns
         -------
-        fdata: list of numpy.ndarray
+        fdata
             The data for each function, list entry
             shapes: (n_func_components,)
-
         """
         out = []
         i0 = 0
@@ -215,22 +198,21 @@ class OptFunctionList(OptFunction):
             i0 = i1
         return out
 
-    def split_population(self, data):
+    def split_population(self, data: np.ndarray) -> list[np.ndarray]:
         """
         Splits result values or other data into
         individual function data.
 
         Parameters
         ----------
-        data: numpy.ndarray
+        data
             The data, shape: (n_pop, n_components)
 
         Returns
         -------
-        fdata: list of numpy.ndarray
+        fdata
             The data for each function, list entry
             shapes: (n_pop, n_func_components)
-
         """
         out = []
         i0 = 0
@@ -240,28 +222,33 @@ class OptFunctionList(OptFunction):
             i0 = i1
         return out
 
-    def calc_individual(self, vars_int, vars_float, problem_results, components=None):
+    def calc_individual(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        problem_results: object,
+        components: Sequence[int] | np.ndarray | None = None,
+    ) -> np.ndarray:
         """
         Calculate values for a single individual of the
         underlying problem.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_vars_float,)
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-        components: list of int, optional
+        components
             The selected components or None for all
 
         Returns
         -------
-        values: np.array
+        values
             The component values, shape: (n_sel_components,)
-
         """
         cmpnts = np.arange(self.n_components()) if components is None else components
         values = np.full(len(cmpnts), np.nan, dtype=np.float64)
@@ -285,27 +272,32 @@ class OptFunctionList(OptFunction):
 
         return values
 
-    def calc_population(self, vars_int, vars_float, problem_results, components=None):
+    def calc_population(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        problem_results: object,
+        components: Sequence[int] | np.ndarray | None = None,
+    ) -> np.ndarray:
         """
         Calculate values for all individuals of a population.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_pop, n_vars_float)
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-        components: list of int, optional
+        components
             The selected components or None for all
 
         Returns
         -------
-        values: np.array
+        values
             The component values, shape: (n_pop, n_sel_components,)
-
         """
         n_pop = vars_float.shape[0]
         cmpnts = np.arange(self.n_components()) if components is None else components
@@ -330,27 +322,32 @@ class OptFunctionList(OptFunction):
 
         return values
 
-    def finalize_individual(self, vars_int, vars_float, problem_results, verbosity=1):
+    def finalize_individual(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        problem_results: object,
+        verbosity: int = 1,
+    ) -> np.ndarray:
         """
         Finalization, given the champion data.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The optimal integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The optimal float variable values, shape: (n_vars_float,)
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
         -------
-        values: np.array
+        values
             The component values, shape: (n_components,)
-
         """
         values = np.full(self.n_components(), np.nan, dtype=np.float64)
 
@@ -366,29 +363,34 @@ class OptFunctionList(OptFunction):
 
         return values
 
-    def finalize_population(self, vars_int, vars_float, problem_results, verbosity=1):
+    def finalize_population(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        problem_results: object,
+        verbosity: int = 1,
+    ) -> np.ndarray:
         """
         Finalization, given the final population data.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values of the final
             generation, shape: (n_pop, n_vars_int)
-        vars_float: np.array
+        vars_float
             The float variable values of the final
             generation, shape: (n_pop, n_vars_float)
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
         -------
-        values: np.array
+        values
             The component values, shape: (n_pop, n_components)
-
         """
         n_pop = vars_float.shape[0]
         values = np.full((n_pop, self.n_components()), np.nan, dtype=np.float64)
@@ -405,7 +407,13 @@ class OptFunctionList(OptFunction):
 
         return values
 
-    def ana_deriv(self, vars_int, vars_float, var, components=None):
+    def ana_deriv(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        var: int,
+        components: Sequence[int] | np.ndarray | None = None,
+    ) -> np.ndarray:
         """
         Calculates the analytic derivative, if possible.
 
@@ -413,20 +421,19 @@ class OptFunctionList(OptFunction):
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_vars_float,)
-        var: int
+        var
             The index of the differentiation float variable
-        components: list of int
+        components
             The selected components, or None for all
 
         Returns
         -------
-        deriv: numpy.ndarray
+        deriv
             The derivative values, shape: (n_sel_components,)
-
         """
         cmpnts = np.arange(self.n_components()) if components is None else components
         deriv = np.full(len(cmpnts), np.nan, dtype=np.float64)

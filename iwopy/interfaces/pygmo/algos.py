@@ -1,4 +1,5 @@
 from numbers import Integral, Real
+from typing import Any
 
 import numpy as np
 
@@ -6,15 +7,10 @@ from . import imports
 
 
 class AlgoFactory:
-    """
-    Creates a pygmo algorithm from parameters
-
-    :group: interfaces.pygmo
-
-    """
+    """Creates a pygmo algorithm from parameters"""
 
     @staticmethod
-    def new(type, pop=False, **kwargs):
+    def new(type: str, pop: bool = False, **kwargs: Any) -> Any:
         """
         Create a pygmo algo.
 
@@ -22,24 +18,27 @@ class AlgoFactory:
 
         Parameters
         ----------
-        type: str
+        type
             Name of the driver type
-        kwargs: dict, optional
+        pop
+            Enable vectorized batch fitness evaluation
+        kwargs
             Additional parameters, type dependent
 
         Returns
         -------
-        imports.pygmo.algo :
+        algorithm
             The pygmo algorithm object
-
         """
 
         imports.load()
+        pygmo = imports.pygmo
+        assert pygmo is not None
 
-        def set_bfe(uda):
+        def set_bfe(uda: Any) -> None:
             if pop:
                 try:
-                    bfe = imports.pygmo.bfe()
+                    bfe = pygmo.bfe()
                     uda.set_bfe(bfe)
                 except AttributeError:
                     print(
@@ -48,27 +47,27 @@ class AlgoFactory:
 
         # nlopt:
         if type == "nlopt":
-            uda = imports.pygmo.nlopt(kwargs["optimizer"])
+            uda = pygmo.nlopt(kwargs["optimizer"])
             set_bfe(uda)
 
-            algo = imports.pygmo.algorithm(uda)
+            algo = pygmo.algorithm(uda)
 
             if "ftol_rel" in kwargs:
-                algo.extract(imports.pygmo.nlopt).ftol_rel = kwargs["ftol_rel"]
+                algo.extract(pygmo.nlopt).ftol_rel = kwargs["ftol_rel"]
             if "ftol_abs" in kwargs:
-                algo.extract(imports.pygmo.nlopt).ftol_abs = kwargs["ftol_abs"]
+                algo.extract(pygmo.nlopt).ftol_abs = kwargs["ftol_abs"]
             if "xtol_rel" in kwargs:
-                algo.extract(imports.pygmo.nlopt).xtol_rel = kwargs["xtol_rel"]
+                algo.extract(pygmo.nlopt).xtol_rel = kwargs["xtol_rel"]
             if "xtol_abs" in kwargs:
-                algo.extract(imports.pygmo.nlopt).xtol_abs = kwargs["xtol_abs"]
+                algo.extract(pygmo.nlopt).xtol_abs = kwargs["xtol_abs"]
             if "maxeval" in kwargs:
-                algo.extract(imports.pygmo.nlopt).maxeval = kwargs["maxeval"]
+                algo.extract(pygmo.nlopt).maxeval = kwargs["maxeval"]
             if "maxtime" in kwargs:
-                algo.extract(imports.pygmo.nlopt).maxtime = kwargs["maxtime"]
+                algo.extract(pygmo.nlopt).maxtime = kwargs["maxtime"]
 
         # ipopt:
         elif type == "ipopt":
-            uda = imports.pygmo.ipopt()
+            uda = pygmo.ipopt()
             set_bfe(uda)
 
             for k, a in kwargs.items():
@@ -86,7 +85,7 @@ class AlgoFactory:
                         "expected bool, int, float, or str"
                     )
 
-            algo = imports.pygmo.algorithm(uda)
+            algo = pygmo.algorithm(uda)
 
         # sga:
         elif type == "sga":
@@ -133,10 +132,10 @@ class AlgoFactory:
 
             """
 
-            uda = imports.pygmo.sga(**kwargs)
+            uda = pygmo.sga(**kwargs)
             set_bfe(uda)
 
-            algo = imports.pygmo.algorithm(uda)
+            algo = pygmo.algorithm(uda)
 
         # pso:
         elif type == "pso":
@@ -178,10 +177,10 @@ class AlgoFactory:
 
             """
 
-            uda = imports.pygmo.pso(**kwargs)
+            uda = pygmo.pso(**kwargs)
             set_bfe(uda)
 
-            algo = imports.pygmo.algorithm(uda)
+            algo = pygmo.algorithm(uda)
 
         # bee_colony:
         elif type == "bee_colony":
@@ -199,10 +198,10 @@ class AlgoFactory:
 
             """
 
-            uda = imports.pygmo.bee_colony(**kwargs)
+            uda = pygmo.bee_colony(**kwargs)
             set_bfe(uda)
 
-            algo = imports.pygmo.algorithm(uda)
+            algo = pygmo.algorithm(uda)
 
         # nsga2:
         elif type == "nsga2":
@@ -224,10 +223,10 @@ class AlgoFactory:
 
             """
 
-            uda = imports.pygmo.nsga2(**kwargs)
+            uda = pygmo.nsga2(**kwargs)
             set_bfe(uda)
 
-            algo = imports.pygmo.algorithm(uda)
+            algo = pygmo.algorithm(uda)
 
         # additional pygmo algorithms:
         elif type in (
@@ -245,10 +244,10 @@ class AlgoFactory:
             "moead_gen",
             "nspso",
         ):
-            uda = getattr(imports.pygmo, type)(**kwargs)
+            uda = getattr(pygmo, type)(**kwargs)
             set_bfe(uda)
 
-            algo = imports.pygmo.algorithm(uda)
+            algo = pygmo.algorithm(uda)
 
         # unknown driver:
         else:

@@ -1,20 +1,22 @@
 # Testing
 
-For testing, please clone the repository and install the required dependencies:
+For testing, please clone the repository and synchronize the required dependencies:
 
 ```console
 git clone https://github.com/FraunhoferIWES/iwopy.git
 cd iwopy
-pip install .[test]
+uv sync --extra test --extra dev
 ```
 
-If you are a developer you might want to replace the last line by
-```console
-pip install -e .[test]
-```
-for dynamic installation from the local code base.
+Run the test suite and type checker with
 
-The tests are then run by
 ```console
-pytest tests
+uv run pytest tests
+uv run mypy iwopy
+```
+
+Run all repository checks with
+
+```console
+uv run pre-commit run --all-files
 ```

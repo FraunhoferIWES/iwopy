@@ -1,4 +1,8 @@
+from collections.abc import Sequence
+from typing import ClassVar, Literal, overload
+
 import numpy as np
+from numpy.typing import ArrayLike
 from scipy.spatial.distance import cdist
 
 
@@ -6,58 +10,36 @@ class RegularDiscretizationGrid:
     """
     A lightweight regular grid in n dimensions,
     without points storage.
-
-    Attributes
-    ----------
-    origin: numpy.ndarray
-        The origin point, shape: (n_dims,)
-    deltas: numpy.ndarray
-        The step sizes, shape: (n_dims,)
-    n_steps: numpy.ndarray
-        The number of steps, shape: (n_dims,)
-    interpolation: str
-        The interpolation method: None, nearest, linear
-    tol: numpy.ndarray
-        The tolerances for grid bounds, shape: (n_dims,),
-        or None
-    digits: int
-        The grid point precision
-
-    :group: utils
-
     """
 
-    INT_INF = -999999
+    INT_INF: ClassVar[int] = -999999
 
     def __init__(
         self,
-        origin,
-        deltas,
-        n_steps,
-        interpolation=None,
-        tol=None,
-        digits=12,
-    ):
+        origin: ArrayLike,
+        deltas: ArrayLike,
+        n_steps: ArrayLike,
+        interpolation: Literal["nearest", "linear"] | None = None,
+        tol: ArrayLike | None = None,
+        digits: int = 12,
+    ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
-        origin: array-like
+        origin
             The origin point, len: n_dims
-        deltas: array-like
+        deltas
             The step sizes, len: n_dims.
-        n_steps: array-like
+        n_steps
             The number of steps, len: n_dims. Use
             INT_INF for infinite.
-        interpolation: str
+        interpolation
             The interpolation method: None, nearest, linear
-        tol: list of float, optional
+        tol
             The tolerances for grid bounds, default is 0,
             shape: (n_dims,)
-        digits: int
+        digits
             The grid point precision
-
         """
 
         self.origin = np.array(origin, dtype=np.float64)
@@ -66,84 +48,80 @@ class RegularDiscretizationGrid:
         self.digits = digits
         self.interpolation = interpolation
 
+        self.tol: np.ndarray | None
         if tol is not None:
             self.tol = np.zeros(self.n_dims, dtype=np.float64)
             self.tol[:] = tol
         else:
             self.tol = None
 
-        self._opts = None
+        self._opts: np.ndarray | None = None
 
     @property
-    def n_points(self):
+    def n_points(self) -> np.ndarray:
         """
         The number of points in each dimension
 
         Returns
         -------
-        numpy.ndarray :
+        n_points
             The number of points in each dimension,
             shape: (n_dims,)
-
         """
         n = self.n_steps + 1
         n[n == self.INT_INF + 1] = self.INT_INF
         return n
 
     @property
-    def n_dims(self):
+    def n_dims(self) -> int:
         """
         The number of dimensions
 
         Returns
         -------
-        int :
+        n_dims
             The number of dimensions
-
         """
         return len(self.origin)
 
     @property
-    def p_min(self):
+    def p_min(self) -> np.ndarray:
         """
         The minimal grid point values
 
         Returns
         -------
-        numpy.ndarray:
+        p_min
             The minimal grid point values,
             shape: (n_dims,)
-
         """
         m = self.origin.copy()
         m[(self.n_steps == self.INT_INF) & (self.deltas < 0)] = -np.inf
         return m
 
     @property
-    def p_max(self):
+    def p_max(self) -> np.ndarray:
         """
         The maximal grid point values
 
         Returns
         -------
-        numpy.ndarray:
+        p_max
             The maximal grid point values,
             shape: (n_dims,)
-
         """
         m = self.origin + self.n_steps * self.deltas
         m[(self.n_steps == self.INT_INF) & (self.deltas > 0)] = np.inf
         return np.round(m, self.digits)
 
-    def print_info(self, spaces=0):
+    def print_info(self, spaces: int = 0) -> None:
         """
         Prints basic information
 
         Parameters
         ----------
-        spaces: int
+        spaces
             The prepending spaces
-
         """
         s = "" if spaces == 0 else " " * spaces
         print(f"{s}n_dims  :", self.n_dims)
@@ -153,34 +131,30 @@ class RegularDiscretizationGrid:
         print(f"{s}p_min   :", self.p_min)
         print(f"{s}p_max   :", self.p_max)
 
-    def _error_info(self, p, for_ocell=False):
-        """
-        Helper for printing information at interpolation error
-        """
+    def _error_info(self, p: np.ndarray, for_ocell: bool = False) -> None:
+        """Helper for printing information at interpolation error"""
         print("GDIM:", self.n_points.tolist())
         print("GMIN:", self.p_min.tolist())
         print("GMAX:", self.p_max.tolist())
-        print("GTOL:", self.tol.tolist())
+        print("GTOL:", None if self.tol is None else self.tol.tolist())
         if for_ocell:
-            cmin = self._ocell[:, 0]
-            cmax = self._ocell[:, 1]
+            cmin = np.zeros(self.n_dims, dtype=np.float64)
+            cmax = np.ones(self.n_dims, dtype=np.float64)
             print("CMIN:", cmin.tolist())
             print("CMAX:", cmax.tolist())
             print("Q   :", p)
         else:
             print("P   :", p)
 
-    def _error_infos(self, pts, for_ocell=False):
-        """
-        Helper for printing information at interpolation error
-        """
+    def _error_infos(self, pts: np.ndarray, for_ocell: bool = False) -> None:
+        """Helper for printing information at interpolation error"""
         print("GDIM:", self.n_points.tolist())
         print("GMIN:", self.p_min.tolist())
         print("GMAX:", self.p_max.tolist())
-        print("GTOL:", self.tol.tolist())
+        print("GTOL:", None if self.tol is None else self.tol.tolist())
         if for_ocell:
-            cmin = self._ocell[:, 0]
-            cmax = self._ocell[:, 1]
+            cmin = np.zeros(self.n_dims, dtype=np.float64)
+            cmax = np.ones(self.n_dims, dtype=np.float64)
             print("CMIN:", cmin.tolist())
             print("CMAX:", cmax.tolist())
             print("VMIN:", np.min(pts, axis=0).tolist())
@@ -213,101 +187,111 @@ class RegularDiscretizationGrid:
                     f"Found {np.sum(sel)} points above higher bounds, e.g. point {s}: p = {pts[s]}"
                 )
 
-    def is_gridi(self, inds):
+    def is_gridi(self, inds: np.ndarray) -> bool:
         """
         Checks if grid indices are valid
 
         Parameters
         ----------
-        inds: int
+        inds
             The grid point indices, shape: (n_dims,)
 
         Returns
         -------
-        bool :
+        on_grid
             True if on grid
-
         """
         sel0 = ~(self.n_steps == self.INT_INF)
         sel = (inds < 0) | (sel0 & (inds >= self.n_points))
-        return not np.any(sel)
+        return not bool(np.any(sel))
 
-    def i2gp(self, inds, error=True):
+    @overload
+    def i2gp(self, inds: np.ndarray, error: Literal[True] = True) -> np.ndarray: ...
+
+    @overload
+    def i2gp(self, inds: np.ndarray, error: Literal[False]) -> np.ndarray | None: ...
+
+    @overload
+    def i2gp(self, inds: np.ndarray, error: bool) -> np.ndarray | None: ...
+
+    def i2gp(self, inds: np.ndarray, error: bool = True) -> np.ndarray | None:
         """
         Translates grid point indices to grid point.
 
         Parameters
         ----------
-        inds: int
+        inds
             The grid point indices, shape: (n_dims,)
-        error: bool
+        error
             Flag for throwing error if off-grid, else
             return None in that case
 
         Returns
         -------
-        gp: numpy.ndarray
+        gp
             The grid point, shape: (n_dims,)
-
         """
-        if not self.is_gridi(inds) and error:
-            self.print_info()
-            raise ValueError(f"Grind indices {inds} are not on grid")
+        if not self.is_gridi(inds):
+            if error:
+                self.print_info()
+                raise ValueError(f"Grid indices {inds} are not on grid")
+            return None
 
         return np.round(self.origin + inds * self.deltas, self.digits)
 
-    def find_grid_inds(self, inds):
+    def find_grid_inds(self, inds: np.ndarray) -> np.ndarray:
         """
         Finds indices that are on grid
 
         Parameters
         ----------
-        inds: numpy.ndarray
+        inds
             The grid point index candidates,
             shape: (n_inds, n_dims)
 
         Returns
         -------
-        sel_grid: numpy.ndarray of bool
+        sel_grid
             Subset selection of on-grid indices,
             shape: (n_inds, n_dims)
-
         """
         sel0 = ~(self.n_steps == self.INT_INF)
         sel = (inds < 0) | (sel0[None, :] & (inds >= self.n_points[None, :]))
         return ~sel
 
-    def inds2gpts(self, inds):
+    def inds2gpts(self, inds: np.ndarray) -> np.ndarray:
         """
         Translates grid point indices to grid points.
 
         Parameters
         ----------
-        inds: array-like
+        inds
             The integer grid point indices, shape:
             (n_gpts, dims)
 
         Returns
         -------
-        gpts: numpy.ndarray
+        gpts
             The grid points, shape: (n_gpts, n_dims)
-
         """
         selg = np.all(self.find_grid_inds(inds), axis=1)
         if not np.all(selg):
-            selg = np.where(selg)[0]
+            bad = np.where(~selg)[0]
             raise ValueError(
-                f"Found {len(selg)} indices outside grid, e.g. index {selg[0]}: {inds[selg[0]]}"
+                f"Found {len(bad)} indices outside grid, e.g. index {bad[0]}: {inds[bad[0]]}"
             )
 
         o = self.origin[None, :]
         d = self.deltas[None, :]
         return np.round(o + inds * d, self.digits)
 
-    def _gp2i(self, gp, allow_outer=True, lower_left=False):
-        """
-        Helper function for indices calculation
-        """
+    def _gp2i(
+        self,
+        gp: np.ndarray,
+        allow_outer: bool = True,
+        lower_left: bool = False,
+    ) -> np.ndarray:
+        """Helper function for indices calculation"""
         if lower_left:
             inds = np.round((gp - self.origin) / self.deltas, self.digits).astype(
                 np.int32
@@ -322,10 +306,13 @@ class RegularDiscretizationGrid:
 
         return inds
 
-    def _gpts2inds(self, gpts, allow_outer=True, lower_left=False):
-        """
-        Helper function for index calculation
-        """
+    def _gpts2inds(
+        self,
+        gpts: np.ndarray,
+        allow_outer: bool = True,
+        lower_left: bool = False,
+    ) -> np.ndarray:
+        """Helper function for index calculation"""
         o = self.origin[None, :]
         d = self.deltas[None, :]
 
@@ -341,20 +328,19 @@ class RegularDiscretizationGrid:
 
         return inds
 
-    def apply_tol(self, p):
+    def apply_tol(self, p: np.ndarray) -> np.ndarray:
         """
         Get tolerance corrected point
 
         Parameters
         ----------
-        p: numpy.ndarray
+        p
             The point, shape: (n_dims,)
 
         Returns
         -------
-        q: numpy.ndarray
+        q
             The corrected point, shape: (n_dims,)
-
         """
         if self.tol is not None:
             q = p.copy()
@@ -370,20 +356,19 @@ class RegularDiscretizationGrid:
             return q
         return p
 
-    def apply_tols(self, pts):
+    def apply_tols(self, pts: np.ndarray) -> np.ndarray:
         """
         Get tolerance corrected points
 
         Parameters
         ----------
-        pts: numpy.ndarray
+        pts
             The points, shape: (n_pts, n_dims)
 
         Returns
         -------
-        q: numpy.ndarray
+        q
             The corrected points, shape: (n_pts, n_dims)
-
         """
         if self.tol is not None:
             qts = pts.copy()
@@ -405,27 +390,46 @@ class RegularDiscretizationGrid:
             return qts
         return pts
 
-    def is_gridpoint(self, p, allow_outer=True, ret_inds=False):
+    @overload
+    def is_gridpoint(
+        self,
+        p: np.ndarray,
+        allow_outer: bool = True,
+        ret_inds: Literal[False] = False,
+    ) -> bool: ...
+
+    @overload
+    def is_gridpoint(
+        self, p: np.ndarray, allow_outer: bool, ret_inds: Literal[True]
+    ) -> tuple[bool, np.ndarray]: ...
+
+    @overload
+    def is_gridpoint(
+        self, p: np.ndarray, allow_outer: bool, ret_inds: bool
+    ) -> bool | tuple[bool, np.ndarray]: ...
+
+    def is_gridpoint(
+        self, p: np.ndarray, allow_outer: bool = True, ret_inds: bool = False
+    ) -> bool | tuple[bool, np.ndarray]:
         """
         Checks if a point is on grid.
 
         Parameters
         ----------
-        p: numpy.ndarray
+        p
             The point, shape: (n_dims,)
-        allow_outer: bool
+        allow_outer
             Allow outermost point indices, else
             reduce those to lower-left cell corner
-        ret_inds: bool
+        ret_inds
             Additionally return indices
 
         Returns
         -------
-        bool :
+        on_grid
             True if on grid
-        inds: numpy.ndarray, optional
+        inds
             The grid point indices, shape: (n_dims,)
-
         """
         p = self.apply_tol(p)
 
@@ -437,31 +441,50 @@ class RegularDiscretizationGrid:
 
         p0 = np.round(self.origin + inds * self.deltas, self.digits)
         if ret_inds:
-            return np.all(p0 == p), inds
-        return np.all(p0 == p)
+            return bool(np.all(p0 == p)), inds
+        return bool(np.all(p0 == p))
 
-    def find_gridpoints(self, pts, allow_outer=True, ret_inds=False):
+    @overload
+    def find_gridpoints(
+        self,
+        pts: np.ndarray,
+        allow_outer: bool = True,
+        ret_inds: Literal[False] = False,
+    ) -> np.ndarray: ...
+
+    @overload
+    def find_gridpoints(
+        self, pts: np.ndarray, allow_outer: bool, ret_inds: Literal[True]
+    ) -> tuple[np.ndarray, np.ndarray]: ...
+
+    @overload
+    def find_gridpoints(
+        self, pts: np.ndarray, allow_outer: bool, ret_inds: bool
+    ) -> np.ndarray | tuple[np.ndarray, np.ndarray]: ...
+
+    def find_gridpoints(
+        self, pts: np.ndarray, allow_outer: bool = True, ret_inds: bool = False
+    ) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
         """
         Finds points that are on grid.
 
         Parameters
         ----------
-        pts: numpy.ndarray
+        pts
             The points, shape: (n_pts, n_dims)
-        allow_outer: bool
+        allow_outer
             Allow outermost point indices, else
             reduce those to lower-left cell corner
-        ret_inds: bool
+        ret_inds
             Additionally return indices
 
         Returns
         -------
-        sel_grid: numpy.ndarray of bool
+        sel_grid
             Subset selection of points that are on grid,
             shape: (n_pts, n_dims)
-        inds: numpy.ndarray, optional
+        inds
             The grid point indices, shape: (n_gpts, n_dims)
-
         """
         pts = self.apply_tols(pts)
 
@@ -479,92 +502,102 @@ class RegularDiscretizationGrid:
 
         return sel
 
-    def all_gridpoints(self, pts, allow_outer=True):
+    def all_gridpoints(self, pts: np.ndarray, allow_outer: bool = True) -> bool:
         """
         Checks if all points are on grid.
 
         Parameters
         ----------
-        pts: numpy.ndarray
+        pts
             The points space, shape: (n_pts, n_dims)
-        allow_outer: bool
+        allow_outer
             Allow outermost point indices, else
             reduce those to lower-left cell corner
 
         Returns
         -------
-        bool :
+        all_on_grid
             True if all points on grid
-
         """
         selg = self.find_gridpoints(pts, allow_outer)
-        return np.all(selg)
+        return bool(np.all(selg))
 
-    def in_grid(self, p):
+    def in_grid(self, p: np.ndarray) -> bool:
         """
         Checks if a point is located within the grid.
 
         Parameters
         ----------
-        p: numpy.ndarray
+        p
             The point, shape: (n_dims,)
 
         Returns
         -------
-        bool :
+        in_grid
             True if within grid
-
         """
         p = self.apply_tol(p)
-        return np.all((p >= self.p_min) & (p <= self.p_max))
+        return bool(np.all((p >= self.p_min) & (p <= self.p_max)))
 
-    def find_ingrid(self, pts):
+    def find_ingrid(self, pts: np.ndarray) -> np.ndarray:
         """
         Finds points that are on grid.
 
         Parameters
         ----------
-        pts: numpy.ndarray
+        pts
             The points, shape: (n_pts, n_dims)
 
         Returns
         -------
-        sel_grid: numpy.ndarray of bool
+        sel_grid
             Subset selection of points that are in grid,
             shape: (n_pts, n_dims)
-
         """
         pts = self.apply_tols(pts)
         return (pts >= self.p_min[None, :]) & (pts <= self.p_max[None, :])
 
-    def gp2i(self, gp, allow_outer=True, error=True):
+    @overload
+    def gp2i(
+        self,
+        gp: np.ndarray,
+        allow_outer: bool = True,
+        error: Literal[True] = True,
+    ) -> np.ndarray: ...
+
+    @overload
+    def gp2i(
+        self, gp: np.ndarray, allow_outer: bool, error: Literal[False]
+    ) -> np.ndarray | None: ...
+
+    @overload
+    def gp2i(
+        self, gp: np.ndarray, allow_outer: bool, error: bool
+    ) -> np.ndarray | None: ...
+
+    def gp2i(
+        self, gp: np.ndarray, allow_outer: bool = True, error: bool = True
+    ) -> np.ndarray | None:
         """
         Get grid index of a grid point
 
         Parameters
         ----------
-        gp: numpy.ndarray
+        gp
             The point, shape: (n_dims,)
-        allow_outer: bool
+        allow_outer
             Allow outermost point indices, else
             reduce those to lower-left cell corner
-        error: bool
+        error
             Flag for throwing error if off-grid, else
             return None in that case
 
         Returns
         -------
-        inds: numpy.ndarray
+        inds
             The lower-left grid corner point indices, shape: (n_dims,)
-
         """
         isgp, inds = self.is_gridpoint(gp, allow_outer, ret_inds=True)
-
-        if isgp:
-            if error:
-                self._error_info(gp)
-                raise KeyError(f"Point gp = {gp} is not on grid")
-            return None
 
         if not self.is_gridi(inds):
             if error:
@@ -572,29 +605,54 @@ class RegularDiscretizationGrid:
                 raise ValueError(f"Point {gp} out of grid")
             return None
 
+        if not isgp:
+            if error:
+                self._error_info(gp)
+                raise KeyError(f"Point gp = {gp} is not on grid")
+            return None
+
         return inds
 
-    def gpts2inds(self, gpts, allow_outer=True, error=True):
+    @overload
+    def gpts2inds(
+        self,
+        gpts: np.ndarray,
+        allow_outer: bool = True,
+        error: Literal[True] = True,
+    ) -> np.ndarray: ...
+
+    @overload
+    def gpts2inds(
+        self, gpts: np.ndarray, allow_outer: bool, error: Literal[False]
+    ) -> np.ndarray | None: ...
+
+    @overload
+    def gpts2inds(
+        self, gpts: np.ndarray, allow_outer: bool, error: bool
+    ) -> np.ndarray | None: ...
+
+    def gpts2inds(
+        self, gpts: np.ndarray, allow_outer: bool = True, error: bool = True
+    ) -> np.ndarray | None:
         """
         Get grid indices of grid points.
 
         Parameters
         ----------
-        gpts: numpy.ndarray
+        gpts
             The grid points, shape: (n_gpts, n_dims)
-        allow_outer: bool
+        allow_outer
             Allow outermost point indices, else
             reduce those to lower-left cell corner
-        error: bool
+        error
             Flag for throwing error if off-grid, else
             return None in that case
 
         Returns
         -------
-        inds: numpy.ndarray
+        inds
             The lower-left grid corner indices,
             shape: (n_gpts, n_dims)
-
         """
         selg, inds = self.find_gridpoints(gpts, allow_outer, ret_inds=True)
 
@@ -603,29 +661,28 @@ class RegularDiscretizationGrid:
                 self._error_infos(gpts)
                 sel = np.where(np.any(~selg, axis=1))[0]
                 raise KeyError(
-                    f"Found {len(sel)} points not on grid, e.g. point {sel[0]}: {gpts[0]}"
+                    f"Found {len(sel)} points not on grid, e.g. point {sel[0]}: {gpts[sel[0]]}"
                 )
             return None
 
         return inds
 
-    def get_corner(self, p, allow_outer=True):
+    def get_corner(self, p: np.ndarray, allow_outer: bool = True) -> np.ndarray:
         """
         Get the lower-left grid corner of a point.
 
         Parameters
         ----------
-        p: numpy.ndarray
+        p
             The point, shape: (n_dims,)
-        allow_outer: bool
+        allow_outer
             Allow outermost point indices, else
             reduce those to lower-left cell corner
 
         Returns
         -------
-        p0: numpy.ndarray
+        p0
             The lower-left grid corner point, shape: (n_dims,)
-
         """
         p = self.apply_tol(p)
 
@@ -640,30 +697,29 @@ class RegularDiscretizationGrid:
 
         return np.round(self.origin + inds * self.deltas, self.digits)
 
-    def get_corners(self, pts, allow_outer=True):
+    def get_corners(self, pts: np.ndarray, allow_outer: bool = True) -> np.ndarray:
         """
         Get the lower-left grid corners of points.
 
         Parameters
         ----------
-        pts: numpy.ndarray
+        pts
             The points space, shape: (n_pts, n_dims)
-        allow_outer: bool
+        allow_outer
             Allow outermost point indices, else
             reduce those to lower-left cell corner
 
         Returns
         -------
-        p0: numpy.ndarray
+        p0
             The lower-left grid corner points, shape: (n_pts, n_dims)
-
         """
         pts = self.apply_tols(pts)
 
         selg = self.find_ingrid(pts)
         if not np.all(selg):
             self._error_infos(pts)
-            selg = np.where(np.any(~selg), axis=1)[0]
+            selg = np.where(np.any(~selg, axis=1))[0]
             raise ValueError(
                 f"Found {len(selg)} points out of grid, e.g. point {selg[0]}: {pts[selg[0]]}"
             )
@@ -675,50 +731,48 @@ class RegularDiscretizationGrid:
         selg = self.find_grid_inds(inds)
         if not np.all(selg):
             self._error_infos(pts)
-            selg = np.where(np.any(~selg), axis=1)[0]
+            selg = np.where(np.any(~selg, axis=1))[0]
             raise ValueError(
                 f"Found {len(selg)} indices not on grid, e.g. indices {selg[0]}: {inds[selg[0]]}"
             )
 
         return np.round(o + inds * d, self.digits)
 
-    def get_cell(self, p):
+    def get_cell(self, p: np.ndarray) -> np.ndarray:
         """
         Get the grid cell that contains a point.
 
         Parameters
         ----------
-        p: numpy.ndarray
+        p
             The point, shape: (n_dims,)
 
         Returns
         -------
-        cell: numpy.ndarray
+        cell
             The min and max values of each dimension. Shape:
             (n_dims, 2)
-
         """
         cell = np.zeros((self.n_dims, 2), dtype=np.float64)
         cell[:] = self.get_corner(p, allow_outer=False)[:, None]
         cell[:, 1] += self.deltas
         return np.round(cell, self.digits)
 
-    def get_cells(self, pts):
+    def get_cells(self, pts: np.ndarray) -> np.ndarray:
         """
         Get the grid cells that contain the given points,
         one cell per point.
 
         Parameters
         ----------
-        pts: numpy.ndarray
+        pts
             The points, shape: (n_pts, n_dims)
 
         Returns
         -------
-        cells: numpy.ndarray
+        cells
             The min and max values of each dimension. Shape:
             (n_pts, n_dims, 2)
-
         """
         n_pts = pts.shape[0]
         cells = np.zeros((n_pts, self.n_dims, 2), dtype=np.float64)
@@ -726,26 +780,24 @@ class RegularDiscretizationGrid:
         cells[:, :, 1] += self.deltas[None, :]
         return np.round(cells, self.digits)
 
-    def _get_opts(self):
-        """
-        Helper function that returns unit origin cell points
-        """
+    def _get_opts(self) -> np.ndarray:
+        """Helper function that returns unit origin cell points"""
         if self._opts is None:
             ocell = np.zeros((self.n_dims, 2), dtype=np.int8)
             ocell[:, 1] += 1
             self._opts = np.stack(np.meshgrid(*ocell, indexing="ij"), axis=-1)
             self._opts = self._opts.reshape(2**self.n_dims, self.n_dims)
             del ocell
+        assert self._opts is not None
         return self._opts
 
-    def _interpolate_ocell(self, qts):
+    def _interpolate_ocell(self, qts: np.ndarray) -> np.ndarray:
         """
         Helper function for interpolation weights in
         unit hypercube.
 
         Classic volume weighting, see e.g. Fig. 2 and Eq. (4) in
         http://dx.doi.org/10.1088/0004-6256/139/2/342
-
         """
         assert (qts >= 0.0).all(), (
             f"Found coordinates below 0: {qts[np.any(qts < 0.0, axis=-1)].tolist()}"
@@ -757,32 +809,40 @@ class RegularDiscretizationGrid:
         opts = self._get_opts()
         return np.prod(1 - np.abs(qts[:, None] - opts[None, :]), axis=-1)
 
-    def interpolation_coeffs_point(self, p):
+    def interpolation_coeffs_point(
+        self, p: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Get the interpolation coefficients for
         a point.
 
-        Example
-        -------
-            >>> g = RegularDiscretizationGrid(...)
-            >>> p = ...
-            >>> gpts, c = g.interpolation_coeffs_point(p)
-            >>> ratg = ... calc results at gpts, shape (n_gpts, x) ...
-            >>> ires = np.einsum('gx,g->x', ratg, c)
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from iwopy.utils import RegularDiscretizationGrid
+        >>> grid = RegularDiscretizationGrid(
+        ...     [0.0], [1.0], [2], interpolation="linear"
+        ... )
+        >>> points, coefficients = grid.interpolation_coeffs_point(
+        ...     np.array([0.5])
+        ... )
+        >>> points.tolist()
+        [[0.0], [1.0]]
+        >>> coefficients.tolist()
+        [0.5, 0.5]
 
         Parameters
         ----------
-        p: numpy.ndarray
+        p
             The point, shape: (n_dims,)
 
         Returns
         -------
-        gpts: numpy.ndarray
+        gpts
             The grid points relevant for coeffs,
             shape: (n_gpts, n_dims)
-        coeffs: numpy.ndarray
+        coeffs
             The interpolation coefficients, shape: (n_gpts,)
-
         """
         p = self.apply_tol(p)
 
@@ -822,37 +882,62 @@ class RegularDiscretizationGrid:
 
         return gpts, coeffs
 
-    def interpolation_coeffs_points(self, pts, ret_pmap=False):
+    @overload
+    def interpolation_coeffs_points(
+        self, pts: np.ndarray, ret_pmap: Literal[False] = False
+    ) -> tuple[np.ndarray, np.ndarray]: ...
+
+    @overload
+    def interpolation_coeffs_points(
+        self, pts: np.ndarray, ret_pmap: Literal[True]
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...
+
+    @overload
+    def interpolation_coeffs_points(
+        self, pts: np.ndarray, ret_pmap: bool
+    ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]: ...
+
+    def interpolation_coeffs_points(
+        self, pts: np.ndarray, ret_pmap: bool = False
+    ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Get the interpolation coefficients for a set of points.
 
-        Example
-        -------
-            >>> g = RegularDiscretizationGrid(...)
-            >>> pts = ...
-            >>> gpts, c = g.interpolation_coeffs_points(pts)
-            >>> ratg = ... calc results at gpts, shape (n_gpts, x) ...
-            >>> ires = np.einsum('gx,pg->px', ratg, c)
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from iwopy.utils import RegularDiscretizationGrid
+        >>> grid = RegularDiscretizationGrid(
+        ...     [0.0], [1.0], [2], interpolation="linear"
+        ... )
+        >>> points, coefficients, point_map = grid.interpolation_coeffs_points(
+        ...     np.array([[0.5], [1.5]]), ret_pmap=True
+        ... )
+        >>> points.tolist()
+        [[0.0], [1.0], [2.0]]
+        >>> coefficients.tolist()
+        [[0.5, 0.5, 0.0], [0.0, 0.5, 0.5]]
+        >>> point_map.tolist()
+        [[0, 1], [1, 2]]
 
         Parameters
         ----------
-        pts: numpy.ndarray
+        pts
             The points, shape: (n_pts, n_dims)
-        ret_pmap: bool
+        ret_pmap
             Additionally return the map from pts to
             gpts
 
         Returns
         -------
-        gpts: numpy.ndarray
+        gpts
             The grid points relevant for coeffs,
             shape: (n_gpts, n_dims)
-        coeffs: numpy.ndarray
+        coeffs
             The interpolation coefficients, shape:
             (n_pts, n_gpts)
-        pmap: numpy.ndarray, optional
+        pmap
             The map from pts to gpts, shape: (n_pts, n_gp)
-
         """
         pts = self.apply_tols(pts)
         n_pts = len(pts)
@@ -890,6 +975,12 @@ class RegularDiscretizationGrid:
             )  # shape: (n_pts, n_gp, n_dims)
             del p0, qts, opts
 
+        else:
+            raise ValueError(
+                f"Unknown interpolation '{self.interpolation}'. "
+                "Please choose: nearest, linear"
+            )
+
         # remove points with zero weights:
         sel = np.all(np.abs(coeffs) < 1.0e-14, axis=0)
         if np.any(sel):
@@ -913,36 +1004,41 @@ class RegularDiscretizationGrid:
 
         return gpts, coeffs
 
-    def deriv_coeffs_gridpoints(self, inds, var, order=2, orderb=1):
+    def deriv_coeffs_gridpoints(
+        self,
+        inds: np.ndarray,
+        var: int,
+        order: int = 2,
+        orderb: int = 1,
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Calculates the derivative coefficients at grid points.
 
         Parameters
         ----------
-        inds: numpy.ndarray
+        inds
             The integer grid point indices, shape:
             (n_inds, n_dims)
-        var: int
+        var
             The dimension representing the variable
             wrt which to differentiate
-        order: int
+        order
             The finite difference order,
             1 = forward, -1 = backward, 2 = centre
-        orderb: int
+        orderb
             The finite difference order at boundary points
 
         Returns
         -------
-        gpts: numpy.ndarray
+        gpts
             The grid points relevant for coeffs,
             shape: (n_gpts, n_dims)
-        coeffs: numpy.ndarray
+        coeffs
             The gradient coefficients, shape:
             (n_inds, n_gpts)
-
         """
         # check indices:
-        if var < 0 or var > self.n_dims:
+        if var < 0 or var >= self.n_dims:
             raise ValueError(
                 f"Variable choice '{var}' exceeds dimensions, n_dims = {self.n_dims}"
             )
@@ -1066,32 +1162,37 @@ class RegularDiscretizationGrid:
 
         return gpts, coeffs / self.deltas[var]
 
-    def deriv_coeffs(self, pts, var, order=2, orderb=1):
+    def deriv_coeffs(
+        self,
+        pts: np.ndarray,
+        var: int,
+        order: int = 2,
+        orderb: int = 1,
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Calculates the derivative coefficients at points.
 
         Parameters
         ----------
-        pts: numpy.ndarray
+        pts
             The evaluation points, shape: (n_pts, n_dims)
-        var: int
+        var
             The dimension representing the variable
             wrt which to differentiate
-        order: int
+        order
             The finite difference order,
             1 = forward, -1 = backward, 2 = centre
-        orderb: int
+        orderb
             The finite difference order at boundary points
 
         Returns
         -------
-        gpts: numpy.ndarray
+        gpts
             The grid points relevant for coeffs,
             shape: (n_gpts, n_dims)
-        coeffs: numpy.ndarray
+        coeffs
             The gradient coefficients, shape:
             (n_pts, n_gpts)
-
         """
         gpts0, coeffs0, pmap = self.interpolation_coeffs_points(pts, ret_pmap=True)
 
@@ -1107,47 +1208,57 @@ class RegularDiscretizationGrid:
 
         return gpts, coeffs
 
-    def grad_coeffs_gridpoints(self, inds, vars, order=2, orderb=1):
+    def grad_coeffs_gridpoints(
+        self,
+        inds: np.ndarray,
+        vars: Sequence[int] | np.ndarray | None,
+        order: int | Sequence[int] | np.ndarray = 2,
+        orderb: int | Sequence[int] | np.ndarray = 1,
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Calculates the gradient coefficients at grid points.
 
         Parameters
         ----------
-        inds: numpy.ndarray
+        inds
             The integer grid point indices, shape:
             (n_inds, n_dims)
-        vars: list of int, optional
+        vars
             The dimensions representing the variables
             wrt which to differentiate, shape: (n_vars,).
             Default is all dimensions
-        order: int or list of int
+        order
             The finite difference order,
             1 = forward, -1 = backward, 2 = centre
-        orderb: int list of int
+        orderb
             The finite difference order at boundary points
 
         Returns
         -------
-        gpts: numpy.ndarray
+        gpts
             The grid points relevant for coeffs,
             shape: (n_gpts, n_dims)
-        coeffs: numpy.ndarray
+        coeffs
             The gradient coefficients,
             shape: (n_inds, n_vars, n_gpts)
-
         """
         if vars is None:
             vars = np.arange(self.n_dims)
         n_vars = len(vars)
         n_inds = len(inds)
+        if not n_vars:
+            return (
+                np.empty((0, self.n_dims), dtype=np.float64),
+                np.empty((n_inds, 0, 0), dtype=np.float64),
+            )
 
-        gpts = None
-        cfs = None
-        sizes = []
+        gpts: np.ndarray | None = None
+        cfs: np.ndarray | None = None
+        sizes: list[int] = []
         for vi, v in enumerate(vars):
             o = order if isinstance(order, int) else order[vi]
             ob = orderb if isinstance(orderb, int) else orderb[vi]
-            hg, hc = self.deriv_coeffs_gridpoints(inds, v, o, ob)
+            hg, hc = self.deriv_coeffs_gridpoints(inds, int(v), int(o), int(ob))
 
             if gpts is None:
                 gpts = hg
@@ -1159,6 +1270,8 @@ class RegularDiscretizationGrid:
 
             del hg, hc
 
+        assert gpts is not None
+        assert cfs is not None
         gpts, gmap = np.unique(gpts, axis=0, return_inverse=True)
         n_gpts = len(gpts)
 
@@ -1171,33 +1284,38 @@ class RegularDiscretizationGrid:
 
         return gpts, coeffs
 
-    def grad_coeffs(self, pts, vars, order=2, orderb=1):
+    def grad_coeffs(
+        self,
+        pts: np.ndarray,
+        vars: Sequence[int] | np.ndarray | None,
+        order: int | Sequence[int] | np.ndarray = 2,
+        orderb: int | Sequence[int] | np.ndarray = 1,
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Calculates the gradient coefficients at grid points.
 
         Parameters
         ----------
-        pts: numpy.ndarray
+        pts
             The evaluation points, shape: (n_pts, n_dims)
-        vars: list of int, optional
+        vars
             The dimensions representing the variables
             wrt which to differentiate, shape: (n_vars,).
             Default is all dimensions
-        order: int list of int
+        order
             The finite difference order,
             1 = forward, -1 = backward, 2 = centre
-        orderb: int list of int
+        orderb
             The finite difference order at boundary points
 
         Returns
         -------
-        gpts: numpy.ndarray
+        gpts
             The grid points relevant for coeffs,
             shape: (n_gpts, n_dims)
-        coeffs: numpy.ndarray
+        coeffs
             The gradient coefficients,
             shape: (n_pts, n_vars, n_gpts)
-
         """
         gpts0, coeffs0, pmap = self.interpolation_coeffs_points(pts, ret_pmap=True)
 

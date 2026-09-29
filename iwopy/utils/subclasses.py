@@ -1,84 +1,99 @@
-def all_subclasses(cls):
+from typing import Any, TypeVar, overload
+
+
+_T = TypeVar("_T")
+
+
+def all_subclasses(cls: type[_T]) -> set[type[_T]]:
     """
     Searches all classes derived from some
     base class.
 
     Parameters
     ----------
-    cls: class
+    cls
         The base class
 
     Returns
     -------
-    list of class:
+    classes
         The derived classes
-
-    :group: utils
-
     """
     return set(cls.__subclasses__()).union(
         [s for c in cls.__subclasses__() for s in all_subclasses(c)]
     )
 
 
-def new_cls(base_cls, cls_name):
+@overload
+def new_cls(base_cls: type[_T], cls_name: str) -> type[_T]: ...
+
+
+@overload
+def new_cls(base_cls: type[_T], cls_name: None) -> None: ...
+
+
+def new_cls(base_cls: type[_T], cls_name: str | None) -> type[_T] | None:
     """
     Run-time class selector.
 
     Parameters
     ----------
-    base_cls: object
+    base_cls
         The base class
-    cls_name: string
+    cls_name
         Name of the class
 
     Returns
     -------
-    cls: object
+    cls
         The derived class
-
-    :group: utils
-
     """
 
     if cls_name is None:
         return None
 
     allc = all_subclasses(base_cls)
-    found = cls_name in [scls.__name__ for scls in allc]
+    for scls in allc:
+        if scls.__name__ == cls_name:
+            return scls
 
-    if found:
-        for scls in allc:
-            if scls.__name__ == cls_name:
-                return scls
-
-    else:
-        estr = f"Class '{cls_name}' not found, available classes derived from '{base_cls.__name__}' are \n {sorted([i.__name__ for i in allc])}"
-        raise KeyError(estr)
+    estr = f"Class '{cls_name}' not found, available classes derived from '{base_cls.__name__}' are \n {sorted([i.__name__ for i in allc])}"
+    raise KeyError(estr)
 
 
-def new_instance(base_cls, cls_name, *args, **kwargs):
+@overload
+def new_instance(
+    base_cls: type[_T], cls_name: str, *args: Any, **kwargs: Any
+) -> _T: ...
+
+
+@overload
+def new_instance(
+    base_cls: type[_T], cls_name: None, *args: Any, **kwargs: Any
+) -> None: ...
+
+
+def new_instance(
+    base_cls: type[_T], cls_name: str | None, *args: Any, **kwargs: Any
+) -> _T | None:
     """
     Run-time factory.
 
     Parameters
     ----------
-    base_cls: object
+    base_cls
         The base class
-    cls_name: string
+    cls_name
         Name of the class
-    args: tuple, optional
+    args
         Additional parameters for the constructor
-    kwargs: dict, optional
+    kwargs
         Additional parameters for the constructor
 
     Returns
     -------
-    obj: object
+    obj
         The instance of the derived class
-
-    :group: utils
-
     """
 
     cls = new_cls(base_cls, cls_name)

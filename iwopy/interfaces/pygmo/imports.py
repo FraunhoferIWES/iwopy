@@ -1,20 +1,19 @@
+from types import ModuleType
+
 from iwopy.utils import import_module
 
-pygmo = None
-loaded = False
+pygmo: ModuleType | None = None
+loaded: bool = False
 
 
-def load(verbosity=1):
+def load(verbosity: int = 1) -> None:
     """
     Loads the pygmo package dynamically
 
     Parameters
     ----------
-    verbosity: int
+    verbosity
         The verbosity level, 0 = silent
-
-    :group: interfaces.pygmo
-
     """
 
     global pygmo, loaded

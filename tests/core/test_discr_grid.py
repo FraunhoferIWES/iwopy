@@ -1,6 +1,40 @@
 import numpy as np
+import pytest
 
 import iwopy
+
+
+def test_index_conversions_and_errors():
+    grid = iwopy.utils.RegularDiscretizationGrid([0.0], [0.5], [2])
+
+    np.testing.assert_array_equal(grid.gp2i(np.array([0.5])), np.array([1]))
+    assert grid.gp2i(np.array([0.25]), error=False) is None
+    assert grid.i2gp(np.array([-1]), error=False) is None
+
+    with pytest.raises(KeyError, match="not on grid"):
+        grid.gp2i(np.array([0.25]))
+    with pytest.raises(ValueError, match="outside grid"):
+        grid.inds2gpts(np.array([[0], [3]]))
+
+
+def test_unknown_interpolation_error():
+    grid = iwopy.utils.RegularDiscretizationGrid([0.0], [0.5], [2])
+    grid.interpolation = "unknown"
+
+    with pytest.raises(ValueError, match="Unknown interpolation"):
+        grid.interpolation_coeffs_points(np.array([[0.25]]))
+
+
+def test_derivative_axis_and_empty_gradient():
+    grid = iwopy.utils.RegularDiscretizationGrid([0.0], [0.5], [2])
+    inds = np.array([[1]])
+
+    with pytest.raises(ValueError, match="exceeds dimensions"):
+        grid.deriv_coeffs_gridpoints(inds, 1)
+
+    gpts, coeffs = grid.grad_coeffs_gridpoints(inds, [])
+    assert gpts.shape == (0, 1)
+    assert coeffs.shape == (1, 0, 0)
 
 
 def test_interp_point():

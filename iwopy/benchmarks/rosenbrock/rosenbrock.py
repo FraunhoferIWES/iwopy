@@ -1,4 +1,10 @@
+from collections.abc import Sequence
+
+import numpy as np
+from numpy.typing import ArrayLike
+
 from iwopy import SimpleObjective, SimpleProblem
+from iwopy.core import Problem
 
 
 class RosenbrockObjective(SimpleObjective):
@@ -22,93 +28,78 @@ class RosenbrockObjective(SimpleObjective):
     with a function value of
 
     f(x,y) = 0
-
-    :group: benchmarks.rosenbrock
-
     """
 
     def __init__(
         self,
-        problem,
-        pars=(1.0, 100.0),
-        ana_deriv=False,
-        name="f",
-    ):
+        problem: Problem,
+        pars: tuple[float, float] = (1.0, 100.0),
+        ana_deriv: bool = False,
+        name: str = "f",
+    ) -> None:
         """
-        Construtor
-
         Parameters
         ----------
-        problem: iwopy.Problem
+        problem
             The underlying optimization problem
-        pars: tuple
+        pars
             The a, b parameters
-        ana_deriv: bool
+        ana_deriv
             Switch for analytical derivatives
-        name: str
+        name
             The function name
-
         """
         super().__init__(problem, name, n_components=1, has_ana_derivs=ana_deriv)
 
         # (a, b)
         self._pars = pars
 
-    def f(self, x, y):
-        """
-        The Rosenbrock function f(x, y)
-        """
+    def f(self, *x: ArrayLike) -> ArrayLike:
+        """The Rosenbrock function f(x, y)"""
+        x_value, y_value = (np.asarray(value) for value in x)
         a, b = self._pars
-        return (a - x) ** 2 + b * (y - x**2) ** 2
+        return (a - x_value) ** 2 + b * (y_value - x_value**2) ** 2
 
-    def g(self, var, x, y, components=None):
-        """
-        The derivative of the Rosenbrock function
-        """
+    def g(
+        self,
+        var: int,
+        *x: ArrayLike,
+        components: Sequence[int] | np.ndarray | None = None,
+    ) -> ArrayLike:
+        """The derivative of the Rosenbrock function"""
+        del components
+        x_value, y_value = (np.asarray(value) for value in x)
         a, b = self._pars
         if var == 0:
-            return -2 * (a - x) - 2 * b * (y - x**2) * 2 * x
+            return -2 * (a - x_value) - 2 * b * (y_value - x_value**2) * 2 * x_value
         else:
-            return 2 * b * (y - x**2)
+            return 2 * b * (y_value - x_value**2)
 
 
 class RosenbrockProblem(SimpleProblem):
-    """
-    Problem definition of benchmark function Rosenbrock.
-
-    Attributes
-    ----------
-    initial_values: list of float
-        The initial values
-
-    :group: benchmarks.rosenbrock
-
-    """
+    """Problem definition of benchmark function Rosenbrock."""
 
     def __init__(
         self,
-        lower=None,
-        upper=None,
-        initial=None,
-        ana_deriv=False,
-        name="rosenbrock",
-    ):
+        lower: Sequence[float] | np.ndarray | None = None,
+        upper: Sequence[float] | np.ndarray | None = None,
+        initial: Sequence[float] | np.ndarray | None = None,
+        ana_deriv: bool = False,
+        name: str = "rosenbrock",
+    ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
-        lower: list of float
+        lower
             The minimal variable values
-        upper: list of float
+        upper
             The maximal variable values
-        initial: list of float
+        initial
             The initial values
-        ana_deriv: bool
+        ana_deriv
             Switch for analytical derivatives
-        name: str
+        name
             The name of the problem
-
         """
         if initial is None:
             initial = [0.0, 0.0]

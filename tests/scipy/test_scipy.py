@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 
@@ -97,6 +99,11 @@ class Quadratic(iwopy.SimpleObjective):
         return (x - 1.0) ** 2
 
 
+class MixedQuadratic(iwopy.SimpleObjective):
+    def f(self, i, x):
+        return (i - 1) ** 2 + (x - 1.0) ** 2
+
+
 def make_quadratic_problem():
     problem = iwopy.SimpleProblem(
         "quadratic",
@@ -171,6 +178,44 @@ def test_scipy_callback_cache_miss_does_not_evaluate(monkeypatch):
 
     assert history.states[0].objs is None
     assert history.states[0].cons is None
+
+
+def test_scipy_combines_integer_and_float_bounds(monkeypatch):
+    problem = iwopy.SimpleProblem(
+        "mixed",
+        int_vars={"i": 1},
+        float_vars={"x": 0.0},
+        min_values_int={"i": 0},
+        max_values_int={"i": 2},
+        min_values_float={"x": -1.0},
+        max_values_float={"x": 3.0},
+    )
+    problem.add_objective(MixedQuadratic(problem))
+    problem.initialize(verbosity=0)
+    solver = Optimizer_scipy(problem)
+    solver.initialize(verbosity=0)
+    captured = {}
+
+    def fake_minimize(fun, x0, *, bounds, **kwargs):
+        captured["bounds"] = bounds
+        return SimpleNamespace(success=False)
+
+    monkeypatch.setattr("iwopy.interfaces.scipy.optimizer.minimize", fake_minimize)
+    solver.solve(verbosity=0)
+
+    assert captured["bounds"] == [(0, 2), (-1.0, 3.0)]
+
+
+def test_scipy_cache_respects_capacity():
+    problem = make_quadratic_problem()
+    solver = Optimizer_scipy(problem, mem_size=1)
+    solver.initialize(verbosity=0)
+
+    solver._get_results(np.array([1.0]))
+    solver._get_results(np.array([2.0]))
+
+    assert solver._mem is not None
+    assert len(solver._mem) == 1
 
 
 if __name__ == "__main__":
