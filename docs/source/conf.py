@@ -1,4 +1,5 @@
 import pathlib
+import re
 import sys
 
 repository_root = pathlib.Path(__file__).resolve().parents[2]
@@ -132,5 +133,20 @@ nb_ipywidgets_js = {
         "crossorigin": "anonymous",
     },
 }
+
+
+def remove_autoapi_submodule_heading(app, docname, source):
+    if docname.startswith(f"{autoapi_root}/") and docname.endswith("/index"):
+        source[0] = re.sub(
+            r"(?m)^Submodules\s*\n-+\s*\n",
+            "",
+            source[0],
+            count=1,
+        )
+
+
+def setup(app):
+    app.connect("source-read", remove_autoapi_submodule_heading)
+
 
 suppress_warnings = ["mystnb.unknown_mime_type"]
