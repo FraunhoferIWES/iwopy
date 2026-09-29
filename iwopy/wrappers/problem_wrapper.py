@@ -7,22 +7,10 @@ from iwopy.core.problem import Problem
 
 
 class ProblemWrapper(Problem):
-    """
-    Generic abstract problem wrapper class.
-
-    Attributes
-    ----------
-    base_problem: iwopy.Problem
-        The underlying concrete problem
-
-    :group: wrappers
-
-    """
+    """Generic abstract problem wrapper class."""
 
     def __init__(self, base_problem: Problem, name: str, **kwargs: Any) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         base_problem
@@ -31,7 +19,6 @@ class ProblemWrapper(Problem):
             The problem name
         kwargs
             Additional parameters for the Problem class
-
         """
         super().__init__(name, **kwargs)
         self.base_problem = base_problem
@@ -45,9 +32,8 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        names: list of str
+        names
             The names of the integer variables
-
         """
         return self.base_problem.var_names_int()
 
@@ -57,9 +43,8 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        values: numpy.ndarray
+        values
             Initial int values, shape: (n_vars_int,)
-
         """
         return self.base_problem.initial_values_int()
 
@@ -71,9 +56,8 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        values: numpy.ndarray
+        values
             Minimal int values, shape: (n_vars_int,)
-
         """
         return self.base_problem.min_values_int()
 
@@ -85,9 +69,8 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        values: numpy.ndarray
+        values
             Maximal int values, shape: (n_vars_int,)
-
         """
         return self.base_problem.max_values_int()
 
@@ -97,9 +80,8 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        names: list of str
+        names
             The names of the float variables
-
         """
         return self.base_problem.var_names_float()
 
@@ -109,9 +91,8 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        values: numpy.ndarray
+        values
             Initial float values, shape: (n_vars_float,)
-
         """
         return self.base_problem.initial_values_float()
 
@@ -123,9 +104,8 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        values: numpy.ndarray
+        values
             Minimal float values, shape: (n_vars_float,)
-
         """
         return self.base_problem.min_values_float()
 
@@ -137,9 +117,8 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        values: numpy.ndarray
+        values
             Maximal float values, shape: (n_vars_float,)
-
         """
         return self.base_problem.max_values_float()
 
@@ -151,7 +130,6 @@ class ProblemWrapper(Problem):
         ----------
         verbosity
             The verbosity level, 0 = silent
-
         """
         if not self.base_problem.initialized:
             self.base_problem.initialize(verbosity)
@@ -184,10 +162,9 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-
         """
         return self.base_problem.apply_individual(vars_int, vars_float)
 
@@ -207,10 +184,9 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-
         """
         return self.base_problem.apply_population(vars_int, vars_float)
 
@@ -231,14 +207,13 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-        objs: np.array
+        objs
             The objective function values, shape: (n_objectives,)
-        cons: np.array
+        cons
             The constraints values, shape: (n_constraints,)
-
         """
         return self.base_problem.finalize_individual(vars_int, vars_float, verbosity)
 
@@ -261,13 +236,12 @@ class ProblemWrapper(Problem):
 
         Returns
         -------
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-        objs: np.array
+        objs
             The final objective function values, shape: (n_pop, n_components)
-        cons: np.array
+        cons
             The final constraint values, shape: (n_pop, n_constraints)
-
         """
         return self.base_problem.finalize_population(vars_int, vars_float, verbosity)

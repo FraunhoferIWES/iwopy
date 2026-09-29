@@ -55,22 +55,6 @@ class Optimizer_pygmo(Optimizer):
     """
     Interface to the pygmo optimizers
     for serial runs.
-
-    Attributes
-    ----------
-    problem_pars: dict
-        Parameters for the problem
-    algo_pars: dict
-        Parameters for the alorithm
-    setup_pars: dict
-        Parameters for the calculation setup
-    udp: iwopy.interfaces.imports.pygmo.UDA
-        The pygmo problem
-    algo: imports.pygmo.algo
-        The pygmo algorithm
-
-    :group: interfaces.pygmo
-
     """
 
     def __init__(
@@ -81,8 +65,6 @@ class Optimizer_pygmo(Optimizer):
         setup_pars: dict[str, Any] | None = None,
     ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         problem
@@ -93,7 +75,6 @@ class Optimizer_pygmo(Optimizer):
             Parameters for the alorithm
         setup_pars
             Parameters for the calculation setup
-
         """
         if setup_pars is None:
             setup_pars = {}
@@ -122,7 +103,6 @@ class Optimizer_pygmo(Optimizer):
         ----------
         verbosity
             The verbosity level, 0 = silent
-
         """
 
         if "callback_mode" in self.setup_pars:
@@ -169,9 +149,7 @@ class Optimizer_pygmo(Optimizer):
         super().initialize(verbosity)
 
     def print_info(self) -> None:
-        """
-        Print solver info, called before solving
-        """
+        """Print solver info, called before solving"""
         super().print_info()
         if self.algo is not None:
             print()
@@ -201,9 +179,8 @@ class Optimizer_pygmo(Optimizer):
 
         Returns
         -------
-        results: iwopy.SingleObjOptResults
+        results
             The optimization results object
-
         """
 
         super().solve(verbosity, callbacks)

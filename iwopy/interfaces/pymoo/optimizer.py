@@ -35,9 +35,7 @@ class _PymooCallbackTemplate:
 
     @classmethod
     def get_class(cls) -> type[Any]:
-        """
-        Creates the class, dynamically derived from pymoo.Callback
-        """
+        """Creates the class, dynamically derived from pymoo.Callback"""
         imports.load()
         attrb: dict[str, Any] = {
             v: d
@@ -56,27 +54,7 @@ class _PymooCallbackTemplate:
 
 
 class Optimizer_pymoo(Optimizer):
-    """
-    Interface to the pymoo optimization solver.
-
-    Attributes
-    ----------
-    problem_pars: dict
-        Parameters for the problem
-    algo_pars: dict
-        Parameters for the alorithm
-    setup_pars: dict
-        Parameters for the calculation setup
-    term_pars: dict
-        Parameters for the termination conditions
-    pymoo_problem: iwopy.interfaces.pymoo.SingleObjProblem
-        The pygmo problem
-    algo: pygmo.algo
-        The pygmo algorithm
-
-    :group: interfaces.pymoo
-
-    """
+    """Interface to the pymoo optimization solver."""
 
     def __init__(
         self,
@@ -87,8 +65,6 @@ class Optimizer_pymoo(Optimizer):
         term_pars: dict[str, Any] | tuple[Any, ...] | list[Any] | None = None,
     ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         problem
@@ -99,7 +75,8 @@ class Optimizer_pymoo(Optimizer):
             Parameters for the alorithm
         setup_pars
             Parameters for the calculation setup
-
+        term_pars
+            Parameters for the termination conditions
         """
         if term_pars is None:
             term_pars = {}
@@ -118,9 +95,7 @@ class Optimizer_pymoo(Optimizer):
         self.results: Any | None = None
 
     def print_info(self) -> None:
-        """
-        Print solver info, called before solving
-        """
+        """Print solver info, called before solving"""
         super().print_info()
 
         for k, v in self.problem_pars.items():
@@ -160,7 +135,6 @@ class Optimizer_pymoo(Optimizer):
         ----------
         verbosity
             The verbosity level, 0 = silent
-
         """
         if "callback" in self.setup_pars:
             raise ValueError(
@@ -267,9 +241,8 @@ class Optimizer_pymoo(Optimizer):
 
         Returns
         -------
-        results: iwopy.SingleObjOptResults or iwopy.MultiObjOptResults
+        results
             The optimization results object
-
         """
         # check problem initialization:
         super().solve(verbosity, callbacks)

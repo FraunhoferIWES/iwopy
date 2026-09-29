@@ -2,27 +2,14 @@ from typing import overload
 
 
 class Base:
-    """
-    Generic base for various iwopy objects.
-
-    Attributes
-    ----------
-    name: str
-        The name
-
-    :group: core
-
-    """
+    """Generic base for various iwopy objects."""
 
     def __init__(self, name: str | None) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         name
             The name
-
         """
         self.name = type(self).__name__ if name is None else name
         self._initialized = False
@@ -33,9 +20,8 @@ class Base:
 
         Returns
         -------
-        str :
+        info
             Info string
-
         """
         if self.name == type(self).__name__:
             return self.name
@@ -48,9 +34,8 @@ class Base:
 
         Returns
         -------
-        bool :
+        initialized
             True if initialization has been done
-
         """
         return self._initialized
 
@@ -68,7 +53,6 @@ class Base:
         ----------
         verbosity
             The verbosity level, 0 = silent
-
         """
         self._initialized = True
 
@@ -86,6 +70,5 @@ class Base:
         ----------
         verbosity
             The verbosity level, 0 = silent
-
         """
         self._initialized = False

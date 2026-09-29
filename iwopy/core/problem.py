@@ -17,21 +17,7 @@ from .objective import Objective
 
 
 class Problem(Base, metaclass=ABCMeta):
-    """
-    Abstract base class for optimization problems.
-
-    Attributes
-    ----------
-    objs: iwopy.core.OptFunctionList
-        The objective functions
-    cons: iwopy.core.OptFunctionList
-        The constraints
-    memory: iwopy.core.Memory
-        The memory, or None
-
-    :group: core
-
-    """
+    """Abstract base class for optimization problems."""
 
     INT_INF = RegularDiscretizationGrid.INT_INF
 
@@ -42,8 +28,6 @@ class Problem(Base, metaclass=ABCMeta):
         mem_keyf: Callable[[np.ndarray, np.ndarray], Hashable] | None = None,
     ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         name
@@ -53,7 +37,6 @@ class Problem(Base, metaclass=ABCMeta):
         mem_keyf
             The memory key function. Parameters:
             (vars_int, vars_float), returns key Object
-
         """
         super().__init__(name)
 
@@ -75,9 +58,8 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        names: list of str
+        names
             The names of the integer variables
-
         """
         return []
 
@@ -87,9 +69,8 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        values: numpy.ndarray
+        values
             Initial int values, shape: (n_vars_int,)
-
         """
         return 0
 
@@ -101,9 +82,8 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        values: numpy.ndarray
+        values
             Minimal int values, shape: (n_vars_int,)
-
         """
         return -self.INT_INF
 
@@ -115,9 +95,8 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        values: numpy.ndarray
+        values
             Maximal int values, shape: (n_vars_int,)
-
         """
         return self.INT_INF
 
@@ -128,9 +107,8 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        n: int
+        n
             The number of int variables
-
         """
         return len(self.var_names_int())
 
@@ -140,9 +118,8 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        names: list of str
+        names
             The names of the float variables
-
         """
         return []
 
@@ -152,9 +129,8 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        values: numpy.ndarray
+        values
             Initial float values, shape: (n_vars_float,)
-
         """
         return None
 
@@ -166,9 +142,8 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        values: numpy.ndarray
+        values
             Minimal float values, shape: (n_vars_float,)
-
         """
         return -np.inf
 
@@ -180,9 +155,8 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        values: numpy.ndarray
+        values
             Maximal float values, shape: (n_vars_float,)
-
         """
         return np.inf
 
@@ -193,9 +167,8 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        n: int
+        n
             The number of float variables
-
         """
         return len(self.var_names_float())
 
@@ -274,7 +247,6 @@ class Problem(Base, metaclass=ABCMeta):
             value: str or int
         verbosity
             The verbosity level, 0 = silent
-
         """
         if not objective.initialized:
             objective.initialize(verbosity)
@@ -306,7 +278,6 @@ class Problem(Base, metaclass=ABCMeta):
             value: str or int
         verbosity
             The verbosity level, 0 = silent
-
         """
         if not constraint.initialized:
             constraint.initialize(verbosity)
@@ -333,9 +304,8 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        cmi: numpy.ndarray
+        cmi
             The minimal constraint values, shape: (n_constraints,)
-
         """
         return self._cons_mi
 
@@ -346,9 +316,8 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        cma: numpy.ndarray
+        cma
             The maximal constraint values, shape: (n_constraints,)
-
         """
         return self._cons_ma
 
@@ -359,9 +328,8 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        ctol: numpy.ndarray
+        ctol
             The constraint tolerance values, shape: (n_constraints,)
-
         """
         return self._cons_tol
 
@@ -373,10 +341,9 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        n_obj: int
+        n_obj
             The total number of objective
             functions
-
         """
         return self.objs.n_components()
 
@@ -388,10 +355,9 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        n_con: int
+        n_con
             The total number of constraint
             functions
-
         """
         return self.cons.n_components()
 
@@ -513,10 +479,9 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        gradients: numpy.ndarray
+        gradients
             The gradients of the functions, shape:
             (n_components, n_vrs)
-
         """
         n_vars = len(vrs)
         n_cmpnts = func.n_components() if components is None else len(components)
@@ -581,10 +546,9 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        gradients: numpy.ndarray
+        gradients
             The gradients of the functions, shape:
             (n_components, n_vars)
-
         """
         # set and check func:
         if func is None:
@@ -668,7 +632,6 @@ class Problem(Base, metaclass=ABCMeta):
         ----------
         verbosity
             The verbosity level, 0 = silent
-
         """
 
         if not self.objs.initialized:
@@ -707,10 +670,9 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        maximize: numpy.ndarray
+        maximize
             Boolean flag for maximization of objective,
             shape: (n_objectives,)
-
         """
         if self._maximize is None:
             raise RuntimeError(f"Problem '{self.name}' has not been initialized")
@@ -731,10 +693,9 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-
         """
         return None
 
@@ -754,10 +715,9 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-
         """
         return None
 
@@ -797,13 +757,12 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        objs: np.array
+        objs
             The objective function values, shape: (n_objectives,)
-        con: np.array
+        con
             The constraints values, shape: (n_constraints,)
-        prob_res: object, optional
+        prob_res
             The problem results
-
         """
         objs, cons = None, None
         if not ret_prob_res and self.memory is not None:
@@ -865,13 +824,12 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        objs: np.array
+        objs
             The objective function values, shape: (n_pop, n_objectives)
-        cons: np.array
+        cons
             The constraints values, shape: (n_pop, n_constraints)
-        prob_res: object, optional
+        prob_res
             The problem results
-
         """
 
         from_mem = False
@@ -936,9 +894,8 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        values: np.array
+        values
             The boolean result, shape: (n_components,)
-
         """
         val = constraint_values
         out = np.zeros(self.n_constraints, dtype=bool)
@@ -967,9 +924,8 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        values: np.array
+        values
             The boolean result, shape: (n_pop, n_components)
-
         """
         val = constraint_values
         n_pop = val.shape[0]
@@ -1000,14 +956,13 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-        objs: np.array
+        objs
             The objective function values, shape: (n_objectives,)
-        cons: np.array
+        cons
             The constraints values, shape: (n_constraints,)
-
         """
         results = self.apply_individual(vars_int, vars_float)
 
@@ -1038,14 +993,13 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-        objs: np.array
+        objs
             The final objective function values, shape: (n_pop, n_components)
-        cons: np.array
+        cons
             The final constraint values, shape: (n_pop, n_constraints)
-
         """
         results = self.apply_population(vars_int, vars_float)
 
@@ -1072,9 +1026,8 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        prob_res: object
+        prob_res
             The weighted sum of problem results
-
         """
         if not len(prob_res_list) or prob_res_list[0] is None:
             return None
@@ -1098,9 +1051,8 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        prob_res: object
+        prob_res
             The weighted sum of problem results
-
         """
         if not len(prob_res_list) or prob_res_list[0] is None:
             return None
@@ -1122,7 +1074,6 @@ class Problem(Base, metaclass=ABCMeta):
             Additional parameters for constructor
         kwargs
             Additional parameters for constructor
-
         """
         return new_instance(cls, problem_type, *args, **kwargs)
 
@@ -1131,20 +1082,14 @@ class ProblemDefaultFunc(OptFunctionList[OptFunction]):
     """
     The default function of a problem
     for gradient calculations.
-
-    :group: core
-
     """
 
     def __init__(self, problem: Problem) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         problem
             The problem
-
         """
         super().__init__(problem, "objs_cons")
         for objective in problem.objs.functions:

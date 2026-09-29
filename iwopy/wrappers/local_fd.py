@@ -15,18 +15,6 @@ class LocalFD(ProblemWrapper):
     """
     A wrapper that provides finite distance
     differentiation by local stepwise evaluation.
-
-    Attributes
-    ----------
-    order: dict
-        Finite difference order. Key: variable name
-        str, value: 1 = forward, -1 = backward, 2 = centre
-    orderb: dict or int
-        Finite difference order of boundary points.
-        Key: variable name str, value: order int
-
-    :group: wrappers
-
     """
 
     def __init__(
@@ -38,8 +26,6 @@ class LocalFD(ProblemWrapper):
         name: str | None = None,
     ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         base_problem
@@ -60,7 +46,6 @@ class LocalFD(ProblemWrapper):
             for all variables. Default is same as fd_order
         name
             The problem name
-
         """
         name = base_problem.name + "_fd" if name is None else name
         super().__init__(base_problem, name)
@@ -104,7 +89,6 @@ class LocalFD(ProblemWrapper):
         ----------
         verbosity
             The verbosity level, 0 = silent
-
         """
         super().initialize(verbosity)
 
@@ -148,9 +132,7 @@ class LocalFD(ProblemWrapper):
         order: np.ndarray,
         orderb: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Helper function that provides gradient coeffs
-        """
+        """Helper function that provides gradient coeffs"""
 
         # prepare:
         n_vars = len(gvars)
@@ -296,10 +278,9 @@ class LocalFD(ProblemWrapper):
 
         Returns
         -------
-        gradients: numpy.ndarray
+        gradients
             The gradients of the functions, shape:
             (n_components, n_vrs)
-
         """
         # get analytic gradient results:
         gradients = super().calc_gradients(

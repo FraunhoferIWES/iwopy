@@ -34,17 +34,12 @@ class BraninObjective(SimpleObjective):
     with a function value of
 
     f(x,y) = 0.397887
-
-    :group: benchmarks.branin
-
     """
 
     def __init__(
         self, problem: Problem, ana_deriv: bool = False, name: str = "f"
     ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         problem
@@ -53,7 +48,6 @@ class BraninObjective(SimpleObjective):
             Switch for analytical derivatives
         name
             The function name
-
         """
         super().__init__(problem, name, n_components=1, has_ana_derivs=ana_deriv)
 
@@ -70,9 +64,7 @@ class BraninObjective(SimpleObjective):
         self._ana_deriv = ana_deriv
 
     def f(self, *x: ArrayLike) -> ArrayLike:
-        """
-        The Branin function f(x, y)
-        """
+        """The Branin function f(x, y)"""
         x_value, y_value = (np.asarray(value) for value in x)
         a, b, c, r, s, t = self._pars
         return (
@@ -87,9 +79,7 @@ class BraninObjective(SimpleObjective):
         *x: ArrayLike,
         components: Sequence[int] | np.ndarray | None = None,
     ) -> ArrayLike:
-        """
-        The derivative of the Branin function
-        """
+        """The derivative of the Branin function"""
         del components
         x_value, y_value = (np.asarray(value) for value in x)
         a, b, c, r, s, t = self._pars
@@ -102,17 +92,7 @@ class BraninObjective(SimpleObjective):
 
 
 class BraninProblem(SimpleProblem):
-    """
-    Problem definition of benchmark function Branin.
-
-    Attributes
-    ----------
-    initial_values: list of float
-        The initial values
-
-    :group: benchmarks.branin
-
-    """
+    """Problem definition of benchmark function Branin."""
 
     def __init__(
         self,
@@ -121,8 +101,6 @@ class BraninProblem(SimpleProblem):
         ana_deriv: bool = False,
     ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         name
@@ -131,7 +109,6 @@ class BraninProblem(SimpleProblem):
             Switch for analytical derivatives
         initial_values
             The initial values
-
         """
         if initial_values is None:
             initial_values = [1.0, 1.0]

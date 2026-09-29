@@ -14,9 +14,6 @@ def load(verbosity: int = 1) -> None:
     ----------
     verbosity
         The verbosity level, 0 = silent
-
-
-
     """
 
     global pygmo, loaded

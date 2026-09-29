@@ -9,16 +9,6 @@ class OptFunctionSubset(OptFunction):
     """
     A function composed of a subset of a function's
     components.
-
-    Attributes
-    ----------
-    func_org: iwopy.OptFunction
-        The original function
-    subset: list of int
-        The component choice
-
-    :group: core
-
     """
 
     def __init__(
@@ -28,8 +18,6 @@ class OptFunctionSubset(OptFunction):
         name: str | None = None,
     ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         function
@@ -38,7 +26,6 @@ class OptFunctionSubset(OptFunction):
             The component choice
         name
             The function name
-
         """
         if name is None:
             name = f"{function.name}[" + ",".join([str(i) for i in subset]) + "]"
@@ -55,7 +42,6 @@ class OptFunctionSubset(OptFunction):
         ----------
         verbosity
             The verbosity level, 0 = silent
-
         """
         f = self.func_org
         if not f.initialized:
@@ -76,10 +62,9 @@ class OptFunctionSubset(OptFunction):
 
         Returns
         -------
-        deps: numpy.ndarray of bool
+        deps
             The dependencies of components on function
             variables, shape: (n_components, n_vars_int)
-
         """
         return self._vdepsi
 
@@ -90,10 +75,9 @@ class OptFunctionSubset(OptFunction):
 
         Returns
         -------
-        deps: numpy.ndarray of bool
+        deps
             The dependencies of components on function
             variables, shape: (n_components, n_vars_float)
-
         """
         return self._vdepsf
 
@@ -104,9 +88,8 @@ class OptFunctionSubset(OptFunction):
 
         Returns
         -------
-        int:
+        n_components
             The number of components.
-
         """
         return len(self.subset)
 
@@ -135,9 +118,8 @@ class OptFunctionSubset(OptFunction):
 
         Returns
         -------
-        values: np.array
+        values
             The component values, shape: (n_sel_components,)
-
         """
         cmpts = (
             self.subset if components is None else [self.subset[i] for i in components]
@@ -170,9 +152,8 @@ class OptFunctionSubset(OptFunction):
 
         Returns
         -------
-        values: np.array
+        values
             The component values, shape: (n_pop, n_sel_components,)
-
         """
         cmpts = (
             self.subset if components is None else [self.subset[i] for i in components]
@@ -206,9 +187,8 @@ class OptFunctionSubset(OptFunction):
 
         Returns
         -------
-        deriv: numpy.ndarray
+        deriv
             The derivative values, shape: (n_sel_components,)
-
         """
         cmpts = (
             self.subset if components is None else [self.subset[i] for i in components]

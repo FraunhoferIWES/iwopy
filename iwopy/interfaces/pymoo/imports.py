@@ -47,9 +47,6 @@ def load(verbosity: int = 1) -> None:
     ----------
     verbosity
         The verbosity level, 0 = silent
-
-
-
     """
 
     global Callback, Problem, Real, Integer, IntegerRandomSampling, FloatRandomSampling

@@ -19,31 +19,16 @@ _OptResultsT = TypeVar("_OptResultsT", SingleObjOptResults, MultiObjOptResults)
 
 
 class Optimizer(Base, metaclass=ABCMeta):
-    """
-    Abstract base class for optimization solvers.
-
-    Attributes
-    ----------
-    problem: iwopy.Problem
-        The problem to optimize
-    name: str
-        The name
-
-    :group: core
-
-    """
+    """Abstract base class for optimization solvers."""
 
     def __init__(self, problem: Problem, name: str = "optimizer") -> None:
         """
-        Constructor
-
         Parameters
         ----------
         problem
             The problem to optimize
         name
             The name
-
         """
         super().__init__(name)
         self.problem = problem
@@ -51,9 +36,7 @@ class Optimizer(Base, metaclass=ABCMeta):
         self._callback_dispatcher = _OptimizerCallbackDispatcher(None)
 
     def print_info(self) -> None:
-        """
-        Print solver info, called before solving
-        """
+        """Print solver info, called before solving"""
         print("\nProblem:")
         print("--------")
         print(f"  name         : {self.problem.name}")
@@ -82,9 +65,8 @@ class Optimizer(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        results: iwopy.core.OptResults
+        results
             The optimization results object
-
         """
 
         # check problem initialization:
@@ -140,7 +122,6 @@ class Optimizer(Base, metaclass=ABCMeta):
             The optimization results object
         verbosity
             The verbosity level, 0 = silent
-
         """
         if not isinstance(opt_results, (SingleObjOptResults, MultiObjOptResults)):
             super().finalize(
@@ -209,6 +190,5 @@ class Optimizer(Base, metaclass=ABCMeta):
             Additional parameters for constructor
         kwargs
             Additional parameters for constructor
-
         """
         return new_instance(cls, optimizer_type, *args, **kwargs)

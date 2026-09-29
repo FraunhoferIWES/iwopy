@@ -15,34 +15,6 @@ class SingleObjOptResults:
     """
     Container for optimization results for single objective
     problems.
-
-    Attributes
-    ----------
-    success: bool
-        Optimization success
-    vars_int: np.array
-        Optimal variables, shape: (n_vars_int,)
-    vars_float: np.array
-        Optimal variables, shape: (n_vars_float,)
-    objs: float
-        Optimal objective function value
-    cons: np.array
-        Constraint values, shape: (n_constraints,)
-    problem_results: Object
-        The results of the variable application to the problem
-    pname: str
-        The problem's name
-    vnames_int: list of str
-        The int variable names
-    vnames_float: list of str
-        The float variable names
-    onames: list of str
-        The names of objectives
-    cnames: list of str
-        The names of constraints
-
-    :group: core
-
     """
 
     def __init__(
@@ -56,8 +28,6 @@ class SingleObjOptResults:
         problem_results: object | None,
     ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         problem
@@ -74,7 +44,6 @@ class SingleObjOptResults:
             Constraint values, shape: (n_constraints,)
         problem_results
             The results of the variable application to the problem
-
         """
 
         self.success = success
@@ -133,34 +102,6 @@ class MultiObjOptResults:
     """
     Container for optimization results for multi objective
     problems.
-
-    Attributes
-    ----------
-    success: bool
-        Optimization success
-    vars_int: np.array
-        Pareto-optimal variables, shape: (n_pop, n_vars_int)
-    vars_float: np.array
-        Pareto-optimal variables, shape: (n_pop, n_vars_float)
-    objs: np.array
-        Pareto front objective function values, shape: (n_pop, n_objectives)
-    cons: np.array
-        Parteo front Constraint values, shape: (n_pop, n_constraints)
-    problem_results: Object
-        The results of the variable application to the problem
-    pname: str
-        The problem's name
-    vnames_int: list of str
-        The int variable names
-    vnames_float: list of str
-        The float variable names
-    onames: list of str
-        The names of objectives
-    cnames: list of str
-        The names of constraints
-
-    :group: core
-
     """
 
     def __init__(
@@ -174,8 +115,6 @@ class MultiObjOptResults:
         problem_results: object | None,
     ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         problem
@@ -192,7 +131,6 @@ class MultiObjOptResults:
             Parteo front Constraint values, shape: (n_pop, n_constraints)
         problem_results
             The results of the variable application to the problem
-
         """
         self.success = success
         self.vars_int = vars_int
@@ -285,9 +223,8 @@ class MultiObjOptResults:
 
         Returns
         -------
-        ax: pyplot.axis
+        ax
             The plot axis
-
         """
         if ax is None:
             __, ax = plt.subplots(figsize=figsize)
@@ -326,19 +263,18 @@ class MultiObjOptResults:
         Find the point on the pareto front that
         approximates best the given weights of objectives
 
-        Paramters
-        ---------
-        obj_weights: list of float
+        Parameters
+        ----------
+        obj_weights
             The weights of the objectives
-        max: bool
+        max
             Find the maximal value of the weighted result
             (otherwise find the minimal value)
 
         Returns
         -------
-        index: int
+        index
             The index in the pareto front results
-
         """
         w = np.array(obj_weights, dtype=np.float64)
         res = np.einsum("po,o->p", self.objs, w)

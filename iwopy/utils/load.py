@@ -20,11 +20,8 @@ def import_module(
 
     Returns
     -------
-    mdl: module
+    mdl
         The imnported package
-
-    :group: utils
-
     """
     try:
         return importlib.import_module(name, package)

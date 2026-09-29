@@ -8,12 +8,7 @@ from .function import OptFunction
 
 
 class Objective(OptFunction):
-    """
-    Abstract base class for objective functions.
-
-    :group: core
-
-    """
+    """Abstract base class for objective functions."""
 
     @abstractmethod
     def maximize(self) -> np.ndarray:
@@ -22,10 +17,9 @@ class Objective(OptFunction):
 
         Returns
         -------
-        flags: np.array
+        flags
             Bool array for component maximization,
             shape: (n_components,)
-
         """
 
     @classmethod
@@ -41,6 +35,5 @@ class Objective(OptFunction):
             Additional parameters for constructor
         kwargs
             Additional parameters for constructor
-
         """
         return new_instance(cls, objective_type, *args, **kwargs)

@@ -15,14 +15,6 @@ class OptFunction(Base, metaclass=ABCMeta):
     """
     Abstract base class for functions
     that calculate scalars based on a problem.
-
-    Attributes
-    ----------
-    problem: iwopy.Problem
-        The underlying optimization problem
-
-    :group: core
-
     """
 
     def __init__(
@@ -36,8 +28,6 @@ class OptFunction(Base, metaclass=ABCMeta):
         cnames: list[str] | None = None,
     ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         problem
@@ -62,7 +52,6 @@ class OptFunction(Base, metaclass=ABCMeta):
             map by integer or default name
         cnames
             The names of the components
-
         """
         super().__init__(name)
 
@@ -97,9 +86,8 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        int:
+        n_components
             The number of components.
-
         """
 
     def initialize(self, verbosity: int = 0) -> None:
@@ -110,7 +98,6 @@ class OptFunction(Base, metaclass=ABCMeta):
         ----------
         verbosity
             The verbosity level, 0 = silent
-
         """
         if self._cnames is None:
             if self.n_components() > 1:
@@ -135,9 +122,8 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        names: list of str
+        names
             The component names
-
         """
         if self._cnames is None:
             raise RuntimeError(f"Function '{self.name}' has not been initialized")
@@ -150,9 +136,8 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        names: list of str
+        names
             The integer variable names
-
         """
         if self._vnamesi is None:
             raise RuntimeError(f"Function '{self.name}' has not been initialized")
@@ -165,9 +150,8 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        n: int
+        n
             The number of int variables
-
         """
         return len(self.var_names_int)
 
@@ -178,9 +162,8 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        names: list of str
+        names
             The float variable names
-
         """
         if self._vnamesf is None:
             raise RuntimeError(f"Function '{self.name}' has not been initialized")
@@ -193,9 +176,8 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        n: int
+        n
             The number of float variables
-
         """
         return len(self.var_names_float)
 
@@ -206,10 +188,9 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        deps: numpy.ndarray of bool
+        deps
             The dependencies of components on function
             variables, shape: (n_components, n_vars_int)
-
         """
         return np.ones((self.n_components(), self.n_vars_int), dtype=bool)
 
@@ -220,10 +201,9 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        deps: numpy.ndarray of bool
+        deps
             The dependencies of components on function
             variables, shape: (n_components, n_vars_float)
-
         """
         return np.ones((self.n_components(), self.n_vars_float), dtype=bool)
 
@@ -233,9 +213,7 @@ class OptFunction(Base, metaclass=ABCMeta):
         target: list[str],
         vtype: str,
     ) -> None:
-        """
-        Helper function for variable renaming
-        """
+        """Helper function for variable renaming"""
         for ov, nv in varmap.items():
             if isinstance(ov, str):
                 ovl = fnmatch.filter(target, ov)
@@ -273,7 +251,6 @@ class OptFunction(Base, metaclass=ABCMeta):
         varmap
             The name mapping. Key: old name str,
             Value: new name str
-
         """
         self._rename_vars(varmap, self.var_names_int, "int")
 
@@ -286,7 +263,6 @@ class OptFunction(Base, metaclass=ABCMeta):
         varmap
             The name mapping. Key: old name str,
             Value: new name str
-
         """
         self._rename_vars(varmap, self.var_names_float, "float")
 
@@ -315,9 +291,8 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        values: np.array
+        values
             The component values, shape: (n_sel_components,)
-
         """
         raise NotImplementedError(f"Not implemented for class {type(self).__name__}")
 
@@ -345,9 +320,8 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        values: np.array
+        values
             The component values, shape: (n_pop, n_sel_components)
-
         """
         if problem_results is not None:
             raise NotImplementedError(
@@ -392,9 +366,8 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        values: np.array
+        values
             The component values, shape: (n_components,)
-
         """
         return self.calc_individual(vars_int, vars_float, problem_results)
 
@@ -424,9 +397,8 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        values: np.array
+        values
             The component values, shape: (n_pop, n_components)
-
         """
         return self.calc_population(vars_int, vars_float, problem_results)
 
@@ -455,9 +427,8 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        deriv: numpy.ndarray
+        deriv
             The derivative values, shape: (n_sel_components,)
-
         """
         n_cmpnts = len(components) if components is not None else self.n_components()
         return np.full(n_cmpnts, np.nan, dtype=np.float64)

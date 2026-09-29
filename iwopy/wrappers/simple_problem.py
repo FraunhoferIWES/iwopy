@@ -10,9 +10,6 @@ class SimpleProblem(Problem):
     """
     A problem which simply pipes variables to its
     objectives and constraints.
-
-    :group: wrappers
-
     """
 
     def __init__(
@@ -29,10 +26,10 @@ class SimpleProblem(Problem):
         **kwargs: Any,
     ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
+        name
+            The problem name
         int_vars
             The integer variables, either dict with name str
             to initial value mapping, or list of variable names
@@ -57,7 +54,6 @@ class SimpleProblem(Problem):
             for right-unbounded cases. None sets all values as such.
         kwargs
             Additional parameters for the Problem class
-
         """
         super().__init__(name, **kwargs)
 
@@ -138,9 +134,8 @@ class SimpleProblem(Problem):
 
         Returns
         -------
-        names: list of str
+        names
             The names of the integer variables
-
         """
         return list(self._ivars.keys())
 
@@ -150,9 +145,8 @@ class SimpleProblem(Problem):
 
         Returns
         -------
-        values: numpy.ndarray
+        values
             Initial int values, shape: (n_vars_int,)
-
         """
         return np.array(list(self._ivars.values()), dtype=np.int32)
 
@@ -164,9 +158,8 @@ class SimpleProblem(Problem):
 
         Returns
         -------
-        values: numpy.ndarray
+        values
             Minimal int values, shape: (n_vars_int,)
-
         """
         return np.array(
             [self._ivars_min[v] for v in self.var_names_int()], dtype=np.int32
@@ -180,9 +173,8 @@ class SimpleProblem(Problem):
 
         Returns
         -------
-        values: numpy.ndarray
+        values
             Maximal int values, shape: (n_vars_int,)
-
         """
         return np.array(
             [self._ivars_max[v] for v in self.var_names_int()], dtype=np.int32
@@ -194,9 +186,8 @@ class SimpleProblem(Problem):
 
         Returns
         -------
-        names: list of str
+        names
             The names of the float variables
-
         """
         return list(self._fvars.keys())
 
@@ -206,9 +197,8 @@ class SimpleProblem(Problem):
 
         Returns
         -------
-        values: numpy.ndarray
+        values
             Initial float values, shape: (n_vars_float,)
-
         """
         return np.array(list(self._fvars.values()), dtype=np.float64)
 
@@ -220,9 +210,8 @@ class SimpleProblem(Problem):
 
         Returns
         -------
-        values: numpy.ndarray
+        values
             Minimal float values, shape: (n_vars_float,)
-
         """
         return np.array(
             [self._fvars_min[v] for v in self.var_names_float()], dtype=np.float64
@@ -236,9 +225,8 @@ class SimpleProblem(Problem):
 
         Returns
         -------
-        values: numpy.ndarray
+        values
             Maximal float values, shape: (n_vars_float,)
-
         """
         return np.array(
             [self._fvars_max[v] for v in self.var_names_float()], dtype=np.float64

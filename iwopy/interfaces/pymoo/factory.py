@@ -13,27 +13,38 @@ class _PymooProblem(Protocol):
 
 
 class Factory:
-    """
-    A factory for pymoo components
-
-    :group: interfaces.pymoo
-
-    """
+    """A factory for pymoo components"""
 
     def __init__(self, pymoo_problem: _PymooProblem, verbosity: int) -> None:
+        """
+        Parameters
+        ----------
+        pymoo_problem
+            The pymoo problem wrapper
+        verbosity
+            The verbosity level, 0 = silent
+        """
         self.pymoo_problem = pymoo_problem
         self.verbosity = verbosity
 
         imports.load(verbosity)
 
     def print(self, *args: object, **kwargs: Any) -> None:
+        """
+        Print a message when verbose output is enabled.
+
+        Parameters
+        ----------
+        args
+            Positional arguments for the print function
+        kwargs
+            Keyword arguments for the print function
+        """
         if self.verbosity:
             print(*args, **kwargs)
 
     def get_sampling(self, samp_name: str | None, **kwargs: Any) -> Any:
-        """
-        Sampling factory function
-        """
+        """Sampling factory function"""
         if samp_name is None:
             if self.pymoo_problem.is_intprob:
                 samp_name = "int_random"
@@ -60,9 +71,7 @@ class Factory:
         return out
 
     def get_crossover(self, cross: str, **pars: Any) -> Any:
-        """
-        Crossover factory function
-        """
+        """Crossover factory function"""
         if cross == "sbx":
             if self.pymoo_problem.is_intprob:
                 pars.setdefault("repair", imports.RoundingRepair())
@@ -75,9 +84,7 @@ class Factory:
         return out
 
     def get_mutation(self, mut: str, **pars: Any) -> Any:
-        """
-        Mutation factory function
-        """
+        """Mutation factory function"""
         if mut == "pm":
             if self.pymoo_problem.is_intprob:
                 pars.setdefault("repair", imports.RoundingRepair())
@@ -90,9 +97,7 @@ class Factory:
         return out
 
     def get_algorithm(self, pars: dict[str, Any]) -> Any:
-        """
-        Algorithm factory function
-        """
+        """Algorithm factory function"""
         pars = pars.copy()
         typ = pars["type"]
 
@@ -275,9 +280,7 @@ class Factory:
         self,
         term_pars: dict[str, Any] | tuple[Any, ...] | list[Any],
     ) -> Any:
-        """
-        Termination factory function
-        """
+        """Termination factory function"""
 
         if isinstance(term_pars, tuple):
             return term_pars

@@ -14,20 +14,6 @@ class DiscretizeRegGrid(LocalFD):
     A wrapper that provides finite distance
     differentiation on a regular grid for
     selected or all problem float variables.
-
-    Attributes
-    ----------
-    grid: iwopy.tools.RegularDiscretizationGrid
-        The discretization grid
-    order: dict
-        Finite difference order. Key: variable name
-        str, value: 1 = forward, -1 = backward, 2 = centre
-    orderb: dict or int
-        Finite difference order of boundary points.
-        Key: variable name str, value: order int
-
-    :group: wrappers
-
     """
 
     def __init__(
@@ -41,8 +27,6 @@ class DiscretizeRegGrid(LocalFD):
         **dpars: Any,
     ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         base_problem
@@ -67,7 +51,6 @@ class DiscretizeRegGrid(LocalFD):
             The problem name
         dpars
             Additional parameters for `RegularDiscretizationGrid`
-
         """
         name = base_problem.name + "_grid" if name is None else name
         super().__init__(base_problem, deltas, fd_order, fd_bounds_order, name)
@@ -84,7 +67,6 @@ class DiscretizeRegGrid(LocalFD):
         ----------
         verbosity
             The verbosity level, 0 = silent
-
         """
         super().initialize(verbosity)
 
@@ -145,9 +127,7 @@ class DiscretizeRegGrid(LocalFD):
         order: np.ndarray,
         orderb: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Helper function that provides gradient coeffs
-        """
+        """Helper function that provides gradient coeffs"""
         grid = self.grid
         assert grid is not None
         gpts, coeffs = grid.grad_coeffs(varsf[None, :], gvars, order, orderb)
@@ -168,10 +148,9 @@ class DiscretizeRegGrid(LocalFD):
 
         Returns
         -------
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-
         """
         grid = self.grid
         assert grid is not None
@@ -198,10 +177,9 @@ class DiscretizeRegGrid(LocalFD):
 
         Returns
         -------
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-
         """
         grid = self.grid
         assert grid is not None
@@ -248,13 +226,12 @@ class DiscretizeRegGrid(LocalFD):
 
         Returns
         -------
-        objs: np.array
+        objs
             The objective function values, shape: (n_objectives,)
-        con: np.array
+        con
             The constraints values, shape: (n_constraints,)
-        prob_res: object, optional
+        prob_res
             The problem results
-
         """
         grid = self.grid
         assert grid is not None
@@ -332,13 +309,12 @@ class DiscretizeRegGrid(LocalFD):
 
         Returns
         -------
-        objs: np.array
+        objs
             The objective function values, shape: (n_pop, n_objectives)
-        cons: np.array
+        cons
             The constraints values, shape: (n_pop, n_constraints)
-        prob_res: object, optional
+        prob_res
             The problem results
-
         """
         grid = self.grid
         assert grid is not None
@@ -452,14 +428,13 @@ class DiscretizeRegGrid(LocalFD):
 
         Returns
         -------
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-        objs: np.array
+        objs
             The objective function values, shape: (n_objectives,)
-        cons: np.array
+        cons
             The constraints values, shape: (n_constraints,)
-
         """
         if self.memory is not None:
             self.memory.clear()
@@ -484,14 +459,13 @@ class DiscretizeRegGrid(LocalFD):
 
         Returns
         -------
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-        objs: np.array
+        objs
             The final objective function values, shape: (n_pop, n_components)
-        cons: np.array
+        cons
             The final constraint values, shape: (n_pop, n_constraints)
-
         """
         if self.memory is not None:
             self.memory.clear()

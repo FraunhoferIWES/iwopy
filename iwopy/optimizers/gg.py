@@ -17,34 +17,6 @@ class GG(Optimizer):
     Follows steepest decent, reducing step size
     in a finite number of steps on the way. Step directions
     that violate constraints are projected out or reversed.
-
-    Attributes
-    ----------
-    step_max: numpy.ndarray
-        Maximal step size for each problem variable,
-        shape: (n_vars_float,)
-    step_min: numpy.ndarray
-        Minimal step size for each problem variable,
-        shape: (n_vars_float,)
-    step_div_factor: float
-        Step size division factor until step_min is reached
-    f_tol: float
-        The objective function tolerance
-    vectorized: bool
-        Flag for running in vectorized mode
-    n_max_steps: int
-        The maximal number of steps without fresh gradient
-    memory_size: int
-        The number of memorized visited points
-    memory: tuple
-        Memorized data: (x, grad, obj, all_valid), each a
-        numpy.ndarray, shapes: (memory_size, n_vars),
-        (memory_size, n_funcs, n_vars), (memory_size,), (memory_size,)
-    n_iterations: int
-        Number of completed iterations in the current or latest solve
-
-    :group: optimizers
-
     """
 
     def __init__(
@@ -61,8 +33,6 @@ class GG(Optimizer):
         max_iterations: int | None = None,
     ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         problem
@@ -89,7 +59,6 @@ class GG(Optimizer):
             The name
         max_iterations
             Exit criteria based on number of iterations, None for no limit
-
         """
         super().__init__(problem, name)
         self.step_max = step_max
@@ -111,7 +80,6 @@ class GG(Optimizer):
         ----------
         verbosity
             The verbosity level, 0 = silent
-
         """
         if self.problem.n_objectives != 1:
             raise ValueError(
@@ -216,9 +184,7 @@ class GG(Optimizer):
         super().initialize(verbosity)
 
     def print_info(self) -> None:
-        """
-        Print solver info, called before solving
-        """
+        """Print solver info, called before solving"""
         super().print_info()
 
         s = f"  Optimizer '{self.name}'  "
@@ -234,9 +200,7 @@ class GG(Optimizer):
         print(hline)
 
     def _get_newx(self, x: np.ndarray, deltax: np.ndarray) -> np.ndarray:
-        """
-        Helper function for new x creation
-        """
+        """Helper function for new x creation"""
         n_vars = self.problem.n_vars_float
         newx = np.zeros((self.n_max_steps, n_vars), dtype=np.float64)
         newx[:] = x[None, :]
@@ -254,9 +218,7 @@ class GG(Optimizer):
         return newx
 
     def _grad2deltax(self, grad: np.ndarray, step: np.ndarray) -> np.ndarray:
-        """
-        Helper function for deltax creation
-        """
+        """Helper function for deltax creation"""
         if not np.any(np.abs(grad) > 0):
             return np.zeros_like(grad)
         j = np.argmax(np.abs(grad) / step)
@@ -326,9 +288,8 @@ class GG(Optimizer):
 
         Returns
         -------
-        results: iwopy.core.SingleObjOptResults
+        results
             The optimization results object
-
         """
         super().solve(verbosity, callbacks)
         step_max = self.step_max

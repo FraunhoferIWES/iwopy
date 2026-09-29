@@ -16,11 +16,8 @@ def all_subclasses(cls: type[_T]) -> set[type[_T]]:
 
     Returns
     -------
-    list of class:
+    classes
         The derived classes
-
-    :group: utils
-
     """
     return set(cls.__subclasses__()).union(
         [s for c in cls.__subclasses__() for s in all_subclasses(c)]
@@ -48,11 +45,8 @@ def new_cls(base_cls: type[_T], cls_name: str | None) -> type[_T] | None:
 
     Returns
     -------
-    cls: object
+    cls
         The derived class
-
-    :group: utils
-
     """
 
     if cls_name is None:
@@ -98,11 +92,8 @@ def new_instance(
 
     Returns
     -------
-    obj: object
+    obj
         The instance of the derived class
-
-    :group: utils
-
     """
 
     cls = new_cls(base_cls, cls_name)

@@ -7,12 +7,7 @@ from . import imports
 
 
 class AlgoFactory:
-    """
-    Creates a pygmo algorithm from parameters
-
-    :group: interfaces.pygmo
-
-    """
+    """Creates a pygmo algorithm from parameters"""
 
     @staticmethod
     def new(type: str, pop: bool = False, **kwargs: Any) -> Any:
@@ -25,14 +20,15 @@ class AlgoFactory:
         ----------
         type
             Name of the driver type
+        pop
+            Enable vectorized batch fitness evaluation
         kwargs
             Additional parameters, type dependent
 
         Returns
         -------
-        imports.pygmo.algo :
+        algorithm
             The pygmo algorithm object
-
         """
 
         imports.load()

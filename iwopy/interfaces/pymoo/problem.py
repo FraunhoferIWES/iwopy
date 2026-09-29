@@ -14,23 +14,6 @@ class SingleObjProblemTemplate:
 
     At the moment this interface only supports
     pure int or pure float problems (not mixed).
-
-    Attributes
-    ----------
-    problem: iwopy.core.Problem
-        The iwopy problem to solve
-    vectorize: bool
-        Switch for vectorized calculations, wrt
-        population individuals
-    is_mixed: bool
-        Flag for mixed integer/float problems
-    is_intprob: bool
-        Flag for integer problems
-    store_prob_res: bool
-        Whether to store current problem results
-
-    :group: interfaces.pymoo
-
     """
 
     CLASS_NAME = "SingleObjProblem"
@@ -43,8 +26,6 @@ class SingleObjProblemTemplate:
         store_prob_res: bool = False,
     ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         problem
@@ -54,7 +35,6 @@ class SingleObjProblemTemplate:
             population individuals
         store_prob_res
             Whether to store current problem results
-
         """
         self.problem = problem
         self.vectorize = vectorize
@@ -136,9 +116,7 @@ class SingleObjProblemTemplate:
 
     @property
     def current_problem_results(self) -> tuple[object | None, ...] | None:
-        """
-        Returns the current problem results, if stored.
-        """
+        """Returns the current problem results, if stored."""
         if not self.store_prob_res:
             raise RuntimeError("Current problem results are not stored.")
         return self.__current_problem_results
@@ -266,9 +244,8 @@ class SingleObjProblemTemplate:
 
         Returns
         -------
-        results: iwopy.SingleObjOptResults
+        results
             The optimization results object
-
         """
 
         # prepare:
@@ -345,9 +322,7 @@ class SingleObjProblemTemplate:
 
     @classmethod
     def get_class(cls) -> type[Any]:
-        """
-        Creates the class, dynamically derived from pymoo.Problem
-        """
+        """Creates the class, dynamically derived from pymoo.Problem"""
         imports.load()
         attrb: dict[str, Any] = {
             v: d
@@ -372,19 +347,6 @@ class MultiObjProblemTemplate:
 
     At the moment this interface only supports
     pure int or pure float problems (not mixed).
-
-    Attributes
-    ----------
-    problem: iwopy.core.Problem
-        The iwopy problem to solve
-    vectorize: bool
-        Switch for vectorized calculations, wrt
-        population individuals
-    is_intprob: bool
-        Flag for integer problems
-
-    :group: interfaces.pymoo
-
     """
 
     CLASS_NAME = "MultiObjProblem"
@@ -396,8 +358,6 @@ class MultiObjProblemTemplate:
 
     def __init__(self, problem: Problem, vectorize: bool) -> None:
         """
-        Constructor template, will be overwritten by get_class
-
         Parameters
         ----------
         problem
@@ -405,7 +365,6 @@ class MultiObjProblemTemplate:
         vectorize
             Switch for vectorized calculations, wrt
             population individuals
-
         """
 
     def finalize(self, pymoo_results: Any, verbosity: int = 1) -> MultiObjOptResults:
@@ -421,9 +380,8 @@ class MultiObjProblemTemplate:
 
         Returns
         -------
-        results: iwopy.SingleObjOptResults
+        results
             The optimization results object
-
         """
 
         # prepare:
@@ -461,9 +419,7 @@ class MultiObjProblemTemplate:
 
     @classmethod
     def get_class(cls) -> type[Any]:
-        """
-        Creates the class, dynamically derived from SingleObjProblem
-        """
+        """Creates the class, dynamically derived from SingleObjProblem"""
         scls = SingleObjProblemTemplate.get_class()
         attrb: dict[str, Any] = {
             v: d

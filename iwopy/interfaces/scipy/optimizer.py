@@ -19,18 +19,6 @@ class Optimizer_scipy(Optimizer):
 
     Note that these solvers do not support
     vectorized evaluation.
-
-    Attributes
-    ----------
-    scipy_pars: dict
-        Additional parameters for
-        scipy.optimze.minimize()
-    mem_size: int
-        The memory size, number of
-        stored obj, cons evaluations
-
-    :group: interfaces.scipy
-
     """
 
     def __init__(
@@ -41,8 +29,6 @@ class Optimizer_scipy(Optimizer):
         **kwargs: Any,
     ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         problem
@@ -55,7 +41,6 @@ class Optimizer_scipy(Optimizer):
             stored obj, cons evaluations
         kwargs
             Additional parameters for base class
-
         """
         if scipy_pars is None:
             scipy_pars = {}
@@ -69,9 +54,7 @@ class Optimizer_scipy(Optimizer):
         self._callback_iteration = 0
 
     def print_info(self) -> None:
-        """
-        Print solver info, called before solving
-        """
+        """Print solver info, called before solving"""
         super().print_info()
 
         if len(self.scipy_pars):
@@ -91,7 +74,6 @@ class Optimizer_scipy(Optimizer):
         ----------
         verbosity
             The verbosity level, 0 = silent
-
         """
 
         # Check objectives:
@@ -129,13 +111,12 @@ class Optimizer_scipy(Optimizer):
 
         Returns
         -------
-        objs: np.array
+        objs
             The objective function values, shape: (n_objectives,)
-        cons: np.array
+        cons
             The constraints values, shape: (n_constraints,)
-        prob_results: object
+        prob_results
             The problem results
-
         """
         memory = self._mem
         assert memory is not None
@@ -170,10 +151,8 @@ class Optimizer_scipy(Optimizer):
 
         Returns
         -------
-        float:
+        objective
             Current objective function value
-
-
         """
         objs, __, __ = self._get_results(x)
         return float(objs[0])
@@ -193,9 +172,8 @@ class Optimizer_scipy(Optimizer):
 
         Returns
         -------
-        float:
+        constraints
             Value of constraint component
-
         """
         __, cons, __ = self._get_results(x)
         return float(cons[ci])
@@ -265,9 +243,8 @@ class Optimizer_scipy(Optimizer):
 
         Returns
         -------
-        results: iwopy.SingleObjOptResults
+        results
             The optimization results object
-
         """
 
         # check problem initialization:

@@ -35,28 +35,7 @@ def _read_only_population(
 
 @dataclass(frozen=True)
 class OptimizerCallbackData:
-    """Immutable intermediate optimization data supplied to callbacks.
-
-    Attributes
-    ----------
-    event
-        The backend event represented by this snapshot.
-    vars_int
-        Integer variables for the current population.
-    vars_float
-        Floating-point variables for the current population.
-    objs
-        Objective values for the current population, if available.
-    cons
-        Constraint values for the current population, if available.
-    iteration
-        The solver iteration or generation, if available.
-    n_evaluations
-        The cumulative number of evaluated individuals, if available.
-
-    :group: core
-
-    """
+    """Immutable intermediate optimization data supplied to callbacks."""
 
     event: Literal["iteration", "evaluation"]
     vars_int: np.ndarray
@@ -103,64 +82,56 @@ class OptimizerCallbackData:
 
 
 class OptimizerCallback(metaclass=ABCMeta):
-    """Base class for optimizer callbacks.
-
-    :group: core
-
-    """
+    """Base class for optimizer callbacks."""
 
     def __init__(self) -> None:
-        """Initialize the callback."""
         self.optimizer: Optimizer | None = None
 
     def initialize(self, optimizer: Optimizer) -> None:
-        """Prepare the callback for an optimization run.
+        """
+        Prepare the callback for an optimization run.
 
         Parameters
         ----------
         optimizer
             The optimizer starting the run.
-
         """
         self.optimizer = optimizer
 
     @abstractmethod
     def notify(self, data: OptimizerCallbackData) -> None:
-        """Process intermediate optimization data.
+        """
+        Process intermediate optimization data.
 
         Parameters
         ----------
         data
             The current normalized optimizer state.
-
         """
 
     def finalize(
         self,
         results: SingleObjOptResults | MultiObjOptResults,
     ) -> None:
-        """Process the completed optimization results.
+        """
+        Process the completed optimization results.
 
         Parameters
         ----------
         results
             The completed iwopy optimization results.
-
         """
 
 
 class OptimizationHistory(OptimizerCallback):
-    """Record intermediate optimization states.
+    """
+    Record intermediate optimization states.
 
     The ``states`` attribute contains the snapshots received during the
     current or latest optimization run.
-
-    :group: core
-
     """
 
     def __init__(self) -> None:
-        """Initialize the history."""
         super().__init__()
         self.states: list[OptimizerCallbackData] = []
 
@@ -179,7 +150,8 @@ class OptimizationHistory(OptimizerCallback):
         ax: Axes | None = None,
         **kwargs: object,
     ) -> Figure:
-        """Plot the best objective value in each recorded state.
+        """
+        Plot the best objective value in each recorded state.
 
         Parameters
         ----------
@@ -192,9 +164,8 @@ class OptimizationHistory(OptimizerCallback):
 
         Returns
         -------
-        matplotlib.figure.Figure
+        figure
             The figure containing the objective history.
-
         """
         if self.optimizer is None:
             raise RuntimeError("Optimization history has not been initialized.")

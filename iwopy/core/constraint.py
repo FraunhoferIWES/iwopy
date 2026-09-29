@@ -11,25 +11,18 @@ class Constraint(OptFunction):
     """
     Abstract base class for optimization
     constraints.
-
-    Attributes
-    ----------
-    tol: float
-        The tolerance for constraint violations
-
-    :group: core
-
     """
 
     def __init__(self, *args: Any, tol: float = 1e-5, **kwargs: Any) -> None:
         """
-        Constructor
-
         Parameters
         ----------
+        args
+            Positional parameters for the base class
         tol
             The tolerance for constraint violations
-
+        kwargs
+            Keyword parameters for the base class
         """
         super().__init__(*args, **kwargs)
         self.tol = tol
@@ -42,11 +35,10 @@ class Constraint(OptFunction):
 
         Returns
         -------
-        min: np.array
+        min
             The lower bounds, shape: (n_components,)
-        max: np.array
+        max
             The upper bounds, shape: (n_components,)
-
         """
         return (
             np.full(self.n_components(), -np.inf, dtype=np.float64),
@@ -68,10 +60,9 @@ class Constraint(OptFunction):
             The verbosity level, 0 = silent
 
         Returns
-        values: np.array
         -------
+        values
             The boolean result, shape: (n_components,)
-
         """
         vals = constraint_values
         mi, ma = self.get_bounds()
@@ -103,9 +94,8 @@ class Constraint(OptFunction):
 
         Returns
         -------
-        values: np.array
+        values
             The boolean result, shape: (n_pop, n_components)
-
         """
         vals = constraint_values
         mi, ma = self.get_bounds()
@@ -136,6 +126,5 @@ class Constraint(OptFunction):
             Additional parameters for constructor
         kwargs
             Additional parameters for constructor
-
         """
         return new_instance(cls, constraint_type, *args, **kwargs)

@@ -11,9 +11,6 @@ class SimpleObjective(Objective):
     """
     A simple objective that assumes the
     same variables as defined by the problem.
-
-    :group: wrappers
-
     """
 
     def __init__(
@@ -26,8 +23,6 @@ class SimpleObjective(Objective):
         has_ana_derivs: bool = True,
     ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         problem
@@ -40,9 +35,8 @@ class SimpleObjective(Objective):
             For each component, the maximization goal
         cnames
             The names of the components
-        has_ana_derivs = bool
+        has_ana_derivs
             Flag for analytical derivatives
-
         """
         if cnames is not None and len(cnames) != n_components:
             raise ValueError(
@@ -75,11 +69,10 @@ class SimpleObjective(Objective):
 
         Returns
         -------
-        result: float (or numpy.ndarray) or list of float (or numpy.ndarray)
+        result
             For one component, a float, else a list of floats. For
             population results, a array with shape (n_pop,) in case
             of one component or a list of such arrays otherwise.
-
         """
 
     def g(
@@ -104,11 +97,10 @@ class SimpleObjective(Objective):
 
         Returns
         -------
-        result: float or list of float
+        result
             For one component, a float, else a list of floats.
             The length of list is 0 or 1 in case of single component,
             or n_sel_components otherwise.
-
         """
         return None
 
@@ -119,9 +111,8 @@ class SimpleObjective(Objective):
 
         Returns
         -------
-        bool :
+        has_ana_derivs
             Analitical derivatives flag
-
         """
         return self._ana
 
@@ -131,10 +122,9 @@ class SimpleObjective(Objective):
 
         Returns
         -------
-        flags: np.array
+        flags
             Bool array for component maximization,
             shape: (n_components,)
-
         """
         return self._maxi
 
@@ -145,9 +135,8 @@ class SimpleObjective(Objective):
 
         Returns
         -------
-        int:
+        n_components
             The number of components.
-
         """
         return self._n_comps
 
@@ -176,9 +165,8 @@ class SimpleObjective(Objective):
 
         Returns
         -------
-        values: np.array
+        values
             The component values, shape: (n_sel_components,)
-
         """
         results = np.array(self.f(*vars_int, *vars_float), dtype=np.float64)
         return np.atleast_1d(results)
@@ -207,9 +195,8 @@ class SimpleObjective(Objective):
 
         Returns
         -------
-        values: np.array
+        values
             The component values, shape: (n_pop, n_sel_components,)
-
         """
         varsi = [vars_int[:, vi] for vi in range(self.n_vars_int)]
         varsf = [vars_float[:, vi] for vi in range(self.n_vars_float)]
@@ -245,9 +232,8 @@ class SimpleObjective(Objective):
 
         Returns
         -------
-        deriv: numpy.ndarray
+        deriv
             The derivative values, shape: (n_sel_components,)
-
         """
         cmpnts = list(range(self.n_components())) if components is None else components
 

@@ -11,16 +11,13 @@ def get_default_keyf(
 
     Parameters
     ----------
-        digits
+    digits
         The number of digits for floats
 
     Returns
     -------
-    Function :
+    keyf
         The default key function
-
-    :group: core
-
     """
 
     def default_key(vars_int: np.ndarray, vars_float: np.ndarray) -> Hashable:
@@ -36,9 +33,8 @@ def get_default_keyf(
 
         Returns
         -------
-        Object :
+        key
             The key
-
         """
         li = vars_int.tolist() if len(vars_int) else []
         tf = tuple(tuple(v.tolist()) for v in np.round(vars_float, digits))
@@ -48,23 +44,7 @@ def get_default_keyf(
 
 
 class Memory:
-    """
-    Storage for function results.
-
-    Attributes
-    ----------
-    max_size: int
-        The number of maximally stored results
-    data: dict
-        The stored data. Key: keyf return type,
-        Values: tuples (objs, cons)
-    keyf: Function
-        The memory key function. Parameters:
-        (vars_int, vars_float), returns key Object
-
-    :group: core
-
-    """
+    """Storage for function results."""
 
     def __init__(
         self,
@@ -72,8 +52,6 @@ class Memory:
         keyf: Callable[[np.ndarray, np.ndarray], Hashable] | None = None,
     ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         size
@@ -81,16 +59,13 @@ class Memory:
         keyf
             The memory key function. Parameters:
             (vars_int, vars_float), returns key Object
-
         """
         self.max_size = size
         self.keyf = keyf if keyf is not None else get_default_keyf()
         self.data: dict[Hashable, tuple[np.ndarray, np.ndarray]] = {}
 
     def clear(self) -> None:
-        """
-        Clears the memory
-        """
+        """Clears the memory"""
         self.data = {}
 
     @property
@@ -101,10 +76,9 @@ class Memory:
 
         Returns
         -------
-        int :
+        size
             The number of elements currently stored
             in memory
-
         """
         return len(self.data)
 
@@ -121,9 +95,8 @@ class Memory:
 
         Returns
         -------
-        found: bool
+        found
             True if data is available
-
         """
         key = self.keyf(vars_int, vars_float)
         return key in self.data
@@ -143,9 +116,8 @@ class Memory:
 
         Returns
         -------
-        found: numpy.ndarray of bool
+        found
             True if data is available, shape: (n_pop,)
-
         """
         n_pop = len(vars_float)
         found = np.zeros(n_pop, dtype=bool)
@@ -171,9 +143,8 @@ class Memory:
             The float variable values, shape: (n_vars_float,)
         objs
             The objective function values, shape: (n_objectives,)
-        con
+        cons
             The constraints values, shape: (n_constraints,)
-
         """
         key = self.keyf(vars_int, vars_float)
         if key not in self.data and self.size == self.max_size:
@@ -199,9 +170,8 @@ class Memory:
             The float variable values, shape: (n_pop, n_vars_float)
         objs
             The objective function values, shape: (n_pop, n_objectives)
-        con
+        cons
             The constraints values, shape: (n_pop, n_constraints)
-
         """
         for pi in range(len(objs)):
             self.store_individual(vars_int[pi], vars_float[pi], objs[pi], cons[pi])
@@ -221,9 +191,8 @@ class Memory:
 
         Returns
         -------
-        results: tuple or None
+        results
             The results (objs, cons) if found, None otherwise
-
         """
         key = self.keyf(vars_int, vars_float)
         if key not in self.data:
@@ -252,10 +221,9 @@ class Memory:
 
         Returns
         -------
-        results: numpy.ndarray or None
+        results
             None if no results at all found, otherwise array
             with shape: (n_pop, n_objs_cmpnts + n_cons_cmpnts)
-
         """
         results = target
         n_pop = len(vars_float)

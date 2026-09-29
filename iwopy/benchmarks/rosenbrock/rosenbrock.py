@@ -28,9 +28,6 @@ class RosenbrockObjective(SimpleObjective):
     with a function value of
 
     f(x,y) = 0
-
-    :group: benchmarks.rosenbrock
-
     """
 
     def __init__(
@@ -41,8 +38,6 @@ class RosenbrockObjective(SimpleObjective):
         name: str = "f",
     ) -> None:
         """
-        Construtor
-
         Parameters
         ----------
         problem
@@ -53,7 +48,6 @@ class RosenbrockObjective(SimpleObjective):
             Switch for analytical derivatives
         name
             The function name
-
         """
         super().__init__(problem, name, n_components=1, has_ana_derivs=ana_deriv)
 
@@ -61,9 +55,7 @@ class RosenbrockObjective(SimpleObjective):
         self._pars = pars
 
     def f(self, *x: ArrayLike) -> ArrayLike:
-        """
-        The Rosenbrock function f(x, y)
-        """
+        """The Rosenbrock function f(x, y)"""
         x_value, y_value = (np.asarray(value) for value in x)
         a, b = self._pars
         return (a - x_value) ** 2 + b * (y_value - x_value**2) ** 2
@@ -74,9 +66,7 @@ class RosenbrockObjective(SimpleObjective):
         *x: ArrayLike,
         components: Sequence[int] | np.ndarray | None = None,
     ) -> ArrayLike:
-        """
-        The derivative of the Rosenbrock function
-        """
+        """The derivative of the Rosenbrock function"""
         del components
         x_value, y_value = (np.asarray(value) for value in x)
         a, b = self._pars
@@ -87,17 +77,7 @@ class RosenbrockObjective(SimpleObjective):
 
 
 class RosenbrockProblem(SimpleProblem):
-    """
-    Problem definition of benchmark function Rosenbrock.
-
-    Attributes
-    ----------
-    initial_values: list of float
-        The initial values
-
-    :group: benchmarks.rosenbrock
-
-    """
+    """Problem definition of benchmark function Rosenbrock."""
 
     def __init__(
         self,
@@ -108,8 +88,6 @@ class RosenbrockProblem(SimpleProblem):
         name: str = "rosenbrock",
     ) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         lower
@@ -122,7 +100,6 @@ class RosenbrockProblem(SimpleProblem):
             Switch for analytical derivatives
         name
             The name of the problem
-
         """
         if initial is None:
             initial = [0.0, 0.0]

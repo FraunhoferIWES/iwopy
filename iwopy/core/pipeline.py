@@ -13,9 +13,6 @@ class PipelineStage(Base, metaclass=ABCMeta):
     Abstract base class for a pipeline stage.
 
     A pipeline stage is a single step in an optimization pipeline.
-
-    :group: core
-
     """
 
     def initialize(self, pipeline: Pipeline | int = 0, verbosity: int = 0) -> None:
@@ -28,7 +25,6 @@ class PipelineStage(Base, metaclass=ABCMeta):
             The pipeline this stage belongs to
         verbosity
             The verbosity level, 0 = silent
-
         """
 
         if isinstance(pipeline, int):
@@ -52,9 +48,8 @@ class PipelineStage(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        int :
+        index
             The stage index in the pipeline
-
         """
         return self.__stage_i
 
@@ -65,9 +60,8 @@ class PipelineStage(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        Path :
+        base_dir
             The base directory
-
         """
         return self.__base_dir
 
@@ -78,9 +72,8 @@ class PipelineStage(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        Path :
+        stage_dir
             The stage directory
-
         """
         return self.__stage_dir
 
@@ -103,14 +96,15 @@ class PipelineStage(Base, metaclass=ABCMeta):
             The results from the previous stage
         verbosity
             The verbosity level, 0 = silent
+        kwargs
+            Additional parameters for the pipeline stage
 
         Returns
         -------
-        success: bool
+        success
             Whether the stage was successful
-        results: object
+        results
             The stage results
-
         """
 
     def finalize(self, pipeline: Pipeline | int = 0, verbosity: int = 0) -> None:
@@ -123,7 +117,6 @@ class PipelineStage(Base, metaclass=ABCMeta):
             The pipeline this stage belongs to
         verbosity
             The verbosity level, 0 = silent
-
         """
         if isinstance(pipeline, int):
             return super().finalize(verbosity or pipeline)
@@ -137,29 +130,16 @@ class Pipeline(Base):
     An optimization pipeline is a collection of optimization problems
     and optimmizers that are being run one after another. Each step
     of this process is called a stage.
-
-    Attributes
-    ----------
-    start_stage: int
-        The stage index to start from, default 0
-    end_stage: int
-        The stage index to end at, default None (run all stages)
-
-    :group: core
-
     """
 
     def __init__(self, base_dir: str | Path, **kwargs: Any) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         base_dir
             The base directory
         kwargs
             Additional keyword arguments for the base class
-
         """
         super().__init__(**kwargs)
         self.start_stage: int = 0
@@ -178,7 +158,6 @@ class Pipeline(Base):
         ----------
         stage
             The stage to add
-
         """
         assert not self.initialized, (
             f"{self.name}: cannot add stage '{stage.name}' after pipeline has been initialized"
@@ -202,7 +181,6 @@ class Pipeline(Base):
         ----------
         verbosity
             The verbosity level, 0 = silent
-
         """
         assert not self.running, (
             f"{self.name}: cannot initialize pipeline while it is running"
@@ -223,9 +201,8 @@ class Pipeline(Base):
 
         Returns
         -------
-        bool :
+        running
             Whether the pipeline is currently running
-
         """
         return self.__running
 
@@ -236,9 +213,8 @@ class Pipeline(Base):
 
         Returns
         -------
-        list of str :
+        stage_names
             The stage names
-
         """
         return [stage.name for stage in self.__stages]
 
@@ -249,9 +225,8 @@ class Pipeline(Base):
 
         Returns
         -------
-        Path :
+        base_dir
             The base directory
-
         """
         return self.__base_dir
 
@@ -262,9 +237,8 @@ class Pipeline(Base):
 
         Returns
         -------
-        int :
+        n_stages
             The number of stages
-
         """
         return len(self.__stages)
 
@@ -275,9 +249,8 @@ class Pipeline(Base):
 
         Returns
         -------
-        int :
+        stage_index
             The current stage index
-
         """
         return self.__idx
 
@@ -292,9 +265,8 @@ class Pipeline(Base):
 
         Returns
         -------
-        int :
+        stage_index
             The stage index, or -1 if not found
-
         """
         for i, stage in enumerate(self.__stages):
             if stage.name == stage_name:
@@ -312,9 +284,8 @@ class Pipeline(Base):
 
         Returns
         -------
-        PipelineStage :
+        stage
             The stage at the given index
-
         """
         return self.__stages[stage_index]
 
@@ -336,13 +307,12 @@ class Pipeline(Base):
 
         Returns
         -------
-        stage_index: int
+        stage_index
             The stage index
-        stage_name: str
+        stage_name
             The stage name
-        stage_dir: Path
+        stage_dir
             The stage directory
-
         """
         assert self.running, (
             f"{self.name}: cannot get next stage data while pipeline is not running"
@@ -383,11 +353,10 @@ class Pipeline(Base):
 
         Returns
         -------
-        success: bool
+        success
             Whether all stages were successful
-        results: object
+        results
             The pipeline results
-
         """
         assert not self.running, f"{self.name}: cannot run pipeline while it is running"
 
@@ -439,7 +408,6 @@ class Pipeline(Base):
         ----------
         verbosity
             The verbosity level, 0 = silent
-
         """
         assert not self.running, (
             f"{self.name}: cannot finalize pipeline while it is running"

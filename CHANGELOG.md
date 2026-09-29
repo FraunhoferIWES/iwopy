@@ -223,5 +223,7 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Development:
   - Added package-wide type annotations and strict mypy checking, enforced by
     pre-commit.
+  - Standardized API docstrings and Sphinx configuration on the foxes NumPyDoc
+    style, with a Python 3.10 TOML fallback for documentation builds.
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0](https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0)

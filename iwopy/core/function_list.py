@@ -21,33 +21,16 @@ class OptFunctionList(OptFunction, Generic[_OptFunctionT]):
 
     Add functions to the list via the `append` function,
     and don't forget to initialize.
-
-    Attributes
-    ----------
-    func_vars_int: list of lists of int
-        For each added function, the subset of
-        integer variables
-    func_vars_float: list of lists of int
-        For each added function, the subset of
-        float variables
-    sizes: list of int
-        The components of each added function
-
-    :group: core
-
     """
 
     def __init__(self, problem: "Problem", name: str) -> None:
         """
-        Constructor
-
         Parameters
         ----------
         problem
             The underlying optimization problem
         name
             The function name
-
         """
         super().__init__(problem, name)
 
@@ -65,7 +48,6 @@ class OptFunctionList(OptFunction, Generic[_OptFunctionT]):
         ----------
         function
             The function
-
         """
         if self.initialized:
             raise ValueError(
@@ -86,9 +68,8 @@ class OptFunctionList(OptFunction, Generic[_OptFunctionT]):
 
         Returns
         -------
-        funcs: list of iwopy.core.OptFunction
+        funcs
             The list of added functions
-
         """
         return self._functions
 
@@ -99,9 +80,8 @@ class OptFunctionList(OptFunction, Generic[_OptFunctionT]):
 
         Returns
         -------
-        n: int
+        n
             The total number of added functions
-
         """
         return len(self.functions)
 
@@ -113,7 +93,6 @@ class OptFunctionList(OptFunction, Generic[_OptFunctionT]):
         ----------
         verbosity
             The verbosity level, 0 = silent
-
         """
         self._vnamesi = []
         self._vnamesf = []
@@ -148,10 +127,9 @@ class OptFunctionList(OptFunction, Generic[_OptFunctionT]):
 
         Returns
         -------
-        deps: numpy.ndarray of bool
+        deps
             The dependencies of components on function
             variables, shape: (n_components, n_vars_int)
-
         """
         deps = np.zeros((self.n_components(), self.n_vars_int), dtype=bool)
 
@@ -170,10 +148,9 @@ class OptFunctionList(OptFunction, Generic[_OptFunctionT]):
 
         Returns
         -------
-        deps: numpy.ndarray of bool
+        deps
             The dependencies of components on function
             variables, shape: (n_components, n_vars_float)
-
         """
         deps = np.zeros((self.n_components(), self.n_vars_float), dtype=bool)
 
@@ -192,9 +169,8 @@ class OptFunctionList(OptFunction, Generic[_OptFunctionT]):
 
         Returns
         -------
-        int:
+        n_components
             The number of components.
-
         """
         return sum(self.sizes)
 
@@ -210,10 +186,9 @@ class OptFunctionList(OptFunction, Generic[_OptFunctionT]):
 
         Returns
         -------
-        fdata: list of numpy.ndarray
+        fdata
             The data for each function, list entry
             shapes: (n_func_components,)
-
         """
         out = []
         i0 = 0
@@ -235,10 +210,9 @@ class OptFunctionList(OptFunction, Generic[_OptFunctionT]):
 
         Returns
         -------
-        fdata: list of numpy.ndarray
+        fdata
             The data for each function, list entry
             shapes: (n_pop, n_func_components)
-
         """
         out = []
         i0 = 0
@@ -273,9 +247,8 @@ class OptFunctionList(OptFunction, Generic[_OptFunctionT]):
 
         Returns
         -------
-        values: np.array
+        values
             The component values, shape: (n_sel_components,)
-
         """
         cmpnts = np.arange(self.n_components()) if components is None else components
         values = np.full(len(cmpnts), np.nan, dtype=np.float64)
@@ -323,9 +296,8 @@ class OptFunctionList(OptFunction, Generic[_OptFunctionT]):
 
         Returns
         -------
-        values: np.array
+        values
             The component values, shape: (n_pop, n_sel_components,)
-
         """
         n_pop = vars_float.shape[0]
         cmpnts = np.arange(self.n_components()) if components is None else components
@@ -374,9 +346,8 @@ class OptFunctionList(OptFunction, Generic[_OptFunctionT]):
 
         Returns
         -------
-        values: np.array
+        values
             The component values, shape: (n_components,)
-
         """
         values = np.full(self.n_components(), np.nan, dtype=np.float64)
 
@@ -418,9 +389,8 @@ class OptFunctionList(OptFunction, Generic[_OptFunctionT]):
 
         Returns
         -------
-        values: np.array
+        values
             The component values, shape: (n_pop, n_components)
-
         """
         n_pop = vars_float.shape[0]
         values = np.full((n_pop, self.n_components()), np.nan, dtype=np.float64)
@@ -462,9 +432,8 @@ class OptFunctionList(OptFunction, Generic[_OptFunctionT]):
 
         Returns
         -------
-        deriv: numpy.ndarray
+        deriv
             The derivative values, shape: (n_sel_components,)
-
         """
         cmpnts = np.arange(self.n_components()) if components is None else components
         deriv = np.full(len(cmpnts), np.nan, dtype=np.float64)

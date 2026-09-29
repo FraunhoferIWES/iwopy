@@ -24,26 +24,6 @@ class SLSQP(Optimizer):
     ``Problem.get_gradients(..., pop=True)`` at each iterate. Hence missing
     analytical derivatives can be supplied by a population-capable problem
     wrapper such as :class:`iwopy.wrappers.LocalFD`.
-
-    Attributes
-    ----------
-    scipy_pars: dict
-        Additional parameters for :func:`scipy.optimize.minimize`.
-    mem_size: int
-        Maximum number of cached value and gradient evaluations.
-    vectorized: bool
-        Whether gradients use population-based function evaluation.
-    var_shift: numpy.ndarray
-        Variable offsets used for internal dimensionless coordinates.
-    var_scale: numpy.ndarray
-        Variable scales used for internal dimensionless coordinates.
-    scipy_results: scipy.optimize.OptimizeResult
-        Results returned by SciPy after solving, or ``None`` before solving.
-    n_iterations: int
-        Number of completed SLSQP iterations in the current or latest solve.
-
-    :group: optimizers
-
     """
 
     def __init__(
@@ -55,8 +35,6 @@ class SLSQP(Optimizer):
         name: str = "SLSQP",
     ) -> None:
         """
-        Constructor.
-
         Parameters
         ----------
         problem
@@ -71,7 +49,6 @@ class SLSQP(Optimizer):
             Whether gradients use population-based function evaluation.
         name
             The optimizer name.
-
         """
         super().__init__(problem, name)
         self.scipy_pars = {} if scipy_pars is None else scipy_pars.copy()
@@ -91,9 +68,7 @@ class SLSQP(Optimizer):
         self._solve_verbosity = 0
 
     def print_info(self) -> None:
-        """
-        Print solver info, called before solving
-        """
+        """Print solver info, called before solving"""
         super().print_info()
 
         if len(self.scipy_pars):
@@ -113,7 +88,6 @@ class SLSQP(Optimizer):
         ----------
         verbosity
             The verbosity level, 0 = silent.
-
         """
         if self.problem.n_objectives != 1:
             raise ValueError(
@@ -404,9 +378,8 @@ class SLSQP(Optimizer):
 
         Returns
         -------
-        results: iwopy.core.SingleObjOptResults
+        results
             The optimization results.
-
         """
         super().solve(verbosity, callbacks)
         self.n_iterations = 0

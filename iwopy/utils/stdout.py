@@ -9,10 +9,11 @@ def suppress_stdout(silent: bool = True) -> Iterator[None]:
     """
     Surpresses print outputs
 
-    Example
-    -------
-        >>> with suppress_stdout():
-        >>>    ...
+    Examples
+    --------
+    >>> from iwopy.utils import suppress_stdout
+    >>> with suppress_stdout():
+    ...     print("hidden")
 
     Source:
     https://stackoverflow.com/questions/2125702/how-to-suppress-console-output-in-python
@@ -21,9 +22,6 @@ def suppress_stdout(silent: bool = True) -> Iterator[None]:
     ----------
     silent
         Flag for the silent treatment.
-
-
-
     """
     with open(os.devnull, "w") as devnull:
         if silent:
