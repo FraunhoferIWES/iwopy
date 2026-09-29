@@ -133,11 +133,14 @@ def test_gg_zero_iteration_limit_has_no_intermediate_state():
     [
         {"step_div_factor": 1.0},
         {"n_max_steps": 0},
+        {"n_max_steps": True},
         {"memory_size": 0},
+        {"memory_size": True},
         {"step_max": 0.0},
         {"step_min": 0.0},
         {"step_max": 0.1, "step_min": 1.0},
         {"max_iterations": -1},
+        {"max_iterations": True},
     ],
 )
 def test_gg_rejects_invalid_configuration(kwargs):

@@ -18,7 +18,7 @@ from .opt_results import MultiObjOptResults, SingleObjOptResults
 def _read_only_population(
     values: np.ndarray,
     name: str,
-    dtype: np.dtype,
+    dtype: np.dtype[np.int32] | np.dtype[np.float64],
 ) -> np.ndarray:
     """Create a read-only two-dimensional population array."""
     population = np.asarray(values, dtype=dtype)
@@ -177,7 +177,7 @@ class OptimizationHistory(OptimizerCallback):
         self,
         objective: int = 0,
         ax: Axes | None = None,
-        **kwargs,
+        **kwargs: object,
     ) -> Figure:
         """Plot the best objective value in each recorded state.
 
@@ -204,7 +204,9 @@ class OptimizationHistory(OptimizerCallback):
                 f"Objective index {objective} is outside [0, {n_objectives})."
             )
 
-        states = [state for state in self.states if state.objs is not None]
+        states = [
+            (state, state.objs) for state in self.states if state.objs is not None
+        ]
         if not states:
             raise RuntimeError("Optimization history contains no objective values.")
 
@@ -212,14 +214,14 @@ class OptimizationHistory(OptimizerCallback):
 
         maximize = self.optimizer.problem.maximize_objs[objective]
         select = np.max if maximize else np.min
-        objective_values = [select(state.objs[:, objective]) for state in states]
+        objective_values = [select(values[:, objective]) for _, values in states]
         steps = [
             state.iteration
             if state.iteration is not None
             else state.n_evaluations
             if state.n_evaluations is not None
             else index
-            for index, state in enumerate(states, start=1)
+            for index, (state, _) in enumerate(states, start=1)
         ]
         if ax is None:
             figure, ax = plt.subplots()
@@ -227,7 +229,9 @@ class OptimizationHistory(OptimizerCallback):
             figure = ax.figure
         objective_name = self.optimizer.problem.objs.component_names[objective]
         ax.plot(steps, objective_values, label=objective_name, **kwargs)
-        ax.set_xlabel("iteration" if states[0].event == "iteration" else "evaluations")
+        ax.set_xlabel(
+            "iteration" if states[0][0].event == "iteration" else "evaluations"
+        )
         ax.set_ylabel(objective_name)
         return figure
 

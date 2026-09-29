@@ -1,18 +1,21 @@
 import importlib
+from types import ModuleType
 
 
-def import_module(name, package=None, hint=None):
+def import_module(
+    name: str, package: str | None = None, hint: str | None = None
+) -> ModuleType:
     """
     Imports a module dynamically.
 
     Parameters
     ----------
-    name: str
+    name
         The module name
-    package: str, optional
+    package
         The explicit package name, deduced from name
         if not given
-    hint: str, optional
+    hint
         Installation advice, in case the import fails
 
     Returns

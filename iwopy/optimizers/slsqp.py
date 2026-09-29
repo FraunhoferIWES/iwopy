@@ -1,12 +1,19 @@
+from typing import Any, TypeVar, cast
+
 import numpy as np
-from scipy.optimize import minimize
+from numpy.typing import ArrayLike
+from scipy.optimize import OptimizeResult, minimize
 
 from iwopy.core import (
     Optimizer,
     OptimizerCallback,
     OptimizerCallbackData,
+    Problem,
     SingleObjOptResults,
 )
+
+
+_CacheValueT = TypeVar("_CacheValueT")
 
 
 class SLSQP(Optimizer):
@@ -41,28 +48,28 @@ class SLSQP(Optimizer):
 
     def __init__(
         self,
-        problem,
-        scipy_pars=None,
-        mem_size=100,
-        vectorized=True,
-        name="SLSQP",
-    ):
+        problem: Problem,
+        scipy_pars: dict[str, object] | None = None,
+        mem_size: int = 100,
+        vectorized: bool = True,
+        name: str = "SLSQP",
+    ) -> None:
         """
         Constructor.
 
         Parameters
         ----------
-        problem: iwopy.core.Problem
+        problem
             The continuous single-objective problem to optimize.
-        scipy_pars: dict, optional
+        scipy_pars
             Additional parameters for :func:`scipy.optimize.minimize`.
             The parameters ``method``, ``jac``, ``bounds``, and
             ``constraints`` are managed by this optimizer.
-        mem_size: int
+        mem_size
             Maximum number of cached value and gradient evaluations.
-        vectorized: bool
+        vectorized
             Whether gradients use population-based function evaluation.
-        name: str, optional
+        name
             The optimizer name.
 
         """
@@ -70,18 +77,20 @@ class SLSQP(Optimizer):
         self.scipy_pars = {} if scipy_pars is None else scipy_pars.copy()
         self.mem_size = mem_size
         self.vectorized = vectorized
-        self.scipy_results = None
-        self._value_mem = None
-        self._gradient_mem = None
-        self._constraints_scipy = None
-        self._constraint_lower = None
-        self._constraint_upper = None
-        self.var_shift = None
-        self.var_scale = None
+        self.scipy_results: OptimizeResult | None = None
+        self._value_mem: (
+            dict[tuple[float, ...], tuple[np.ndarray, np.ndarray]] | None
+        ) = None
+        self._gradient_mem: dict[tuple[float, ...], np.ndarray] | None = None
+        self._constraints_scipy: list[dict[str, object]] | None = None
+        self._constraint_lower: np.ndarray | None = None
+        self._constraint_upper: np.ndarray | None = None
+        self.var_shift: np.ndarray | None = None
+        self.var_scale: np.ndarray | None = None
         self.n_iterations = 0
         self._solve_verbosity = 0
 
-    def print_info(self):
+    def print_info(self) -> None:
         """
         Print solver info, called before solving
         """
@@ -96,13 +105,13 @@ class SLSQP(Optimizer):
 
         print()
 
-    def initialize(self, verbosity=1):
+    def initialize(self, verbosity: int = 1) -> None:
         """
         Initialize the optimizer.
 
         Parameters
         ----------
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent.
 
         """
@@ -118,7 +127,11 @@ class SLSQP(Optimizer):
             raise ValueError(
                 f"Optimizer '{self.name}': At least one float variable is required."
             )
-        if not isinstance(self.mem_size, (int, np.integer)) or self.mem_size < 1:
+        if (
+            isinstance(self.mem_size, (bool, np.bool_))
+            or not isinstance(self.mem_size, (int, np.integer))
+            or self.mem_size < 1
+        ):
             raise ValueError(
                 f"Optimizer '{self.name}': mem_size must be a positive integer."
             )
@@ -137,7 +150,7 @@ class SLSQP(Optimizer):
         self._constraints_scipy = self._make_constraints()
         super().initialize(verbosity)
 
-    def _initialize_scaling(self):
+    def _initialize_scaling(self) -> None:
         """Create affine scaling from physical variable bounds."""
         initial = np.asarray(self.problem.initial_values_float(), dtype=np.float64)
         lower = np.asarray(self.problem.min_values_float(), dtype=np.float64)
@@ -164,35 +177,52 @@ class SLSQP(Optimizer):
             np.abs(upper[upper_only] - initial[upper_only]), 1.0
         )
 
-    def _to_problem_vars(self, scaled):
+    def _to_problem_vars(self, scaled: ArrayLike) -> np.ndarray:
         """Convert dimensionless optimizer variables to physical variables."""
-        return self.var_shift + self.var_scale * np.asarray(scaled)
+        var_shift = self.var_shift
+        var_scale = self.var_scale
+        assert var_shift is not None
+        assert var_scale is not None
+        return var_shift + var_scale * np.asarray(scaled)
 
-    def _to_scaled_vars(self, physical):
+    def _to_scaled_vars(self, physical: ArrayLike) -> np.ndarray:
         """Convert physical variables to dimensionless optimizer variables."""
-        return (np.asarray(physical) - self.var_shift) / self.var_scale
+        var_shift = self.var_shift
+        var_scale = self.var_scale
+        assert var_shift is not None
+        assert var_scale is not None
+        return (np.asarray(physical) - var_shift) / var_scale
 
-    def _remember(self, memory, key, value):
+    def _remember(
+        self,
+        memory: dict[tuple[float, ...], _CacheValueT],
+        key: tuple[float, ...],
+        value: _CacheValueT,
+    ) -> _CacheValueT:
         """Store a cache entry and evict the oldest one if required."""
         if len(memory) >= self.mem_size:
             del memory[next(iter(memory))]
         memory[key] = value
         return value
 
-    def _get_values(self, x):
+    def _get_values(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Return objective and constraint values at an iterate."""
-        key = tuple(x)
-        if key not in self._value_mem:
+        memory = self._value_mem
+        assert memory is not None
+        key = tuple(float(value) for value in x)
+        if key not in memory:
             values = self.problem.evaluate_individual(
                 np.array([], dtype=np.int32), np.asarray(x, dtype=np.float64)
             )
-            self._remember(self._value_mem, key, values)
-        return self._value_mem[key]
+            self._remember(memory, key, values)
+        return memory[key]
 
-    def _get_gradients(self, x):
+    def _get_gradients(self, x: np.ndarray) -> np.ndarray:
         """Return the vectorized objective and constraint Jacobian."""
-        key = tuple(x)
-        if key not in self._gradient_mem:
+        memory = self._gradient_mem
+        assert memory is not None
+        key = tuple(float(value) for value in x)
+        if key not in memory:
             try:
                 objs, cons = self._get_values(x)
                 gradients = self.problem.get_gradients(
@@ -216,35 +246,57 @@ class SLSQP(Optimizer):
                 raise ValueError(
                     f"Optimizer '{self.name}': Non-finite objective or constraint gradient."
                 )
-            self._remember(self._gradient_mem, key, gradients)
-        return self._gradient_mem[key]
+            self._remember(memory, key, gradients)
+        return memory[key]
 
-    def _objective(self, scaled):
+    def _objective(self, scaled: np.ndarray) -> float:
         """Return the minimization-oriented objective value."""
         x = self._to_problem_vars(scaled)
         objs, __ = self._get_values(x)
         sign = -1.0 if self.problem.maximize_objs[0] else 1.0
-        return sign * objs[0]
+        return float(sign * objs[0])
 
-    def _objective_jac(self, scaled):
+    def _objective_jac(self, scaled: np.ndarray) -> np.ndarray:
         """Return the minimization-oriented objective gradient."""
         x = self._to_problem_vars(scaled)
         sign = -1.0 if self.problem.maximize_objs[0] else 1.0
-        return sign * self._get_gradients(x)[0] * self.var_scale
+        var_scale = self.var_scale
+        assert var_scale is not None
+        return sign * self._get_gradients(x)[0] * var_scale
 
-    def _constraint_values(self, scaled, indices, bounds, sign):
+    def _constraint_values(
+        self,
+        scaled: np.ndarray,
+        indices: np.ndarray,
+        bounds: np.ndarray,
+        sign: float,
+    ) -> np.ndarray:
         """Return one group of constraints in SciPy sign convention."""
         x = self._to_problem_vars(scaled)
         __, cons = self._get_values(x)
         return sign * (cons[indices] - bounds)
 
-    def _constraint_jac(self, scaled, indices, bounds, sign):
+    def _constraint_jac(
+        self,
+        scaled: np.ndarray,
+        indices: np.ndarray,
+        bounds: np.ndarray,
+        sign: float,
+    ) -> np.ndarray:
         """Return one grouped constraint Jacobian."""
         del bounds
         x = self._to_problem_vars(scaled)
-        return sign * self._get_gradients(x)[1 + indices] * self.var_scale
+        var_scale = self.var_scale
+        assert var_scale is not None
+        return sign * self._get_gradients(x)[1 + indices] * var_scale
 
-    def _make_constraint(self, kind, indices, bounds, sign):
+    def _make_constraint(
+        self,
+        kind: str,
+        indices: np.ndarray,
+        bounds: np.ndarray,
+        sign: float,
+    ) -> dict[str, object]:
         """Create a grouped old-style SciPy constraint specification."""
         return {
             "type": kind,
@@ -253,7 +305,7 @@ class SLSQP(Optimizer):
             "args": (indices, bounds, sign),
         }
 
-    def _make_constraints(self):
+    def _make_constraints(self) -> list[dict[str, object]]:
         """Translate iwopy constraint bounds to grouped SciPy constraints."""
         if not self.problem.n_constraints:
             return []
@@ -271,7 +323,7 @@ class SLSQP(Optimizer):
         self._constraint_lower = lower
         self._constraint_upper = upper
         equal = np.isfinite(lower) & np.isfinite(upper) & (lower == upper)
-        constraints = []
+        constraints: list[dict[str, object]] = []
 
         indices = np.flatnonzero(equal)
         if len(indices):
@@ -292,19 +344,26 @@ class SLSQP(Optimizer):
             )
         return constraints
 
-    def _constraint_violation(self, cons):
+    def _constraint_violation(self, cons: np.ndarray) -> float:
         """Return the maximum exact constraint-bound violation."""
         if not self.problem.n_constraints:
             return 0.0
-        lower = np.maximum(self._constraint_lower - cons, 0.0)
-        upper = np.maximum(cons - self._constraint_upper, 0.0)
+        constraint_lower = self._constraint_lower
+        constraint_upper = self._constraint_upper
+        assert constraint_lower is not None
+        assert constraint_upper is not None
+        lower = np.maximum(constraint_lower - cons, 0.0)
+        upper = np.maximum(cons - constraint_upper, 0.0)
         return float(np.max(np.maximum(lower, upper)))
 
-    def _progress_callback(self, scaled):
+    def _progress_callback(self, scaled: np.ndarray) -> None:
         """Report one accepted SLSQP iterate without new evaluations."""
         self.n_iterations += 1
         x = self._to_problem_vars(scaled)
-        values = self._value_mem.get(tuple(x))
+        memory = self._value_mem
+        assert memory is not None
+        key = tuple(float(value) for value in x)
+        values = memory.get(key)
         if values is None:
             objs = None
             cons = None
@@ -332,7 +391,7 @@ class SLSQP(Optimizer):
         self,
         verbosity: int = 1,
         callbacks: list[OptimizerCallback] | None = None,
-    ):
+    ) -> SingleObjOptResults:
         """
         Run the SLSQP optimizer.
 
@@ -368,29 +427,32 @@ class SLSQP(Optimizer):
             print("   it |      objective | max constraint")
             print("--------------------+----------------+----------------")
         report_progress = bool(verbosity) or self._has_callbacks
+        constraints_scipy = self._constraints_scipy
+        assert constraints_scipy is not None
         self.scipy_results = minimize(
             self._objective,
             scaled0,
             method="SLSQP",
             jac=self._objective_jac,
             bounds=bounds,
-            constraints=self._constraints_scipy,
+            constraints=constraints_scipy,
             callback=self._progress_callback if report_progress else None,
-            **self.scipy_pars,
+            **cast(dict[str, Any], self.scipy_pars),
         )
+        scipy_results = self.scipy_results
         if not report_progress:
-            self.n_iterations = int(self.scipy_results.nit)
+            self.n_iterations = int(scipy_results.nit)
         if verbosity:
             print("--------------------+----------------+----------------")
 
-        vars_float = self._to_problem_vars(self.scipy_results.x)
-        self.scipy_results.x = vars_float
+        vars_float = self._to_problem_vars(scipy_results.x)
+        scipy_results.x = vars_float
         vars_int = np.array([], dtype=np.int32)
         problem_results, objs, cons = self.problem.finalize_individual(
             vars_int, vars_float, verbosity=verbosity
         )
         feasible = np.all(self.problem.check_constraints_individual(cons))
-        success = bool(self.scipy_results.success and feasible)
+        success = bool(scipy_results.success and feasible)
         results = SingleObjOptResults(
             self.problem,
             success,

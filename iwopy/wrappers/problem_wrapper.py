@@ -1,3 +1,8 @@
+from typing import Any
+
+import numpy as np
+from numpy.typing import ArrayLike
+
 from iwopy.core.problem import Problem
 
 
@@ -14,27 +19,27 @@ class ProblemWrapper(Problem):
 
     """
 
-    def __init__(self, base_problem, name, **kwargs):
+    def __init__(self, base_problem: Problem, name: str, **kwargs: Any) -> None:
         """
         Constructor
 
         Parameters
         ----------
-        base_problem: iwopy.Problem
+        base_problem
             The underlying concrete problem
-        name: str
+        name
             The problem name
-        kwargs: dict, optional
+        kwargs
             Additional parameters for the Problem class
 
         """
         super().__init__(name, **kwargs)
         self.base_problem = base_problem
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         return super().__getattribute__("base_problem").__getattribute__(name)
 
-    def var_names_int(self):
+    def var_names_int(self) -> list[str]:
         """
         The names of integer variables.
 
@@ -46,7 +51,7 @@ class ProblemWrapper(Problem):
         """
         return self.base_problem.var_names_int()
 
-    def initial_values_int(self):
+    def initial_values_int(self) -> ArrayLike:
         """
         The initial values of the integer variables.
 
@@ -58,7 +63,7 @@ class ProblemWrapper(Problem):
         """
         return self.base_problem.initial_values_int()
 
-    def min_values_int(self):
+    def min_values_int(self) -> ArrayLike:
         """
         The minimal values of the integer variables.
 
@@ -72,7 +77,7 @@ class ProblemWrapper(Problem):
         """
         return self.base_problem.min_values_int()
 
-    def max_values_int(self):
+    def max_values_int(self) -> ArrayLike:
         """
         The maximal values of the integer variables.
 
@@ -86,7 +91,7 @@ class ProblemWrapper(Problem):
         """
         return self.base_problem.max_values_int()
 
-    def var_names_float(self):
+    def var_names_float(self) -> list[str]:
         """
         The names of float variables.
 
@@ -98,7 +103,7 @@ class ProblemWrapper(Problem):
         """
         return self.base_problem.var_names_float()
 
-    def initial_values_float(self):
+    def initial_values_float(self) -> ArrayLike | None:
         """
         The initial values of the float variables.
 
@@ -110,7 +115,7 @@ class ProblemWrapper(Problem):
         """
         return self.base_problem.initial_values_float()
 
-    def min_values_float(self):
+    def min_values_float(self) -> ArrayLike:
         """
         The minimal values of the float variables.
 
@@ -124,7 +129,7 @@ class ProblemWrapper(Problem):
         """
         return self.base_problem.min_values_float()
 
-    def max_values_float(self):
+    def max_values_float(self) -> ArrayLike:
         """
         The maximal values of the float variables.
 
@@ -138,13 +143,13 @@ class ProblemWrapper(Problem):
         """
         return self.base_problem.max_values_float()
 
-    def initialize(self, verbosity=0):
+    def initialize(self, verbosity: int = 0) -> None:
         """
         Initialize the problem.
 
         Parameters
         ----------
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         """
@@ -154,25 +159,27 @@ class ProblemWrapper(Problem):
         self.objs = self.base_problem.objs
         self.cons = self.base_problem.cons
 
-        for f in self.objs.functions:
-            f.problem = self
+        for objective in self.objs.functions:
+            objective.problem = self
         self.objs.problem = self
 
-        for f in self.cons.functions:
-            f.problem = self
+        for constraint in self.cons.functions:
+            constraint.problem = self
         self.cons.problem = self
 
         super().initialize(verbosity)
 
-    def apply_individual(self, vars_int, vars_float):
+    def apply_individual(
+        self, vars_int: np.ndarray, vars_float: np.ndarray
+    ) -> object | None:
         """
         Apply new variables to the problem.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_vars_float,)
 
         Returns
@@ -184,16 +191,18 @@ class ProblemWrapper(Problem):
         """
         return self.base_problem.apply_individual(vars_int, vars_float)
 
-    def apply_population(self, vars_int, vars_float):
+    def apply_population(
+        self, vars_int: np.ndarray, vars_float: np.ndarray
+    ) -> object | None:
         """
         Apply new variables to the problem,
         for a whole population.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_pop, n_vars_float)
 
         Returns
@@ -205,17 +214,19 @@ class ProblemWrapper(Problem):
         """
         return self.base_problem.apply_population(vars_int, vars_float)
 
-    def finalize_individual(self, vars_int, vars_float, verbosity=1):
+    def finalize_individual(
+        self, vars_int: np.ndarray, vars_float: np.ndarray, verbosity: int = 1
+    ) -> tuple[object | None, np.ndarray, np.ndarray]:
         """
         Finalization, given the champion data.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The optimal integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The optimal float variable values, shape: (n_vars_float,)
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
@@ -231,19 +242,21 @@ class ProblemWrapper(Problem):
         """
         return self.base_problem.finalize_individual(vars_int, vars_float, verbosity)
 
-    def finalize_population(self, vars_int, vars_float, verbosity=0):
+    def finalize_population(
+        self, vars_int: np.ndarray, vars_float: np.ndarray, verbosity: int = 0
+    ) -> tuple[object | None, np.ndarray, np.ndarray]:
         """
         Finalization, given the final population data.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values of the final
             generation, shape: (n_pop, n_vars_int)
-        vars_float: np.array
+        vars_float
             The float variable values of the final
             generation, shape: (n_pop, n_vars_float)
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns

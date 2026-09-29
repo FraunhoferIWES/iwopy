@@ -210,9 +210,18 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Bugs:
   - Fixed lower-bound second-order finite differences in `LocalFD`, maximization
     gradient orientation in PyGMO, and callback leakage after PyGMO solves.
+  - Fixed regular-grid index and interpolation error handling, SciPy mixed-variable
+    bounds and cache eviction, disabled pymoo problem-result storage access, and
+    empty PyGMO gradient sparsity handling.
+  - Rejected boolean values for integer-only `GG` iteration settings and `GG` or
+    `SLSQP` memory sizes.
+  - Fixed package-version fallback lookup on Python versions without `tomllib`.
 - Dependencies:
   - Added the `iwopy[scipy]`, `iwopy[pymoo]`, `iwopy[pygmo]`, and `iwopy[opt]`
     extras; dropped Python 3.9 and raised runtime, PyGMO, test, and documentation
     dependency floors.
+- Development:
+  - Added package-wide type annotations and strict mypy checking, enforced by
+    pre-commit.
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0](https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0)

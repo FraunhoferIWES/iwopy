@@ -4,6 +4,7 @@ from iwopy.core import (
     Optimizer,
     OptimizerCallback,
     OptimizerCallbackData,
+    Problem,
     SingleObjOptResults,
 )
 
@@ -36,9 +37,9 @@ class GG(Optimizer):
     memory_size: int
         The number of memorized visited points
     memory: tuple
-        Memorized data: (x, obj, grad, all_valid), each a
+        Memorized data: (x, grad, obj, all_valid), each a
         numpy.ndarray, shapes: (memory_size, n_vars),
-        (memory_size, n_vars), (memory_size,), (memory_size,)
+        (memory_size, n_funcs, n_vars), (memory_size,), (memory_size,)
     n_iterations: int
         Number of completed iterations in the current or latest solve
 
@@ -48,45 +49,45 @@ class GG(Optimizer):
 
     def __init__(
         self,
-        problem,
-        step_max,
-        step_min,
-        step_div_factor=2.0,
-        f_tol=1e-8,
-        vectorized=True,
-        n_max_steps=100,
-        memory_size=100,
-        name="GG",
-        max_iterations=None,
-    ):
+        problem: Problem,
+        step_max: float | list[float] | np.ndarray | dict[str, float],
+        step_min: float | list[float] | np.ndarray | dict[str, float],
+        step_div_factor: float = 2.0,
+        f_tol: float | None = 1e-8,
+        vectorized: bool = True,
+        n_max_steps: int = 100,
+        memory_size: int = 100,
+        name: str = "GG",
+        max_iterations: int | None = None,
+    ) -> None:
         """
         Constructor
 
         Parameters
         ----------
-        problem: iwopy.Problem
+        problem
             The problem to optimize
-        step_max: float or list or dict
+        step_max
             The maximal steps. Either uniform float value
             or list of floats for each problem variable,
             or dict with entry for each variable
-        step_min: float or list or dict
+        step_min
             The minimal steps. Either uniform float value
             or list of floats for each problem variable,
             or dict with entry for each variable
-        step_div_factor: float
+        step_div_factor
             Step size division factor until step_min is reached
-        f_tol: float
+        f_tol
             The objective function tolerance
-        vectorized: bool
+        vectorized
             Flag for running in vectorized mode
-        n_max_steps: int
+        n_max_steps
             The maximal number of steps without fresh gradient
-        memory_size: int
+        memory_size
             The number of memorized visited points
-        name: str, optional
+        name
             The name
-        max_iterations: int, optional
+        max_iterations
             Exit criteria based on number of iterations, None for no limit
 
         """
@@ -98,17 +99,17 @@ class GG(Optimizer):
         self.vectorized = vectorized
         self.n_max_steps = n_max_steps
         self.memory_size = memory_size
-        self.memory = None
+        self.memory: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray] | None = None
         self.max_iterations = max_iterations
         self.n_iterations = 0
 
-    def initialize(self, verbosity=0):
+    def initialize(self, verbosity: int = 0) -> None:
         """
         Initialize the object.
 
         Parameters
         ----------
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         """
@@ -128,16 +129,25 @@ class GG(Optimizer):
             raise ValueError(
                 f"Optimizer '{self.name}': step_div_factor must be greater than 1."
             )
-        if not isinstance(self.n_max_steps, (int, np.integer)) or self.n_max_steps < 1:
+        if (
+            isinstance(self.n_max_steps, (bool, np.bool_))
+            or not isinstance(self.n_max_steps, (int, np.integer))
+            or self.n_max_steps < 1
+        ):
             raise ValueError(
                 f"Optimizer '{self.name}': n_max_steps must be a positive integer."
             )
-        if not isinstance(self.memory_size, (int, np.integer)) or self.memory_size < 1:
+        if (
+            isinstance(self.memory_size, (bool, np.bool_))
+            or not isinstance(self.memory_size, (int, np.integer))
+            or self.memory_size < 1
+        ):
             raise ValueError(
                 f"Optimizer '{self.name}': memory_size must be a positive integer."
             )
         if self.max_iterations is not None and (
-            not isinstance(self.max_iterations, (int, np.integer))
+            isinstance(self.max_iterations, (bool, np.bool_))
+            or not isinstance(self.max_iterations, (int, np.integer))
             or self.max_iterations < 0
         ):
             raise ValueError(
@@ -162,7 +172,6 @@ class GG(Optimizer):
             smax[:] = self.step_max
         else:
             smax[:] = self.step_max
-        self.step_max = smax
 
         smin = np.zeros(n_vars, dtype=np.float64)
         if isinstance(self.step_min, dict):
@@ -181,19 +190,20 @@ class GG(Optimizer):
             smin[:] = self.step_min
         else:
             smin[:] = self.step_min
-        self.step_min = smin
-        if not np.all(np.isfinite(self.step_max)) or not np.all(self.step_max > 0):
+        if not np.all(np.isfinite(smax)) or not np.all(smax > 0):
             raise ValueError(
                 f"Optimizer '{self.name}': step_max must contain positive finite values."
             )
-        if not np.all(np.isfinite(self.step_min)) or not np.all(self.step_min > 0):
+        if not np.all(np.isfinite(smin)) or not np.all(smin > 0):
             raise ValueError(
                 f"Optimizer '{self.name}': step_min must contain positive finite values."
             )
-        if np.any(self.step_max < self.step_min):
+        if np.any(smax < smin):
             raise ValueError(
                 f"Optimizer '{self.name}': step_max must be greater than or equal to step_min."
             )
+        self.step_max = smax
+        self.step_min = smin
 
         n_funcs = 1 + self.problem.n_constraints
         self.memory = (
@@ -205,7 +215,7 @@ class GG(Optimizer):
 
         super().initialize(verbosity)
 
-    def print_info(self):
+    def print_info(self) -> None:
         """
         Print solver info, called before solving
         """
@@ -215,13 +225,15 @@ class GG(Optimizer):
         print(s)
         hline = "-" * len(s)
         print(hline)
+        assert isinstance(self.step_min, np.ndarray)
+        assert isinstance(self.step_max, np.ndarray)
         for i, vname in enumerate(self.problem.var_names_float()):
             print(
                 f" ({i}) {vname}: step size {self.step_min[i]:.2e} -- {self.step_max[i]:.2e}"
             )
         print(hline)
 
-    def _get_newx(self, x, deltax):
+    def _get_newx(self, x: np.ndarray, deltax: np.ndarray) -> np.ndarray:
         """
         Helper function for new x creation
         """
@@ -231,17 +243,17 @@ class GG(Optimizer):
         for i in range(self.n_max_steps):
             newx[i] += np.sum(deltax[: i + 1], axis=0)
 
-        mi = self.problem.min_values_float()[None, :]
+        mi = np.asarray(self.problem.min_values_float(), dtype=np.float64)[None, :]
         sel = np.where(newx < mi)
         newx[sel[0], sel[1]] = mi[0, sel[1]]
 
-        ma = self.problem.max_values_float()[None, :]
+        ma = np.asarray(self.problem.max_values_float(), dtype=np.float64)[None, :]
         sel = np.where(newx > ma)
         newx[sel[0], sel[1]] = ma[0, sel[1]]
 
         return newx
 
-    def _grad2deltax(self, grad, step):
+    def _grad2deltax(self, grad: np.ndarray, step: np.ndarray) -> np.ndarray:
         """
         Helper function for deltax creation
         """
@@ -252,7 +264,9 @@ class GG(Optimizer):
             return np.zeros_like(grad)
         return grad * step[j] / np.abs(grad[j])
 
-    def _constraint_side(self, value, minimum, maximum):
+    def _constraint_side(
+        self, value: float, minimum: float, maximum: float
+    ) -> tuple[float, float]:
         """Return the signed constraint gradient direction toward violation."""
         if value > maximum:
             return 1.0, maximum
@@ -260,7 +274,7 @@ class GG(Optimizer):
             return -1.0, minimum
         return 0.0, value
 
-    def _constraint_bounds(self):
+    def _constraint_bounds(self) -> tuple[np.ndarray, np.ndarray]:
         """Get constraint bounds from the problem or its function list."""
         minimum = self.problem.min_values_constraints
         maximum = self.problem.max_values_constraints
@@ -274,7 +288,13 @@ class GG(Optimizer):
                 maximum = np.array([], dtype=np.float64)
         return minimum, maximum
 
-    def _notify_iteration(self, iteration, x, objs, cons):
+    def _notify_iteration(
+        self,
+        iteration: int,
+        x: np.ndarray,
+        objs: np.ndarray,
+        cons: np.ndarray,
+    ) -> None:
         """Notify callbacks about one completed GG iteration."""
         if not self._has_callbacks:
             return
@@ -293,7 +313,7 @@ class GG(Optimizer):
         self,
         verbosity: int = 1,
         callbacks: list[OptimizerCallback] | None = None,
-    ):
+    ) -> SingleObjOptResults:
         """
         Run the optimization solver.
 
@@ -311,6 +331,12 @@ class GG(Optimizer):
 
         """
         super().solve(verbosity, callbacks)
+        step_max = self.step_max
+        step_min = self.step_min
+        memory = self.memory
+        assert isinstance(step_max, np.ndarray)
+        assert isinstance(step_min, np.ndarray)
+        assert memory is not None
 
         # prepare:
         inone = np.array([], dtype=np.int32)
@@ -334,14 +360,14 @@ class GG(Optimizer):
             print(s)
             print(hline)
 
-        step = self.step_max.copy()
+        step = step_max.copy()
         count = 0
         self.n_iterations = 0
         level = 0
         done = False
         stalled = False
         cmins, cmaxs = self._constraint_bounds()
-        while not np.all(step < self.step_min):
+        while not np.all(step < step_min):
             # exit criteria based on number of iterations:
             if self.max_iterations is not None and count >= self.max_iterations:
                 if verbosity > 0:
@@ -353,13 +379,13 @@ class GG(Optimizer):
 
             # check memory:
             sel = (
-                np.max(np.abs(x[None, :] - self.memory[0][:nmem]), axis=1) < 1e-13
+                np.max(np.abs(x[None, :] - memory[0][:nmem]), axis=1) < 1e-13
                 if nmem > 0
                 else np.array([False])
             )
             if np.any(sel):
                 jmem = np.where(sel)[0][0]
-                grads = self.memory[1][jmem]
+                grads = memory[1][jmem]
                 step /= self.step_div_factor
                 level += 1
             else:
@@ -369,15 +395,15 @@ class GG(Optimizer):
                     raise ValueError(
                         f"Optimizer '{self.name}': Non-finite objective or constraint gradient at current point."
                     )
-                step = self.step_max.copy()
+                step = step_max.copy()
                 level = 0
 
                 # memorize:
                 jmem = imem
-                self.memory[0][jmem] = x
-                self.memory[1][jmem] = grads
-                self.memory[2][jmem] = obs[0]
-                self.memory[3][jmem] = not recover
+                memory[0][jmem] = x
+                memory[1][jmem] = grads
+                memory[2][jmem] = obs[0]
+                memory[3][jmem] = not recover
                 imem = (imem + 1) % self.memory_size
                 nmem = min(nmem + 1, self.memory_size)
 
@@ -543,7 +569,7 @@ class GG(Optimizer):
 
         if verbosity > 0:
             print(f"{hline}")
-            print(f"All steps < step_min      : {np.all(step < self.step_min)}")
+            print(f"All steps < step_min      : {np.all(step < step_min)}")
             print(f"Objective within tolerance: {done}")
             print(f"{hline}\n")
 
@@ -554,8 +580,9 @@ class GG(Optimizer):
             better = obs[0] > obs0
         else:
             better = obs[0] < obs0
-        success = np.all(valid) and (
-            not initially_valid or better or np.abs(obs[0] - obs0) <= self.f_tol
+        success = bool(
+            np.all(valid)
+            and (not initially_valid or better or np.abs(obs[0] - obs0) <= self.f_tol)
         )
 
         results = SingleObjOptResults(

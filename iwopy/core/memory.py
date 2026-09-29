@@ -1,13 +1,17 @@
+from collections.abc import Callable, Hashable
+
 import numpy as np
 
 
-def get_default_keyf(digits=12):
+def get_default_keyf(
+    digits: int = 12,
+) -> Callable[[np.ndarray, np.ndarray], Hashable]:
     """
     Get the default key function
 
     Parameters
     ----------
-    digits: int
+        digits
         The number of digits for floats
 
     Returns
@@ -19,15 +23,15 @@ def get_default_keyf(digits=12):
 
     """
 
-    def default_key(vars_int, vars_float):
+    def default_key(vars_int: np.ndarray, vars_float: np.ndarray) -> Hashable:
         """
         Default key function
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_vars_float,)
 
         Returns
@@ -62,31 +66,35 @@ class Memory:
 
     """
 
-    def __init__(self, size, keyf=None):
+    def __init__(
+        self,
+        size: int,
+        keyf: Callable[[np.ndarray, np.ndarray], Hashable] | None = None,
+    ) -> None:
         """
         Constructor
 
         Parameters
         ----------
-        size: int
+        size
             The number of maximally stored results
-        keyf: Function, optional
+        keyf
             The memory key function. Parameters:
             (vars_int, vars_float), returns key Object
 
         """
         self.max_size = size
         self.keyf = keyf if keyf is not None else get_default_keyf()
-        self.data = {}
+        self.data: dict[Hashable, tuple[np.ndarray, np.ndarray]] = {}
 
-    def clear(self):
+    def clear(self) -> None:
         """
         Clears the memory
         """
         self.data = {}
 
     @property
-    def size(self):
+    def size(self) -> int:
         """
         The number of elements currently stored
         in memory
@@ -100,15 +108,15 @@ class Memory:
         """
         return len(self.data)
 
-    def found_individual(self, vars_int, vars_float):
+    def found_individual(self, vars_int: np.ndarray, vars_float: np.ndarray) -> bool:
         """
         Check if entry is found in memory.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_vars_float,)
 
         Returns
@@ -120,15 +128,17 @@ class Memory:
         key = self.keyf(vars_int, vars_float)
         return key in self.data
 
-    def found_population(self, vars_int, vars_float):
+    def found_population(
+        self, vars_int: np.ndarray, vars_float: np.ndarray
+    ) -> np.ndarray:
         """
         Check if entry is found in memory.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_pop, n_vars_float)
 
         Returns
@@ -143,56 +153,70 @@ class Memory:
             found[pi] = self.found_individual(vars_int[pi], vars_float[pi])
         return found
 
-    def store_individual(self, vars_int, vars_float, objs, cons):
+    def store_individual(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        objs: np.ndarray,
+        cons: np.ndarray,
+    ) -> None:
         """
         Store objs and cons data.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_vars_float,)
-        objs: np.array
+        objs
             The objective function values, shape: (n_objectives,)
-        con: np.array
+        con
             The constraints values, shape: (n_constraints,)
 
         """
         key = self.keyf(vars_int, vars_float)
-        if key in self.data and self.size == self.max_size:
-            delk = next(iter(self.dict.keys()))
-            del self.dict[delk]
+        if key not in self.data and self.size == self.max_size:
+            delk = next(iter(self.data))
+            del self.data[delk]
         self.data[key] = (objs.copy(), cons.copy())
 
-    def store_population(self, vars_int, vars_float, objs, cons):
+    def store_population(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        objs: np.ndarray,
+        cons: np.ndarray,
+    ) -> None:
         """
         Store objs and cons data of a population.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_pop, n_vars_float)
-        objs: np.array
+        objs
             The objective function values, shape: (n_pop, n_objectives)
-        con: np.array
+        con
             The constraints values, shape: (n_pop, n_constraints)
 
         """
         for pi in range(len(objs)):
             self.store_individual(vars_int[pi], vars_float[pi], objs[pi], cons[pi])
 
-    def lookup_individual(self, vars_int, vars_float):
+    def lookup_individual(
+        self, vars_int: np.ndarray, vars_float: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray] | None:
         """
         Lookup results from memory.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_vars_float,)
 
         Returns
@@ -207,17 +231,22 @@ class Memory:
         objs, cons = self.data[key]
         return objs.copy(), cons.copy()
 
-    def lookup_population(self, vars_int, vars_float, target=None):
+    def lookup_population(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        target: np.ndarray | None = None,
+    ) -> np.ndarray | None:
         """
         Lookup results from memory.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_pop, n_vars_float)
-        target: numpy.ndarray, optional
+        target
             The results array to write to, shape:
             (n_pop, n_objs_cmpnts + n_cons_cmpnts)
 

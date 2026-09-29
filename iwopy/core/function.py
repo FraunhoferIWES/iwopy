@@ -1,9 +1,14 @@
 import fnmatch
 from abc import ABCMeta, abstractmethod
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from .base import Base
+
+if TYPE_CHECKING:
+    from .problem import Problem
 
 
 class OptFunction(Base, metaclass=ABCMeta):
@@ -22,40 +27,40 @@ class OptFunction(Base, metaclass=ABCMeta):
 
     def __init__(
         self,
-        problem,
-        name,
-        n_vars_int=None,
-        n_vars_float=None,
-        vnames_int=None,
-        vnames_float=None,
-        cnames=None,
-    ):
+        problem: "Problem",
+        name: str,
+        n_vars_int: int | None = None,
+        n_vars_float: int | None = None,
+        vnames_int: list[str] | None = None,
+        vnames_float: list[str] | None = None,
+        cnames: list[str] | None = None,
+    ) -> None:
         """
         Constructor
 
         Parameters
         ----------
-        problem: iwopy.Problem
+        problem
             The underlying optimization problem
-        name: str
+        name
             The function name
-        n_vars_int: int, optional
+        n_vars_int
             The number of integer variables. If not specified
             it is assumed that the function depends on all
             problem int variables
-        n_vars_float: int, optional
+        n_vars_float
             The number of float variables. If not specified
             it is assumed that the function depends on all
             problem float variables
-        vnames_int: list of str, optional
+        vnames_int
             The integer variable names. Useful for mapping
             function variables to problem variables, otherwise
             map by integer or default name
-        vnames_float: list of str, optional
+        vnames_float
             The float variable names. Useful for mapping
             function variables to problem variables, otherwise
             map by integer or default name
-        cnames: list of str, optional
+        cnames
             The names of the components
 
         """
@@ -85,7 +90,7 @@ class OptFunction(Base, metaclass=ABCMeta):
                 self._vnamesf = [f"{name}_x{i}" for i in range(n_vars_float)]
 
     @abstractmethod
-    def n_components(self):
+    def n_components(self) -> int:
         """
         Returns the number of components of the
         function.
@@ -97,13 +102,13 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         """
 
-    def initialize(self, verbosity=0):
+    def initialize(self, verbosity: int = 0) -> None:
         """
         Initialize the object.
 
         Parameters
         ----------
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         """
@@ -124,7 +129,7 @@ class OptFunction(Base, metaclass=ABCMeta):
         super().initialize(verbosity)
 
     @property
-    def component_names(self):
+    def component_names(self) -> list[str]:
         """
         The names of the components
 
@@ -134,10 +139,12 @@ class OptFunction(Base, metaclass=ABCMeta):
             The component names
 
         """
+        if self._cnames is None:
+            raise RuntimeError(f"Function '{self.name}' has not been initialized")
         return self._cnames
 
     @property
-    def var_names_int(self):
+    def var_names_int(self) -> list[str]:
         """
         The names of the integer variables
 
@@ -147,10 +154,12 @@ class OptFunction(Base, metaclass=ABCMeta):
             The integer variable names
 
         """
+        if self._vnamesi is None:
+            raise RuntimeError(f"Function '{self.name}' has not been initialized")
         return self._vnamesi
 
     @property
-    def n_vars_int(self):
+    def n_vars_int(self) -> int:
         """
         The number of int variables
 
@@ -163,7 +172,7 @@ class OptFunction(Base, metaclass=ABCMeta):
         return len(self.var_names_int)
 
     @property
-    def var_names_float(self):
+    def var_names_float(self) -> list[str]:
         """
         The names of the float variables
 
@@ -173,10 +182,12 @@ class OptFunction(Base, metaclass=ABCMeta):
             The float variable names
 
         """
+        if self._vnamesf is None:
+            raise RuntimeError(f"Function '{self.name}' has not been initialized")
         return self._vnamesf
 
     @property
-    def n_vars_float(self):
+    def n_vars_float(self) -> int:
         """
         The number of float variables
 
@@ -188,7 +199,7 @@ class OptFunction(Base, metaclass=ABCMeta):
         """
         return len(self.var_names_float)
 
-    def vardeps_int(self):
+    def vardeps_int(self) -> np.ndarray:
         """
         Gets the dependencies of all components
         on the function int variables
@@ -202,7 +213,7 @@ class OptFunction(Base, metaclass=ABCMeta):
         """
         return np.ones((self.n_components(), self.n_vars_int), dtype=bool)
 
-    def vardeps_float(self):
+    def vardeps_float(self) -> np.ndarray:
         """
         Gets the dependencies of all components
         on the function float variables
@@ -216,7 +227,12 @@ class OptFunction(Base, metaclass=ABCMeta):
         """
         return np.ones((self.n_components(), self.n_vars_float), dtype=bool)
 
-    def _rename_vars(self, varmap, target, vtype):
+    def _rename_vars(
+        self,
+        varmap: Mapping[str | int, str],
+        target: list[str],
+        vtype: str,
+    ) -> None:
         """
         Helper function for variable renaming
         """
@@ -248,47 +264,53 @@ class OptFunction(Base, metaclass=ABCMeta):
                 )
             target[oi] = nv
 
-    def rename_vars_int(self, varmap):
+    def rename_vars_int(self, varmap: Mapping[str | int, str]) -> None:
         """
         Rename integer variables.
 
         Parameters
         ----------
-        varmap: dict
+        varmap
             The name mapping. Key: old name str,
             Value: new name str
 
         """
-        self._rename_vars(varmap, self._vnamesi, "int")
+        self._rename_vars(varmap, self.var_names_int, "int")
 
-    def rename_vars_float(self, varmap):
+    def rename_vars_float(self, varmap: Mapping[str | int, str]) -> None:
         """
         Rename float variables.
 
         Parameters
         ----------
-        varmap: dict
+        varmap
             The name mapping. Key: old name str,
             Value: new name str
 
         """
-        self._rename_vars(varmap, self._vnamesf, "float")
+        self._rename_vars(varmap, self.var_names_float, "float")
 
-    def calc_individual(self, vars_int, vars_float, problem_results, components=None):
+    def calc_individual(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        problem_results: object,
+        components: Sequence[int] | np.ndarray | None = None,
+    ) -> np.ndarray:
         """
         Calculate values for a single individual of the
         underlying problem.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_vars_float,)
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-        components: list of int, optional
+        components
             The selected components or None for all
 
         Returns
@@ -299,20 +321,26 @@ class OptFunction(Base, metaclass=ABCMeta):
         """
         raise NotImplementedError(f"Not implemented for class {type(self).__name__}")
 
-    def calc_population(self, vars_int, vars_float, problem_results, components=None):
+    def calc_population(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        problem_results: object,
+        components: Sequence[int] | np.ndarray | None = None,
+    ) -> np.ndarray:
         """
         Calculate values for all individuals of a population.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_pop, n_vars_float)
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-        components: list of int, optional
+        components
             The selected components or None for all
 
         Returns
@@ -340,20 +368,26 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         return vals
 
-    def finalize_individual(self, vars_int, vars_float, problem_results, verbosity=1):
+    def finalize_individual(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        problem_results: object,
+        verbosity: int = 1,
+    ) -> np.ndarray:
         """
         Finalization, given the champion data.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The optimal integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The optimal float variable values, shape: (n_vars_float,)
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
@@ -364,22 +398,28 @@ class OptFunction(Base, metaclass=ABCMeta):
         """
         return self.calc_individual(vars_int, vars_float, problem_results)
 
-    def finalize_population(self, vars_int, vars_float, problem_results, verbosity=1):
+    def finalize_population(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        problem_results: object,
+        verbosity: int = 1,
+    ) -> np.ndarray:
         """
         Finalization, given the final population data.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values of the final
             generation, shape: (n_pop, n_vars_int)
-        vars_float: np.array
+        vars_float
             The float variable values of the final
             generation, shape: (n_pop, n_vars_float)
-        problem_results: Any
+        problem_results
             The results of the variable application
             to the problem
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
@@ -390,7 +430,13 @@ class OptFunction(Base, metaclass=ABCMeta):
         """
         return self.calc_population(vars_int, vars_float, problem_results)
 
-    def ana_deriv(self, vars_int, vars_float, var, components=None):
+    def ana_deriv(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        var: int,
+        components: Sequence[int] | np.ndarray | None = None,
+    ) -> np.ndarray:
         """
         Calculates the analytic derivative, if possible.
 
@@ -398,13 +444,13 @@ class OptFunction(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_vars_float,)
-        var: int
+        var
             The index of the differentiation float variable
-        components: list of int
+        components
             The selected components, or None for all
 
         Returns

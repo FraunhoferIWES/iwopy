@@ -1,6 +1,15 @@
+from typing import Any, Protocol
+
 import numpy as np
 
+from iwopy.core import Problem
+
 from . import imports
+
+
+class _PymooProblem(Protocol):
+    is_intprob: bool
+    problem: Problem
 
 
 class Factory:
@@ -11,17 +20,17 @@ class Factory:
 
     """
 
-    def __init__(self, pymoo_problem, verbosity):
+    def __init__(self, pymoo_problem: _PymooProblem, verbosity: int) -> None:
         self.pymoo_problem = pymoo_problem
         self.verbosity = verbosity
 
         imports.load(verbosity)
 
-    def print(self, *args, **kwargs):
+    def print(self, *args: object, **kwargs: Any) -> None:
         if self.verbosity:
             print(*args, **kwargs)
 
-    def get_sampling(self, samp_name, **kwargs):
+    def get_sampling(self, samp_name: str | None, **kwargs: Any) -> Any:
         """
         Sampling factory function
         """
@@ -50,7 +59,7 @@ class Factory:
 
         return out
 
-    def get_crossover(self, cross, **pars):
+    def get_crossover(self, cross: str, **pars: Any) -> Any:
         """
         Crossover factory function
         """
@@ -65,7 +74,7 @@ class Factory:
 
         return out
 
-    def get_mutation(self, mut, **pars):
+    def get_mutation(self, mut: str, **pars: Any) -> Any:
         """
         Mutation factory function
         """
@@ -80,7 +89,7 @@ class Factory:
 
         return out
 
-    def get_algorithm(self, pars):
+    def get_algorithm(self, pars: dict[str, Any]) -> Any:
         """
         Algorithm factory function
         """
@@ -262,7 +271,10 @@ class Factory:
 
         return out
 
-    def get_termination(self, term_pars):
+    def get_termination(
+        self,
+        term_pars: dict[str, Any] | tuple[Any, ...] | list[Any],
+    ) -> Any:
         """
         Termination factory function
         """

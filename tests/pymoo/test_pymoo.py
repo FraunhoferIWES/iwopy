@@ -5,6 +5,7 @@ from iwopy import OptimizationHistory, SimpleConstraint, SimpleObjective, Simple
 from iwopy.benchmarks.branin import BraninProblem
 from iwopy.benchmarks.rosenbrock import RosenbrockProblem
 from iwopy.interfaces.pymoo import Optimizer_pymoo
+from iwopy.interfaces.pymoo.problem import SingleObjProblemTemplate
 
 
 class RC(SimpleConstraint):
@@ -50,6 +51,14 @@ class RecordingIntProblem(SimpleProblem):
 
     def apply_population(self, vars_int, vars_float):
         self.vars_int_dtypes.append(vars_int.dtype)
+
+
+def test_current_problem_results_requires_storage():
+    problem = RecordingIntProblem()
+    pymoo_problem = SingleObjProblemTemplate(problem, vectorize=False)
+
+    with pytest.raises(RuntimeError, match="not stored"):
+        _ = pymoo_problem.current_problem_results
 
 
 @pytest.mark.parametrize("vectorize", [False, True])

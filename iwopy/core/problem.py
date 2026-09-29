@@ -1,13 +1,19 @@
 import fnmatch
 from abc import ABCMeta
+from collections.abc import Callable, Hashable, Mapping, Sequence
+from typing import Literal, overload
 
 import numpy as np
+from numpy.typing import ArrayLike
 
 from iwopy.utils import RegularDiscretizationGrid, new_instance
 
 from .base import Base
+from .constraint import Constraint
+from .function import OptFunction
 from .function_list import OptFunctionList
 from .memory import Memory
+from .objective import Objective
 
 
 class Problem(Base, metaclass=ABCMeta):
@@ -29,35 +35,41 @@ class Problem(Base, metaclass=ABCMeta):
 
     INT_INF = RegularDiscretizationGrid.INT_INF
 
-    def __init__(self, name, mem_size=None, mem_keyf=None):
+    def __init__(
+        self,
+        name: str,
+        mem_size: int | None = None,
+        mem_keyf: Callable[[np.ndarray, np.ndarray], Hashable] | None = None,
+    ) -> None:
         """
         Constructor
 
         Parameters
         ----------
-        name: str
+        name
             The problem's name
-        mem_size: int, optional
+        mem_size
             The memory size, default no memory
-        mem_keyf: Function, optional
+        mem_keyf
             The memory key function. Parameters:
             (vars_int, vars_float), returns key Object
 
         """
         super().__init__(name)
 
-        self.objs = OptFunctionList(self, "objs")
-        self.cons = OptFunctionList(self, "cons")
+        self.objs: OptFunctionList[Objective] = OptFunctionList(self, "objs")
+        self.cons: OptFunctionList[Constraint] = OptFunctionList(self, "cons")
 
-        self.memory = None
+        self.memory: Memory | None = None
         self._mem_size = mem_size
         self._mem_keyf = mem_keyf
 
-        self._cons_mi = None
-        self._cons_ma = None
-        self._cons_tol = None
+        self._cons_mi: np.ndarray | None = None
+        self._cons_ma: np.ndarray | None = None
+        self._cons_tol: np.ndarray | None = None
+        self._maximize: np.ndarray | None = None
 
-    def var_names_int(self):
+    def var_names_int(self) -> list[str]:
         """
         The names of integer variables.
 
@@ -69,7 +81,7 @@ class Problem(Base, metaclass=ABCMeta):
         """
         return []
 
-    def initial_values_int(self):
+    def initial_values_int(self) -> ArrayLike:
         """
         The initial values of the integer variables.
 
@@ -81,7 +93,7 @@ class Problem(Base, metaclass=ABCMeta):
         """
         return 0
 
-    def min_values_int(self):
+    def min_values_int(self) -> ArrayLike:
         """
         The minimal values of the integer variables.
 
@@ -95,7 +107,7 @@ class Problem(Base, metaclass=ABCMeta):
         """
         return -self.INT_INF
 
-    def max_values_int(self):
+    def max_values_int(self) -> ArrayLike:
         """
         The maximal values of the integer variables.
 
@@ -110,7 +122,7 @@ class Problem(Base, metaclass=ABCMeta):
         return self.INT_INF
 
     @property
-    def n_vars_int(self):
+    def n_vars_int(self) -> int:
         """
         The number of int variables
 
@@ -122,7 +134,7 @@ class Problem(Base, metaclass=ABCMeta):
         """
         return len(self.var_names_int())
 
-    def var_names_float(self):
+    def var_names_float(self) -> list[str]:
         """
         The names of float variables.
 
@@ -134,7 +146,7 @@ class Problem(Base, metaclass=ABCMeta):
         """
         return []
 
-    def initial_values_float(self):
+    def initial_values_float(self) -> ArrayLike | None:
         """
         The initial values of the float variables.
 
@@ -144,9 +156,9 @@ class Problem(Base, metaclass=ABCMeta):
             Initial float values, shape: (n_vars_float,)
 
         """
-        return
+        return None
 
-    def min_values_float(self):
+    def min_values_float(self) -> ArrayLike:
         """
         The minimal values of the float variables.
 
@@ -160,7 +172,7 @@ class Problem(Base, metaclass=ABCMeta):
         """
         return -np.inf
 
-    def max_values_float(self):
+    def max_values_float(self) -> ArrayLike:
         """
         The maximal values of the float variables.
 
@@ -175,7 +187,7 @@ class Problem(Base, metaclass=ABCMeta):
         return np.inf
 
     @property
-    def n_vars_float(self):
+    def n_vars_float(self) -> int:
         """
         The number of float variables
 
@@ -187,7 +199,13 @@ class Problem(Base, metaclass=ABCMeta):
         """
         return len(self.var_names_float())
 
-    def _apply_varmap(self, vtype, f, ftype, varmap):
+    def _apply_varmap(
+        self,
+        vtype: str,
+        function: OptFunction,
+        function_type: str,
+        varmap: Mapping[str | int, str | int | np.integer] | None,
+    ) -> None:
         """
         Helper function for mapping function variables
         to problem variables
@@ -207,53 +225,54 @@ class Problem(Base, metaclass=ABCMeta):
                 pvl = fnmatch.filter(pnms, pv)
                 if len(pvl) == 0:
                     raise ValueError(
-                        f"Problem '{self.name}': {vtype} varmap rule '{fv} --> {pv}' failed for {ftype} '{f.name}', pattern '{pv}' not found among problem {vtype} variables {pnms}"
+                        f"Problem '{self.name}': {vtype} varmap rule '{fv} --> {pv}' failed for {function_type} '{function.name}', pattern '{pv}' not found among problem {vtype} variables {pnms}"
                     )
                 elif len(pvl) > 1:
                     raise ValueError(
-                        f"Problem '{self.name}': Require unique match of {vtype} variable '{fv}' of {ftype} '{f.name}' to problem variables, found {pvl} for pattern '{pv}'"
+                        f"Problem '{self.name}': Require unique match of {vtype} variable '{fv}' of {function_type} '{function.name}' to problem variables, found {pvl} for pattern '{pv}'"
                     )
                 else:
                     vmap[fv] = pvl[0]
-            elif np.issubdtype(type(pv), np.integer):
-                if pv < 0 or pv >= len(pnms):
+            elif isinstance(pv, (int, np.integer)):
+                index = int(pv)
+                if index < 0 or index >= len(pnms):
                     raise ValueError(
-                        f"Problem '{self.name}': varmap rule '{fv} --> {pv}' cannot be applied for {len(pnms)} {vtype} variables {pnms}"
+                        f"Problem '{self.name}': varmap rule '{fv} --> {index}' cannot be applied for {len(pnms)} {vtype} variables {pnms}"
                     )
-                vmap[fv] = pnms[pv]
+                vmap[fv] = pnms[index]
             else:
                 raise ValueError(
-                    f"Problem '{self.name}': varmap_{vtype} target variable in '{fv} --> {pv}' of {ftype} '{f.name}' is neither str nor int"
+                    f"Problem '{self.name}': varmap_{vtype} target variable in '{fv} --> {pv}' of {function_type} '{function.name}' is neither str nor int"
                 )
 
         if vtype == "int":
-            f.rename_vars_int(vmap)
+            function.rename_vars_int(vmap)
         else:
-            f.rename_vars_float(vmap)
+            function.rename_vars_float(vmap)
 
     def add_objective(
         self,
-        objective,
-        varmap_int=None,
-        varmap_float=None,
-        verbosity=0,
-    ):
+        objective: Objective,
+        varmap_int: Mapping[str | int, str | int | np.integer] | None = None,
+        varmap_float: Mapping[str | int, str | int | np.integer] | None = None,
+        verbosity: int = 0,
+    ) -> None:
         """
         Add an objective to the problem.
 
         Parameters
         ----------
-        objective: iwopy.Objective
+        objective
             The objective
-        varmap_int: dict, optional
+        varmap_int
             Mapping from objective variables to
             problem variables. Key: str or int,
             value: str or int
-        varmap_float: dict, optional
+        varmap_float
             Mapping from objective variables to
             problem variables. Key: str or int,
             value: str or int
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         """
@@ -265,27 +284,27 @@ class Problem(Base, metaclass=ABCMeta):
 
     def add_constraint(
         self,
-        constraint,
-        varmap_int=None,
-        varmap_float=None,
-        verbosity=0,
-    ):
+        constraint: Constraint,
+        varmap_int: Mapping[str | int, str | int | np.integer] | None = None,
+        varmap_float: Mapping[str | int, str | int | np.integer] | None = None,
+        verbosity: int = 0,
+    ) -> None:
         """
         Add a constraint to the problem.
 
         Parameters
         ----------
-        constraint: iwopy.Constraint
+        constraint
             The constraint
-        varmap_int: dict, optional
+        varmap_int
             Mapping from objective variables to
             problem variables. Key: str or int,
             value: str or int
-        varmap_float: dict, optional
+        varmap_float
             Mapping from objective variables to
             problem variables. Key: str or int,
             value: str or int
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         """
@@ -308,7 +327,7 @@ class Problem(Base, metaclass=ABCMeta):
             self._cons_tol = np.append(self._cons_tol, ctol, axis=0)
 
     @property
-    def min_values_constraints(self):
+    def min_values_constraints(self) -> np.ndarray | None:
         """
         Gets the minimal values of constraints
 
@@ -321,7 +340,7 @@ class Problem(Base, metaclass=ABCMeta):
         return self._cons_mi
 
     @property
-    def max_values_constraints(self):
+    def max_values_constraints(self) -> np.ndarray | None:
         """
         Gets the maximal values of constraints
 
@@ -334,7 +353,7 @@ class Problem(Base, metaclass=ABCMeta):
         return self._cons_ma
 
     @property
-    def constraints_tol(self):
+    def constraints_tol(self) -> np.ndarray | None:
         """
         Gets the tolerance values of constraints
 
@@ -347,7 +366,7 @@ class Problem(Base, metaclass=ABCMeta):
         return self._cons_tol
 
     @property
-    def n_objectives(self):
+    def n_objectives(self) -> int:
         """
         The total number of objectives,
         i.e., the sum of all components
@@ -362,7 +381,7 @@ class Problem(Base, metaclass=ABCMeta):
         return self.objs.n_components()
 
     @property
-    def n_constraints(self):
+    def n_constraints(self) -> int:
         """
         The total number of constraints,
         i.e., the sum of all components
@@ -376,7 +395,31 @@ class Problem(Base, metaclass=ABCMeta):
         """
         return self.cons.n_components()
 
-    def _find_vars(self, vars_int, vars_float, func, ret_inds=False):
+    @overload
+    def _find_vars(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        func: OptFunction,
+        ret_inds: Literal[False] = False,
+    ) -> tuple[np.ndarray, np.ndarray]: ...
+
+    @overload
+    def _find_vars(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        func: OptFunction,
+        ret_inds: Literal[True],
+    ) -> tuple[list[int], list[int]]: ...
+
+    def _find_vars(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        func: OptFunction,
+        ret_inds: bool = False,
+    ) -> tuple[np.ndarray, np.ndarray] | tuple[list[int], list[int]]:
         """
         Helper function for reducing problem variables
         to function variables
@@ -423,17 +466,17 @@ class Problem(Base, metaclass=ABCMeta):
 
     def calc_gradients(
         self,
-        vars_int,
-        vars_float,
-        func,
-        components,
-        ivars,
-        fvars,
-        vrs,
-        pop=False,
-        verbosity=0,
-        func_values=None,
-    ):
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        func: OptFunction,
+        components: Sequence[int] | np.ndarray | None,
+        ivars: list[int],
+        fvars: list[int],
+        vrs: list[int],
+        pop: bool = False,
+        verbosity: int = 0,
+        func_values: np.ndarray | None = None,
+    ) -> np.ndarray:
         """
         The actual gradient calculation, not to be called directly
         (call `get_gradients` instead).
@@ -443,29 +486,29 @@ class Problem(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_vars_float,)
-        func: iwopy.core.OptFunctionList, optional
+        func
             The functions to be differentiated, or None
             for a list of all objectives and all constraints
             (in that order)
-        components: list of int, optional
+        components
             The function's component selection, or None for all
-        ivars: list of int
+        ivars
             The indices of the function int variables in the problem
-        fvars: list of int
+        fvars
             The indices of the function float variables in the problem
-        vrs: list of int
+        vrs
             The function float variable indices wrt which the
             derivatives are to be calculated
-        func_values: np.array, optional
+        func_values
             Previously calculated function values at the given variables,
             shape: (n_components,)
-        pop: bool
+        pop
             Flag for vectorizing calculations via population
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
@@ -493,15 +536,15 @@ class Problem(Base, metaclass=ABCMeta):
 
     def get_gradients(
         self,
-        vars_int,
-        vars_float,
-        func=None,
-        components=None,
-        vars=None,
-        pop=False,
-        verbosity=0,
-        func_values=None,
-    ):
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        func: OptFunction | None = None,
+        components: Sequence[int] | np.ndarray | None = None,
+        vars: Sequence[str | int] | None = None,
+        pop: bool = False,
+        verbosity: int = 0,
+        func_values: np.ndarray | None = None,
+    ) -> np.ndarray:
         """
         Obtain gradients of a function that is linked to the
         problem.
@@ -514,26 +557,26 @@ class Problem(Base, metaclass=ABCMeta):
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_vars_float,)
-        func: iwopy.core.OptFunctionList, optional
+        func
             The functions to be differentiated, or None
             for a list of all objectives and all constraints
             (in that order)
-        components: list of int, optional
+        components
             The function's component selection, or None for all
-        vars: list of int or str, optional
+        vars
             The float variables wrt which the
             derivatives are to be calculated, or
             None for all
-        func_values: np.array, optional
+        func_values
             Previously calculated function values at the given variables,
             shape: (n_components,)
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
-        pop: bool
+        pop
             Flag for vectorizing calculations via population
 
         Returns
@@ -563,12 +606,13 @@ class Problem(Base, metaclass=ABCMeta):
         else:
             tvars = []
             for v in vars:
-                if np.issubdtype(type(v), np.integer):
-                    if v < 0 or v > len(vnmsf):
+                if isinstance(v, (int, np.integer)):
+                    index = int(v)
+                    if index < 0 or index > len(vnmsf):
                         raise ValueError(
-                            f"Problem '{self.name}': Variable index {v} exceeds problem float variables, count = {len(vnmsf)}"
+                            f"Problem '{self.name}': Variable index {index} exceeds problem float variables, count = {len(vnmsf)}"
                         )
-                    tvars.append(vnmsf[v])
+                    tvars.append(vnmsf[index])
                 elif isinstance(v, str):
                     vl = fnmatch.filter(vnmsf, v)
                     if not len(vl):
@@ -616,13 +660,13 @@ class Problem(Base, metaclass=ABCMeta):
 
         return gradients
 
-    def initialize(self, verbosity=1):
+    def initialize(self, verbosity: int = 1) -> None:
         """
         Initialize the problem.
 
         Parameters
         ----------
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         """
@@ -657,7 +701,7 @@ class Problem(Base, metaclass=ABCMeta):
         super().initialize(verbosity)
 
     @property
-    def maximize_objs(self):
+    def maximize_objs(self) -> np.ndarray:
         """
         Flags for objective maximization
 
@@ -668,17 +712,21 @@ class Problem(Base, metaclass=ABCMeta):
             shape: (n_objectives,)
 
         """
+        if self._maximize is None:
+            raise RuntimeError(f"Problem '{self.name}' has not been initialized")
         return self._maximize
 
-    def apply_individual(self, vars_int, vars_float):
+    def apply_individual(
+        self, vars_int: np.ndarray, vars_float: np.ndarray
+    ) -> object | None:
         """
         Apply new variables to the problem.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_vars_float,)
 
         Returns
@@ -688,18 +736,20 @@ class Problem(Base, metaclass=ABCMeta):
             to the problem
 
         """
-        return
+        return None
 
-    def apply_population(self, vars_int, vars_float):
+    def apply_population(
+        self, vars_int: np.ndarray, vars_float: np.ndarray
+    ) -> object | None:
         """
         Apply new variables to the problem,
         for a whole population.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_pop, n_vars_float)
 
         Returns
@@ -709,19 +759,40 @@ class Problem(Base, metaclass=ABCMeta):
             to the problem
 
         """
-        return
+        return None
 
-    def evaluate_individual(self, vars_int, vars_float, ret_prob_res=False):
+    @overload
+    def evaluate_individual(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        ret_prob_res: Literal[False] = False,
+    ) -> tuple[np.ndarray, np.ndarray]: ...
+
+    @overload
+    def evaluate_individual(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        ret_prob_res: Literal[True],
+    ) -> tuple[np.ndarray, np.ndarray, object | None]: ...
+
+    def evaluate_individual(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        ret_prob_res: bool = False,
+    ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, object | None]:
         """
         Evaluate a single individual of the problem.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_vars_float,)
-        ret_prob_res: bool
+        ret_prob_res
             Flag for additionally returning of problem results
 
         Returns
@@ -758,17 +829,38 @@ class Problem(Base, metaclass=ABCMeta):
         else:
             return objs, cons
 
-    def evaluate_population(self, vars_int, vars_float, ret_prob_res=False):
+    @overload
+    def evaluate_population(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        ret_prob_res: Literal[False] = False,
+    ) -> tuple[np.ndarray, np.ndarray]: ...
+
+    @overload
+    def evaluate_population(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        ret_prob_res: Literal[True],
+    ) -> tuple[np.ndarray, np.ndarray, object | None]: ...
+
+    def evaluate_population(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        ret_prob_res: bool = False,
+    ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, object | None]:
         """
         Evaluate all individuals of a population.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values, shape: (n_pop, n_vars_int)
-        vars_float: np.array
+        vars_float
             The float variable values, shape: (n_pop, n_vars_float)
-        ret_prob_res: bool
+        ret_prob_res
             Flag for additionally returning of problem results
 
         Returns
@@ -789,7 +881,7 @@ class Problem(Base, metaclass=ABCMeta):
                 todo = np.any(np.isnan(memres), axis=1)
                 from_mem = not np.all(todo)
 
-        if from_mem:
+        if from_mem and memres is not None:
             objs = memres[:, : self.n_objectives]
             cons = memres[:, self.n_objectives :]
             del memres
@@ -808,7 +900,8 @@ class Problem(Base, metaclass=ABCMeta):
                 cres = self.cons.calc_population(varsi, varsf, results)
                 cons[todo] = cres
 
-                self.memory.store_population(vals_int, vals_float, ores, cres)
+                if self.memory is not None:
+                    self.memory.store_population(vals_int, vals_float, ores, cres)
 
         else:
             results = self.apply_population(vars_int, vars_float)
@@ -827,16 +920,18 @@ class Problem(Base, metaclass=ABCMeta):
         else:
             return objs, cons
 
-    def check_constraints_individual(self, constraint_values, verbosity=0):
+    def check_constraints_individual(
+        self, constraint_values: np.ndarray, verbosity: int = 0
+    ) -> np.ndarray:
         """
         Check if the constraints are fullfilled for the
         given individual.
 
         Parameters
         ----------
-        constraint_values: np.array
+        constraint_values
             The constraint values, shape: (n_components,)
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
@@ -856,16 +951,18 @@ class Problem(Base, metaclass=ABCMeta):
 
         return out
 
-    def check_constraints_population(self, constraint_values, verbosity=0):
+    def check_constraints_population(
+        self, constraint_values: np.ndarray, verbosity: int = 0
+    ) -> np.ndarray:
         """
         Check if the constraints are fullfilled for the
         given population.
 
         Parameters
         ----------
-        constraint_values: np.array
+        constraint_values
             The constraint values, shape: (n_pop, n_components)
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
@@ -886,17 +983,19 @@ class Problem(Base, metaclass=ABCMeta):
 
         return out
 
-    def finalize_individual(self, vars_int, vars_float, verbosity=1):
+    def finalize_individual(
+        self, vars_int: np.ndarray, vars_float: np.ndarray, verbosity: int = 1
+    ) -> tuple[object | None, np.ndarray, np.ndarray]:
         """
         Finalization, given the champion data.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The optimal integer variable values, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             The optimal float variable values, shape: (n_vars_float,)
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
@@ -920,19 +1019,21 @@ class Problem(Base, metaclass=ABCMeta):
 
         return results, objs, cons
 
-    def finalize_population(self, vars_int, vars_float, verbosity=0):
+    def finalize_population(
+        self, vars_int: np.ndarray, vars_float: np.ndarray, verbosity: int = 0
+    ) -> tuple[object | None, np.ndarray, np.ndarray]:
         """
         Finalization, given the final population data.
 
         Parameters
         ----------
-        vars_int: np.array
+        vars_int
             The integer variable values of the final
             generation, shape: (n_pop, n_vars_int)
-        vars_float: np.array
+        vars_float
             The float variable values of the final
             generation, shape: (n_pop, n_vars_float)
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
@@ -956,15 +1057,17 @@ class Problem(Base, metaclass=ABCMeta):
 
         return results, objs, cons
 
-    def prob_res_einsum_individual(self, prob_res_list, coeffs):
+    def prob_res_einsum_individual(
+        self, prob_res_list: Sequence[object | None], coeffs: np.ndarray
+    ) -> object | None:
         """
         Calculate the einsum of problem results
 
         Parameters
         ----------
-        prob_res_list: list
+        prob_res_list
             The problem results
-        coeffs: numpy.ndarray
+        coeffs
             The coefficients
 
         Returns
@@ -974,21 +1077,23 @@ class Problem(Base, metaclass=ABCMeta):
 
         """
         if not len(prob_res_list) or prob_res_list[0] is None:
-            return
+            return None
 
         raise NotImplementedError(
             f"Problem '{self.name}': Einsum not implemented for problem results type '{type(prob_res_list[0]).__name__}'"
         )
 
-    def prob_res_einsum_population(self, prob_res_list, coeffs):
+    def prob_res_einsum_population(
+        self, prob_res_list: Sequence[object | None], coeffs: np.ndarray
+    ) -> object | None:
         """
         Calculate the einsum of problem results
 
         Parameters
         ----------
-        prob_res_list: list
+        prob_res_list
             The problem results
-        coeffs: numpy.ndarray
+        coeffs
             The coefficients
 
         Returns
@@ -998,31 +1103,31 @@ class Problem(Base, metaclass=ABCMeta):
 
         """
         if not len(prob_res_list) or prob_res_list[0] is None:
-            return
+            return None
 
         raise NotImplementedError(
             f"Problem '{self.name}': Einsum not implemented for problem results type '{type(prob_res_list[0]).__name__}'"
         )
 
     @classmethod
-    def new(cls, problem_type, *args, **kwargs):
+    def new(cls, problem_type: str, *args: object, **kwargs: object) -> "Problem":
         """
         Run-time problem factory.
 
         Parameters
         ----------
-        problem_type: str
+        problem_type
             The selected derived class name
-        args: tuple, optional
+        args
             Additional parameters for constructor
-        kwargs: dict, optional
+        kwargs
             Additional parameters for constructor
 
         """
         return new_instance(cls, problem_type, *args, **kwargs)
 
 
-class ProblemDefaultFunc(OptFunctionList):
+class ProblemDefaultFunc(OptFunctionList[OptFunction]):
     """
     The default function of a problem
     for gradient calculations.
@@ -1031,18 +1136,18 @@ class ProblemDefaultFunc(OptFunctionList):
 
     """
 
-    def __init__(self, problem):
+    def __init__(self, problem: Problem) -> None:
         """
         Constructor
 
         Parameters
         ----------
-        problem: iwopy.core.Problem
+        problem
             The problem
 
         """
         super().__init__(problem, "objs_cons")
-        for f in problem.objs.functions:
-            self.append(f)
-        for f in problem.cons.functions:
-            self.append(f)
+        for objective in problem.objs.functions:
+            self.append(objective)
+        for constraint in problem.cons.functions:
+            self.append(constraint)

@@ -176,6 +176,27 @@ def test_pygmo_gradient_matches_fitness_direction(maximize):
     assert udp.gradient(x)[0] == pytest.approx(numerical)
 
 
+def test_pygmo_empty_gradient_sparsity_returns_empty_gradient():
+    class ConstantObjective(iwopy.SimpleObjective):
+        def f(self, x):
+            return 1.0
+
+        def vardeps_float(self):
+            return np.zeros((1, 1), dtype=bool)
+
+    problem = iwopy.SimpleProblem(
+        "constant",
+        float_vars=["x"],
+        init_values_float=[0.0],
+    )
+    problem.add_objective(ConstantObjective(problem))
+    problem.initialize(verbosity=0)
+    udp = UDP(problem)
+
+    assert udp.gradient_sparsity() == []
+    assert udp.gradient(np.array([0.0])) == []
+
+
 def test_pygmo_batch_callback_reports_iwopy_values():
     problem = iwopy.SimpleProblem(
         "maximize_x",

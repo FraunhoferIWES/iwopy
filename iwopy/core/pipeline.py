@@ -1,5 +1,9 @@
+from __future__ import annotations
+
 from abc import ABCMeta, abstractmethod
+from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 from .base import Base
 
@@ -14,31 +18,35 @@ class PipelineStage(Base, metaclass=ABCMeta):
 
     """
 
-    def initialize(self, pipeline, verbosity=0):
+    def initialize(self, pipeline: Pipeline | int = 0, verbosity: int = 0) -> None:
         """
         Initialize the stage. This method is called before running the stage.
 
         Parameters
         ----------
-        pipeline: Pipeline
+        pipeline
             The pipeline this stage belongs to
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         """
 
+        if isinstance(pipeline, int):
+            super().initialize(verbosity=verbosity or pipeline)
+            return
+
         i = pipeline.find_stage(self.name)
         assert i >= 0, f"{self.name}: stage not found in pipeline '{pipeline.name}'"
 
-        self.__stage_i = i
-        self.__base_dir = pipeline.base_dir
-        self.__stage_dir = self.__base_dir / f"{i:02d}_{self.name}"
+        self.__stage_i: int = i
+        self.__base_dir: Path = pipeline.base_dir
+        self.__stage_dir: Path = self.__base_dir / f"{i:02d}_{self.name}"
         self.__stage_dir.mkdir(parents=True, exist_ok=True)
 
         super().initialize(verbosity=verbosity)
 
     @property
-    def index(self):
+    def index(self) -> int:
         """
         Get the stage index in the pipeline
 
@@ -51,7 +59,7 @@ class PipelineStage(Base, metaclass=ABCMeta):
         return self.__stage_i
 
     @property
-    def base_dir(self):
+    def base_dir(self) -> Path:
         """
         Get the base directory
 
@@ -64,7 +72,7 @@ class PipelineStage(Base, metaclass=ABCMeta):
         return self.__base_dir
 
     @property
-    def stage_dir(self):
+    def stage_dir(self) -> Path:
         """
         Get the stage directory
 
@@ -77,17 +85,23 @@ class PipelineStage(Base, metaclass=ABCMeta):
         return self.__stage_dir
 
     @abstractmethod
-    def run(self, prev_stage=None, prev_results=None, verbosity=1):
+    def run(
+        self,
+        prev_stage: PipelineStage | None = None,
+        prev_results: object | None = None,
+        verbosity: int = 1,
+        **kwargs: object,
+    ) -> tuple[bool, object | None]:
         """
         Run the pipeline stage.
 
         Parameters
         ----------
-        prev_stage: PipelineStage, optional
+        prev_stage
             The previous stage
-        prev_results: object, optional
+        prev_results
             The results from the previous stage
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
@@ -99,18 +113,20 @@ class PipelineStage(Base, metaclass=ABCMeta):
 
         """
 
-    def finalize(self, pipeline, verbosity=0):
+    def finalize(self, pipeline: Pipeline | int = 0, verbosity: int = 0) -> None:
         """
         Finalize the stage. This method is called after running the stage.
 
         Parameters
         ----------
-        pipeline: Pipeline
+        pipeline
             The pipeline this stage belongs to
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         """
+        if isinstance(pipeline, int):
+            return super().finalize(verbosity or pipeline)
         return super().finalize(verbosity)
 
 
@@ -133,34 +149,34 @@ class Pipeline(Base):
 
     """
 
-    def __init__(self, base_dir, **kwargs):
+    def __init__(self, base_dir: str | Path, **kwargs: Any) -> None:
         """
         Constructor
 
         Parameters
         ----------
-        base_dir: str
+        base_dir
             The base directory
-        kwargs: dict
+        kwargs
             Additional keyword arguments for the base class
 
         """
         super().__init__(**kwargs)
-        self.start_stage = 0
-        self.end_stage = None
+        self.start_stage: int = 0
+        self.end_stage: int | None = None
 
-        self.__stages = []
-        self.__base_dir = Path(base_dir)
-        self.__idx = -1
-        self.__running = False
+        self.__stages: list[PipelineStage] = []
+        self.__base_dir: Path = Path(base_dir)
+        self.__idx: int = -1
+        self.__running: bool = False
 
-    def add_stage(self, stage):
+    def add_stage(self, stage: PipelineStage) -> None:
         """
         Add a stage to the pipeline
 
         Parameters
         ----------
-        stage: PipelineStage
+        stage
             The stage to add
 
         """
@@ -178,13 +194,13 @@ class Pipeline(Base):
         )
         self.__stages.append(stage)
 
-    def initialize(self, verbosity=0):
+    def initialize(self, verbosity: int = 0) -> None:
         """
         Initialize the object.
 
         Parameters
         ----------
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         """
@@ -201,7 +217,7 @@ class Pipeline(Base):
         super().initialize(verbosity=verbosity)
 
     @property
-    def running(self):
+    def running(self) -> bool:
         """
         Get whether the pipeline is currently running
 
@@ -214,7 +230,7 @@ class Pipeline(Base):
         return self.__running
 
     @property
-    def stage_names(self):
+    def stage_names(self) -> list[str]:
         """
         Get the stage names
 
@@ -227,7 +243,7 @@ class Pipeline(Base):
         return [stage.name for stage in self.__stages]
 
     @property
-    def base_dir(self):
+    def base_dir(self) -> Path:
         """
         Get the base directory
 
@@ -240,7 +256,7 @@ class Pipeline(Base):
         return self.__base_dir
 
     @property
-    def n_stages(self):
+    def n_stages(self) -> int:
         """
         Get the number of stages
 
@@ -253,7 +269,7 @@ class Pipeline(Base):
         return len(self.__stages)
 
     @property
-    def stage_index(self):
+    def stage_index(self) -> int:
         """
         Get the current stage index
 
@@ -265,13 +281,13 @@ class Pipeline(Base):
         """
         return self.__idx
 
-    def find_stage(self, stage_name):
+    def find_stage(self, stage_name: str) -> int:
         """
         Find the index of a stage by name
 
         Parameters
         ----------
-        stage_name: str
+        stage_name
             The stage name
 
         Returns
@@ -285,13 +301,13 @@ class Pipeline(Base):
                 return i
         return -1
 
-    def get_stage(self, stage_index):
+    def get_stage(self, stage_index: int) -> PipelineStage:
         """
         Get a stage by index
 
         Parameters
         ----------
-        stage_index: int
+        stage_index
             The stage index
 
         Returns
@@ -302,7 +318,7 @@ class Pipeline(Base):
         """
         return self.__stages[stage_index]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[PipelineStage]:
         """Get an iterator object for the pipeline."""
         assert self.initialized, (
             f"{self.name}: cannot iterate over pipeline before it has been initialized"
@@ -314,7 +330,7 @@ class Pipeline(Base):
         self.__idx = self.start_stage - 1
         return self
 
-    def __next__(self):
+    def __next__(self) -> PipelineStage:
         """
         Get the data for the next stage.
 
@@ -343,26 +359,26 @@ class Pipeline(Base):
 
     def run(
         self,
-        start_stage=0,
-        end_stage=None,
-        finalize=True,
-        verbosity=1,
-        **kwargs,
-    ):
+        start_stage: int = 0,
+        end_stage: int | None = None,
+        finalize: bool = True,
+        verbosity: int = 1,
+        **kwargs: object,
+    ) -> tuple[bool | None, object | None]:
         """
         Run the pipeline.
 
         Parameters
         ----------
-        start_stage: int
+        start_stage
             The stage index to start from
-        end_stage: int, optional
+        end_stage
             The stage index to end at, default None (run all stages)
-        finalize: bool
+        finalize
             Whether to finalize the pipeline after running, default True
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
-        kwargs: dict, optional
+        kwargs
             Additional keyword arguments to pass to each stage's run method
 
         Returns
@@ -415,13 +431,13 @@ class Pipeline(Base):
 
         return success, results
 
-    def finalize(self, verbosity=0):
+    def finalize(self, verbosity: int = 0) -> None:
         """
         Finalize the object.
 
         Parameters
         ----------
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         """

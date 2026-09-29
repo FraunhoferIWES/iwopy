@@ -1,5 +1,7 @@
 from abc import abstractmethod
 
+import numpy as np
+
 from iwopy.utils import new_instance
 
 from .function import OptFunction
@@ -14,7 +16,7 @@ class Objective(OptFunction):
     """
 
     @abstractmethod
-    def maximize(self):
+    def maximize(self) -> np.ndarray:
         """
         Returns flag for maximization of each component.
 
@@ -27,17 +29,17 @@ class Objective(OptFunction):
         """
 
     @classmethod
-    def new(cls, objective_type, *args, **kwargs):
+    def new(cls, objective_type: str, *args: object, **kwargs: object) -> "Objective":
         """
         Run-time objective function factory.
 
         Parameters
         ----------
-        objective_type: str
+        objective_type
             The selected derived class name
-        args: tuple, optional
+        args
             Additional parameters for constructor
-        kwargs: dict, optional
+        kwargs
             Additional parameters for constructor
 
         """

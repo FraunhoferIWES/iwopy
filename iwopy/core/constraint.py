@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 
 from iwopy.utils import new_instance
@@ -19,20 +21,20 @@ class Constraint(OptFunction):
 
     """
 
-    def __init__(self, *args, tol=1e-5, **kwargs):
+    def __init__(self, *args: Any, tol: float = 1e-5, **kwargs: Any) -> None:
         """
         Constructor
 
         Parameters
         ----------
-        tol: float
+        tol
             The tolerance for constraint violations
 
         """
         super().__init__(*args, **kwargs)
         self.tol = tol
 
-    def get_bounds(self):
+    def get_bounds(self) -> tuple[np.ndarray, np.ndarray]:
         """
         Returns the bounds for all components.
 
@@ -51,16 +53,18 @@ class Constraint(OptFunction):
             np.zeros(self.n_components(), dtype=np.float64),
         )
 
-    def check_individual(self, constraint_values, verbosity=0):
+    def check_individual(
+        self, constraint_values: np.ndarray, verbosity: int = 0
+    ) -> np.ndarray:
         """
         Check if the constraints are fullfilled for the
         given individual.
 
         Parameters
         ----------
-        constraint_values: np.array
+        constraint_values
             The constraint values, shape: (n_components,)
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
@@ -83,16 +87,18 @@ class Constraint(OptFunction):
 
         return out
 
-    def check_population(self, constraint_values, verbosity=0):
+    def check_population(
+        self, constraint_values: np.ndarray, verbosity: int = 0
+    ) -> np.ndarray:
         """
         Check if the constraints are fullfilled for the
         given population.
 
         Parameters
         ----------
-        constraint_values: np.array
+        constraint_values
             The constraint values, shape: (n_pop, n_components,)
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
@@ -118,17 +124,17 @@ class Constraint(OptFunction):
         return out
 
     @classmethod
-    def new(cls, constraint_type, *args, **kwargs):
+    def new(cls, constraint_type: str, *args: object, **kwargs: object) -> "Constraint":
         """
         Run-time constraint factory.
 
         Parameters
         ----------
-        constraint_type: str
+        constraint_type
             The selected derived class name
-        args: tuple, optional
+        args
             Additional parameters for constructor
-        kwargs: dict, optional
+        kwargs
             Additional parameters for constructor
 
         """

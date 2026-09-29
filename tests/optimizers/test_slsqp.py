@@ -437,7 +437,7 @@ def test_slsqp_returns_candidate_after_iteration_limit():
     assert solver.scipy_results.status != 0
 
 
-@pytest.mark.parametrize("mem_size", [0, -1, 1.5])
+@pytest.mark.parametrize("mem_size", [0, -1, 1.5, True])
 def test_slsqp_rejects_invalid_memory_size(mem_size):
     problem = make_problem()
     problem.initialize()

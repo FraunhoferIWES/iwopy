@@ -1,3 +1,6 @@
+from typing import overload
+
+
 class Base:
     """
     Generic base for various iwopy objects.
@@ -11,22 +14,20 @@ class Base:
 
     """
 
-    def __init__(self, name):
+    def __init__(self, name: str | None) -> None:
         """
         Constructor
 
         Parameters
         ----------
-        name: str
+        name
             The name
 
         """
-        self.name = name
+        self.name = type(self).__name__ if name is None else name
         self._initialized = False
-        if name is None:
-            self.name = type(self).__name__
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Get info string
 
@@ -41,7 +42,7 @@ class Base:
         return f"{self.name} ({type(self).__name__})"
 
     @property
-    def initialized(self):
+    def initialized(self) -> bool:
         """
         Flag for finished initialization
 
@@ -53,25 +54,37 @@ class Base:
         """
         return self._initialized
 
-    def initialize(self, verbosity=0):
+    @overload
+    def initialize(self, verbosity: int = 0, /) -> None: ...
+
+    @overload
+    def initialize(self, *, verbosity: int = 0) -> None: ...
+
+    def initialize(self, verbosity: int = 0) -> None:
         """
         Initialize the object.
 
         Parameters
         ----------
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         """
         self._initialized = True
 
-    def finalize(self, verbosity=0):
+    @overload
+    def finalize(self, verbosity: int = 0, /) -> None: ...
+
+    @overload
+    def finalize(self, *, verbosity: int = 0) -> None: ...
+
+    def finalize(self, verbosity: int = 0) -> None:
         """
         Finalize the object.
 
         Parameters
         ----------
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         """

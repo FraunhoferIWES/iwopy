@@ -1,6 +1,8 @@
+from typing import Any
+
 import numpy as np
 
-from iwopy.core import MultiObjOptResults, SingleObjOptResults
+from iwopy.core import MultiObjOptResults, Problem, SingleObjOptResults
 
 from . import imports
 
@@ -34,18 +36,23 @@ class SingleObjProblemTemplate:
     CLASS_NAME = "SingleObjProblem"
     CLASS_DOC = "The default callback"
 
-    def __init__(self, problem, vectorize, store_prob_res=False):
+    def __init__(
+        self,
+        problem: Problem,
+        vectorize: bool,
+        store_prob_res: bool = False,
+    ) -> None:
         """
         Constructor
 
         Parameters
         ----------
-        problem: iwopy.core.Problem
+        problem
             The iwopy problem to solve
-        vectorize: bool, optional
+        vectorize
             Switch for vectorized calculations, wrt
             population individuals
-        store_prob_res: bool
+        store_prob_res
             Whether to store current problem results
 
         """
@@ -53,7 +60,9 @@ class SingleObjProblemTemplate:
         self.vectorize = vectorize
         self.store_prob_res = store_prob_res
 
-        self.__current_problem_results = None
+        self.__current_problem_results: tuple[object | None, ...] | None = None
+        self._cmi = np.empty(0, dtype=np.float64)
+        self._cma = np.empty(0, dtype=np.float64)
 
         if self.problem.n_vars_float > 0 and self.problem.n_vars_int == 0:
             self.is_mixed = False
@@ -87,19 +96,19 @@ class SingleObjProblemTemplate:
             self.is_mixed = True
             self.is_intprob = False
 
-            vars = {}
+            vars: dict[str, Any] = {}
 
             nami = self.problem.var_names_int()
-            inii = self.problem.initial_values_int()
-            mini = self.problem.min_values_int()
-            maxi = self.problem.max_values_int()
+            inii = np.asarray(self.problem.initial_values_int())
+            mini = np.asarray(self.problem.min_values_int())
+            maxi = np.asarray(self.problem.max_values_int())
             for i, v in enumerate(nami):
                 vars[v] = imports.Integer(value=inii[i], bounds=(mini[i], maxi[i]))
 
             namf = self.problem.var_names_float()
-            inif = self.problem.initial_values_float()
-            minf = self.problem.min_values_float()
-            maxf = self.problem.max_values_float()
+            inif = np.asarray(self.problem.initial_values_float())
+            minf = np.asarray(self.problem.min_values_float())
+            maxf = np.asarray(self.problem.max_values_float())
             for i, v in enumerate(namf):
                 vars[v] = imports.Real(value=inif[i], bounds=(minf[i], maxf[i]))
 
@@ -113,7 +122,7 @@ class SingleObjProblemTemplate:
         if self.problem.n_constraints:
             self._cmi = self.problem.min_values_constraints
             self._cma = self.problem.max_values_constraints
-            cnames = self.problem.cons.component_names
+            cnames = np.asarray(self.problem.cons.component_names)
 
             sel = np.isinf(self._cmi) & np.isinf(self._cma)
             if np.any(sel):
@@ -126,15 +135,35 @@ class SingleObjProblemTemplate:
                 )
 
     @property
-    def current_problem_results(self):
+    def current_problem_results(self) -> tuple[object | None, ...] | None:
         """
         Returns the current problem results, if stored.
         """
-        if self.store_prob_res is None:
+        if not self.store_prob_res:
             raise RuntimeError("Current problem results are not stored.")
         return self.__current_problem_results
 
-    def _evaluate(self, x, out, *args, **kwargs):
+    def _evaluate_population(
+        self, vars_int: np.ndarray, vars_float: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, object | None]:
+        if self.store_prob_res:
+            return self.problem.evaluate_population(vars_int, vars_float, True)
+        return self.problem.evaluate_population(vars_int, vars_float)
+
+    def _evaluate_individual(
+        self, vars_int: np.ndarray, vars_float: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, object | None]:
+        if self.store_prob_res:
+            return self.problem.evaluate_individual(vars_int, vars_float, True)
+        return self.problem.evaluate_individual(vars_int, vars_float)
+
+    def _evaluate(
+        self,
+        x: Any,
+        out: dict[str, Any],
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         """
         Overloading the abstract evaluation function
         of the pymoo base class.
@@ -151,9 +180,7 @@ class SingleObjProblemTemplate:
                     [[dct[v] for v in self.problem.var_names_float()] for dct in x],
                     dtype=np.float64,
                 )
-                r = self.problem.evaluate_population(
-                    xi, xf, ret_prob_res=self.store_prob_res
-                )
+                r = self._evaluate_population(xi, xf)
                 out["F"], out["G"] = r[:2]
                 out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
                 if self.store_prob_res:
@@ -163,9 +190,7 @@ class SingleObjProblemTemplate:
                 n_pop = x.shape[0]
                 if self.is_intprob:
                     dummies = np.zeros((n_pop, 0), dtype=np.float64)
-                    r = self.problem.evaluate_population(
-                        x, dummies, ret_prob_res=self.store_prob_res
-                    )
+                    r = self._evaluate_population(x, dummies)
                     out["F"], out["G"] = r[:2]
                     out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
                     if self.store_prob_res:
@@ -173,9 +198,7 @@ class SingleObjProblemTemplate:
                     del r
                 else:
                     dummies = np.zeros((n_pop, 0), dtype=np.int32)
-                    r = self.problem.evaluate_population(
-                        dummies, x, ret_prob_res=self.store_prob_res
-                    )
+                    r = self._evaluate_population(dummies, x)
                     out["F"], out["G"] = r[:2]
                     out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)[None, :]
                     if self.store_prob_res:
@@ -198,9 +221,7 @@ class SingleObjProblemTemplate:
                 xf = np.array(
                     [x[v] for v in self.problem.var_names_float()], dtype=np.float64
                 )
-                r = self.problem.evaluate_individual(
-                    xi, xf, ret_prob_res=self.store_prob_res
-                )
+                r = self._evaluate_individual(xi, xf)
                 out["F"], out["G"] = r[:2]
                 out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)
                 if self.store_prob_res:
@@ -210,9 +231,7 @@ class SingleObjProblemTemplate:
                 n_pop = x.shape[0]
                 if self.is_intprob:
                     dummies = np.zeros(0, dtype=np.float64)
-                    r = self.problem.evaluate_individual(
-                        x, dummies, ret_prob_res=self.store_prob_res
-                    )
+                    r = self._evaluate_individual(x, dummies)
                     out["F"], out["G"] = r[:2]
                     out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)
                     if self.store_prob_res:
@@ -220,9 +239,7 @@ class SingleObjProblemTemplate:
                     del r
                 else:
                     dummies = np.zeros(0, dtype=np.int32)
-                    r = self.problem.evaluate_individual(
-                        dummies, x, ret_prob_res=self.store_prob_res
-                    )
+                    r = self._evaluate_individual(dummies, x)
                     out["F"], out["G"] = r[:2]
                     out["F"] *= np.where(self.problem.maximize_objs, -1.0, 1.0)
                     if self.store_prob_res:
@@ -236,15 +253,15 @@ class SingleObjProblemTemplate:
                 sel = ~np.isinf(self._cmi)
                 out["G"][sel] = self._cmi[sel] - out["G"][sel]
 
-    def finalize(self, pymoo_results, verbosity=1):
+    def finalize(self, pymoo_results: Any, verbosity: int = 1) -> SingleObjOptResults:
         """
         Finalize the problem.
 
         Parameters
         ----------
-        pymoo_results: pymoo.Results
+        pymoo_results
             The results from the solver
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
@@ -327,19 +344,19 @@ class SingleObjProblemTemplate:
         return SingleObjOptResults(self.problem, suc, xi, xf, objs, cons, res)
 
     @classmethod
-    def get_class(cls):
+    def get_class(cls) -> type[Any]:
         """
         Creates the class, dynamically derived from pymoo.Problem
         """
         imports.load()
-        attrb = {
+        attrb: dict[str, Any] = {
             v: d
             for v, d in cls.__dict__.items()
             if v not in ["get_class", "CLASS_NAME"]
         }
         init0 = cls.__init__
 
-        def __init(self, *args, **kwargs):
+        def __init(self: Any, *args: Any, **kwargs: Any) -> None:
             init0(self, *args, **kwargs)
             imports.Problem.__init__(self, **self._pargs)
 
@@ -372,29 +389,34 @@ class MultiObjProblemTemplate:
 
     CLASS_NAME = "MultiObjProblem"
 
-    def __init__(self, problem, vectorize):
+    problem: Problem
+    vectorize: bool
+    is_mixed: bool
+    is_intprob: bool
+
+    def __init__(self, problem: Problem, vectorize: bool) -> None:
         """
         Constructor template, will be overwritten by get_class
 
         Parameters
         ----------
-        problem: iwopy.core.Problem
+        problem
             The iwopy problem to solve
-        vectorize: bool, optional
+        vectorize
             Switch for vectorized calculations, wrt
             population individuals
 
         """
 
-    def finalize(self, pymoo_results, verbosity=1):
+    def finalize(self, pymoo_results: Any, verbosity: int = 1) -> MultiObjOptResults:
         """
         Finalize the problem.
 
         Parameters
         ----------
-        pymoo_results: pymoo.Results
+        pymoo_results
             The results from the solver
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         Returns
@@ -438,18 +460,18 @@ class MultiObjProblemTemplate:
         return MultiObjOptResults(self.problem, suc, xi, xf, objs, cons, res)
 
     @classmethod
-    def get_class(cls):
+    def get_class(cls) -> type[Any]:
         """
         Creates the class, dynamically derived from SingleObjProblem
         """
         scls = SingleObjProblemTemplate.get_class()
-        attrb = {
+        attrb: dict[str, Any] = {
             v: d
             for v, d in cls.__dict__.items()
             if v not in ["get_class", "CLASS_NAME"]
         }
 
-        def init(self, *args, **kwargs):
+        def init(self: Any, *args: Any, **kwargs: Any) -> None:
             scls.__init__(self, *args, **kwargs)
 
         attrb["__init__"] = init

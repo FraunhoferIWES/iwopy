@@ -1,7 +1,7 @@
 # .pre-commit-config.yaml
 # See https://pre-commit.com for more information
-# Install: pip install pre-commit && pre-commit install
-# Run manually: pre-commit run --all-files
+# Install: uv run pre-commit install
+# Run manually: uv run pre-commit run --all-files
 
 repos:
   # General file fixes
@@ -26,6 +26,16 @@ repos:
       # Run the formatter.
       - id: ruff-format
         args: [ --exit-non-zero-on-fix ]
+  # Mypy - Static type checking, aligned with the uv project environment
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: uv run mypy --cache-dir=/tmp/mypy_cache --no-incremental --no-site-packages --ignore-missing-imports --follow-imports=silent
+        language: system
+        pass_filenames: false
+        files: ^iwopy/.*\.py$
+        exclude: ^iwopy/(tests?/|notebooks?/)
 
 # CI configuration - run pre-commit in CI as well
 ci:

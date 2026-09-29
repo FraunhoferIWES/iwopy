@@ -1,10 +1,11 @@
 import os
 import sys
+from collections.abc import Iterator
 from contextlib import contextmanager
 
 
 @contextmanager
-def suppress_stdout(silent=True):
+def suppress_stdout(silent: bool = True) -> Iterator[None]:
     """
     Surpresses print outputs
 
@@ -18,10 +19,10 @@ def suppress_stdout(silent=True):
 
     Parameters
     ----------
-    silent: bool
+    silent
         Flag for the silent treatment.
 
-    :group: utils
+
 
     """
     with open(os.devnull, "w") as devnull:

@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from typing import TypeVar
 
 import numpy as np
 
@@ -10,6 +11,11 @@ from .optimizer_callback import (
     OptimizerCallbackData,
     _OptimizerCallbackDispatcher,
 )
+from .opt_results import MultiObjOptResults, SingleObjOptResults
+from .problem import Problem
+
+
+_OptResultsT = TypeVar("_OptResultsT", SingleObjOptResults, MultiObjOptResults)
 
 
 class Optimizer(Base, metaclass=ABCMeta):
@@ -27,15 +33,15 @@ class Optimizer(Base, metaclass=ABCMeta):
 
     """
 
-    def __init__(self, problem, name="optimizer"):
+    def __init__(self, problem: Problem, name: str = "optimizer") -> None:
         """
         Constructor
 
         Parameters
         ----------
-        problem: iwopy.Problem
+        problem
             The problem to optimize
-        name: str
+        name
             The name
 
         """
@@ -44,7 +50,7 @@ class Optimizer(Base, metaclass=ABCMeta):
         self.name = name
         self._callback_dispatcher = _OptimizerCallbackDispatcher(None)
 
-    def print_info(self):
+    def print_info(self) -> None:
         """
         Print solver info, called before solving
         """
@@ -63,13 +69,13 @@ class Optimizer(Base, metaclass=ABCMeta):
         self,
         verbosity: int = 1,
         callbacks: list[OptimizerCallback] | None = None,
-    ):
+    ) -> SingleObjOptResults | MultiObjOptResults | None:
         """
         Run the optimization solver.
 
         Parameters
         ----------
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
         callbacks
             Ordered callbacks for intermediate optimization states.
@@ -99,6 +105,7 @@ class Optimizer(Base, metaclass=ABCMeta):
         self._validate_callbacks(callback_dispatcher.callbacks)
         self._callback_dispatcher = callback_dispatcher
         self._callback_dispatcher.initialize(self)
+        return None
 
     def _validate_callbacks(self, callbacks: list[OptimizerCallback]) -> None:
         """Validate backend-specific callback capabilities."""
@@ -113,24 +120,34 @@ class Optimizer(Base, metaclass=ABCMeta):
         """Notify callbacks about an intermediate optimizer state."""
         self._callback_dispatcher.notify(data)
 
-    def _finalize_callbacks(self, results):
+    def _finalize_callbacks(self, results: _OptResultsT) -> _OptResultsT:
         """Finalize callbacks and return the optimization results."""
         self._callback_dispatcher.finalize(results)
         return results
 
-    def finalize(self, opt_results, verbosity=1):
+    def finalize(
+        self,
+        opt_results: SingleObjOptResults | MultiObjOptResults | int | None = None,
+        verbosity: int = 1,
+    ) -> None:
         """
         This function may be called after finishing
         the optimization.
 
         Parameters
         ----------
-        opt_results: iwopy.OptResults
+        opt_results
             The optimization results object
-        verbosity: int
+        verbosity
             The verbosity level, 0 = silent
 
         """
+        if not isinstance(opt_results, (SingleObjOptResults, MultiObjOptResults)):
+            super().finalize(
+                verbosity=opt_results if isinstance(opt_results, int) else verbosity
+            )
+            return
+
         if verbosity:
             print(f"{type(self).__name__}: Optimization run finished")
             if (
@@ -180,17 +197,17 @@ class Optimizer(Base, metaclass=ABCMeta):
                         i0 = i1
 
     @classmethod
-    def new(cls, optimizer_type, *args, **kwargs):
+    def new(cls, optimizer_type: str, *args: object, **kwargs: object) -> "Optimizer":
         """
         Run-time optimizer factory.
 
         Parameters
         ----------
-        optimizer_type: str
+        optimizer_type
             The selected derived class name
-        args: tuple, optional
+        args
             Additional parameters for constructor
-        kwargs: dict, optional
+        kwargs
             Additional parameters for constructor
 
         """

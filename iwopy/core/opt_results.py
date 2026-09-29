@@ -1,5 +1,14 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
+
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.axes import Axes
+
+if TYPE_CHECKING:
+    from .problem import Problem
 
 
 class SingleObjOptResults:
@@ -38,32 +47,32 @@ class SingleObjOptResults:
 
     def __init__(
         self,
-        problem,
-        success,
-        vars_int,
-        vars_float,
-        objs,
-        cons,
-        problem_results,
-    ):
+        problem: Problem,
+        success: bool,
+        vars_int: np.ndarray | None,
+        vars_float: np.ndarray | None,
+        objs: np.ndarray | None,
+        cons: np.ndarray | None,
+        problem_results: object | None,
+    ) -> None:
         """
         Constructor
 
         Parameters
         ----------
-        problem: iwopy.core.Problem
+        problem
             The problem
-        success: bool
+        success
             Optimization success
-        vars_int: np.array
+        vars_int
             Optimal variables, shape: (n_vars_int,)
-        vars_float: np.array
+        vars_float
             Optimal variables, shape: (n_vars_float,)
-        objs: float
+        objs
             Optimal objective function value
-        cons: np.array
+        cons
             Constraint values, shape: (n_constraints,)
-        problem_results: Object
+        problem_results
             The results of the variable application to the problem
 
         """
@@ -86,10 +95,10 @@ class SingleObjOptResults:
                 f"Wrong opt results class '{type(self).__name__}' for multi objective problem. Use 'MultiObjOptResults' instead."
             )
 
-    def __str__(self):
+    def __str__(self) -> str:
         s = f"Results problem '{self.pname}':\n"
         hline = "-" * len(s) + "\n"
-        if len(self.vnames_int):
+        if self.vars_int is not None and len(self.vnames_int):
             s += hline
             L = len(max(self.vnames_int, key=len))
             s += "  Integer variables:\n"
@@ -156,32 +165,32 @@ class MultiObjOptResults:
 
     def __init__(
         self,
-        problem,
-        success,
-        vars_int,
-        vars_float,
-        objs,
-        cons,
-        problem_results,
-    ):
+        problem: Problem,
+        success: np.ndarray,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        objs: np.ndarray,
+        cons: np.ndarray,
+        problem_results: object | None,
+    ) -> None:
         """
         Constructor
 
         Parameters
         ----------
-        problem: iwopy.core.Problem
+        problem
             The problem
-        success: bool
+        success
             Optimization success
-        vars_int: np.array
+        vars_int
             Pareto-optimal variables, shape: (n_pop, n_vars_int)
-        vars_float: np.array
+        vars_float
             Pareto-optimal variables, shape: (n_pop, n_vars_float)
-        objs: np.array
+        objs
             Pareto front objective function values, shape: (n_pop, n_objectives)
-        cons: np.array
+        cons
             Parteo front Constraint values, shape: (n_pop, n_constraints)
-        problem_results: Object
+        problem_results
             The results of the variable application to the problem
 
         """
@@ -203,7 +212,7 @@ class MultiObjOptResults:
                 f"Wrong opt results class '{type(self).__name__}' for single objective problem. Use 'SingleObjOptResults' instead."
             )
 
-    def __str__(self):
+    def __str__(self) -> str:
         s = f"Results problem '{self.pname}':\n"
         hline = "-" * 2 * len(s) + "\n"
         if len(self.vnames_int):
@@ -243,35 +252,35 @@ class MultiObjOptResults:
 
     def plot_pareto(
         self,
-        obj_0=0,
-        obj_1=1,
-        ax=None,
-        figsize=(5, 5),
-        s=50,
-        color_val="orange",
-        color_ival="red",
-        title=None,
-    ):
+        obj_0: int = 0,
+        obj_1: int = 1,
+        ax: Axes | None = None,
+        figsize: tuple[float, float] = (5, 5),
+        s: float = 50,
+        color_val: str = "orange",
+        color_ival: str = "red",
+        title: str | None = None,
+    ) -> Axes:
         """
         Get figure that shows the pareto front
 
         Parameters
         ----------
-        obj_0: int
+        obj_0
             The objective on the x axis
-        obj_1: int
+        obj_1
             The objective on the y axis
-        ax: pyplot.Axis, optional
+        ax
             The axis to plot on
-        figsize: tuple
+        figsize
             The figure size, if ax is not given
-        s: float
+        s
             Scatter point size
-        color_val: str
+        color_val
             Color choice for valid points
-        color_ival: str
+        color_ival
             Color choice for invalid points
-        title: str, optional
+        title
             The plot title
 
         Returns
@@ -310,7 +319,9 @@ class MultiObjOptResults:
 
         return ax
 
-    def find_pareto_objmix(self, obj_weights, max=False):
+    def find_pareto_objmix(
+        self, obj_weights: Sequence[float], max: bool = False
+    ) -> int:
         """
         Find the point on the pareto front that
         approximates best the given weights of objectives
@@ -331,4 +342,4 @@ class MultiObjOptResults:
         """
         w = np.array(obj_weights, dtype=np.float64)
         res = np.einsum("po,o->p", self.objs, w)
-        return np.argmax(res) if max else np.argmin(res)
+        return int(np.argmax(res) if max else np.argmin(res))

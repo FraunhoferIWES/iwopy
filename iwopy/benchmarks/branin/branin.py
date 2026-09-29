@@ -1,6 +1,10 @@
+from collections.abc import Sequence
+
 import numpy as np
+from numpy.typing import ArrayLike
 
 from iwopy import SimpleObjective, SimpleProblem
+from iwopy.core import Problem
 
 
 class BraninObjective(SimpleObjective):
@@ -35,24 +39,26 @@ class BraninObjective(SimpleObjective):
 
     """
 
-    def __init__(self, problem, ana_deriv=False, name="f"):
+    def __init__(
+        self, problem: Problem, ana_deriv: bool = False, name: str = "f"
+    ) -> None:
         """
         Constructor
 
         Parameters
         ----------
-        problem: iwopy.Problem
+        problem
             The underlying optimization problem
-        ana_deriv: bool
+        ana_deriv
             Switch for analytical derivatives
-        name: str
+        name
             The function name
 
         """
         super().__init__(problem, name, n_components=1, has_ana_derivs=ana_deriv)
 
         # (a, b, c, r, s, t)
-        self._pars = (
+        self._pars: tuple[float, float, float, float, float, float] = (
             1,
             5.1 / (4 * np.pi**2),
             5 / np.pi,
@@ -63,24 +69,36 @@ class BraninObjective(SimpleObjective):
 
         self._ana_deriv = ana_deriv
 
-    def f(self, x, y):
+    def f(self, *x: ArrayLike) -> ArrayLike:
         """
         The Branin function f(x, y)
         """
+        x_value, y_value = (np.asarray(value) for value in x)
         a, b, c, r, s, t = self._pars
-        return a * (y - b * x**2 + c * x - r) ** 2 + s * (1 - t) * np.cos(x) + s
+        return (
+            a * (y_value - b * x_value**2 + c * x_value - r) ** 2
+            + s * (1 - t) * np.cos(x_value)
+            + s
+        )
 
-    def g(self, var, x, y, components=None):
+    def g(
+        self,
+        var: int,
+        *x: ArrayLike,
+        components: Sequence[int] | np.ndarray | None = None,
+    ) -> ArrayLike:
         """
         The derivative of the Branin function
         """
+        del components
+        x_value, y_value = (np.asarray(value) for value in x)
         a, b, c, r, s, t = self._pars
         if var == 0:
-            return 2 * a * (y - b * x**2 + c * x - r) * (-2 * b * x + c) - s * (
-                1 - t
-            ) * np.sin(x)
+            return 2 * a * (y_value - b * x_value**2 + c * x_value - r) * (
+                -2 * b * x_value + c
+            ) - s * (1 - t) * np.sin(x_value)
         else:
-            return 2 * a * (y - b * x**2 + c * x - r)
+            return 2 * a * (y_value - b * x_value**2 + c * x_value - r)
 
 
 class BraninProblem(SimpleProblem):
@@ -96,17 +114,22 @@ class BraninProblem(SimpleProblem):
 
     """
 
-    def __init__(self, name="branin", initial_values=None, ana_deriv=False):
+    def __init__(
+        self,
+        name: str = "branin",
+        initial_values: Sequence[float] | np.ndarray | None = None,
+        ana_deriv: bool = False,
+    ) -> None:
         """
         Constructor
 
         Parameters
         ----------
-        name: str
+        name
             The name of the problem
-        ana_deriv: bool
+        ana_deriv
             Switch for analytical derivatives
-        initial_values: list of float
+        initial_values
             The initial values
 
         """
