@@ -2,6 +2,15 @@
 .. image:: ../../Logo_IWOPY_white.svg
     :align: center
 
+.. versionadded:: 0.5.0
+    Optimization pipelines through the ``Pipeline`` base class and native
+    callbacks with normalized intermediate states across optimizer interfaces.
+
+.. versionadded:: 0.5.0
+    The ``SLSQP`` optimizer for constrained single-objective problems, including
+    automatic scaling and vectorized gradient evaluation.
+
+
 Welcome to IWOPY
 ================
 

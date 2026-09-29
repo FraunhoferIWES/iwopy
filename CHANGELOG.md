@@ -183,51 +183,36 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 ## v0.5.0
 
-- Introducing extra dependencies `iwopy[scipy]`, `iwopy[pymoo]`,
-`iwopy[pygmo]`, and `iwopy[opt]` for installation of all supported optimization packages
-- Introducing the concept of optimization pipelines, with abstract base class `Pipeline`
-- Small improvements of optimizer `GG`
-- Hardened optimizer `GG` for zero gradients, general constraint bounds, and
-  convergence edge cases.
-- Added hard iteration limits, non-finite gradient checks, and stalled
-  constraint detection to `GG`.
-- Added `SLSQP` and an example for continuous single-objective
-  problems with general constraints and vectorized iwopy gradient determination.
-- Added automatic dimensionless variable scaling to `SLSQP`, avoiding
-  false convergence for problems with large physical coordinate ranges.
-- Reused cached SLSQP function values in `LocalFD` gradients, avoiding duplicate
-  center-point evaluations.
-- Fixed the lower-bound second-order stencil in `LocalFD`, ensuring boundary-aware
-  finite differences use the correct one-sided stencil near the lower domain limit.
-- Added regression coverage for `LocalFD` lower-bound stencil behavior.
-- Added `pymoo` factory support for `DE`, `NSGA3`, and `CMAES` algorithms.
-- Fixed `pymoo` `GA` and `NSGA2` defaults for pure integer problems by applying
-  integer rounding repair to generated offspring.
-- Expanded `pygmo` algorithm support and hardened IPOPT option handling.
-- Fixed PyGMO gradient orientation for maximization objectives, ensuring
-  gradient-based algorithms receive derivatives consistent with fitness values.
-- Hardened `pymoo` factories for integer problems, reusable configurations, and
-  termination limits.
-- Unified problem summaries in optimizer output.
-- Added evaluation-free per-iteration objective and constraint progress output
-  to `SLSQP`.
-- Added iwopy-native optimizer callbacks with normalized intermediate states for
-  `GG`, `SLSQP`, SciPy, pymoo, and PyGMO interfaces except IPOPT.
-- PyGMO IPOPT now rejects callbacks because pygmo exposes neither exact live
-  iterations nor decision vectors in its progress log.
-- Added runnable SLSQP and pymoo callback examples with live output and
-  objective-history plots.
-- Scoped PyGMO callback sinks to active solves, preventing notifications after
-  successful or failed optimization runs.
-- Avoided backend callback adapters and intermediate-data construction when no
-  iwopy callbacks are registered.
-- Standardized backend callback validation and documented that callback
-  finalization occurs only after successful solver completion.
-- Improved `pymoo` single-objective termination defaults by combining robust
-  objective convergence with generation and evaluation limits.
-- Dropping support for Python 3.9 and updating dependency minimums to match foxes
-- Raised the optional PyGMO minimum to 2.19 to match the supported API.
-- Raised test and documentation dependency minimums to patched releases.
-- New farm opt problem `DiscreteLocalMoveOptProblem` for a single small step for each turbine
+- Core:
+  - Added optimization pipelines through the new abstract `Pipeline` base class.
+  - Added native optimizer callbacks with normalized intermediate states for
+    `GG`, `SLSQP`, SciPy, pymoo, and PyGMO. Callback validation and finalization
+    are now consistent, callback-free runs avoid adapter overhead, and unsupported
+    PyGMO IPOPT callbacks fail explicitly.
+  - Unified problem summaries across optimizer output.
+- Optimizers:
+  - Added `SLSQP` for constrained single-objective problems, with automatic
+    dimensionless scaling, vectorized iwopy gradients, evaluation-free progress
+    output, and reuse of cached function values in `LocalFD`.
+  - Hardened `GG` for zero and non-finite gradients, general constraint bounds,
+    stalled constraints, hard iteration limits, and convergence edge cases.
+- Interfaces:
+  - Extended pymoo factories with `DE`, `NSGA3`, and `CMAES`, and improved
+    integer offspring handling, reusable configurations, and bounded
+    single-objective termination.
+  - Expanded PyGMO algorithm support and made IPOPT option handling more robust.
+- Problems:
+  - Added `DiscreteLocalMoveOptProblem` for applying one small discrete move per
+    wind turbine.
+- Examples:
+  - Added runnable SLSQP and pymoo examples for general constraints and callbacks,
+    including live progress and objective-history plots.
+- Bugs:
+  - Fixed lower-bound second-order finite differences in `LocalFD`, maximization
+    gradient orientation in PyGMO, and callback leakage after PyGMO solves.
+- Dependencies:
+  - Added the `iwopy[scipy]`, `iwopy[pymoo]`, `iwopy[pygmo]`, and `iwopy[opt]`
+    extras; dropped Python 3.9 and raised runtime, PyGMO, test, and documentation
+    dependency floors.
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0](https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0)
