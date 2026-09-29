@@ -226,6 +226,8 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Improved `pymoo` single-objective termination defaults by combining robust
   objective convergence with generation and evaluation limits.
 - Dropping support for Python 3.9 and updating dependency minimums to match foxes
+- Raised the optional PyGMO minimum to 2.19 to match the supported API.
+- Raised test and documentation dependency minimums to patched releases.
 - New farm opt problem `DiscreteLocalMoveOptProblem` for a single small step for each turbine
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0](https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0)
