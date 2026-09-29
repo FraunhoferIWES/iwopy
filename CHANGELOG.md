@@ -216,3 +216,9 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
     dependency floors.
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0](https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0)
+
+## v0.5.1
+
+
+
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.5.1](https://github.com/FraunhoferIWES/iwopy/commits/v0.5.1)
