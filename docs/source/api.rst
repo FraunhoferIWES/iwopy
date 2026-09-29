@@ -4,7 +4,7 @@ API
 The API is generated with AutoAPI.
 
 .. toctree::
-    :hidden:
+    :maxdepth: 1
 
     api_iwopy
     api_benchmarks
