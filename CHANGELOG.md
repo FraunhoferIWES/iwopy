@@ -230,6 +230,8 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 ## v0.5.1
 
+- Python versions:
+  - Added support for Python 3.14
 
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.5.1](https://github.com/FraunhoferIWES/iwopy/commits/v0.5.1)
