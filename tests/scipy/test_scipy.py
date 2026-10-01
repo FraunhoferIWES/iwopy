@@ -1,12 +1,12 @@
-from types import SimpleNamespace
-
 import numpy as np
 import pytest
+from scipy.optimize import OptimizeResult
 
 import iwopy
 from iwopy import SimpleConstraint
 from iwopy.benchmarks.branin import BraninProblem
 from iwopy.interfaces.scipy import Optimizer_scipy
+from iwopy.wrappers import LocalFD
 
 
 class RC(SimpleConstraint):
@@ -95,8 +95,14 @@ def test_branin_slsqp():
 
 
 class Quadratic(iwopy.SimpleObjective):
+    def __init__(self, problem, maximize=False):
+        super().__init__(problem, maximize=maximize)
+
     def f(self, x):
         return (x - 1.0) ** 2
+
+    def g(self, var, x, components):
+        return 2.0 * (x - 1.0)
 
 
 class MixedQuadratic(iwopy.SimpleObjective):
@@ -104,14 +110,85 @@ class MixedQuadratic(iwopy.SimpleObjective):
         return (i - 1) ** 2 + (x - 1.0) ** 2
 
 
-def make_quadratic_problem():
+class FiniteDifferenceQuadratic(iwopy.SimpleObjective):
+    def __init__(self, problem):
+        super().__init__(problem, has_ana_derivs=False)
+
+    def f(self, x, y):
+        return (x - 1.0) ** 2 + (y + 1.0) ** 2
+
+
+class MissingDerivativeQuadratic(iwopy.SimpleObjective):
+    def __init__(self, problem):
+        super().__init__(problem, has_ana_derivs=False)
+
+    def f(self, x):
+        return (x - 1.0) ** 2
+
+
+class MutableQuadratic(iwopy.SimpleObjective):
+    def __init__(self, problem, target):
+        super().__init__(problem)
+        self.target = target
+
+    def f(self, x):
+        return (x - self.target) ** 2
+
+    def g(self, var, x, components):
+        return 2.0 * (x - self.target)
+
+
+class LowerBound(iwopy.SimpleConstraint):
+    def __init__(self, problem):
+        super().__init__(problem, "lower", mins=1.5, maxs=np.inf)
+
+    def f(self, x):
+        return x
+
+    def g(self, var, x, components):
+        return 1.0
+
+
+class GeneralBounds(iwopy.SimpleConstraint):
+    def __init__(self, problem):
+        super().__init__(
+            problem,
+            "general",
+            n_components=3,
+            mins=[2.0, 0.0, -np.inf],
+            maxs=[2.0, np.inf, 1.0],
+        )
+
+    def f(self, x):
+        return [x, x, x]
+
+    def g(self, var, x, components):
+        return np.ones(len(components))
+
+
+class FiniteDifferenceSumLower(iwopy.SimpleConstraint):
+    def __init__(self, problem):
+        super().__init__(
+            problem,
+            "sum_lower",
+            mins=1.0,
+            maxs=np.inf,
+            has_ana_derivs=False,
+        )
+
+    def f(self, x, y):
+        return x + y
+
+
+def make_quadratic_problem(initialize=True):
     problem = iwopy.SimpleProblem(
         "quadratic",
         float_vars=["x"],
         init_values_float=[3.0],
     )
     problem.add_objective(Quadratic(problem))
-    problem.initialize(verbosity=0)
+    if initialize:
+        problem.initialize(verbosity=0)
     return problem
 
 
@@ -158,7 +235,7 @@ def test_scipy_rejects_native_callback_parameter():
         scipy_pars={"method": "BFGS", "callback": lambda x: None},
     )
 
-    with pytest.raises(ValueError, match="callback is managed internally"):
+    with pytest.raises(ValueError, match="parameters managed internally: callback"):
         solver.initialize(verbosity=0)
 
 
@@ -180,7 +257,7 @@ def test_scipy_callback_cache_miss_does_not_evaluate(monkeypatch):
     assert history.states[0].cons is None
 
 
-def test_scipy_combines_integer_and_float_bounds(monkeypatch):
+def test_scipy_rejects_integer_variables():
     problem = iwopy.SimpleProblem(
         "mixed",
         int_vars={"i": 1},
@@ -193,17 +270,9 @@ def test_scipy_combines_integer_and_float_bounds(monkeypatch):
     problem.add_objective(MixedQuadratic(problem))
     problem.initialize(verbosity=0)
     solver = Optimizer_scipy(problem)
-    solver.initialize(verbosity=0)
-    captured = {}
 
-    def fake_minimize(fun, x0, *, bounds, **kwargs):
-        captured["bounds"] = bounds
-        return SimpleNamespace(success=False)
-
-    monkeypatch.setattr("iwopy.interfaces.scipy.optimizer.minimize", fake_minimize)
-    solver.solve(verbosity=0)
-
-    assert captured["bounds"] == [(0, 2), (-1.0, 3.0)]
+    with pytest.raises(ValueError, match="Integer variables are not supported"):
+        solver.initialize(verbosity=0)
 
 
 def test_scipy_cache_respects_capacity():
@@ -216,6 +285,303 @@ def test_scipy_cache_respects_capacity():
 
     assert solver._mem is not None
     assert len(solver._mem) == 1
+
+
+def test_scipy_uses_population_for_local_fd_gradients(monkeypatch):
+    base_problem = iwopy.SimpleProblem(
+        "quadratic_fd",
+        float_vars=["x", "y"],
+        init_values_float=[3.0, -3.0],
+    )
+    base_problem.add_objective(FiniteDifferenceQuadratic(base_problem))
+    base_problem.initialize(verbosity=0)
+    problem = LocalFD(base_problem, deltas=1e-5)
+    problem.initialize(verbosity=0)
+    population_sizes = []
+    evaluate_population = problem.evaluate_population
+
+    def record_population(*args, **kwargs):
+        population_sizes.append(len(args[1]))
+        return evaluate_population(*args, **kwargs)
+
+    monkeypatch.setattr(problem, "evaluate_population", record_population)
+    solver = Optimizer_scipy(
+        problem,
+        scipy_pars={"method": "L-BFGS-B", "tol": 1e-9},
+        vectorized=True,
+    )
+    solver.initialize(verbosity=0)
+
+    result = solver.solve(verbosity=0)
+
+    assert result.success
+    assert result.vars_float == pytest.approx([1.0, -1.0], abs=1e-4)
+    assert population_sizes
+    assert all(size == problem.n_vars_float for size in population_sizes)
+
+
+def test_scipy_supports_constraints_through_local_fd():
+    base_problem = iwopy.SimpleProblem(
+        "constrained_fd",
+        float_vars=["x", "y"],
+        init_values_float=[3.0, -3.0],
+    )
+    base_problem.add_objective(FiniteDifferenceQuadratic(base_problem))
+    base_problem.add_constraint(FiniteDifferenceSumLower(base_problem))
+    base_problem.initialize(verbosity=0)
+    problem = LocalFD(base_problem, deltas=1e-5)
+    problem.initialize(verbosity=0)
+    solver = Optimizer_scipy(
+        problem,
+        scipy_pars={"method": "SLSQP", "tol": 1e-9},
+    )
+
+    solver.initialize(verbosity=0)
+    result = solver.solve(verbosity=0)
+
+    assert result.success
+    assert result.vars_float == pytest.approx([1.5, -0.5], abs=1e-4)
+    assert np.all(problem.check_constraints_individual(result.cons))
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        None,
+        "CG",
+        "BFGS",
+        "Newton-CG",
+        "L-BFGS-B",
+        "TNC",
+        "SLSQP",
+        "trust-constr",
+        "dogleg",
+        "trust-ncg",
+        "trust-exact",
+        "trust-krylov",
+    ],
+)
+def test_scipy_supplies_jacobian_to_gradient_methods(method, monkeypatch):
+    problem = make_quadratic_problem()
+    scipy_pars = {} if method is None else {"method": method}
+    solver = Optimizer_scipy(problem, scipy_pars=scipy_pars)
+    solver.initialize(verbosity=0)
+
+    def fake_minimize(fun, x0, *, bounds, **kwargs):
+        assert kwargs["jac"] == solver._objective_jac
+        np.testing.assert_allclose(kwargs["jac"](x0), [4.0])
+        return OptimizeResult(success=False)
+
+    monkeypatch.setattr("iwopy.interfaces.scipy.optimizer.minimize", fake_minimize)
+
+    solver.solve(verbosity=0)
+
+
+@pytest.mark.parametrize("method", ["Nelder-Mead", "Powell", "COBYLA", "COBYQA"])
+def test_scipy_omits_jacobian_for_derivative_free_methods(method, monkeypatch):
+    problem = make_quadratic_problem()
+    solver = Optimizer_scipy(problem, scipy_pars={"method": method})
+    solver.initialize(verbosity=0)
+
+    def fake_minimize(fun, x0, *, bounds, **kwargs):
+        assert "jac" not in kwargs
+        return OptimizeResult(success=False)
+
+    monkeypatch.setattr("iwopy.interfaces.scipy.optimizer.minimize", fake_minimize)
+
+    solver.solve(verbosity=0)
+
+
+def test_scipy_supplies_jacobian_to_custom_method(monkeypatch):
+    problem = make_quadratic_problem()
+
+    def custom_method(fun, x0, args=(), **kwargs):
+        del fun, args, kwargs
+        return OptimizeResult(x=x0, success=False)
+
+    solver = Optimizer_scipy(problem, scipy_pars={"method": custom_method})
+    solver.initialize(verbosity=0)
+
+    def fake_minimize(fun, x0, *, bounds, **kwargs):
+        assert kwargs["jac"] == solver._objective_jac
+        return OptimizeResult(success=False)
+
+    monkeypatch.setattr("iwopy.interfaces.scipy.optimizer.minimize", fake_minimize)
+
+    solver.solve(verbosity=0)
+
+
+@pytest.mark.parametrize("method", ["SLSQP", "trust-constr"])
+def test_scipy_honors_constraint_bounds(method):
+    problem = make_quadratic_problem(initialize=False)
+    problem.add_constraint(LowerBound(problem))
+    problem.initialize(verbosity=0)
+    solver = Optimizer_scipy(
+        problem,
+        scipy_pars={"method": method, "tol": 1e-9},
+    )
+    solver.initialize(verbosity=0)
+
+    result = solver.solve(verbosity=0)
+
+    assert result.success
+    assert result.vars_float == pytest.approx([1.5], abs=2e-4)
+    assert np.all(problem.check_constraints_individual(result.cons))
+
+
+def test_scipy_groups_general_constraint_bounds(monkeypatch):
+    problem = make_quadratic_problem(initialize=False)
+    problem.add_constraint(GeneralBounds(problem))
+    problem.initialize(verbosity=0)
+    solver = Optimizer_scipy(problem, scipy_pars={"method": "SLSQP"})
+    solver.initialize(verbosity=0)
+
+    def fake_minimize(fun, x0, *, bounds, **kwargs):
+        constraints = kwargs["constraints"]
+        assert [constraint["type"] for constraint in constraints] == [
+            "eq",
+            "ineq",
+            "ineq",
+        ]
+        np.testing.assert_allclose(
+            [
+                constraint["fun"](x0, *constraint["args"])[0]
+                for constraint in constraints
+            ],
+            [1.0, 3.0, -2.0],
+        )
+        np.testing.assert_allclose(
+            [
+                constraint["jac"](x0, *constraint["args"])[0, 0]
+                for constraint in constraints
+            ],
+            [1.0, 1.0, -1.0],
+        )
+        return OptimizeResult(success=False)
+
+    monkeypatch.setattr("iwopy.interfaces.scipy.optimizer.minimize", fake_minimize)
+
+    solver.solve(verbosity=0)
+
+
+def test_scipy_orients_maximization_objective_and_gradient():
+    problem = iwopy.SimpleProblem(
+        "maximize",
+        float_vars=["x"],
+        init_values_float=[0.0],
+        min_values_float=[-2.0],
+        max_values_float=[2.0],
+    )
+    problem.add_objective(Quadratic(problem, maximize=True))
+    problem.initialize(verbosity=0)
+    solver = Optimizer_scipy(problem, scipy_pars={"method": "L-BFGS-B"})
+    solver.initialize(verbosity=0)
+
+    result = solver.solve(verbosity=0)
+
+    assert result.success
+    assert result.vars_float == pytest.approx([-2.0], abs=1e-7)
+    assert result.objs == pytest.approx([9.0], abs=1e-7)
+
+
+def test_scipy_can_disable_population_gradients(monkeypatch):
+    problem = make_quadratic_problem()
+    gradient_pop_flags = []
+    get_gradients = problem.get_gradients
+
+    def record_gradient_mode(*args, **kwargs):
+        gradient_pop_flags.append(kwargs.get("pop"))
+        return get_gradients(*args, **kwargs)
+
+    monkeypatch.setattr(problem, "get_gradients", record_gradient_mode)
+    solver = Optimizer_scipy(
+        problem,
+        scipy_pars={"method": "L-BFGS-B"},
+        vectorized=False,
+    )
+    solver.initialize(verbosity=0)
+
+    result = solver.solve(verbosity=0)
+
+    assert result.success
+    assert gradient_pop_flags
+    assert not any(gradient_pop_flags)
+
+
+def test_scipy_reuses_combined_jacobian_for_constraints(monkeypatch):
+    problem = make_quadratic_problem(initialize=False)
+    problem.add_constraint(LowerBound(problem))
+    problem.initialize(verbosity=0)
+    gradient_pop_flags = []
+    get_gradients = problem.get_gradients
+
+    def record_gradient_mode(*args, **kwargs):
+        gradient_pop_flags.append(kwargs.get("pop"))
+        return get_gradients(*args, **kwargs)
+
+    monkeypatch.setattr(problem, "get_gradients", record_gradient_mode)
+    solver = Optimizer_scipy(problem, scipy_pars={"method": "SLSQP"})
+    solver.initialize(verbosity=0)
+
+    def fake_minimize(fun, x0, *, bounds, **kwargs):
+        np.testing.assert_allclose(kwargs["jac"](x0), [4.0])
+        constraints = kwargs["constraints"]
+        assert len(constraints) == 1
+        np.testing.assert_allclose(
+            constraints[0]["jac"](x0, *constraints[0]["args"]),
+            [[1.0]],
+        )
+        return OptimizeResult(success=False)
+
+    monkeypatch.setattr("iwopy.interfaces.scipy.optimizer.minimize", fake_minimize)
+
+    solver.solve(verbosity=0)
+
+    assert gradient_pop_flags == [True]
+
+
+def test_scipy_gradient_method_requires_problem_derivatives():
+    problem = iwopy.SimpleProblem(
+        "missing_derivatives",
+        float_vars=["x"],
+        init_values_float=[3.0],
+    )
+    problem.add_objective(MissingDerivativeQuadratic(problem))
+    problem.initialize(verbosity=0)
+    solver = Optimizer_scipy(problem, scipy_pars={"method": "L-BFGS-B"})
+    solver.initialize(verbosity=0)
+
+    with pytest.raises(ValueError, match="Failed to determine a finite"):
+        solver.solve(verbosity=0)
+
+
+def test_scipy_clears_value_and_gradient_caches_between_solves(monkeypatch):
+    problem = iwopy.SimpleProblem(
+        "mutable",
+        float_vars=["x"],
+        init_values_float=[3.0],
+    )
+    objective = MutableQuadratic(problem, target=1.0)
+    problem.add_objective(objective)
+    problem.initialize(verbosity=0)
+    solver = Optimizer_scipy(problem, scipy_pars={"method": "L-BFGS-B"})
+    solver.initialize(verbosity=0)
+    solver._objective(np.array([3.0]))
+    solver._objective_jac(np.array([3.0]))
+    objective.target = -1.0
+    evaluated = {}
+
+    def fake_minimize(fun, x0, *, bounds, **kwargs):
+        evaluated["objective"] = fun(x0)
+        evaluated["gradient"] = kwargs["jac"](x0)
+        return OptimizeResult(success=False)
+
+    monkeypatch.setattr("iwopy.interfaces.scipy.optimizer.minimize", fake_minimize)
+
+    solver.solve(verbosity=0)
+
+    assert evaluated["objective"] == pytest.approx(16.0)
+    np.testing.assert_allclose(evaluated["gradient"], [8.0])
 
 
 if __name__ == "__main__":

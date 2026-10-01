@@ -66,6 +66,7 @@ class SLSQP(Optimizer):
         self.var_scale: np.ndarray | None = None
         self.n_iterations = 0
         self._solve_verbosity = 0
+        self._pending_progress: OptimizerCallbackData | None = None
 
     def print_info(self) -> None:
         """Print solver info, called before solving"""
@@ -330,36 +331,40 @@ class SLSQP(Optimizer):
         upper = np.maximum(cons - constraint_upper, 0.0)
         return float(np.max(np.maximum(lower, upper)))
 
+    def _emit_progress(self, data: OptimizerCallbackData) -> None:
+        """Report a buffered SLSQP iterate."""
+        if self._solve_verbosity:
+            if data.objs is None or data.cons is None:
+                print(f"{data.iteration:>5} | {'cached values unavailable':>32}")
+            else:
+                violation = self._constraint_violation(data.cons[0])
+                print(
+                    f"{data.iteration:>5} | {data.objs[0, 0]:>14.7e} | "
+                    f"{violation:>14.7e}"
+                )
+        if self._has_callbacks:
+            self._notify_callbacks(data)
+
     def _progress_callback(self, scaled: np.ndarray) -> None:
-        """Report one accepted SLSQP iterate without new evaluations."""
+        """Buffer one accepted SLSQP iterate without new evaluations."""
+        if self._pending_progress is not None:
+            self._emit_progress(self._pending_progress)
+
         self.n_iterations += 1
         x = self._to_problem_vars(scaled)
         memory = self._value_mem
         assert memory is not None
         key = tuple(float(value) for value in x)
         values = memory.get(key)
-        if values is None:
-            objs = None
-            cons = None
-            if self._solve_verbosity:
-                print(f"{self.n_iterations:>5} | {'cached values unavailable':>32}")
-        else:
-            objs, cons = values
-            if self._solve_verbosity:
-                violation = self._constraint_violation(cons)
-                print(f"{self.n_iterations:>5} | {objs[0]:>14.7e} | {violation:>14.7e}")
-
-        if self._has_callbacks:
-            self._notify_callbacks(
-                OptimizerCallbackData(
-                    event="iteration",
-                    iteration=self.n_iterations,
-                    vars_int=np.array([], dtype=np.int32),
-                    vars_float=x,
-                    objs=objs,
-                    cons=cons,
-                )
-            )
+        objs, cons = (None, None) if values is None else values
+        self._pending_progress = OptimizerCallbackData(
+            event="iteration",
+            iteration=self.n_iterations,
+            vars_int=np.array([], dtype=np.int32),
+            vars_float=x,
+            objs=objs,
+            cons=cons,
+        )
 
     def solve(
         self,
@@ -384,6 +389,7 @@ class SLSQP(Optimizer):
         super().solve(verbosity, callbacks)
         self.n_iterations = 0
         self._solve_verbosity = verbosity
+        self._pending_progress = None
         x0 = np.asarray(self.problem.initial_values_float(), dtype=np.float64)
         scaled0 = self._to_scaled_vars(x0)
         lower = self._to_scaled_vars(self.problem.min_values_float())
@@ -415,8 +421,6 @@ class SLSQP(Optimizer):
         scipy_results = self.scipy_results
         if not report_progress:
             self.n_iterations = int(scipy_results.nit)
-        if verbosity:
-            print("--------------------+----------------+----------------")
 
         vars_float = self._to_problem_vars(scipy_results.x)
         scipy_results.x = vars_float
@@ -435,4 +439,18 @@ class SLSQP(Optimizer):
             cons,
             problem_results,
         )
+        if report_progress and self.n_iterations:
+            self._pending_progress = None
+            self._emit_progress(
+                OptimizerCallbackData(
+                    event="iteration",
+                    iteration=self.n_iterations,
+                    vars_int=vars_int,
+                    vars_float=vars_float,
+                    objs=objs,
+                    cons=cons,
+                )
+            )
+        if verbosity:
+            print("--------------------+----------------+----------------")
         return self._finalize_callbacks(results)

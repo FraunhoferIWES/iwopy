@@ -31,6 +31,27 @@ class Obj1(iwopy.Objective):
         return grad[var]
 
 
+class SingleVarObjective(iwopy.Objective):
+    def __init__(self, problem, name, variable, scale):
+        super().__init__(problem, name, vnames_float=[variable])
+        self.scale = scale
+
+    def n_components(self):
+        return 1
+
+    def maximize(self):
+        return [False]
+
+    def calc_individual(self, vars_int, vars_float, problem_results):
+        return [self.scale * vars_float[0] ** 2]
+
+    def calc_population(self, vars_int, vars_float, problem_results):
+        return (self.scale * vars_float[:, 0] ** 2)[:, None]
+
+    def ana_deriv(self, vars_int, vars_float, var, components=None):
+        return 2.0 * self.scale * vars_float[0]
+
+
 def _calc(p, f, p0, o, lim, pop):
     print("p0 =", p0)
 
@@ -116,6 +137,24 @@ def test_o2_pop():
 
     for p0 in np.random.uniform(-2.0, 2.0, (100, 2)):
         _calc(p, f, p0, 2, 0.01, True)
+
+
+def test_analytical_gradients_zero_disjoint_variable_dependencies():
+    problem = iwopy.SimpleProblem(
+        "disjoint",
+        float_vars=["x", "y"],
+        init_values_float=[0.0, 0.0],
+    )
+    problem.add_objective(SingleVarObjective(problem, "fx", "x", scale=1.0))
+    problem.add_objective(SingleVarObjective(problem, "fy", "y", scale=2.0))
+    problem.initialize(verbosity=0)
+
+    gradients = problem.get_gradients(
+        np.array([], dtype=np.int32),
+        np.array([3.0, 4.0]),
+    )
+
+    np.testing.assert_allclose(gradients, [[6.0, 0.0], [0.0, 16.0]])
 
 
 if __name__ == "__main__":

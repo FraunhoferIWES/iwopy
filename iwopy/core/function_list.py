@@ -435,26 +435,23 @@ class OptFunctionList(OptFunction, Generic[_OptFunctionT]):
         deriv
             The derivative values, shape: (n_sel_components,)
         """
-        cmpnts = np.arange(self.n_components()) if components is None else components
-        deriv = np.full(len(cmpnts), np.nan, dtype=np.float64)
+        cmpnts = (
+            np.arange(self.n_components())
+            if components is None
+            else np.asarray(components)
+        )
+        deriv = np.zeros(len(cmpnts), dtype=np.float64)
 
         i0 = 0
-        j0 = 0
         for fi, f in enumerate(self.functions):
             i1 = i0 + self.sizes[fi]
-            if var in list(self.func_vars_float[fi]):
-                cts = (
-                    None
-                    if components is None
-                    else [i - i0 for i in cmpnts if i >= i0 and i < i1]
-                )
-                if cts is None or len(cts):
-                    j1 = j0 + (self.sizes[fi] if cts is None else len(cts))
-                    varsi = vars_int[self.func_vars_int[fi]]
-                    varsf = vars_float[self.func_vars_float[fi]]
-                    vi = list(self.func_vars_float[fi]).index(var)
-                    deriv[j0:j1] = f.ana_deriv(varsi, varsf, vi, components=cts)
-                    j0 = j1
+            selected = (cmpnts >= i0) & (cmpnts < i1)
+            if np.any(selected) and var in list(self.func_vars_float[fi]):
+                cts = None if components is None else (cmpnts[selected] - i0).tolist()
+                varsi = vars_int[self.func_vars_int[fi]]
+                varsf = vars_float[self.func_vars_float[fi]]
+                vi = list(self.func_vars_float[fi]).index(var)
+                deriv[selected] = f.ana_deriv(varsi, varsf, vi, components=cts)
             i0 = i1
 
         return deriv

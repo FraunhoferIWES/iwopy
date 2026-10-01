@@ -232,6 +232,14 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 - Python versions:
   - Added support for Python 3.14
+- Interfaces:
+  - Added cached, population-vectorized iwopy Jacobians to every
+    gradient-capable SciPy minimizer, with grouped general constraints and an
+    explicit continuous-variable contract.
+- Bugs:
+  - Fixed combined analytical Jacobians for functions with disjoint variable
+    dependencies, restored constraint bounds through problem wrappers, and
+    cleared SciPy value and gradient caches between solves.
 
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.5.1](https://github.com/FraunhoferIWES/iwopy/commits/v0.5.1)

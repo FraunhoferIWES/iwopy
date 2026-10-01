@@ -2,6 +2,7 @@ from time import perf_counter, sleep
 
 import numpy as np
 import pytest
+from scipy.optimize import OptimizeResult
 
 import iwopy
 from iwopy.optimizers import SLSQP
@@ -180,6 +181,39 @@ def test_slsqp_reports_progress_without_extra_evaluations(capsys, monkeypatch):
     assert history.states[-1].vars_float[0] == pytest.approx(result.vars_float)
     assert history.states[-1].objs[0] == pytest.approx(result.objs)
     assert evaluations == solver.scipy_results.nfev
+
+
+def test_slsqp_reports_returned_point_as_last_iteration(monkeypatch):
+    problem = make_problem(initial=0.0, target=1.0)
+    problem.initialize(verbosity=0)
+    solver = SLSQP(problem)
+    solver.initialize(verbosity=0)
+
+    def return_newer_point(fun, x0, callback, **kwargs):
+        del x0, kwargs
+        callback_point = np.array([2.0])
+        fun(callback_point)
+        callback(callback_point)
+        final_point = np.array([1.0])
+        final_objective = fun(final_point)
+        return OptimizeResult(
+            x=final_point,
+            fun=final_objective,
+            success=True,
+            nit=1,
+            nfev=2,
+        )
+
+    monkeypatch.setattr("iwopy.optimizers.slsqp.minimize", return_newer_point)
+    history = iwopy.OptimizationHistory()
+
+    result = solver.solve(verbosity=0, callbacks=[history])
+
+    assert result.success
+    assert len(history.states) == 1
+    assert history.states[0].iteration == 1
+    assert history.states[0].vars_float[0] == pytest.approx(result.vars_float)
+    assert history.states[0].objs[0] == pytest.approx(result.objs)
 
 
 def test_slsqp_progress_is_silent_at_zero_verbosity(capsys):
