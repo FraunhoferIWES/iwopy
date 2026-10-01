@@ -380,6 +380,60 @@ def test_local_fd_population_evaluates_only_numerical_components():
     assert constraint.population_calls == 0
 
 
+@pytest.mark.parametrize(
+    ("max_population_size", "expected_sizes"),
+    [(2, [2, 1]), (10, [3])],
+)
+def test_local_fd_bounds_population_size(
+    monkeypatch, max_population_size, expected_sizes
+):
+    problem = iwopy.SimpleProblem(
+        "batched_fd",
+        float_vars=["x", "y", "z"],
+        init_values_float=[1.0, 2.0, 3.0],
+    )
+    problem.add_objective(SlowQuadratic(problem, delay=0.0))
+    problem.initialize(verbosity=0)
+    problem = LocalFD(
+        problem,
+        deltas=1e-5,
+        max_population_size=max_population_size,
+    )
+    problem.initialize(verbosity=0)
+    population_sizes = []
+    apply_population = problem.apply_population
+
+    def record_population(*args, **kwargs):
+        population_sizes.append(len(args[1]))
+        return apply_population(*args, **kwargs)
+
+    monkeypatch.setattr(problem, "apply_population", record_population)
+    gradients = problem.get_gradients(
+        np.array([], dtype=np.int32),
+        np.array([1.0, 2.0, 3.0]),
+        func_values=np.array([14.0]),
+        pop=True,
+    )
+
+    np.testing.assert_allclose(gradients, [[2.0, 4.0, 6.0]], atol=1e-4)
+    assert population_sizes == expected_sizes
+
+
+@pytest.mark.parametrize(
+    ("max_population_size", "error"),
+    [(0, ValueError), (-1, ValueError), (1.5, TypeError)],
+)
+def test_local_fd_rejects_invalid_population_size(max_population_size, error):
+    problem = make_problem(initial=2.0, target=1.0, ana_deriv=False)
+
+    with pytest.raises(error, match="max_population_size"):
+        LocalFD(
+            problem,
+            deltas={"x": 1e-5},
+            max_population_size=max_population_size,
+        )
+
+
 def test_local_fd_reuses_center_values_in_serial_mode(monkeypatch):
     problem = make_problem(initial=2.0, target=1.0, ana_deriv=False)
     problem.initialize()

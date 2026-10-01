@@ -26,6 +26,7 @@ class LocalFD(ProblemWrapper):
         deltas: float | dict[str, float],
         fd_order: int | dict[str, int] = 1,
         fd_bounds_order: int | dict[str, int] | None = None,
+        max_population_size: int | None = None,
         name: str | None = None,
     ) -> None:
         """
@@ -47,11 +48,22 @@ class LocalFD(ProblemWrapper):
             Either a dict with key: variable name str,
             value: order int, or a global integer order
             for all variables. Default is same as fd_order
+        max_population_size
+            Maximum number of finite-difference points evaluated in one
+            vectorized population call, or ``None`` for one unbounded call.
         name
             The problem name
         """
         name = base_problem.name + "_fd" if name is None else name
         super().__init__(base_problem, name)
+
+        if max_population_size is not None:
+            if not isinstance(max_population_size, (int, np.integer)):
+                raise TypeError("max_population_size must be an integer or None")
+            if max_population_size < 1:
+                raise ValueError("max_population_size must be positive")
+            max_population_size = int(max_population_size)
+        self.max_population_size = max_population_size
 
         if isinstance(deltas, float):
             deltas = {v: deltas for v in base_problem.var_names_float()}
@@ -122,6 +134,34 @@ class LocalFD(ProblemWrapper):
             raise NotImplementedError(
                 f"Order(s) {list(np.unique(self._order[~sel]))} not implemented."
             )
+
+    def _calc_population_values(
+        self,
+        vars_int: np.ndarray,
+        vars_float: np.ndarray,
+        func: OptFunction,
+        components: np.ndarray,
+    ) -> np.ndarray:
+        """Evaluate finite-difference points in bounded population batches."""
+        values = np.full((len(vars_float), len(components)), np.nan, dtype=np.float64)
+        batch_size = self.max_population_size or max(len(vars_float), 1)
+        for start in range(0, len(vars_float), batch_size):
+            stop = min(start + batch_size, len(vars_float))
+            batch_float = vars_float[start:stop]
+            batch_int = np.zeros((stop - start, self.n_vars_int), dtype=np.int32)
+            if self.n_vars_int:
+                batch_int[:] = vars_int[None, :]
+            results = self.apply_population(batch_int, batch_float)
+            if isinstance(func, ProblemDefaultFunc):
+                fvarsi, fvarsf = self._find_vars(batch_int, batch_float, func)
+                values[start:stop] = func.calc_population(
+                    fvarsi, fvarsf, results, components=components
+                )
+            else:
+                values[start:stop] = func.calc_population(
+                    batch_int, batch_float, results, components
+                )
+        return values
         sel = (self._orderb == -1) | (self._orderb == 1) | (self._orderb == 2)
         if not np.all(sel):
             raise NotImplementedError(
@@ -340,20 +380,7 @@ class LocalFD(ProblemWrapper):
         varsf[:] = vars_float[None, :]
         varsf[:, gvars] = epts
         if pop:
-            varsi = np.zeros((n_pop, self.n_vars_int), dtype=np.int32)
-            if self.n_vars_int:
-                varsi[:] = vars_int[None, :]
-            if isinstance(func, ProblemDefaultFunc):
-                results = self.apply_population(varsi, varsf)
-                fvarsi, fvarsf = self._find_vars(varsi, varsf, func)
-                values[:] = func.calc_population(
-                    fvarsi, fvarsf, results, components=fcmpts
-                )
-                del results
-            else:
-                results = self.apply_population(varsi, varsf)
-                values[:] = func.calc_population(varsi, varsf, results, fcmpts)
-                del results
+            values[:] = self._calc_population_values(vars_int, varsf, func, fcmpts)
         else:
             for i, vf in enumerate(varsf):
                 if isinstance(func, ProblemDefaultFunc):

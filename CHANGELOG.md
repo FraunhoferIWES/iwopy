@@ -236,6 +236,8 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
   - Added cached, population-vectorized iwopy Jacobians to every
     gradient-capable SciPy minimizer, with grouped general constraints and an
     explicit continuous-variable contract.
+  - Added bounded vectorized finite-difference batches through
+    `LocalFD.max_population_size`.
 - Bugs:
   - Fixed combined analytical Jacobians for functions with disjoint variable
     dependencies, restored constraint bounds through problem wrappers, and

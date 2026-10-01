@@ -53,7 +53,7 @@ class DiscretizeRegGrid(LocalFD):
             Additional parameters for `RegularDiscretizationGrid`
         """
         name = base_problem.name + "_grid" if name is None else name
-        super().__init__(base_problem, deltas, fd_order, fd_bounds_order, name)
+        super().__init__(base_problem, deltas, fd_order, fd_bounds_order, name=name)
 
         self.grid: RegularDiscretizationGrid | None = None
         self._msize = mem_size
