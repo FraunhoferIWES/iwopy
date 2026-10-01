@@ -52,6 +52,43 @@ class SingleVarObjective(iwopy.Objective):
         return 2.0 * self.scale * vars_float[0]
 
 
+class SparseObjective(iwopy.Objective):
+    def __init__(self, problem):
+        super().__init__(problem, "sparse")
+        self.derivative_calls = []
+
+    def n_components(self):
+        return 3
+
+    def maximize(self):
+        return [False, False, False]
+
+    def vardeps_float(self):
+        return np.array(
+            [
+                [True, False],
+                [False, True],
+                [False, False],
+            ]
+        )
+
+    def calc_individual(self, vars_int, vars_float, problem_results):
+        x, y = vars_float
+        return np.array([x, 2.0 * y, 1.0])
+
+    def calc_population(self, vars_int, vars_float, problem_results):
+        x, y = vars_float.T
+        return np.column_stack([x, 2.0 * y, np.ones(len(x))])
+
+    def ana_deriv(self, vars_int, vars_float, var, components=None):
+        selected = np.arange(self.n_components()) if components is None else components
+        selected = np.asarray(selected, dtype=int)
+        expected = np.flatnonzero(self.vardeps_float()[:, var])
+        np.testing.assert_array_equal(selected, expected)
+        self.derivative_calls.append((var, selected.tolist()))
+        return np.full(len(selected), 1.0 if var == 0 else 2.0)
+
+
 def _calc(p, f, p0, o, lim, pop):
     print("p0 =", p0)
 
@@ -155,6 +192,32 @@ def test_analytical_gradients_zero_disjoint_variable_dependencies():
     )
 
     np.testing.assert_allclose(gradients, [[6.0, 0.0], [0.0, 16.0]])
+
+
+def test_analytical_gradients_select_dependent_components():
+    problem = iwopy.SimpleProblem(
+        "sparse",
+        float_vars=["x", "y"],
+        init_values_float=[0.0, 0.0],
+    )
+    objective = SparseObjective(problem)
+    problem.add_objective(objective)
+    problem.initialize(verbosity=0)
+
+    gradients = problem.get_gradients(
+        np.array([], dtype=np.int32),
+        np.array([3.0, 4.0]),
+    )
+
+    np.testing.assert_allclose(
+        gradients,
+        [
+            [1.0, 0.0],
+            [0.0, 2.0],
+            [0.0, 0.0],
+        ],
+    )
+    assert objective.derivative_calls == [(0, [0]), (1, [1])]
 
 
 if __name__ == "__main__":

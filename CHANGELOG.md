@@ -240,6 +240,10 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
   - Fixed combined analytical Jacobians for functions with disjoint variable
     dependencies, restored constraint bounds through problem wrappers, and
     cleared SciPy value and gradient caches between solves.
+  - Skipped structurally independent components when assembling analytical
+    Jacobians.
+  - Avoided evaluating analytically differentiated function components during
+    vectorized `LocalFD` gradients.
 
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.5.1](https://github.com/FraunhoferIWES/iwopy/commits/v0.5.1)

@@ -41,6 +41,16 @@ class LinearConstraint(iwopy.SimpleConstraint):
         return 1.0
 
 
+class CountingLinearConstraint(LinearConstraint):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.population_calls = 0
+
+    def calc_population(self, *args, **kwargs):
+        self.population_calls += 1
+        return super().calc_population(*args, **kwargs)
+
+
 class NonFiniteQuadratic(Quadratic):
     def g(self, var, x, components):
         return np.nan
@@ -308,7 +318,7 @@ def test_slsqp_uses_population_for_local_fd_gradients(monkeypatch):
     population_calls = 0
     population_sizes = []
     gradient_pop_flags = []
-    original = problem.evaluate_population
+    original = problem.apply_population
     original_gradients = problem.get_gradients
 
     def count_population(*args, **kwargs):
@@ -321,7 +331,7 @@ def test_slsqp_uses_population_for_local_fd_gradients(monkeypatch):
         gradient_pop_flags.append(kwargs.get("pop"))
         return original_gradients(*args, **kwargs)
 
-    monkeypatch.setattr(problem, "evaluate_population", count_population)
+    monkeypatch.setattr(problem, "apply_population", count_population)
     monkeypatch.setattr(problem, "get_gradients", record_gradient_mode)
     solver = SLSQP(problem, scipy_pars={"tol": 1e-8})
     solver.initialize(verbosity=0)
@@ -350,6 +360,24 @@ def test_local_fd_rejects_wrong_center_value_shape():
             func_values=np.array([1.0, 2.0]),
             pop=True,
         )
+
+
+def test_local_fd_population_evaluates_only_numerical_components():
+    problem = make_problem(initial=2.0, target=1.0, ana_deriv=False)
+    constraint = CountingLinearConstraint(problem, "c", mins=1.5, maxs=np.inf)
+    problem.add_constraint(constraint)
+    problem.initialize(verbosity=0)
+    problem = LocalFD(problem, deltas={"x": 1e-5})
+    problem.initialize(verbosity=0)
+
+    gradients = problem.get_gradients(
+        np.array([], dtype=np.int32),
+        np.array([2.0]),
+        pop=True,
+    )
+
+    np.testing.assert_allclose(gradients, [[2.0], [1.0]], atol=1e-4)
+    assert constraint.population_calls == 0
 
 
 def test_local_fd_reuses_center_values_in_serial_mode(monkeypatch):

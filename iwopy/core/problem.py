@@ -488,14 +488,27 @@ class Problem(Base, metaclass=ABCMeta):
         varsi = vars_int[ivars] if len(vars_int) else np.array([])
         varsf = vars_float[fvars] if len(vars_float) else np.array([])
 
-        gradients = np.full((n_cmpnts, n_vars), np.nan, dtype=np.float64)
+        component_indices = (
+            np.arange(func.n_components(), dtype=int)
+            if components is None
+            else np.asarray(components, dtype=int)
+        )
+        dependencies = func.vardeps_float()[component_indices]
+        gradients = np.zeros((n_cmpnts, n_vars), dtype=np.float64)
         for vi, v in enumerate(vrs):
             if v in fvars:
-                gradients[:, vi] = func.ana_deriv(
-                    varsi, varsf, fvars.index(v), components
+                func_var = fvars.index(v)
+                dependent = np.flatnonzero(dependencies[:, func_var])
+                if not len(dependent):
+                    continue
+                selected_components = (
+                    components
+                    if len(dependent) == n_cmpnts
+                    else component_indices[dependent]
                 )
-            else:
-                gradients[:, vi] = 0
+                gradients[dependent, vi] = func.ana_deriv(
+                    varsi, varsf, func_var, selected_components
+                )
 
         return gradients
 

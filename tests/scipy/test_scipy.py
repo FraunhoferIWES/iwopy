@@ -298,13 +298,13 @@ def test_scipy_uses_population_for_local_fd_gradients(monkeypatch):
     problem = LocalFD(base_problem, deltas=1e-5)
     problem.initialize(verbosity=0)
     population_sizes = []
-    evaluate_population = problem.evaluate_population
+    apply_population = problem.apply_population
 
     def record_population(*args, **kwargs):
         population_sizes.append(len(args[1]))
-        return evaluate_population(*args, **kwargs)
+        return apply_population(*args, **kwargs)
 
-    monkeypatch.setattr(problem, "evaluate_population", record_population)
+    monkeypatch.setattr(problem, "apply_population", record_population)
     solver = Optimizer_scipy(
         problem,
         scipy_pars={"method": "L-BFGS-B", "tol": 1e-9},

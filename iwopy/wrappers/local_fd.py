@@ -15,6 +15,9 @@ class LocalFD(ProblemWrapper):
     """
     A wrapper that provides finite distance
     differentiation by local stepwise evaluation.
+
+    When population evaluation is enabled, only function components without
+    analytical derivatives are calculated at the finite-difference points.
     """
 
     def __init__(
@@ -341,9 +344,12 @@ class LocalFD(ProblemWrapper):
             if self.n_vars_int:
                 varsi[:] = vars_int[None, :]
             if isinstance(func, ProblemDefaultFunc):
-                os, cs = self.evaluate_population(varsi, varsf)
-                values[:] = np.c_[os, cs][:, fcmpts]
-                del os, cs
+                results = self.apply_population(varsi, varsf)
+                fvarsi, fvarsf = self._find_vars(varsi, varsf, func)
+                values[:] = func.calc_population(
+                    fvarsi, fvarsf, results, components=fcmpts
+                )
+                del results
             else:
                 results = self.apply_population(varsi, varsf)
                 values[:] = func.calc_population(varsi, varsf, results, fcmpts)
