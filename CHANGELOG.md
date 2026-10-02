@@ -246,6 +246,9 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
     Jacobians.
   - Avoided evaluating analytically differentiated function components during
     vectorized `LocalFD` gradients.
-
+- Development:
+  - Added iwopy-specific agentic coding policy, architecture, naming,
+    development, docstring, data-classification, decision, and Fraunhofer IWES
+    visual-design guidance.
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.5.1](https://github.com/FraunhoferIWES/iwopy/commits/v0.5.1)
