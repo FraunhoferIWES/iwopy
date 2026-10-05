@@ -270,7 +270,9 @@ def test_slsqp_scales_large_physical_variable_ranges():
 )
 def test_slsqp_supports_constraint_bounds(minimum, maximum, expected):
     problem = make_problem(initial=0.0)
-    problem.add_constraint(LinearConstraint(problem, "c", mins=minimum, maxs=maximum))
+    constraint = LinearConstraint(problem, "c", mins=minimum, maxs=maximum)
+    constraint.tol = 0.0
+    problem.add_constraint(constraint)
     problem.initialize()
     solver = SLSQP(problem, scipy_pars={"tol": 1e-10})
     solver.initialize(verbosity=0)
@@ -279,6 +281,22 @@ def test_slsqp_supports_constraint_bounds(minimum, maximum, expected):
 
     assert result.success
     assert result.vars_float == pytest.approx([expected], abs=1e-7)
+    assert np.all(problem.check_constraints_individual(result.cons))
+
+
+def test_slsqp_honors_constraint_tolerance():
+    problem = make_problem(initial=0.0)
+    constraint = LinearConstraint(problem, "c", mins=1.0, maxs=np.inf)
+    problem.add_constraint(constraint)
+    constraint.tol = 0.2
+    problem.initialize()
+    solver = SLSQP(problem, scipy_pars={"tol": 1e-10})
+    solver.initialize(verbosity=0)
+
+    result = solver.solve(verbosity=0)
+
+    assert result.success
+    assert result.vars_float == pytest.approx([0.8], abs=1e-7)
     assert np.all(problem.check_constraints_individual(result.cons))
 
 

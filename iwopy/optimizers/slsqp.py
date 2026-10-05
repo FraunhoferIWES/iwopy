@@ -17,13 +17,16 @@ _CacheValueT = TypeVar("_CacheValueT")
 
 
 class SLSQP(Optimizer):
-    """
-    Gradient-based SLSQP optimizer for continuous problems.
+    """Gradient-based SLSQP optimizer for continuous problems.
 
     The complete objective and constraint Jacobian is obtained through
     ``Problem.get_gradients(..., pop=True)`` at each iterate. Hence missing
     analytical derivatives can be supplied by a population-capable problem
     wrapper such as :class:`iwopy.wrappers.LocalFD`.
+
+    Constraint bounds are relaxed by the feasibility tolerance owned by each
+    registered :class:`iwopy.core.Constraint`. A small inward numerical reserve
+    keeps a solver result on the accepted side of iwopy's feasibility check.
     """
 
     def __init__(
@@ -34,7 +37,8 @@ class SLSQP(Optimizer):
         vectorized: bool = True,
         name: str = "SLSQP",
     ) -> None:
-        """
+        """Initialize the SLSQP optimizer.
+
         Parameters
         ----------
         problem
@@ -295,27 +299,49 @@ class SLSQP(Optimizer):
             upper = np.concatenate([bound[1] for bound in bounds])
         lower = np.asarray(lower, dtype=np.float64)
         upper = np.asarray(upper, dtype=np.float64)
+        tolerance = np.concatenate(
+            [
+                np.full(
+                    constraint.n_components(),
+                    constraint.tol,
+                    dtype=np.float64,
+                )
+                for constraint in self.problem.cons.functions
+            ]
+        )
         self._constraint_lower = lower
         self._constraint_upper = upper
-        equal = np.isfinite(lower) & np.isfinite(upper) & (lower == upper)
+        reserve = np.maximum(
+            tolerance * 1e-9,
+            10.0 * np.finfo(np.float64).eps,
+        )
+        solver_tolerance = np.maximum(tolerance - reserve, 0.0)
+        solver_lower = lower - solver_tolerance
+        solver_upper = upper + solver_tolerance
+        equal = (
+            np.isfinite(lower)
+            & np.isfinite(upper)
+            & (lower == upper)
+            & (tolerance == 0.0)
+        )
         constraints: list[dict[str, object]] = []
 
         indices = np.flatnonzero(equal)
         if len(indices):
             constraints.append(
-                self._make_constraint("eq", indices, lower[indices], 1.0)
+                self._make_constraint("eq", indices, solver_lower[indices], 1.0)
             )
 
-        indices = np.flatnonzero(np.isfinite(lower) & ~equal)
+        indices = np.flatnonzero(np.isfinite(solver_lower) & ~equal)
         if len(indices):
             constraints.append(
-                self._make_constraint("ineq", indices, lower[indices], 1.0)
+                self._make_constraint("ineq", indices, solver_lower[indices], 1.0)
             )
 
-        indices = np.flatnonzero(np.isfinite(upper) & ~equal)
+        indices = np.flatnonzero(np.isfinite(solver_upper) & ~equal)
         if len(indices):
             constraints.append(
-                self._make_constraint("ineq", indices, upper[indices], -1.0)
+                self._make_constraint("ineq", indices, solver_upper[indices], -1.0)
             )
         return constraints
 

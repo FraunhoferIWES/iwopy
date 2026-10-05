@@ -8,21 +8,24 @@ from .function import OptFunction
 
 
 class Constraint(OptFunction):
-    """
-    Abstract base class for optimization
-    constraints.
+    """Abstract base class for optimization constraints.
+
+    Each constraint owns the scalar feasibility tolerance applied to all of
+    its components. Optimizer backends derive component-wise tolerance arrays
+    from the registered constraint objects when they initialize.
     """
 
     def __init__(self, *args: Any, tol: float = 1e-5, **kwargs: Any) -> None:
-        """
+        """Initialize the constraint.
+
         Parameters
         ----------
         args
-            Positional parameters for the base class
+            Positional parameters for the base class.
         tol
-            The tolerance for constraint violations
+            Feasibility tolerance applied to every constraint component.
         kwargs
-            Keyword parameters for the base class
+            Keyword parameters for the base class.
         """
         super().__init__(*args, **kwargs)
         self.tol = tol

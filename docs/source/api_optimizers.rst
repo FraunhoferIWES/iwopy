@@ -7,6 +7,13 @@ problems with variable bounds and lower, upper, two-sided, or equality
 constraints. It supplies SciPy's SLSQP implementation with the complete
 iwopy Jacobian at every iterate.
 
+SLSQP expands the tolerance owned by each registered constraint in component
+order and relaxes the corresponding lower and upper solver bounds. A
+positive-tolerance equality becomes two inequalities; set a constraint's
+``tol`` to zero when exact equality or inequality bounds are required. A small
+inward numerical reserve keeps a boundary solution inside iwopy's feasibility
+check.
+
 Optimization variables are transformed internally to dimensionless
 coordinates. Variables with finite lower and upper bounds are mapped to
 ``[-1, 1]``; other variables are scaled from their initial values and finite

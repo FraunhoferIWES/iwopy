@@ -138,6 +138,9 @@ them to attributes without a deliberate contract change.
 	uses `np.inf`.
 - Constraint components have lower bounds, upper bounds, and tolerance. The
 	default is `-np.inf <= value <= 0.0` with tolerance `1e-5`.
+- Each constraint object owns its scalar tolerance. A backend may derive a
+	component vector in constraint registration order, but `Problem` does not own
+	or cache that vector.
 - `success` on result containers and callback snapshots denotes the owning
 	optimizer's solution/candidate status. State whether it represents solver
 	completion, feasibility, or both for a backend-specific value.
@@ -185,7 +188,8 @@ them to attributes without a deliberate contract change.
 	`RegularDiscretizationGrid` is the lower-level grid utility.
 - Pipeline classes end in `Pipeline`; composable stages derive from
 	`PipelineStage`. Use `prev_stage` and `prev_results` for stage inputs and
-	return `(success, results)`.
+	return `(success, results)`. Use `initial_results` for an application payload
+	seeded into the first selected stage of a restart.
 - Stage directories use two-digit index prefixes: `NN_stage_name`.
 - Callback events are `iteration` or `evaluation`. Distinguish event counters
 	from population indices and objective evaluations.

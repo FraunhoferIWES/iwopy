@@ -143,6 +143,28 @@ class MaximizeX(iwopy.SimpleObjective):
         return x
 
 
+class LimitX(iwopy.SimpleConstraint):
+    def f(self, x):
+        return x
+
+
+def test_pygmo_uses_constraint_owned_tolerance():
+    problem = iwopy.SimpleProblem(
+        "constraint_tolerance",
+        float_vars=["x"],
+        init_values_float=[0.0],
+    )
+    problem.add_objective(MaximizeX(problem))
+    constraint = LimitX(problem, "limit_x")
+    problem.add_constraint(constraint)
+    constraint.tol = 0.2
+    problem.initialize(verbosity=0)
+
+    udp = UDP(problem)
+
+    np.testing.assert_array_equal(udp.c_tol, [0.2])
+
+
 @pytest.mark.parametrize("maximize", [False, True])
 def test_pygmo_gradient_matches_fitness_direction(maximize):
     class LinearObjective(iwopy.SimpleObjective):

@@ -124,11 +124,10 @@ class PipelineStage(Base, metaclass=ABCMeta):
 
 
 class Pipeline(Base):
-    """
-    Base class for optimization pipelines.
+    """Base class for optimization pipelines.
 
     An optimization pipeline is a collection of optimization problems
-    and optimmizers that are being run one after another. Each step
+    and optimizers that are run one after another. Each step
     of this process is called a stage.
     """
 
@@ -331,32 +330,44 @@ class Pipeline(Base):
         self,
         start_stage: int = 0,
         end_stage: int | None = None,
+        initial_results: object | None = None,
         finalize: bool = True,
         verbosity: int = 1,
         **kwargs: object,
     ) -> tuple[bool | None, object | None]:
-        """
-        Run the pipeline.
+        """Run a selected half-open range of pipeline stages.
+
+        The first selected stage receives ``initial_results`` and the stage
+        registered immediately before it as ``prev_stage``. Execution stops
+        after a stage returns ``success=False``. The pipeline always leaves its
+        running state before returning or propagating an exception.
 
         Parameters
         ----------
         start_stage
-            The stage index to start from
+            Index of the first stage to run.
         end_stage
-            The stage index to end at, default None (run all stages)
+            Exclusive end index, or ``None`` to run through the final stage.
+        initial_results
+            Application-defined results supplied to the first selected stage,
+            for example a persisted result used with ``start_stage > 0``.
         finalize
-            Whether to finalize the pipeline after running, default True
+            Whether to finalize initialized stages after normal completion or
+            a stage-reported failure.
         verbosity
-            The verbosity level, 0 = silent
+            Verbosity level, where zero is silent except for propagated stage
+            errors.
         kwargs
-            Additional keyword arguments to pass to each stage's run method
+            Additional keyword arguments passed to every selected stage.
 
         Returns
         -------
         success
-            Whether all stages were successful
+            Whether every selected stage succeeded, or ``None`` when no stage
+            ran.
         results
-            The pipeline results
+            Results returned by the final stage that ran, or
+            ``initial_results`` when no stage ran.
         """
         assert not self.running, f"{self.name}: cannot run pipeline while it is running"
 
@@ -369,12 +380,12 @@ class Pipeline(Base):
         self.end_stage = end_stage
 
         success = None
-        results = None
-        prev_stage = None
-        for stage in self:
-            if verbosity > 0:
-                print(f"{self.name}: Running stage {stage.index}: {stage.name}")
-            try:
+        results = initial_results
+        prev_stage = self.get_stage(start_stage - 1) if start_stage > 0 else None
+        try:
+            for stage in self:
+                if verbosity > 0:
+                    print(f"{self.name}: Running stage {stage.index}: {stage.name}")
                 success, results = stage.run(
                     prev_stage=prev_stage,
                     prev_results=results,
@@ -384,16 +395,17 @@ class Pipeline(Base):
                 if not success:
                     print(f"{self.name}: Stage {stage.name} failed, stopping pipeline")
                     break
-            except Exception:
-                print(
-                    f"{self.name}: Exception occurred during pipeline execution at step {stage.index}: {stage.name}"
-                )
-                success = False
-                self.__running = False
-                raise
-
-        self.start_stage = hstart
-        self.end_stage = hend
+                prev_stage = stage
+        except Exception:
+            print(
+                f"{self.name}: Exception occurred during pipeline execution at step {stage.index}: {stage.name}"
+            )
+            success = False
+            raise
+        finally:
+            self.__running = False
+            self.start_stage = hstart
+            self.end_stage = hend
 
         if finalize:
             self.finalize(verbosity=verbosity)

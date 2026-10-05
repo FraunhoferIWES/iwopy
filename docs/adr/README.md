@@ -14,6 +14,8 @@ all of them.
 |---|---|---|
 | [0001](0001-forward-only-development.md) | Accepted | Develop iwopy forward-only by default and close every change with synchronized tests, documentation, records, and changelog. |
 | [0002](0002-corporate-design.md) | Accepted | Apply Fraunhofer corporate design to iwopy's plots, documentation, notebooks, and brand assets. |
+| [0003](0003-constraint-owned-solver-tolerances.md) | Accepted | Keep feasibility tolerance on each constraint and derive backend component vectors in registration order. |
+| [0004](0004-pipeline-restart-results.md) | Accepted | Seed a selected pipeline range with restart results and always clear running state when execution stops. |
 
 ## When To Add An ADR
 

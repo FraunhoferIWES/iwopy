@@ -232,12 +232,18 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 - Python versions:
   - Added support for Python 3.14
+- Core:
+  - Added restart result seeding for selected pipeline stage ranges and ensured
+    stage-reported failures clear running state before finalization.
 - Interfaces:
   - Added cached, population-vectorized iwopy Jacobians to every
     gradient-capable SciPy minimizer, with grouped general constraints and an
     explicit continuous-variable contract.
   - Added bounded vectorized finite-difference batches through
     `LocalFD.max_population_size`.
+  - Constraint objects are now the sole tolerance owners; SLSQP and PyGMO
+    derive component tolerances directly from registered constraints, and
+    SLSQP applies them to translated solver bounds.
 - Bugs:
   - Fixed combined analytical Jacobians for functions with disjoint variable
     dependencies, restored constraint bounds through problem wrappers, and

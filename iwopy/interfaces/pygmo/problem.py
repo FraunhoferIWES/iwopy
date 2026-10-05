@@ -22,7 +22,11 @@ class _CallbackSink(Protocol):
 
 
 class UDP:
-    """Generic Problem to Pygmo UserDefinedProblem adapter"""
+    """Adapt an iwopy problem to a PyGMO user-defined problem.
+
+    PyGMO's component tolerance vector is derived from the tolerance owned by
+    each registered iwopy constraint when the adapter is constructed.
+    """
 
     def __init__(
         self,
@@ -30,7 +34,8 @@ class UDP:
         pop: bool = False,
         verbosity: int = 0,
     ) -> None:
-        """
+        """Initialize the PyGMO problem adapter.
+
         Parameters
         ----------
         problem
@@ -44,7 +49,20 @@ class UDP:
         self.n_vars_all = problem.n_vars_float + problem.n_vars_int
         self.n_fitness = problem.n_objectives + problem.n_constraints
 
-        self.c_tol = problem.constraints_tol
+        self.c_tol = (
+            np.concatenate(
+                [
+                    np.full(
+                        constraint.n_components(),
+                        constraint.tol,
+                        dtype=np.float64,
+                    )
+                    for constraint in problem.cons.functions
+                ]
+            )
+            if problem.n_constraints
+            else np.empty(0, dtype=np.float64)
+        )
 
         self.pop = pop
         self.verbosity = verbosity

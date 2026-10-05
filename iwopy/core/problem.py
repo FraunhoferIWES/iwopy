@@ -49,7 +49,6 @@ class Problem(Base, metaclass=ABCMeta):
 
         self._cons_mi: np.ndarray | None = None
         self._cons_ma: np.ndarray | None = None
-        self._cons_tol: np.ndarray | None = None
         self._maximize: np.ndarray | None = None
 
     def var_names_int(self) -> list[str]:
@@ -286,16 +285,12 @@ class Problem(Base, metaclass=ABCMeta):
         self.cons.append(constraint)
 
         cmi, cma = constraint.get_bounds()
-        ctol = np.zeros(constraint.n_components(), dtype=np.float64)
-        ctol[:] = constraint.tol
         if self._cons_mi is None:
             self._cons_mi = cmi
             self._cons_ma = cma
-            self._cons_tol = ctol
         else:
             self._cons_mi = np.append(self._cons_mi, cmi, axis=0)
             self._cons_ma = np.append(self._cons_ma, cma, axis=0)
-            self._cons_tol = np.append(self._cons_tol, ctol, axis=0)
 
     @property
     def min_values_constraints(self) -> np.ndarray | None:
@@ -320,18 +315,6 @@ class Problem(Base, metaclass=ABCMeta):
             The maximal constraint values, shape: (n_constraints,)
         """
         return self._cons_ma
-
-    @property
-    def constraints_tol(self) -> np.ndarray | None:
-        """
-        Gets the tolerance values of constraints
-
-        Returns
-        -------
-        ctol
-            The constraint tolerance values, shape: (n_constraints,)
-        """
-        return self._cons_tol
 
     @property
     def n_objectives(self) -> int:

@@ -165,6 +165,13 @@ Constraint bounds are component-wise. The default contract is
 and upper bounds with tolerance; a finite calculation is not necessarily a
 feasible one.
 
+Each `Constraint` is the sole owner of its scalar tolerance. `Problem` does not
+cache a second tolerance vector. Backends that require component-wise values
+expand the registered constraints in function/component order when their
+adapter initializes. Native SLSQP applies those tolerances to its translated
+bounds, while zero tolerance requests exact bounds. See
+[ADR-0003](adr/0003-constraint-owned-solver-tolerances.md).
+
 Simple objectives and constraints expose `f(*x)` and optional analytical
 gradient `g()`. Integer function arguments precede floating arguments. Keep the
 callable convention aligned with the function's variable mapping.
@@ -210,13 +217,21 @@ stops after a failed stage, and optionally finalizes initialized stages. Changes
 to result propagation must be tested directly; do not infer pipeline behavior
 from a downstream application package.
 
+`Pipeline.run(initial_results=...)` supplies an application-defined restart
+payload to the first selected stage. A later-stage restart also identifies the
+immediately preceding registered stage without running it. Run cleanup restores
+the configured stage range and clears running state after success, a
+stage-reported failure, or an exception. See
+[ADR-0004](adr/0004-pipeline-restart-results.md).
+
 ## Optimizer And Backend Boundaries
 
 ### Native Optimizers
 
 `GG` is a constrained local Greedy Gradient optimizer. `SLSQP` uses SciPy with
 iwopy gradients and scaling. Both require continuous, single-objective problems.
-They own optimizer-specific convergence and step behavior, not problem
+SLSQP derives and applies component tolerances from the registered constraint
+objects. They own optimizer-specific convergence and step behavior, not problem
 application semantics.
 
 ### SciPy
@@ -241,6 +256,10 @@ integer variables, while fitness vectors place objectives before constraints;
 batch fitness is flattened according to PyGMO's contract. Current finalization
 produces a single champion in `SingleObjOptResults`. Do not infer multi-objective
 result support from UDP metadata alone.
+
+The PyGMO UDP expands each registered constraint's tolerance into its `c_tol`
+vector when the adapter is constructed; the core problem does not own that
+backend representation.
 
 pymoo and PyGMO imports are lazy and report installation guidance when their
 extras are unavailable. Importing base `iwopy` must not require either package.
