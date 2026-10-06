@@ -359,6 +359,10 @@ def test_slsqp_uses_population_for_local_fd_gradients(monkeypatch):
     assert result.success
     assert result.vars_float == pytest.approx([1.5], abs=1e-4)
     assert np.all(problem.check_constraints_individual(result.cons))
+    assert np.all(problem.check_constraints_population(result.cons[None, :]))
+    outside_tolerance = np.array([1.49998])
+    assert not np.any(problem.check_constraints_individual(outside_tolerance))
+    assert not np.any(problem.check_constraints_population(outside_tolerance[None, :]))
     assert population_calls > 0
     assert all(size == 1 for size in population_sizes)
     assert gradient_pop_flags

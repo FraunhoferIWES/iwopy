@@ -250,26 +250,33 @@ class GG(Optimizer):
                 maximum = np.array([], dtype=np.float64)
         return minimum, maximum
 
-    def _notify_iteration(
+    def _report_iteration(
         self,
         iteration: int,
         x: np.ndarray,
         objs: np.ndarray,
         cons: np.ndarray,
+        valid: np.ndarray,
+        level: int,
+        step: np.ndarray,
+        verbosity: int,
     ) -> None:
-        """Notify callbacks about one completed GG iteration."""
-        if not self._has_callbacks:
-            return
-        self._notify_callbacks(
-            OptimizerCallbackData(
-                event="iteration",
-                iteration=iteration,
-                vars_int=np.array([], dtype=np.int32),
-                vars_float=x,
-                objs=objs,
-                cons=cons,
+        """Report the current completed iteration to stdout and callbacks."""
+        if verbosity > 0:
+            print(
+                f"{iteration:>5} | {objs[0]:9.3e} | {np.sum(~valid):>5} | {level:>5} | {np.min(step):>5.3e} | {np.max(step):>5.3e}"
             )
-        )
+        if self._has_callbacks:
+            self._notify_callbacks(
+                OptimizerCallbackData(
+                    event="iteration",
+                    iteration=iteration,
+                    vars_int=np.array([], dtype=np.int32),
+                    vars_float=x,
+                    objs=objs,
+                    cons=cons,
+                )
+            )
 
     def solve(
         self,
@@ -371,11 +378,6 @@ class GG(Optimizer):
             count += 1
             self.n_iterations = count
 
-            if verbosity > 0:
-                print(
-                    f"{count:>5} | {obs[0]:9.3e} | {np.sum(~valid):>5} | {level:>5} | {np.min(step):>5.3e} | {np.max(step):>5.3e}"
-                )
-
             # project out directions of constraint violation:
             grad = grads[0].copy() if not maximize else -grads[0]
             deltax = self._grad2deltax(-grad, step)
@@ -399,7 +401,9 @@ class GG(Optimizer):
                 grad -= np.dot(grad, n) * n
 
             if stalled:
-                self._notify_iteration(count, x, obs, cons)
+                self._report_iteration(
+                    count, x, obs, cons, valid, level, step, verbosity
+                )
                 break
 
             # follow grad, but move downwards along violated directions:
@@ -424,7 +428,9 @@ class GG(Optimizer):
             newx = self._get_newx(x, deltax)
 
             if not len(newx):
-                self._notify_iteration(count, x, obs, cons)
+                self._report_iteration(
+                    count, x, obs, cons, valid, level, step, verbosity
+                )
                 continue
 
             """
@@ -474,7 +480,9 @@ class GG(Optimizer):
                             cons = consp[valc][i]
                             valid = validp[valc][i]
                             if done:
-                                self._notify_iteration(count, x, obs, cons)
+                                self._report_iteration(
+                                    count, x, obs, cons, valid, level, step, verbosity
+                                )
                                 break
 
                 else:
@@ -483,7 +491,6 @@ class GG(Optimizer):
                     cons = consp[0]
                     valid = validp[0]
 
-            # non-vectorized:
             else:
                 anygood = False
                 done = False
@@ -526,7 +533,7 @@ class GG(Optimizer):
                     cons = consh0
                     valid = validh0
 
-            self._notify_iteration(count, x, obs, cons)
+            self._report_iteration(count, x, obs, cons, valid, level, step, verbosity)
 
         if verbosity > 0:
             print(f"{hline}")

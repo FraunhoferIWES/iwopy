@@ -48,6 +48,24 @@ class Constraint(OptFunction):
             np.zeros(self.n_components(), dtype=np.float64),
         )
 
+    def _feasibility_bounds(self) -> tuple[np.ndarray, np.ndarray]:
+        """Return bounds expanded by feasibility tolerance and roundoff."""
+        minimum, maximum = self.get_bounds()
+        minimum = np.asarray(minimum, dtype=np.float64)
+        maximum = np.asarray(maximum, dtype=np.float64)
+        roundoff = 32.0 * np.finfo(np.float64).eps
+        lower_slack = np.where(
+            np.isfinite(minimum),
+            roundoff * np.maximum(1.0, np.abs(minimum)),
+            0.0,
+        )
+        upper_slack = np.where(
+            np.isfinite(maximum),
+            roundoff * np.maximum(1.0, np.abs(maximum)),
+            0.0,
+        )
+        return minimum - self.tol - lower_slack, maximum + self.tol + upper_slack
+
     def check_individual(
         self, constraint_values: np.ndarray, verbosity: int = 0
     ) -> np.ndarray:
@@ -68,8 +86,8 @@ class Constraint(OptFunction):
             The boolean result, shape: (n_components,)
         """
         vals = constraint_values
-        mi, ma = self.get_bounds()
-        out = (vals + self.tol >= mi) & (vals - self.tol <= ma)
+        minimum, maximum = self._feasibility_bounds()
+        out = (vals >= minimum) & (vals <= maximum)
 
         if verbosity:
             print(f"Constraint '{self.name}': tol = {self.tol}")
@@ -101,11 +119,8 @@ class Constraint(OptFunction):
             The boolean result, shape: (n_pop, n_components)
         """
         vals = constraint_values
-        mi, ma = self.get_bounds()
-        mi = np.array(mi, dtype=np.float64)
-        ma = np.array(ma, dtype=np.float64)
-
-        out = (vals + self.tol >= mi[None, :]) & (vals - self.tol <= ma[None, :])
+        minimum, maximum = self._feasibility_bounds()
+        out = (vals >= minimum[None, :]) & (vals <= maximum[None, :])
 
         if verbosity:
             print(f"Constraint '{self.name}': tol = {self.tol}")

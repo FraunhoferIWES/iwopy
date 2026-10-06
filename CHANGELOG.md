@@ -245,6 +245,10 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
     derive component tolerances directly from registered constraints, and
     SLSQP applies them to translated solver bounds.
 - Bugs:
+  - Aligned GG progress rows with the completed iteration state reported to
+    callbacks.
+  - Accounted for floating-point roundoff at constraint feasibility-tolerance
+    boundaries.
   - Fixed combined analytical Jacobians for functions with disjoint variable
     dependencies, restored constraint bounds through problem wrappers, and
     cleared SciPy value and gradient caches between solves.

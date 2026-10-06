@@ -88,19 +88,27 @@ def test_gg_skips_callback_data_without_callbacks(monkeypatch):
 
 
 @pytest.mark.parametrize("vectorized", [False, True])
-def test_gg_reports_completed_iterations(vectorized):
-    problem = make_problem(initial=2.0)
+def test_gg_reports_completed_iterations(vectorized, capsys):
+    problem = iwopy.SimpleProblem(
+        "quadratic",
+        float_vars=["x"],
+        init_values_float=[1.5],
+    )
+    problem.add_objective(Quadratic(problem))
+    problem.add_constraint(BoundedConstraint(problem, "bounded", mins=1.65, maxs=3.0))
+    problem.initialize()
     solver = GG(
         problem,
-        step_max=0.5,
+        step_max=0.1,
         step_min=0.01,
         max_iterations=2,
+        n_max_steps=1,
         vectorized=vectorized,
     )
     solver.initialize()
     history = iwopy.OptimizationHistory()
 
-    result = solver.solve(verbosity=0, callbacks=[history])
+    result = solver.solve(verbosity=1, callbacks=[history])
 
     assert solver.n_iterations == 2
     assert [state.iteration for state in history.states] == [1, 2]
@@ -108,6 +116,19 @@ def test_gg_reports_completed_iterations(vectorized):
     assert history.states[-1].vars_int.shape == (1, 0)
     assert history.states[-1].vars_float[0] == pytest.approx(result.vars_float)
     assert history.states[-1].objs[0] == pytest.approx(result.objs)
+    rows = []
+    for line in capsys.readouterr().out.splitlines():
+        fields = line.split("|")
+        try:
+            iteration = int(fields[0].strip())
+        except (ValueError, IndexError):
+            continue
+        rows.append((iteration, float(fields[1]), int(fields[2])))
+    assert [iteration for iteration, _, _ in rows] == [1, 2]
+    assert [objective for _, objective, _ in rows] == pytest.approx(
+        [state.objs[0, 0] for state in history.states]
+    )
+    assert [n_violated for _, _, n_violated in rows] == [1, 0]
 
 
 def test_gg_zero_iteration_limit_has_no_intermediate_state():
