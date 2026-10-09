@@ -234,6 +234,12 @@ SLSQP derives and applies component tolerances from the registered constraint
 objects. They own optimizer-specific convergence and step behavior, not problem
 application semantics.
 
+GG keeps feasible iterates feasible and accepts only improving feasible trials
+after feasibility is reached. A batch without feasible candidates leaves the
+current point unchanged and triggers step reduction through the gradient memory.
+Infeasible fallback steps are limited to recovery from an initially infeasible
+point. See [ADR-0005](adr/0005-gg-feasible-iterates.md).
+
 ### SciPy
 
 The SciPy adapter requires one objective, no integer variables, and at least one

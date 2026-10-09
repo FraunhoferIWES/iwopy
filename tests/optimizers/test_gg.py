@@ -21,6 +21,22 @@ class BoundedConstraint(iwopy.SimpleConstraint):
         return 1.0
 
 
+class ShiftedQuadratic(iwopy.SimpleObjective):
+    def f(self, x):
+        return (x - 1.0) ** 2
+
+    def g(self, var, x, components):
+        return 2.0 * (x - 1.0)
+
+
+class CurvedConstraint(iwopy.SimpleConstraint):
+    def f(self, x):
+        return x**2
+
+    def g(self, var, x, components):
+        return 2.0 * x
+
+
 class FlatConstraint(iwopy.SimpleConstraint):
     def f(self, x):
         return np.full_like(x, 3.0)
@@ -64,6 +80,42 @@ def test_gg_accepts_feasible_initial_optimum():
     assert result.success
     assert result.vars_float[0] == 0.0
     assert result.objs[0] == 0.0
+
+
+@pytest.mark.parametrize("vectorized", [False, True])
+@pytest.mark.parametrize("max_iterations, expected", [(1, 0.0), (2, 0.5)])
+def test_gg_rejects_infeasible_trials_and_backtracks(
+    vectorized, max_iterations, expected
+):
+    problem = iwopy.SimpleProblem(
+        "curved_boundary",
+        float_vars=["x"],
+        init_values_float=[0.0],
+    )
+    problem.add_objective(ShiftedQuadratic(problem))
+    constraint = CurvedConstraint(problem, "curved", maxs=0.25)
+    constraint.tol = 0.0
+    problem.add_constraint(constraint)
+    problem.initialize()
+    solver = GG(
+        problem,
+        step_max=1.0,
+        step_min=0.1,
+        n_max_steps=1,
+        max_iterations=max_iterations,
+        vectorized=vectorized,
+    )
+    solver.initialize()
+    history = iwopy.OptimizationHistory()
+
+    result = solver.solve(verbosity=0, callbacks=[history])
+
+    assert result.success
+    assert result.vars_float[0] == pytest.approx(expected)
+    assert history.states[0].vars_float[0, 0] == 0.0
+    assert all(state.cons[0, 0] <= 0.25 for state in history.states)
+    assert all(state.objs[0, 0] <= 1.0 for state in history.states)
+    assert len(history.states) == max_iterations
 
 
 def test_gg_skips_callback_data_without_callbacks(monkeypatch):

@@ -247,6 +247,9 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Bugs:
   - Aligned GG progress rows with the completed iteration state reported to
     callbacks.
+  - Kept feasible GG iterates when all trial candidates violate constraints,
+    backtracking instead of accepting an infeasible point with lower quality.
+    Preserved recovery from initially infeasible layouts in both evaluation modes.
   - Accounted for floating-point roundoff at constraint feasibility-tolerance
     boundaries.
   - Fixed combined analytical Jacobians for functions with disjoint variable

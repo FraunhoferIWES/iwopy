@@ -14,9 +14,12 @@ class GG(Optimizer):
     Greedy Gradient (GG) optimizer, for local optimum
     search with constraints.
 
-    Follows steepest decent, reducing step size
+    Follows steepest descent, reducing step size
     in a finite number of steps on the way. Step directions
     that violate constraints are projected out or reversed.
+    Once a feasible point is reached, infeasible trial batches leave
+    it unchanged and trigger step reduction. Infeasible trial points
+    may be accepted only while recovering from an infeasible start.
     """
 
     def __init__(
@@ -286,6 +289,11 @@ class GG(Optimizer):
         """
         Run the optimization solver.
 
+        Feasible iterates are replaced only by feasible improving trials.
+        If all trials are infeasible, keep the current point and reduce
+        the step on the next iteration. Recovery steps may remain
+        infeasible only until the first feasible point is reached.
+
         Parameters
         ----------
         verbosity
@@ -296,7 +304,15 @@ class GG(Optimizer):
         Returns
         -------
         results
-            The optimization results object
+            The selected solution and its final objective, constraints,
+            and problem results. Success requires feasibility and either
+            recovery from an infeasible start, net objective improvement,
+            or an objective change within ``f_tol`` of the initial point.
+
+        Raises
+        ------
+        ValueError
+            If an objective or constraint gradient is non-finite.
         """
         super().solve(verbosity, callbacks)
         step_max = self.step_max
@@ -485,7 +501,7 @@ class GG(Optimizer):
                                 )
                                 break
 
-                else:
+                elif recover:
                     x = newx[0]
                     obs = obsp[0]
                     cons = consp[0]
@@ -527,7 +543,7 @@ class GG(Optimizer):
                     if done:
                         break
 
-                if not anygood:
+                if recover and not anygood:
                     x = hx0
                     obs = obsh0
                     cons = consh0
