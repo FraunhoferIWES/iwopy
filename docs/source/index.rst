@@ -16,7 +16,7 @@ through a shared Python interface. External integrations include:
 * `pymoo <https://pymoo.org/index.html>`_
 * `pygmo <https://esa.github.io/pygmo2/index.html>`_
 * `scipy <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_
-* `pycma <https://github.com/CMA-ES/pycma>`_ 
+* `pycma <https://github.com/CMA-ES/pycma>`_
 * `Nevergrad <https://facebookresearch.github.io/nevergrad/>`_
 * `Optuna <https://optuna.org/>`_
 * `DEAP <https://deap.readthedocs.io/>`_
