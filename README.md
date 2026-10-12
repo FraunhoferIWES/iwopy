@@ -24,12 +24,12 @@ Native `GG` and `SLSQP` optimizers are included. `LocalFD` supplies finite-diffe
 derivatives; `DiscretizeRegGrid` is the regular-grid problem wrapper. Population
 evaluation batches candidates or derivative points when the chosen backend supports it.
 
-Documentation: [https://fraunhoferiwes.github.io/iwopy](https://fraunhoferiwes.github.io/iwopy)
-
 The [optimizer catalog](https://fraunhoferiwes.github.io/iwopy/optimizer_catalog.html)
 lists every selectable optimizer with a short description and a runnable,
 explicit Python setup. SciPy differential evolution, Nevergrad, Optuna, and
 DEAP support batched search evaluations.
+
+Documentation: [https://fraunhoferiwes.github.io/iwopy](https://fraunhoferiwes.github.io/iwopy)
 
 Source code: [https://github.com/FraunhoferIWES/iwopy](https://github.com/FraunhoferIWES/iwopy)
 
