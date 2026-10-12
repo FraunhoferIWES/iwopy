@@ -9,8 +9,11 @@ This file is present, so the corporate design applies. A free-design project
 deletes it and `docs/fraunhofer-design/` instead — see `AGENTS.md`, "UI Design
 Policy", and establish that policy before the first UI change.
 
-iwopy currently has no browser frontend and no design-token adapter. Do not
-introduce an application stack or token copy as part of an unrelated scientific
+iwopy has no browser application frontend. Sphinx documentation adapts the
+authoritative tokens through `docs/source/_static/iwes-tokens.css` and applies
+them through `docs/source/_static/iwes.css`; `tests/test_documentation.py`
+prevents drift. There is no shared matplotlib token adapter. Do not introduce
+an application stack or another token copy as part of an unrelated scientific
 plot change. For Python plotting code under `iwopy/`, examples, or notebooks,
 read the chart and iwopy-specific guidance in
 `docs/fraunhofer-design/ui-guidelines.md`; Python is intentionally not included

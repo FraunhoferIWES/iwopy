@@ -7,7 +7,7 @@ iwopy. It applies to modules, classes, constructors, methods, functions,
 properties, callbacks, wrappers, pipeline stages, result containers, and backend
 interfaces.
 
-Use NumPy-style docstrings compatible with numpydoc and Sphinx AutoAPI. Keep
+Use NumPy-style docstrings parsed by Sphinx Napoleon and AutoAPI. Keep
 Python types in annotations and describe semantic contracts in prose: lifecycle,
 optimization meaning, shapes, ordering, units, bounds, tolerances, mutation,
 side effects, derivatives, backend translation, return structure, and failures.

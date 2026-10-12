@@ -136,4 +136,8 @@ veri_*
 log.*
 .vscode/
 docs/source/_*
+!docs/source/_static/
+docs/source/_static/*
+!docs/source/_static/iwes-tokens.css
+!docs/source/_static/iwes.css
 .pdm-build/

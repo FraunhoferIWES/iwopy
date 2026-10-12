@@ -1,108 +1,61 @@
 
-.. image:: ../../Logo_IWOPY_white.svg
+IWOPY
+=====
+
+.. image:: ../../Logo_IWOPY.svg
+    :alt: IWOPY logo
     :align: center
+    :class: iwopy-logo
 
-.. versionadded:: 0.5.0
-    Optimization pipelines through the ``Pipeline`` base class and native
-    callbacks with normalized intermediate states across optimizer interfaces.
+Fraunhofer IWES optimization tools in Python.
 
-.. versionadded:: 0.5.0
-    The ``SLSQP`` optimizer for constrained single-objective problems, including
-    automatic scaling and vectorized gradient evaluation.
-
-
-Welcome to IWOPY
-================
-
-*Fraunhofer IWES optimization tools in Python*
-
-The `iwopy` package is in fact mainly a meta package that provides interfaces to
-other open-source Python optimization packages out there. Currently this includes
+Define an optimization problem once and choose a native or external solver
+through a shared Python interface. External integrations include:
 
 * `pymoo <https://pymoo.org/index.html>`_
 * `pygmo <https://esa.github.io/pygmo2/index.html>`_
 * `scipy <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_
 * `pycma <https://github.com/CMA-ES/pycma>`_ with vectorized CMA-ES population evaluation
-* (more to come with future versions)
+* `Nevergrad <https://facebookresearch.github.io/nevergrad/>`_
+* `Optuna <https://optuna.org/>`_
+* `DEAP <https://deap.readthedocs.io/>`_
 
-`iwopy` can thus be understood as an attempt to provide *the best of all worlds*
-when it comes to solving optimization problems with Python. This has not yet been
-achieved, since above list of accessable optimization packages is obviously incomplete, but it's a start. All the credit for implementing the invoked optimizers goes to the original package providers.
+Native ``GG`` and ``SLSQP`` optimizers are included. ``LocalFD`` supplies finite
+differences; ``DiscretizeRegGrid`` wraps a problem on a regular grid. Population
+evaluation batches candidates or derivative points when the backend supports it.
 
-The basic idea of `iwopy` is to provide abstract base classes, that can be
-concretized for any kind of problem by the users, and the corresponding solver
-interfaces. However, also some helpful problem wrappers and an original optimizer
-are provided in addition:
+Choose a solver in the :doc:`optimizer_catalog`: every selectable optimizer
+has a short description and an explicit, runnable Python setup. SciPy
+differential evolution, Nevergrad, Optuna, and DEAP support batched search.
 
-* Problem wrapper *LocalFD*: Calculates derivatives by finite differences
-* Problem wrapper *RegularDiscretizationGrid*: Puts the problem on a Grid
-* Optimizer *GG*: *Greedy Gradient* optimization with constraints
+For Users
+---------
 
-All calculations support vectorized evaluation of a complete population of
-parameters. This is useful for heuristic approaches like genetic algorithms,
-but also for evaluating gradients. It can lead to a vast speed-up and should be
-invoked whenever possible. Check the examples (or the API) for details.
+Start with :doc:`installation`, choose a solver in :doc:`optimizer_catalog`,
+and explore :doc:`examples`. :doc:`callbacks` covers intermediate results;
+:doc:`api` provides the complete reference.
 
-Source code repository (and issue tracker):
-    https://github.com/FraunhoferIWES/iwopy
+For Developers
+--------------
 
-Please report code issues under the github link above.
-
-License:
-    MIT_
-
-.. _MIT: https://github.com/FraunhoferIWES/iwopy/blob/main/LICENSE
-
-Contributing
-------------
-
-Please feel invited to contribute to `iwopy`! Here is how:
-
-#. Fork *iwopy* on *github*.
-#. Create a branch (`git checkout -b new_branch`)
-#. Commit your changes (`git commit -am "your awesome message"`)
-#. Push to the branch (`git push origin new_branch`)
-#. Create a pull request `here <https://github.com/FraunhoferIWES/iwopy/pulls>`_
-
-Support
--------
-For trouble shooting and support, please
-
-* raise an issue `here <https://github.com/FraunhoferIWES/iwopy/issues>`_,
-* or start a discussion `here <https://github.com/FraunhoferIWES/iwopy/discussions>`_,
-* or contact the contributers.
-
-Thanks for your help with improving *iwopy*!
+Use :doc:`testing` for quality checks and the repository's
+`development guide <https://github.com/FraunhoferIWES/iwopy/blob/dev/docs/development.md>`_
+for test ownership and contribution requirements. Submit
+`issues <https://github.com/FraunhoferIWES/iwopy/issues>`_ or
+`pull requests <https://github.com/FraunhoferIWES/iwopy/pulls>`_ on GitHub.
+iwopy is released under the
+`MIT license <https://github.com/FraunhoferIWES/iwopy/blob/main/LICENSE>`_.
 
 Contents
 --------
-    .. toctree::
-        :maxdepth: 2
+.. toctree::
+    :maxdepth: 1
 
-        citation
-
-    .. toctree::
-        :maxdepth: 2
-
-        installation
-
-    .. toctree::
-        :maxdepth: 2
-
-        examples
-        callbacks
-
-    .. toctree::
-        :maxdepth: 1
-
-        api
-
-    .. toctree::
-        :maxdepth: 2
-
-        testing
-
-    .. toctree::
-        :maxdepth: 2
-
-        CHANGELOG
+    installation
+    optimizer_catalog
+    examples
+    callbacks
+    api
+    testing
+    citation
+    CHANGELOG

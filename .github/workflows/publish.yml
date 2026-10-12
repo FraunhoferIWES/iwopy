@@ -29,7 +29,7 @@ jobs:
             pre-commit-${{ runner.os }}-
 
       - name: Install dependencies
-        run: uv sync --extra test --dev
+        run: uv sync --extra dev --extra test
 
       - name: Run pre-commit
         run: uv run pre-commit run --all-files
@@ -58,9 +58,17 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --extra test --dev
+        run: uv sync --extra test
 
-      - name: Running tests
+      - name: Verify optimizer dependencies
+        run: uv run python -c "import cma, deap, nevergrad, optuna, pygmo, pymoo, scipy"
+
+      - name: Run optimizer and benchmark regressions
+        run: >-
+          uv run pytest tests/interfaces tests/scipy/test_de.py
+          tests/test_benchmarks.py tests/test_documentation.py
+
+      - name: Run full test suite
         run: uv run pytest tests
 
       - name: Minimize uv cache
@@ -91,7 +99,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --extra test --dev
+        run: uv sync --extra test
 
       - name: Running tests
         run: uv run pytest --nbmake notebooks

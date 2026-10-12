@@ -30,6 +30,11 @@ The parameters ``bounds``, ``callback``, ``constraints``, and ``jac`` are
 managed by the interface. Integer variables are rejected because
 ``scipy.optimize.minimize`` operates on continuous variables.
 
+``Optimizer_scipy_de`` provides genuine population-vectorized differential
+evolution for bounded single-objective floating, integer, and mixed problems.
+It uses deferred updating, one worker, and no scalar polishing. See
+:ref:`api-scipy-de` and its :ref:`explicit setup <case-scipy-de>` in the catalog.
+
 .. toctree::
     :maxdepth: 2
 

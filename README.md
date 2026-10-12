@@ -2,29 +2,34 @@
 
 Fraunhofer IWES optimization tools in Python
 
-![IWOPY Logo](Logo_IWOPY_white.svg)
+<picture>
+	<source media="(prefers-color-scheme: dark)" srcset="Logo_IWOPY_white.svg">
+	<img alt="IWOPY logo" src="Logo_IWOPY.svg" width="240">
+</picture>
 
 ## Overview
 
-The `iwopy` package is in fact a meta package that provides interfaces to other open-source Python optimization packages out there. Currently this includes
+Define your optimization problem once and use native or external solvers through
+a shared Python interface. Available external integrations include:
 
 - [pymoo](https://pymoo.org/index.html)
 - [pygmo](https://esa.github.io/pygmo2/index.html)
 - [scipy](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html)
 - [pycma](https://github.com/CMA-ES/pycma), with vectorized CMA-ES population evaluation
-- (more to come with future versions)
+- [Nevergrad](https://facebookresearch.github.io/nevergrad/)
+- [Optuna](https://optuna.org/)
+- [DEAP](https://deap.readthedocs.io/)
 
-`iwopy` can thus be understood as an attempt to provide *the best of all worlds* when it comes to solving optimization problems with Python. This has not yet been achieved, since above list of accessable optimization packages is obviously incomplete, but it's a start. All the credit for implementing the invoked optimizers goes to the original package providers.
-
-The basic idea of `iwopy` is to provide abstract base classes, that can be concretized for any kind of problem by the users, and the corresponding solver interfaces. However, also some helpful problem wrappers and an original optimizer are provided in addition:
-
-- Problem wrapper `LocalFD`: Calculates derivatives by finite differences
-- Problem wrapper `RegularDiscretizationGrid`: Puts the problem on a Grid
-- Optimizer `GG`: *Greedy Gradient* optimization with constraints
-
-All calculations support vectorized evaluation of a complete population of parameters. This is useful for heuristic approaches like genetic algorithms, but also for evaluating gradients. It can lead to a vast speed-up and should be invoked whenever possible. Check the examples (or the API) for details.
+Native `GG` and `SLSQP` optimizers are included. `LocalFD` supplies finite-difference
+derivatives; `DiscretizeRegGrid` is the regular-grid problem wrapper. Population
+evaluation batches candidates or derivative points when the chosen backend supports it.
 
 Documentation: [https://fraunhoferiwes.github.io/iwopy](https://fraunhoferiwes.github.io/iwopy)
+
+The [optimizer catalog](https://fraunhoferiwes.github.io/iwopy/optimizer_catalog.html)
+lists every selectable optimizer with a short description and a runnable,
+explicit Python setup. SciPy differential evolution, Nevergrad, Optuna, and
+DEAP support batched search evaluations.
 
 Source code: [https://github.com/FraunhoferIWES/iwopy](https://github.com/FraunhoferIWES/iwopy)
 
@@ -39,183 +44,48 @@ Python](https://doi.org/10.21105/joss.06014)
 
  [![DOI](https://joss.theoj.org/papers/10.21105/joss.06014/status.svg)](https://doi.org/10.21105/joss.06014)
 
- Bibtex:
- ```
-@article{Schulte2024,
-    doi = {10.21105/joss.06014},
-    url = {https://doi.org/10.21105/joss.06014},
-    year = {2024},
-    publisher = {The Open Journal},
-    volume = {9},
-    number = {102},
-    pages = {6014},
-    author = {Jonas Schulte},
-    title = {IWOPY: Fraunhofer IWES optimization tools in Python},
-    journal = {Journal of Open Source Software}
-}
- ```
+BibTeX is available on the [citation page](https://fraunhoferiwes.github.io/iwopy/citation.html).
 
 ## Requirements
 
-The supported Python versions are:
+Supported Python versions: 3.10 through 3.14. NumPy, SciPy, and matplotlib are
+base dependencies.
 
-- `Python 3.10`
-- `Python 3.11`
-- `Python 3.12`
-- `Python 3.13`
-- `Python 3.14`
+## Installation
 
-## Installation via pip
-
-### Virtual Python environment
-
-We recommend working in a Python virtual environment and install `iwopy` there. Such an environment can be created by
-
-```console
-python -m venv /path/to/my_venv
-```
-
-and afterwards be activated by
-
-```console
-source /path/to/my_venv/bin/activate
-```
-
-Note that in the above commands `/path/to/my_venv` is a placeholder that should be replaced by a path to a (non-existing) folder of your choice, for example `~/venv/iwopy`.
-
-All subsequent installation commands via `pip` can then be executed directly within the active environment without changes. After your work with `iwopy` is done you can leave the environment by the command `deactivate`.
-
-### Standard users
-
-As a standard user, you can install the latest release via [pip](https://pypi.org/project/iwopy/) by
+Install in an active virtual environment:
 
 ```console
 pip install iwopy
 ```
 
-This in general corresponds to the `main` branch at [github](https://github.com/FraunhoferIWES/iwopy). Alternatively, you can decide to install the latest pre-release developments (non-stable) by
+Optional extras are `cma`, `nevergrad`, `optuna`, `deap`, `pymoo`, and `pygmo`;
+use `pip install 'iwopy[opt]'` for all backends. SciPy differential evolution
+needs no extra. Nevergrad currently requires NumPy below 2.4.
 
-```console
-pip install git+https://github.com/FraunhoferIWES/iwopy@dev#egg=iwopy
-```
-
-Notice that the above default installation does not install the third-party optimization
-packages. `iwopy` will tell you in an error message that it is missing a package, with
-a hint of installation advice. You can avoid this step by installing all supported
-optimzer packages by installing those optoinal packages by addig `[opt]`:
-
-```console
-pip install iwopy[opt]
-```
-
-or
-
-```console
-pip install git+https://github.com/FraunhoferIWES/iwopy@dev#egg=iwopy[opt]
-```
-
-For only the pycma integration, install `iwopy[cma]` and import
-`Optimizer_cma` from `iwopy.interfaces.cma`. It supports continuous
-single-objective problems, box bounds, and nonlinear constraints through
-pycma's augmented Lagrangian. Each generation evaluates the complete population
-in one iwopy call; no objective or constraint derivatives are needed.
-
-### Developers
-
-The first step as a developer is to clone the `iwopy` repository by
-
-```console
-git clone https://github.com/FraunhoferIWES/iwopy.git
-```
-
-Enter the root directory by
-
-```console
-cd iwopy
-```
-
-Synchronize the development and test dependencies with
-
-```console
-uv sync --extra test --extra dev
-```
-
-Install the pre-commit hooks with
-
-```console
-uv run pre-commit install
-```
-
-## Installation via conda
-
-### Preparation (optional)
-
-It is strongly recommend to use the `libmamba` dependency solver instead of the default solver. Install it once by
-
-```console
-conda install conda-libmamba-solver -n base -c conda-forge
-```
-
-We recommend that you set this to be your default solver, by
-
-```console
-conda config --set solver libmamba
-```
-
-### Standard users
-
-The `iwopy` package is available on the channel [conda-forge](https://anaconda.org/conda-forge/iwopy). You can install the latest version by
+Conda users can install the conda-forge package:
 
 ```console
 conda install -c conda-forge iwopy
 ```
 
-### Developers
+See the [installation guide](https://fraunhoferiwes.github.io/iwopy/installation.html)
+for environment setup and development-branch installation.
 
-For developers using `conda`, we recommend first installing `iwopy` as described above, then removing only the `iwopy` package while keeping the dependencies, and then adding `iwopy` again from a git using `conda develop`:
-
-```console
-conda install iwopy conda-build -c conda-forge
-conda remove iwopy --force
-git clone https://github.com/FraunhoferIWES/iwopy.git
-cd iwopy
-conda develop .
-```
-
-Concerning the `git clone` line, we actually recommend that you fork `iwopy` on GitHub and then replace that command by cloning your fork instead.
-
-## Testing
-
-For testing, please clone the repository and synchronize the required dependencies:
+## Development
 
 ```console
 git clone https://github.com/FraunhoferIWES/iwopy.git
 cd iwopy
-uv sync --extra test --extra dev
-```
-
-Run the test suite and type checker with
-
-```console
-uv run pytest tests
-uv run mypy iwopy
-```
-
-Run all repository checks with
-
-```console
+uv sync --extra dev --extra test
+uv run pre-commit install
 uv run pre-commit run --all-files
+uv run pytest tests
 ```
 
-## Contributing
-
-Please feel invited to contribute to `iwopy`! Here is how:
-
-1. Fork _iwopy_ on _github_.
-2. Create a branch (`git checkout -b new_branch`)
-3. Commit your changes (`git commit -am "your awesome message"`)
-4. Push to the branch (`git push origin new_branch`)
-5. Create a pull request [here](https://github.com/FraunhoferIWES/iwopy/pulls)
+Follow [AGENTS.md](AGENTS.md) and [docs/development.md](docs/development.md) for
+test ownership and completion gates. Contributions are welcome through
+[pull requests](https://github.com/FraunhoferIWES/iwopy/pulls).
 
 ## Support
 

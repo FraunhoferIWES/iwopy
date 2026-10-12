@@ -49,7 +49,7 @@ compatibility-sensitive.
 | component | One scalar output of a function | Function object or optimization variable |
 | feasible / valid | Satisfies all constraint component bounds within tolerance | Merely finite or successfully evaluated |
 | optimizer | Object that solves an initialized problem | Problem, objective, or backend problem adapter |
-| backend interface | Translation between iwopy and SciPy, pycma, pymoo, or PyGMO | Native optimizer implementation |
+| backend interface | Translation between iwopy and SciPy, pycma, pymoo, PyGMO, Nevergrad, Optuna, or DEAP | Native optimizer implementation |
 | champion | Single solution selected by a backend such as PyGMO | Pareto population |
 | Pareto front | Non-dominated objective values for a multi-objective result | All evaluated population values |
 | wrapper | Adapter around a problem or function contract | Independent deep copy |
@@ -185,6 +185,39 @@ them to attributes without a deliberate contract change.
 	standard deviation is `sigma0`. `stop_conditions` records backend termination
 	reasons. pycma inequality residuals group finite lower bounds before finite
 	upper bounds, preserving iwopy component order within each group.
+- The vectorized SciPy differential-evolution adapter is `Optimizer_scipy_de`,
+	with native options in `scipy_pars` and its native result in `scipy_results`.
+	Distinguish search-population vectorization from `Optimizer_scipy` gradient batching.
+- The distribution, import, interface package, and extra names are `nevergrad`,
+	`optuna`, and `deap`; public classes are `Optimizer_nevergrad`, `Optimizer_optuna`,
+	and `Optimizer_deap`. Preserve native `algorithm`/`sampler` selector spellings.
+- `budget` counts candidate evaluations, not function calls or generations;
+	`batch_size` is the outstanding-ask or offspring count. `n_evaluations` excludes
+	selected-point finalization. Native settings are `optimizer_pars` for Nevergrad
+	and `sampler_pars` for Optuna; native state is `optimizer` or `study`, respectively.
+- Optuna distribution identifiers are `float_<index>` followed by `int_<index>`
+	in family order. Trial constraint identifiers are `constraint_<index>` in the
+	finite-lower-then-finite-upper residual ordering shared by the new adapters.
+- Catalog scripts use `<backend>_<optimizer>.py`, lowercase snake_case, with
+	fully explicit constructors in a `__main__` guard. `iwopy.benchmarks.quadratic`
+	owns the synthetic `QuadraticProblem`, `ParetoProblem`, and `MixedProblem` classes,
+	curated through `iwopy.benchmarks`; do not use example-local helpers or path injection.
+- SciPy DE, Nevergrad, Optuna, and DEAP use the optimizer-level `vectorize` flag,
+	defaulting to true, for population versus ordered individual evaluation of native
+	batches. Distinguish this from SciPy minimization's `vectorized` gradient option,
+	pymoo's problem-level `vectorize`, and PyGMO's problem-level `pop` batch-fitness flag.
+- Documentation styles are `iwes-tokens.css` and `iwes.css`. The adapter maps
+	authoritative token paths to `--iwes-` prefixed kebab-case CSS variables;
+	`tests/test_documentation.py` verifies every resolved value and reference.
+- Catalog capabilities name objective/result workflows: `Single`, `Multi`, and
+	`Multi (native)`. `bounds` means variable boxes, `constraints` means additional
+	restrictions, and `mixed` means integer plus floating variables. Recommendations
+	are starting points, not optimizer performance rankings. Keep detailed class
+	references in the API rather than embedding them in the catalog.
+- Catalog subsections use objective count, nonlinear-constraint support, and
+	`Local`/`Global` search strategy. Omit empty categories. Explicit Pareto workflows
+	use `_constrained` script suffixes and `selected_index` for a weighted front choice;
+	keep native PyGMO populations distinct from iwopy Pareto result workflows.
 
 ## Wrappers, Pipelines, And Callbacks
 
@@ -223,6 +256,8 @@ Test directories retain their package ownership:
 - `tests/core/`: lifecycle, mappings, derivatives, memory, callbacks, and grids;
 - `tests/optimizers/`: native optimizer behavior;
 - `tests/scipy/`, `tests/cma/`, `tests/pymoo/`, and `tests/pygmo/`: backend translation;
+- `tests/interfaces/`: shared new population-adapter contracts and complete,
+	package-guarded catalog execution, import safety, and selector/link coverage;
 - root tests: package imports and executable callback examples.
 
 Name focused tests after observable behavior. Parametrization identifiers expose

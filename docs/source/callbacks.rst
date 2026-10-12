@@ -97,6 +97,18 @@ Backend events
     * - ``Optimizer_cma``
       - Completed pycma ask/tell generation
       - Full evaluated population; counts exclude finalization
+    * - ``Optimizer_scipy_de``
+      - Completed native DE generation
+      - Survivor population; constraints unavailable; objectives unavailable if energies are infinite
+    * - ``Optimizer_nevergrad``
+      - Completed ask/evaluate/tell batch
+      - Full evaluated batch in ask order, including the final partial batch
+    * - ``Optimizer_optuna``
+      - Completed ask/evaluate/tell batch
+      - Full evaluated batch in trial order, including the final partial batch
+    * - ``Optimizer_deap``
+      - Completed initial or offspring population evaluation
+      - Full evaluated population, including reproduced offspring and partial batches
     * - ``Optimizer_pygmo``
       - Live fitness evaluation, except for IPOPT
       - One point or one evaluated batch
@@ -108,3 +120,10 @@ algorithm-specific post-run logs. PyGMO's IPOPT progress log reports objective
 evaluations without decision vectors, while gradient requests do not identify
 IPOPT iterations reliably. Supplying callbacks to PyGMO IPOPT therefore raises
 ``NotImplementedError``.
+
+The four new population adapters emit ``iteration`` events with candidate
+evaluation counts excluding selected-point finalization. Nevergrad, Optuna,
+and DEAP start at iteration one for their first evaluated batch; DE starts
+after its first completed generation. No observer causes extra evaluations.
+Repeated solves reset history and counters; callback failures propagate without
+finalizing an invented result. See :doc:`optimizer_catalog` for their contracts.

@@ -41,8 +41,8 @@ Use `uv` for local Python workflows:
 
 ```console
 uv sync --extra dev --extra test --upgrade
-uv run pytest tests
 uv run pre-commit run --all-files
+uv run pytest tests
 ```
 
 The dependency sets in `pyproject.toml` are optional extras, not uv dependency
@@ -54,12 +54,15 @@ extra. Multiple extras are combined by repeating `--extra`.
 | Main dependencies | NumPy, SciPy, and matplotlib runtime support |
 | `scipy` | Explicit SciPy integration selection; SciPy is also a base dependency |
 | `cma` | pycma CMA-ES interface, requiring `cma>=4.4.0` for constrained ask/tell |
+| `nevergrad` | Nevergrad >=1.0.12 population ask/tell; NumPy <2.4 for upstream metamodel compatibility |
+| `optuna` | Optuna >=5.0.0 population ask/tell with the current trial constraint API |
+| `deap` | DEAP >=1.4.4 population evolution using native variation/selection |
 | `pymoo` | pymoo optimizer interface |
 | `pygmo` | PyGMO optimizer interface |
-| `opt` | Aggregate SciPy, pycma, pymoo, and PyGMO integrations |
+| `opt` | Aggregate all supported optimizer integrations |
 | `test` | All solver integrations, pytest, notebook execution, pre-commit, and mypy |
 | `dev` | Contributor hooks, mypy, object-size inspection, and Jupyter |
-| `doc` | Sphinx, AutoAPI, numpydoc, Immaterial, MyST-NB, and documentation notebooks |
+| `doc` | Sphinx, AutoAPI, Napoleon, Immaterial, MyST-NB, and documentation notebooks |
 
 Put a new dependency in the narrowest justified set. A package imported by base
 `iwopy` belongs in main dependencies. An optional backend must remain lazy and
@@ -90,6 +93,9 @@ and the nearest tests.
 | Problem wrapper or discretization | `iwopy/wrappers/` | Underlying core problem, grid utility, and core tests |
 | SciPy translation | `iwopy/interfaces/scipy/` | Core gradients/results and `tests/scipy/` |
 | pycma translation | `iwopy/interfaces/cma/` | Ask/tell batching, constraint bounds/tolerances, callbacks/results, and `tests/cma/` |
+| Bounded population adapters | `iwopy/interfaces/_population.py` and `scipy/de.py`, `nevergrad/`, `optuna/`, `deap/` | Shared constraints, selection/finalization, diagnostics, and `tests/interfaces/` |
+| Optimizer catalog | `docs/source/optimizer_catalog.rst` and `examples/optimizers/` | Direct guarded constructors, package-aware runs, and selector/link coverage |
+| Catalog benchmark problems | `iwopy/benchmarks/quadratic.py` | Public exports, individual/population values, lifecycle, gradients, and `tests/test_benchmarks.py` |
 | pymoo translation | `iwopy/interfaces/pymoo/` | Factory, representation, results, and `tests/pymoo/` |
 | PyGMO translation | `iwopy/interfaces/pygmo/` | UDP ordering, callbacks/results, and `tests/pygmo/` |
 | Native optimizer | `iwopy/optimizers/` | Core optimizer contract and optimizer tests |
@@ -123,18 +129,21 @@ uv run pre-commit run --files iwopy/path.py tests/path/test_module.py
 Before closure, broaden to the repository gates:
 
 ```console
+# All formatting, linting, type, and file-hygiene hooks, before final tests
+uv run pre-commit run --all-files
+
 # Full Python test suite, required when code files changed
 uv run pytest tests
 
 # Notebook execution used by CI
 uv run pytest --nbmake notebooks
 
-# All formatting, linting, type, and file-hygiene hooks
-uv run pre-commit run --all-files
 ```
 
 Pre-commit owns the configured Ruff and mypy invocations. A hook can modify a
 file and still exit non-zero; inspect the diff and rerun it.
+New untracked files need an explicit `pre-commit run --files ...` invocation:
+`--all-files` alone lists only tracked files. Run final tests after hook edits.
 
 ## Development Closure
 
@@ -165,7 +174,51 @@ Sphinx/AutoAPI output itself is under investigation. A documentation-only
 change does not run the full runtime test suite, but it still runs applicable
 documentation checks and all other closure gates.
 
+## GitHub Actions Coverage
+
+Both `.github/workflows/test.yml` and `.github/workflows/publish.yml` test Python
+3.10 through 3.14 on Linux with the complete `test` extra. Before the full suite,
+they import every required solver backend and run a named regression stage for
+`tests/interfaces`, SciPy DE, public benchmarks, and authored documentation.
+This makes catalog execution and scalar/vectorized evaluation coverage visible;
+missing backend packages fail preflight instead of silently skipping their cases.
+Optional PyGMO IPOPT/NLopt native features may still receive explicit skips.
+
+The regular workflow runs on pushes, pull requests to main/dev, the weekly
+schedule, and manual `workflow_dispatch`; manual runs do not publish packages.
+Version-tag validation remains in the release workflow. Pre-commit setup uses
+`--extra dev --extra test`, not the unrelated uv `--dev` group option.
+
+To check dependency metadata and Linux wheel availability without installing:
+
+```console
+uv pip compile pyproject.toml --extra test --python-version 3.14 --python-platform x86_64-unknown-linux-gnu --only-binary=:all: --no-header
+```
+
+Repeat for each matrix version. A successful resolution proves availability of a
+compatible dependency set, not runtime correctness; the actual CI matrix runs
+the regression and full suites. `tests/test_package.py` protects workflow test
+paths, dependency preflight, ordering, extra selection, and manual-run publish guards.
+
 ## Test Structure
+
+For authored documentation, run `uv run pytest tests/test_documentation.py -q`
+to check token drift, stylesheet references, readable sizing, and include targets.
+When reviewing rendered documentation, use a warnings-as-errors build:
+
+```console
+uv run --extra doc --extra dev --extra test sphinx-build -q -E -b html -W --keep-going -D nb_execution_mode=off docs/source docs/build/html
+```
+
+This targets documentation rendering without rerunning unchanged notebooks.
+Sphinx uses AutoAPI and Napoleon for NumPy-style API documentation. Check body,
+navigation, code, and table text at 320, 768, and 1280 CSS pixels; base text is
+16px and content should not overflow the page. Keep entry pages focused on
+users/developers, and implementation details in reference pages or decision records.
+Catalog checks also validate capability/recommendation fields and distinguish
+iwopy Pareto results from native-only PyGMO populations. The documentation
+regressions require the original logo references and API links instead of embedded
+class blocks; inspect the logo's original aspect ratio when checking rendering.
 
 The test directories encode package ownership:
 
@@ -177,7 +230,9 @@ The test directories encode package ownership:
 | `tests/cma/` | pycma population batching, objective signs, bounds/tolerances, callbacks, lifecycle, and stop/success conversion |
 | `tests/pymoo/` | pymoo variable representations, population evaluation, algorithms, and results |
 | `tests/pygmo/` | PyGMO vector/fitness ordering, algorithms, callbacks, and results |
+| `tests/interfaces/` | New population-adapter contracts plus complete catalog execution, guarded optional installations, inert imports, and selector/link coverage |
 | `tests/test_package.py` | Package import and metadata surface |
+| `tests/test_documentation.py` | Corporate token/style consistency and authored documentation include targets |
 | `tests/test_callback_examples.py` | In-process callback example execution and plot output |
 | `notebooks/` | Executable public workflows checked separately with nbmake |
 
@@ -246,6 +301,45 @@ the optional backend in a fresh process. Check the minimum supported backend:
 uv run --with 'cma==4.4.0' pytest tests/cma tests/test_package.py -q
 ```
 
+For the new adapters and complete catalog, run:
+
+```console
+uv run pytest tests/interfaces tests/scipy/test_de.py tests/test_package.py -q
+uv run pytest tests/interfaces/test_optimizer_examples.py -q
+uv run python examples/optimizers/scipy_de.py
+```
+
+The catalog suite executes all 81 explicit scripts in isolated directories and
+also imports each script without running its `__main__` block. `importorskip`
+guards each backend's cases; absent PyGMO IPOPT/NLopt native features and
+SciPy versions without COBYQA get explicit skips. Six simulated missing-backend
+tests verify that unrelated SciPy cases remain available. With the `test` extra,
+all available catalog cases run; skips must not hide algorithm failures.
+The original 79 selector setups are joined by constrained NSGA2/NSGA3 Pareto
+flows. All four pymoo Pareto flows check two-objective shape, feasible constraints,
+and explicit weighted selection. Category tests require every setup exactly once
+in the six non-empty objective/constraint/search groups and omit empty categories.
+Scripts import shared cases from `iwopy.benchmarks` without adding an example
+directory to `sys.path`. Benchmark tests cover initialized construction, known
+values, individual/population agreement, mixed gradients, constraint boundaries,
+and rejected late registration. The interface overview covers all adapters rather
+than distinguishing new integrations from established ones.
+
+For SciPy DE, Nevergrad, Optuna, and DEAP, `vectorize=True` selects population
+evaluation; false evaluates candidates individually in native batch order. Tests
+forbid the opposite path, compare seeded search results/callback counters across
+modes, and cover empty/singleton batches and malformed scalar results. Candidate
+budgets, partial batches, constraint selection, and native generation remain unchanged.
+
+Population regressions forbid individual search evaluation, verify full/partial
+batches, mixed and pure integer variables, objective directions, general and
+equality constraints, tolerances/roundoff, result payloads, failed-trial cleanup,
+callback failures, repeated solves, malformed/nonfinite outputs, and disabled
+callback allocations. The continuous NGOpt case reaches its upstream metamodel
+and verifies the Nevergrad-only NumPy <2.4 dependency constraint. Upstream NumPy
+deprecation warnings and existing SciPy ignored-bound warnings are documented;
+do not silence them by changing application-global logging or warning settings.
+
 ### Callbacks, Pipelines, And Plots
 
 Callback tests assert `initialize`, ordered `notify`, and `finalize`; normalized
@@ -275,7 +369,7 @@ depend on confidential data, network access, or an undeclared local checkout.
 
 Public Python APIs follow [docstring conventions](docstrings.md). Types remain
 in annotations; NumPy-style docstrings describe the optimization, array,
-lifecycle, and backend contract. Sphinx uses numpydoc and AutoAPI for package
+lifecycle, and backend contract. Sphinx uses Napoleon and AutoAPI for package
 references and MyST-NB for Markdown/notebook content.
 
 When an explicit Sphinx rendering check is useful, use the same command as CI:
@@ -329,6 +423,12 @@ for ordinary development commands.
 `pyproject.toml` is the package-version source and Sphinx reads it directly.
 Release tags use `v<version>`; publish CI requires the tag and project version to
 agree.
+
+Keep the final changelog heading and link, installed distribution version,
+runtime `iwopy.__version__`, and `CITATION.cff` software `version` synchronized.
+The citation's `cff-version` is its schema version, not the package version;
+preserve the preferred article's publication metadata. Package regression tests
+check the current release values against project metadata.
 
 Before a release-sensitive change is complete, check:
 

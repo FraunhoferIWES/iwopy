@@ -78,7 +78,7 @@ variables, nonfinite population function values, invalid constraint bounds or
 tolerances, and unsupported representations raise contextual exceptions.
 
 Callbacks, Results, And Side Effects
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 One ``iteration`` callback is emitted after each completed ``tell``. Its arrays
 contain the evaluated population in iwopy ordering, not the strategy mean or

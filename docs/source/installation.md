@@ -2,33 +2,23 @@
 
 ## Requirements
 
-The supported Python versions are:
-
-- `Python 3.10`
-- `Python 3.11`
-- `Python 3.12`
-- `Python 3.13`
-- `Python 3.14`
+Supported Python versions are 3.10 through 3.14. NumPy, SciPy, and matplotlib
+are installed as base dependencies.
 
 ## Installation via pip
 
 ### Virtual Python environment
 
-We recommend working in a Python virtual environment and install `iwopy` there. Such an environment can be created by
+Create and activate a virtual environment before installing:
 
 ```console
-python -m venv /path/to/my_venv
+python -m venv .venv
+source .venv/bin/activate
 ```
 
-and afterwards be activated by
-
-```console
-source /path/to/my_venv/bin/activate
-```
-
-Note that in the above commands `/path/to/my_venv` is a placeholder that should be replaced by a path to a (non-existing) folder of your choice, for example `~/venv/iwopy`.
-
-All subsequent installation commands via `pip` can then be executed directly within the active environment without changes. After your work with `iwopy` is done you can leave the environment by the command `deactivate`.
+The activation command above is for POSIX shells. On Windows, use
+`.venv\Scripts\activate` for Command Prompt or `.venv\Scripts\Activate.ps1`
+for PowerShell. Run `deactivate` to leave the environment.
 
 ### Standard users
 
@@ -38,26 +28,29 @@ As a standard user, you can install the latest release via [pip](https://pypi.or
 pip install iwopy
 ```
 
-This in general corresponds to the `main` branch at [github](https://github.com/FraunhoferIWES/iwopy). Alternatively, you can decide to install the latest pre-release developments (non-stable) by
+To install the unreleased development branch instead:
 
 ```console
-pip install git+https://github.com/FraunhoferIWES/iwopy@dev#egg=iwopy
+pip install 'iwopy @ git+https://github.com/FraunhoferIWES/iwopy@dev'
 ```
 
-Notice that the above default installation does not install the third-party optimization
-packages. `iwopy` will tell you in an error message that it is missing a package, with
-a hint of installation advice. You can avoid this step by installing all supported
-optimzer packages by installing those optoinal packages by addig `[opt]`:
+SciPy and the native optimizers are included. Install an optional backend using
+its extra: `cma`, `nevergrad`, `optuna`, `deap`, `pymoo`, or `pygmo`. For example:
 
 ```console
-pip install iwopy[opt]
+pip install 'iwopy[optuna]'
 ```
 
-or
+Use `opt` for all supported backends:
 
 ```console
-pip install git+https://github.com/FraunhoferIWES/iwopy@dev#egg=iwopy[opt]
+pip install 'iwopy[opt]'
 ```
+
+The [optimizer catalog](optimizer_catalog.rst) contains a runnable setup for
+each optimizer. Missing optional packages produce an installation hint.
+The Nevergrad extra currently requires NumPy below 2.4; the catalog explains
+the upstream limitation.
 
 ### Developers
 
@@ -87,21 +80,7 @@ uv run pre-commit install
 
 ## Installation via conda
 
-### Preparation (optional)
-
-It is strongly recommend to use the `libmamba` dependency solver instead of the default solver. Install it once by
-
-```console
-conda install conda-libmamba-solver -n base -c conda-forge
-```
-
-We recommend that you set this to be your default solver, by
-
-```console
-conda config --set solver libmamba
-```
-
-### Standard users
+### Conda installation
 
 The `iwopy` package is available on the channel [conda-forge](https://anaconda.org/conda-forge/iwopy). You can install the latest version by
 
@@ -109,16 +88,7 @@ The `iwopy` package is available on the channel [conda-forge](https://anaconda.o
 conda install -c conda-forge iwopy
 ```
 
-### Developers
+### Development workflow
 
-For developers using `conda`, we recommend first installing `iwopy` as described above, then removing only the `iwopy` package while keeping the dependencies, and then adding `iwopy` again from a git using `conda develop`:
-
-```console
-conda install iwopy conda-build -c conda-forge
-conda remove iwopy --force
-git clone https://github.com/FraunhoferIWES/iwopy.git
-cd iwopy
-conda develop .
-```
-
-Concerning the `git clone` line, we actually recommend that you fork `iwopy` on GitHub and then replace that command by cloning your fork instead.
+Use the repository's `uv` workflow above for development, even when conda is
+used for other environments. See [Testing](testing.md) for the quality gates.

@@ -10,6 +10,7 @@ on:
     branches:
       - main
       - dev
+  workflow_dispatch:
   schedule:
     - cron: '0 22 * * 3' # run every Wednesday at 22:00 UTC
 
@@ -37,7 +38,7 @@ jobs:
             pre-commit-${{ runner.os }}-
 
       - name: Install dependencies
-        run: uv sync --extra test --dev
+        run: uv sync --extra dev --extra test
 
       - name: Run pre-commit
         run: uv run pre-commit run --all-files
@@ -68,7 +69,15 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra test
 
-      - name: Running tests
+      - name: Verify optimizer dependencies
+        run: uv run python -c "import cma, deap, nevergrad, optuna, pygmo, pymoo, scipy"
+
+      - name: Run optimizer and benchmark regressions
+        run: >-
+          uv run pytest tests/interfaces tests/scipy/test_de.py
+          tests/test_benchmarks.py tests/test_documentation.py
+
+      - name: Run full test suite
         run: uv run pytest tests
 
       - name: Minimize uv cache

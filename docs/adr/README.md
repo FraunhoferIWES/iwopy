@@ -18,6 +18,11 @@ all of them.
 | [0004](0004-pipeline-restart-results.md) | Accepted | Seed a selected pipeline range with restart results and always clear running state when execution stops. |
 | [0005](0005-gg-feasible-iterates.md) | Accepted | Preserve feasible GG iterates and backtrack rejected infeasible trial batches. |
 | [0006](0006-vectorized-pycma-interface.md) | Accepted | Evaluate pycma CMA-ES generations in populations and use native augmented-Lagrangian constraints with lazy optional loading. |
+| [0007](0007-vectorized-interfaces-and-optimizer-catalog.md) | Accepted; shared-case ownership and evaluation controls superseded by 0010/0011 | Add four genuine population-search integrations and a complete catalog of explicit, guarded, package-tested optimizer constructors. |
+| [0008](0008-readable-corporate-documentation.md) | Accepted; logo decision superseded by 0009 | Apply token-backed readable Sphinx styling and accurate, concise user/developer documentation with warning-free rendering checks. |
+| [0009](0009-restored-logo-and-catalog-guidance.md) | Accepted | Restore supplied logos, classify/recommend every catalog optimizer, and link class details to the API with readable responsive rows. |
+| [0010](0010-public-quadratic-benchmarks.md) | Accepted | Publish reusable quadratic catalog cases through iwopy.benchmarks and remove example-local dependencies. |
+| [0011](0011-selectable-interface-vectorization.md) | Accepted | Default all four population adapters to vectorize=True while supporting ordered individual evaluation without changing native search. |
 
 ## When To Add An ADR
 

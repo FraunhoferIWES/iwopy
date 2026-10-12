@@ -228,14 +228,30 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0](https://github.com/FraunhoferIWES/iwopy/commits/v0.5.0)
 
-## v0.5.1
+## v1.0.0
 
+- Release:
+  - Increased the package version to 1.0.0 and synchronized software citation,
+    runtime/distribution metadata, and current-release changelog references.
 - Python versions:
   - Added support for Python 3.14
 - Core:
   - Added restart result seeding for selected pipeline stage ranges and ensured
     stage-reported failures clear running state before finalization.
+- Benchmarks:
+  - Published `QuadraticProblem`, `ParetoProblem`, and `MixedProblem` through
+    `iwopy.benchmarks`, replacing the optimizer examples' local shared-case module.
+    All catalog scripts now use installed-package imports without path setup.
 - Interfaces:
+  - Added population-vectorized SciPy differential evolution with mixed integer/
+    float variables, cached nonlinear constraint evaluations, and callbacks.
+  - Added lazy optional Nevergrad, Optuna, and DEAP interfaces with bounded
+    single-objective population evaluation, general constraints, evaluated-candidate
+    results, and deterministic batching/lifecycle tests. The Nevergrad extra
+    constrains NumPy below 2.4 for upstream metamodel compatibility.
+  - Added default-true `vectorize` flags to SciPy DE, Nevergrad, Optuna, and DEAP.
+    Individual evaluation preserves native batches, budgets, constraints, callbacks,
+    and selection while avoiding population evaluation.
   - Added the lazy optional `cma` interface with population-vectorized pycma
     CMA-ES, native augmented-Lagrangian constraints, constraint-owned
     tolerances, callbacks, finalized results, and termination diagnostics.
@@ -263,8 +279,27 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
   - Avoided evaluating analytically differentiated function components during
     vectorized `LocalFD` gradients.
 - Development:
+  - Made optimizer/catalog, SciPy DE, benchmark, and documentation regressions
+    explicit in regular and release CI across Python 3.10 through 3.14, with
+    required-backend preflight, full-suite coverage, safe manual dispatch, and
+    corrected development-extra setup. Added workflow contract tests.
+  - Added a complete optimizer catalog with 79 direct, main-guarded constructor
+    scripts, package-aware execution/import tests, and selector/link coverage.
+    Each row now includes capability classifications and a practical recommendation;
+    detailed class references link to the API rather than being embedded.
+    Split rows into non-empty objective/constraint/local-global categories and
+    added constrained NSGA2/NSGA3 Pareto flows with explicit weighted selection,
+    bringing the catalog to 81 runnable scripts.
+    The Vectorized Interfaces overview now covers all adapters with equal API-linked
+    descriptions and distinguishes search, gradient, and batch-fitness vectorization.
+  - Reviewed documentation for users and developers, removed duplicated/stale
+    setup and vectorization claims, and added Fraunhofer token-backed readable
+    Sphinx styling with consistency tests. NumPy-style documentation now uses
+    Napoleon rather than the theme-incompatible numpydoc extension.
+    Restored the supplied logo on the homepage and README without artwork changes
+    and corrected the pymoo template's stale mixed-variable documentation.
   - Added iwopy-specific agentic coding policy, architecture, naming,
     development, docstring, data-classification, decision, and Fraunhofer IWES
     visual-design guidance.
 
-**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v0.5.1](https://github.com/FraunhoferIWES/iwopy/commits/v0.5.1)
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v1.0.0](https://github.com/FraunhoferIWES/iwopy/commits/v1.0.0)

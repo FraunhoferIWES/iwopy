@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "iwopy"
-version = "0.5.1"
+version = "1.0.0"
 authors = [
     {name = "Jonas Schulte"},
     {name = "Bernhard Stoevesandt"},
@@ -42,18 +42,24 @@ dependencies = [
 [project.optional-dependencies]
 scipy = ["scipy>=1.12"]
 cma = ["cma>=4.4.0"]
+nevergrad = ["nevergrad>=1.0.12", "numpy<2.4"]
+optuna = ["optuna>=5.0.0"]
+deap = ["deap>=1.4.4"]
 pymoo = ["pymoo>=0.6"]
 pygmo = ["pygmo>=2.19"]
 opt = [
     "iwopy[scipy]",
     "iwopy[cma]",
+    "iwopy[nevergrad]",
+    "iwopy[optuna]",
+    "iwopy[deap]",
     "iwopy[pymoo]",
     "iwopy[pygmo]",
 ]
 test = [
     "pytest>=9.0.3",
     "nbmake>1.0",
-    "iwopy[scipy,cma,pymoo,pygmo]",
+    "iwopy[scipy,cma,nevergrad,optuna,deap,pymoo,pygmo]",
     "pre-commit>=3.0",
     "mypy>=1.11.0,!=2.3.1",
 ]
@@ -62,7 +68,6 @@ doc = [
     "iwopy[pymoo]",
     "sphinx>=5.0",
     "sphinx-autoapi>=3.0",
-    "numpydoc>=1.0",
     "sphinx-immaterial>=0.10",
     "myst-nb>=1.0",
     "tomli>=2.0; python_version < '3.11'",

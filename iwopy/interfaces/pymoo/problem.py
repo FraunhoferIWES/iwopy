@@ -12,12 +12,13 @@ class SingleObjProblemTemplate:
     Template for a wrapper around the pymoo problem
     for a single objective.
 
-    At the moment this interface only supports
-    pure int or pure float problems (not mixed).
+    Supports pure integer, pure floating, and mixed variable representations.
+    Mixed problems use pymoo's named-variable mapping. Registered constraints
+    must each have exactly one finite lower or upper bound.
     """
 
     CLASS_NAME = "SingleObjProblem"
-    CLASS_DOC = "The default callback"
+    CLASS_DOC = "The pymoo wrapper for single-objective iwopy problems."
 
     def __init__(
         self,

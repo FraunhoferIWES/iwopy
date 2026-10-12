@@ -1,0 +1,236 @@
+:root,
+[data-md-color-scheme="default"] {
+  --md-default-fg-color: var(--iwes-semantic-color-text);
+  --md-default-fg-color--light: var(--iwes-semantic-color-text-muted);
+  --md-default-bg-color: var(--iwes-semantic-color-background);
+  --md-primary-fg-color: var(--iwes-semantic-color-primary);
+  --md-primary-bg-color: var(--iwes-semantic-color-text);
+  --md-accent-fg-color: var(--iwes-color-steel-blue);
+  --md-typeset-a-color: var(--iwes-color-steel-blue);
+  --md-code-fg-color: var(--iwes-semantic-color-text-muted);
+  --md-code-bg-color: var(--iwes-semantic-color-background-alternative);
+  --md-footer-fg-color: var(--iwes-semantic-color-text-muted);
+  --md-footer-fg-color--light: var(--iwes-semantic-color-text-muted);
+  --md-footer-fg-color--lighter: var(--iwes-semantic-color-text-muted);
+  --md-footer-bg-color: var(--iwes-semantic-color-background-alternative);
+  --md-footer-bg-color--dark: var(--iwes-semantic-color-background-alternative);
+}
+
+html {
+  font-size: var(--iwes-typography-font-size-xl);
+}
+
+body,
+input {
+  font-family: var(--iwes-typography-font-family-sans), sans-serif;
+  font-weight: var(--iwes-typography-font-weight-light);
+  letter-spacing: 0;
+}
+
+.md-grid {
+  max-width: var(--iwes-layout-container-max);
+}
+
+.md-content__inner {
+  max-width: var(--iwes-layout-content-max);
+  margin-inline: auto;
+}
+
+.md-typeset .iwopy-logo {
+  width: calc(2 * var(--iwes-logo-minimum-width));
+  max-width: 100%;
+  height: auto;
+  margin-block: var(--iwes-spacing-4);
+}
+
+.md-typeset,
+.md-nav,
+.md-typeset table:not([class]),
+.md-typeset table.data,
+.md-typeset code,
+.md-typeset pre {
+  font-size: var(--iwes-typography-font-size-base);
+  line-height: var(--iwes-typography-line-height-base);
+}
+
+.md-typeset,
+.md-nav {
+  color: var(--iwes-semantic-color-text-muted);
+  font-weight: var(--iwes-typography-font-weight-light);
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4 {
+  color: var(--iwes-semantic-color-text-muted);
+  letter-spacing: 0;
+}
+
+.md-typeset h1 {
+  font-size: var(--iwes-typography-font-size-2xl);
+  line-height: var(--iwes-typography-line-height-2xl);
+  font-weight: var(--iwes-typography-font-weight-light);
+}
+
+.md-typeset h2,
+.md-header__title {
+  font-size: var(--iwes-typography-font-size-xl);
+  line-height: var(--iwes-typography-line-height-xl);
+}
+
+.md-typeset h3,
+.md-typeset h4 {
+  font-size: var(--iwes-typography-font-size-lg);
+  line-height: var(--iwes-typography-line-height-lg);
+}
+
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset strong,
+.md-typeset b,
+.md-typeset em,
+.md-typeset i,
+.md-nav__title {
+  font-weight: var(--iwes-typography-font-weight-bold);
+  font-style: normal;
+}
+
+.md-typeset a,
+.md-footer a {
+  color: var(--iwes-color-steel-blue);
+  text-decoration: underline;
+  text-underline-offset: var(--iwes-spacing-1);
+}
+
+.md-nav__link {
+  min-height: var(--iwes-layout-touch-target-min);
+  align-items: center;
+  color: var(--iwes-semantic-color-text-muted);
+}
+
+.md-nav__link--active {
+  color: var(--iwes-semantic-color-text);
+  font-weight: var(--iwes-typography-font-weight-bold);
+}
+
+.md-header {
+  color: var(--iwes-semantic-color-text);
+  background: var(--iwes-semantic-color-primary);
+  box-shadow: none;
+}
+
+.md-header__button,
+.md-header__button.md-icon,
+.md-source {
+  color: var(--iwes-semantic-color-text);
+  opacity: 1;
+}
+
+.md-typeset code {
+  font-family: var(--iwes-typography-font-family-mono);
+}
+
+.md-typeset pre,
+.md-typeset code,
+.md-typeset table,
+.md-typeset .admonition,
+.md-typeset details,
+.md-search__form {
+  border-radius: var(--iwes-radius-none);
+  box-shadow: none;
+}
+
+.md-typeset .highlight pre {
+  overflow-x: auto;
+}
+
+.md-typeset table th,
+.md-typeset table td {
+  font-size: var(--iwes-typography-font-size-base);
+  line-height: var(--iwes-typography-line-height-base);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.md-typeset table th {
+  background: var(--iwes-semantic-color-background-alternative);
+  font-weight: var(--iwes-typography-font-weight-bold);
+}
+
+.md-typeset table td {
+  font-weight: var(--iwes-typography-font-weight-light);
+  border-bottom: var(--iwes-border-width) solid var(--iwes-semantic-color-border-subtle);
+}
+
+.md-typeset .optimizer-catalog {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.md-footer,
+.md-footer-meta {
+  color: var(--iwes-semantic-color-text-muted);
+  background: var(--iwes-semantic-color-background-alternative);
+}
+
+.md-footer-meta,
+.md-copyright {
+  color: var(--iwes-semantic-color-text-muted);
+  font-size: var(--iwes-typography-font-size-sm);
+  line-height: var(--iwes-typography-line-height-sm);
+}
+
+:focus-visible {
+  outline: var(--iwes-border-focus-width) solid var(--iwes-color-steel-blue);
+  outline-offset: var(--iwes-spacing-1);
+}
+
+@media (max-width: 640px) {
+  .md-content__inner {
+    padding-inline: var(--iwes-spacing-4);
+  }
+
+  .md-typeset .optimizer-catalog thead {
+    position: absolute;
+    width: var(--iwes-border-width);
+    height: var(--iwes-border-width);
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .md-typeset .optimizer-catalog tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    padding-block: var(--iwes-spacing-4);
+    border-bottom: var(--iwes-border-width) solid var(--iwes-semantic-color-border-subtle);
+  }
+
+  .md-typeset .optimizer-catalog td {
+    padding: var(--iwes-spacing-2) 0;
+    border-bottom: 0;
+  }
+
+  .md-typeset .optimizer-catalog td::before {
+    display: block;
+    color: var(--iwes-semantic-color-text-muted);
+    font-weight: var(--iwes-typography-font-weight-bold);
+  }
+
+  .md-typeset .optimizer-catalog td:nth-child(1)::before { content: "Optimizer"; }
+  .md-typeset .optimizer-catalog td:nth-child(2)::before { content: "Capabilities"; }
+  .md-typeset .optimizer-catalog td:nth-child(3)::before { content: "Summary"; }
+  .md-typeset .optimizer-catalog td:nth-child(4)::before { content: "When to Use"; }
+  .md-typeset .optimizer-catalog td:nth-child(5)::before { content: "Setup"; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}

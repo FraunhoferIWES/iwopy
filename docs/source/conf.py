@@ -40,7 +40,7 @@ release = __version__
 # -- General configuration ---------------------------------------------------
 
 extensions = [
-    "numpydoc",
+    "sphinx.ext.napoleon",
     "sphinx_immaterial",
     "autoapi.extension",
     "sphinx.ext.autosectionlabel",
@@ -79,12 +79,9 @@ exclude_patterns = [
 
 pygments_style = None
 
-# NumPy-style docstrings and stable cross-reference labels.
-# Keep class members visible so constructors and inherited API members appear in
-# the generated reference pages for the concrete classes.
-numpydoc_use_rtype = False
-numpydoc_show_class_members = True
-numpydoc_class_members_toctree = False
+napoleon_numpy_docstring = True
+napoleon_google_docstring = False
+napoleon_use_rtype = False
 autosectionlabel_prefix_document = True
 
 
@@ -97,12 +94,15 @@ autodoc_class_signature = "separated"
 
 html_theme = "sphinx_immaterial"
 html_theme_options = {
-    "site_url": "https://fraunhoferiwes.github.io/iwopy.docs/index.html",
+    "site_url": "https://fraunhoferiwes.github.io/iwopy/",
     "repo_url": "https://github.com/FraunhoferIWES/iwopy",
     "icon": {"repo": "fontawesome/brands/github", "edit": "material/file-edit-outline"},
     "palette": {"primary": "teal"},
     "toc_title_is_page_title": True,
+    "font": {"text": "Roboto", "code": "JetBrains Mono"},
 }
+html_static_path = ["_static"]
+html_css_files = ["iwes-tokens.css", "iwes.css"]
 htmlhelp_basename = "iwopydoc"
 
 latex_documents = [

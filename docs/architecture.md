@@ -35,7 +35,7 @@ iwopy serves developers, researchers, and engineers who need one problem model
 across native optimizers and external solver libraries. A caller defines a
 `Problem`, adds objective and constraint functions, selects an `Optimizer`, and
 receives an iwopy result container. Interfaces translate the same problem into
-SciPy, pycma, pymoo, or PyGMO contracts.
+SciPy, pycma, pymoo, PyGMO, Nevergrad, Optuna, or DEAP contracts.
 
 ```mermaid
 flowchart LR
@@ -43,7 +43,7 @@ flowchart LR
     Functions[Objectives and constraints] --> Problem
     Problem --> Optimizer
     Optimizer --> Native[GG or SLSQP]
-	Optimizer --> Interfaces[SciPy, pycma, pymoo, or PyGMO interface]
+	Optimizer --> Interfaces[SciPy, pycma, pymoo, PyGMO, Nevergrad, Optuna, or DEAP]
     Native --> Results[Single or multi-objective results]
     Interfaces --> Results
     Optimizer --> Callbacks[Snapshots and optimization history]
@@ -52,7 +52,7 @@ flowchart LR
 - Runtime: Python 3.10 through 3.14 on operating-system-independent Python
 	environments.
 - Required scientific stack: NumPy, SciPy, and matplotlib.
-- Optional optimizer integrations: pycma, pymoo, and PyGMO, selected through package
+- Optional optimizer integrations: pycma, pymoo, PyGMO, Nevergrad, Optuna, and DEAP, selected through package
 	extras. The `opt` and `test` extras aggregate supported solver integrations.
 - iwopy is an in-process library. It has no application server, authentication
 	boundary, persistent database, browser frontend, or package console script.
@@ -84,11 +84,15 @@ existing problem. Those paths still use the same core lifecycle.
 | `iwopy.core` | Base lifecycle, problems, functions, memory, optimizers, callbacks, results, and pipelines | `Base`, `Problem`, `OptFunction`, `Objective`, `Constraint`, `Optimizer`, result containers, `Pipeline` |
 | `iwopy.wrappers` | Reusable adaptations of problems and functions | `SimpleProblem`, `SimpleObjective`, `SimpleConstraint`, `ProblemWrapper`, `LocalFD`, `DiscretizeRegGrid` |
 | `iwopy.interfaces.scipy` | Translation to SciPy optimization methods | SciPy optimizer adapter, bounds, constraints, callbacks, and Jacobians |
+| `iwopy.interfaces._population` | Private shared contract for the four new bounded population adapters | Validation, float-before-integer conversion, constraint residuals, evaluated-candidate selection, callback snapshots, and finalization; no external backend imports |
 | `iwopy.interfaces.cma` | Population-vectorized pycma CMA-ES integration | Continuous single-objective ask/tell, native augmented-Lagrangian constraints, callbacks, and finalized results |
+| `iwopy.interfaces.nevergrad` | Nevergrad population ask/tell integration | Eight explicit batching-safe algorithm selectors, violation feedback, and evaluated-candidate results |
+| `iwopy.interfaces.optuna` | Optuna population ask/tell integration | TPE/random samplers, fresh in-memory studies, current trial constraint API, and failed-batch cleanup |
+| `iwopy.interfaces.deap` | Serial DEAP population evolution | Three variation/replacement schemes, bounded operators, integer repair, and constraint-first fitness |
 | `iwopy.interfaces.pymoo` | Single- and multi-objective pymoo integration | Mixed/integer/float representations, algorithm factories, population evaluation, result conversion |
 | `iwopy.interfaces.pygmo` | Serial PyGMO integration | UDP translation, algorithms, fitness/batch fitness, callbacks, and result conversion |
 | `iwopy.optimizers` | Native iwopy optimizer implementations | `GG` and `SLSQP`; depends on core contracts and SciPy mathematics |
-| `iwopy.benchmarks` | Reusable analytical example problems | Branin and Rosenbrock problem definitions |
+| `iwopy.benchmarks` | Reusable analytical example problems | Branin, Rosenbrock, and public continuous/Pareto/mixed quadratic problem definitions |
 | `iwopy.utils` | Shared discretization, loading, subclass discovery, and output suppression | `RegularDiscretizationGrid` and focused infrastructure helpers |
 | `examples` and `notebooks` | Executable public workflows | Public APIs and declared optimizer extras |
 | `tests` | Core, optimizer, backend, package, and callback-example coverage | May inspect internals only when the internal contract itself is under test |
@@ -243,10 +247,59 @@ point. See [ADR-0005](adr/0005-gg-feasible-iterates.md).
 
 ### SciPy
 
-The SciPy adapter requires one objective, no integer variables, and at least one
+`Optimizer_scipy` requires one objective, no integer variables, and at least one
 floating variable. It translates bounds and constraints, dispatches callbacks,
 and supplies iwopy Jacobians to methods that consume gradients. SciPy is a base
 dependency, not an optional import.
+
+`Optimizer_scipy_de` separately supports bounded floating, integer, and mixed
+population search. It uses deferred single-worker vectorization without polishing
+and shares evaluated population rows across objective and constraint calls.
+Success requires native convergence and final core feasibility. Callbacks report
+survivor populations and actual iwopy candidate counts excluding finalization;
+constraint values and infeasible objective energies are unavailable. Native
+execution/representation options are managed by iwopy; evaluation exceptions
+retain their original diagnostic cause.
+
+### Nevergrad, Optuna, And DEAP
+
+These adapters and SciPy DE use the private `_PopulationOptimizer` boundary,
+not a new core contract. They require one objective, finite strictly ordered
+bounds, valid bounded int32 variables, and finite in-bound initial values. Each
+evaluated population retains separate integer/float arrays; fixed variables and
+zero-tolerance exact equalities are rejected. Constraint tolerances relax bounds;
+finite lower residuals precede finite upper residuals in component order.
+The shared validation method intentionally exceeds the 40-line guideline to keep
+shape, sentinel, bounds, and initial-value checks together in one ordered boundary.
+`vectorize=True` evaluates an ordered batch as a population by default; false
+uses individual calls without changing native search, counters, or callback batches.
+See [ADR-0011](adr/0011-selectable-interface-vectorization.md).
+
+Nevergrad exposes eight batching-safe selectors, evaluating outstanding asks
+together before ordered tells. It receives signed losses and positive violations;
+no executor is created. The `nevergrad>=1.0.12` extra alone constrains NumPy below
+2.4 for NGOpt's metamodel scalar-conversion limitation, exercised by its catalog case.
+
+Optuna >=5.0.0 supports TPE/random sampling with a fresh in-memory study and the
+current `Trial.set_constraint` API. Ordered ask/tell batches use native objective
+directions; failed batch evaluations fail outstanding trials and propagate.
+TPE accounts for pending trials. Logging stays under caller control.
+
+DEAP >=1.4.4 exposes three native variation/replacement schemes, bounded operators,
+integer repair, and constraint-first fitness. Reproduced offspring are reevaluated
+and counted. Its temporary Python-random seed is restored even on failure;
+execution must be serial because upstream operators use that global generator.
+No global creator classes are registered.
+
+Nevergrad, Optuna, and DEAP choose the best feasible evaluated objective, otherwise
+the smallest total positive violation with objective tie-breaking. Roundoff
+residuals accepted by core feasibility do not bias feasible objective ranking.
+The result is finalized through the problem; success means finite final
+feasibility rather than convergence. Budgets include initialization and final
+partial batches. Each completed batch emits an immutable original-direction
+iteration snapshot with candidate counts excluding finalization. Repeated solves
+reset counters, history, selection, and native state. See
+[ADR-0007](adr/0007-vectorized-interfaces-and-optimizer-catalog.md).
 
 ### pymoo
 
@@ -293,9 +346,43 @@ The PyGMO UDP expands each registered constraint's tolerance into its `c_tol`
 vector when the adapter is constructed; the core problem does not own that
 backend representation.
 
-pycma, pymoo, and PyGMO imports are lazy and report installation guidance when
+pycma, pymoo, PyGMO, Nevergrad, Optuna, and DEAP imports are lazy and report installation guidance when
 their extras are unavailable. Importing base `iwopy` must not require any of
-these packages. pycma is loaded during optimizer initialization.
+these packages. pycma, Nevergrad, Optuna, and DEAP are loaded during optimizer initialization.
+
+The optimizer catalog covers every named public selector, SciPy's default and
+callable extension point, and PyGMO's NLopt subsolvers. Each row links to a direct
+constructor script under `examples/optimizers/`, guarded by `__main__`; only
+synthetic problem definitions are shared through `iwopy.benchmarks.quadratic`.
+The package exports `QuadraticProblem`, `ParetoProblem`, and `MixedProblem` directly
+from `iwopy.benchmarks`; constructors initialize silently, imports do not instantiate
+problems, and no example-local helper or path injection is needed. See
+[ADR-0010](adr/0010-public-quadratic-benchmarks.md). Compact capability labels distinguish
+single/multi-objective results, bounds versus nonlinear restrictions, mixed
+variables, and derivative needs. A recommendation gives a starting point rather
+than a performance ranking; API links replace embedded class reference blocks.
+Six non-empty tables partition objective count, nonlinear restrictions, and
+local/global search. Boxes alone are not nonlinear constraints; constraint-capable
+methods can also solve unconstrained problems. Single-run covariance/hill-climbing
+methods are local adaptation here, not claimed global optimizers. Unconstrained
+and constrained NSGA2/NSGA3 Pareto flows show actual iwopy results and explicit
+weighted compromise selection; their demonstrated restriction determines their
+table. There are 81 direct scripts covering 79 selectors plus two constrained
+Pareto flows. Empty local multi-objective categories are omitted.
+Tests execute every script and verify
+inert imports, links, and selector coverage. Optional installations and native
+PyGMO features guard their respective runs with explicit skips. PyGMO Pareto
+examples evolve and return the native population instead of invoking unsupported
+champion finalization.
+
+The catalog's Vectorized Interfaces section covers every adapter with API links,
+distinguishing population search, gradient batching, and optional batch fitness.
+SciPy DE, Nevergrad, Optuna, and DEAP expose `vectorize=True` by default. False
+routes each ordered batch through individual evaluation without changing native
+batch generation, caches, budgets, callbacks, constraints, or result selection.
+Empty batches invoke neither evaluation path. SciPy's native deferred/vectorized
+DE mode remains enabled independently. See
+[ADR-0011](adr/0011-selectable-interface-vectorization.md).
 
 ## Extension Points
 
@@ -375,6 +462,17 @@ is forward-only by default under
 
 ## Cross-Cutting Decisions
 
+- SciPy DE, Nevergrad, Optuna, and DEAP use true population search with explicit
+	bounded single-objective contracts. The catalog links every public selector to
+	a direct guarded script, tested with package-aware skips. New optional extras
+	are lazy; Nevergrad alone constrains NumPy <2.4 based on observed upstream
+	behavior. See [ADR-0007](adr/0007-vectorized-interfaces-and-optimizer-catalog.md).
+- Shared quadratic catalog cases are public `iwopy.benchmarks` definitions with
+	silently initialized constructors, not example-local helpers. See
+	[ADR-0010](adr/0010-public-quadratic-benchmarks.md).
+- The four population adapters default to `vectorize=True` and support ordered
+	individual evaluation without changing native batches or search. See
+	[ADR-0011](adr/0011-selectable-interface-vectorization.md).
 - pycma CMA-ES uses genuine population evaluation and native augmented-Lagrangian
 	constraint handling, with a lazy `cma>=4.4.0` extra and explicit continuous,
 	single-objective support. See [ADR-0006](adr/0006-vectorized-pycma-interface.md).
@@ -386,24 +484,35 @@ is forward-only by default under
 	pre-commit, affected public docstrings, the current-version final
 	`CHANGELOG.md` section, and synchronized iwopy documentation as one completion
 	gate. See [ADR-0001](adr/0001-forward-only-development.md).
+- Regular and version-tag GitHub Actions run the complete test extra on Linux
+	for Python 3.10 through 3.14. A backend-import preflight and explicit
+	optimizer/catalog/benchmark/documentation regression stage precede the full suite.
+	Missing solver packages cannot silently hide coverage; optional PyGMO native
+	features retain documented skips. Manual regular-workflow runs do not publish.
 - `pyproject.toml` is the source of package metadata, supported Python versions,
 	dependencies, extras, build configuration, and mypy settings.
+	Runtime and installed distribution versions, the final changelog section, and
+	software `version` in `CITATION.cff` mirror the project version. Sphinx reads it
+	directly. Citation schema and preferred-article metadata remain independent.
 - Production Python under `iwopy/` is type checked. Tests, examples, notebooks,
 	and docs are not currently part of the mypy target.
 - Public Python APIs follow [docstring conventions](docstrings.md): NumPy-style
 	docstrings expose optimization, array, lifecycle, and backend contracts while
 	types remain in annotations.
 - Ruff formatting/linting and mypy run through pre-commit. Pytest is the test
-	runner; Sphinx with AutoAPI, numpydoc, and MyST-NB builds the documentation.
-- iwopy follows the Fraunhofer corporate design. The repository has no browser
-	UI and no design-token adapter; corporate requirements apply to matplotlib
-	Pareto/history plots, examples, notebooks, documentation, and brand assets.
-	See [ADR-0002](adr/0002-corporate-design.md).
-- The repository has no browser UI and no design-token adapter. Its visual
-	surface consists of matplotlib Pareto/history plots, examples, notebooks,
-	documentation, and brand assets. Visual changes first follow the policy in
-	[AGENTS.md](../AGENTS.md#ui-design-policy) and applicable corporate chart
-	guidance.
+	runner; Sphinx with AutoAPI, Napoleon's NumPy-style parsing, and MyST-NB builds
+	the documentation. The incompatible numpydoc extension is not loaded.
+- iwopy follows Fraunhofer corporate design under
+	[ADR-0002](adr/0002-corporate-design.md). Sphinx adapts authoritative tokens
+	through `docs/source/_static/iwes-tokens.css` and `iwes.css`, checked by
+	`tests/test_documentation.py`. Body, navigation, code, and tables use the 16px
+	base scale; the 14px footer is secondary text. No browser application or shared
+	matplotlib token adapter is introduced. The original color logo is restored
+	on the white homepage without artwork changes; README uses the original white
+	variant for dark color schemes. Repeated installation/release prose is removed.
+	Existing token `needs-review` flags remain authoritative. See
+	[ADR-0008](adr/0008-readable-corporate-documentation.md), with the logo decision
+	superseded by [ADR-0009](adr/0009-restored-logo-and-catalog-guidance.md).
 
 ## ADR Triggers
 

@@ -8,8 +8,11 @@ directory rather than keeping it as advice — see `AGENTS.md`, "UI Design Polic
 
 ### iwopy Scope
 
-iwopy currently has no browser frontend and no design-token adapter. Its visual
-surface consists mainly of matplotlib Pareto-front and optimization-history
+iwopy has no browser application frontend. Sphinx documentation adapts tokens
+through `docs/source/_static/iwes-tokens.css` and applies them through `iwes.css`;
+`tests/test_documentation.py` checks the values against the source tokens.
+There is no shared matplotlib token adapter. Its visual surface also includes
+matplotlib Pareto-front and optimization-history
 plots, example and notebook output, Sphinx documentation, and project/brand
 assets. Apply the chart, colour, typography, image, logo, and accessibility rules
 here when those surfaces change. Do not apply web component requirements to
@@ -21,6 +24,12 @@ corporate preset. Apply defaults locally; do not mutate global matplotlib state
 or require an unavailable font merely by importing `iwopy`. A new browser UI or
 shared plotting theme is an architectural feature and must be recorded in
 `docs/architecture.md` with its adapter or asset ownership.
+
+Documentation uses the approved 16px base scale for body, code, navigation, and
+table cells, with 14px secondary footer text. Test rendered sizes rather than
+assuming theme inheritance. The original token `needs-review` flags, including
+the monospaced stack, layout dimensions, and minimum touch target, remain
+authoritative; the adapter does not grant approval or change those values.
 
 ## Purpose and Authority
 
