@@ -236,6 +236,9 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
   - Added restart result seeding for selected pipeline stage ranges and ensured
     stage-reported failures clear running state before finalization.
 - Interfaces:
+  - Added the lazy optional `cma` interface with population-vectorized pycma
+    CMA-ES, native augmented-Lagrangian constraints, constraint-owned
+    tolerances, callbacks, finalized results, and termination diagnostics.
   - Added cached, population-vectorized iwopy Jacobians to every
     gradient-capable SciPy minimizer, with grouped general constraints and an
     explicit continuous-variable contract.

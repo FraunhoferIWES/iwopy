@@ -49,7 +49,7 @@ compatibility-sensitive.
 | component | One scalar output of a function | Function object or optimization variable |
 | feasible / valid | Satisfies all constraint component bounds within tolerance | Merely finite or successfully evaluated |
 | optimizer | Object that solves an initialized problem | Problem, objective, or backend problem adapter |
-| backend interface | Translation between iwopy and SciPy, pymoo, or PyGMO | Native optimizer implementation |
+| backend interface | Translation between iwopy and SciPy, pycma, pymoo, or PyGMO | Native optimizer implementation |
 | champion | Single solution selected by a backend such as PyGMO | Pareto population |
 | Pareto front | Non-dominated objective values for a multi-objective result | All evaluated population values |
 | wrapper | Adapter around a problem or function contract | Independent deep copy |
@@ -179,6 +179,12 @@ them to attributes without a deliberate contract change.
 	examples, tests, and backend availability messages before renaming a selector.
 - Optional backend imports remain lazy and name the corresponding package extra
 	in errors and documentation.
+- The external project is pycma; its distribution, import, iwopy interface
+	package, and optional extra are named `cma`. The public adapter is
+	`Optimizer_cma`, its backend options are `cma_pars`, and its initial search
+	standard deviation is `sigma0`. `stop_conditions` records backend termination
+	reasons. pycma inequality residuals group finite lower bounds before finite
+	upper bounds, preserving iwopy component order within each group.
 
 ## Wrappers, Pipelines, And Callbacks
 
@@ -216,7 +222,7 @@ Test directories retain their package ownership:
 
 - `tests/core/`: lifecycle, mappings, derivatives, memory, callbacks, and grids;
 - `tests/optimizers/`: native optimizer behavior;
-- `tests/scipy/`, `tests/pymoo/`, and `tests/pygmo/`: backend translation;
+- `tests/scipy/`, `tests/cma/`, `tests/pymoo/`, and `tests/pygmo/`: backend translation;
 - root tests: package imports and executable callback examples.
 
 Name focused tests after observable behavior. Parametrization identifiers expose

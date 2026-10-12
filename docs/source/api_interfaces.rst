@@ -9,6 +9,7 @@ Interfaces to external optimization packages
    ":doc:`pymoo interface <api_interfaces_pymoo>`", "Interface to the `pymoo` package"
    ":doc:`pygmo interface <api_interfaces_pygmo>`", "Interface to the `pygmo` package"
    ":doc:`scipy interface <api_interfaces_scipy>`", "Interface to the `scipy` package"
+   ":doc:`pycma interface <api_interfaces_cma>`", "Population-vectorized CMA-ES with the `cma` package"
 
 .. toctree::
    :hidden:
@@ -16,3 +17,4 @@ Interfaces to external optimization packages
    api_interfaces_pymoo
    api_interfaces_pygmo
    api_interfaces_scipy
+   api_interfaces_cma

@@ -17,6 +17,7 @@ all of them.
 | [0003](0003-constraint-owned-solver-tolerances.md) | Accepted | Keep feasibility tolerance on each constraint and derive backend component vectors in registration order. |
 | [0004](0004-pipeline-restart-results.md) | Accepted | Seed a selected pipeline range with restart results and always clear running state when execution stops. |
 | [0005](0005-gg-feasible-iterates.md) | Accepted | Preserve feasible GG iterates and backtrack rejected infeasible trial batches. |
+| [0006](0006-vectorized-pycma-interface.md) | Accepted | Evaluate pycma CMA-ES generations in populations and use native augmented-Lagrangian constraints with lazy optional loading. |
 
 ## When To Add An ADR
 

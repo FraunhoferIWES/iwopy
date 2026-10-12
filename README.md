@@ -11,6 +11,7 @@ The `iwopy` package is in fact a meta package that provides interfaces to other 
 - [pymoo](https://pymoo.org/index.html)
 - [pygmo](https://esa.github.io/pygmo2/index.html)
 - [scipy](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html)
+- [pycma](https://github.com/CMA-ES/pycma), with vectorized CMA-ES population evaluation
 - (more to come with future versions)
 
 `iwopy` can thus be understood as an attempt to provide *the best of all worlds* when it comes to solving optimization problems with Python. This has not yet been achieved, since above list of accessable optimization packages is obviously incomplete, but it's a start. All the credit for implementing the invoked optimizers goes to the original package providers.
@@ -112,6 +113,12 @@ or
 ```console
 pip install git+https://github.com/FraunhoferIWES/iwopy@dev#egg=iwopy[opt]
 ```
+
+For only the pycma integration, install `iwopy[cma]` and import
+`Optimizer_cma` from `iwopy.interfaces.cma`. It supports continuous
+single-objective problems, box bounds, and nonlinear constraints through
+pycma's augmented Lagrangian. Each generation evaluates the complete population
+in one iwopy call; no objective or constraint derivatives are needed.
 
 ### Developers
 

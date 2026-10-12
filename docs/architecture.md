@@ -35,7 +35,7 @@ iwopy serves developers, researchers, and engineers who need one problem model
 across native optimizers and external solver libraries. A caller defines a
 `Problem`, adds objective and constraint functions, selects an `Optimizer`, and
 receives an iwopy result container. Interfaces translate the same problem into
-SciPy, pymoo, or PyGMO contracts.
+SciPy, pycma, pymoo, or PyGMO contracts.
 
 ```mermaid
 flowchart LR
@@ -43,7 +43,7 @@ flowchart LR
     Functions[Objectives and constraints] --> Problem
     Problem --> Optimizer
     Optimizer --> Native[GG or SLSQP]
-    Optimizer --> Interfaces[SciPy, pymoo, or PyGMO interface]
+	Optimizer --> Interfaces[SciPy, pycma, pymoo, or PyGMO interface]
     Native --> Results[Single or multi-objective results]
     Interfaces --> Results
     Optimizer --> Callbacks[Snapshots and optimization history]
@@ -52,7 +52,7 @@ flowchart LR
 - Runtime: Python 3.10 through 3.14 on operating-system-independent Python
 	environments.
 - Required scientific stack: NumPy, SciPy, and matplotlib.
-- Optional optimizer integrations: pymoo and PyGMO, selected through package
+- Optional optimizer integrations: pycma, pymoo, and PyGMO, selected through package
 	extras. The `opt` and `test` extras aggregate supported solver integrations.
 - iwopy is an in-process library. It has no application server, authentication
 	boundary, persistent database, browser frontend, or package console script.
@@ -84,6 +84,7 @@ existing problem. Those paths still use the same core lifecycle.
 | `iwopy.core` | Base lifecycle, problems, functions, memory, optimizers, callbacks, results, and pipelines | `Base`, `Problem`, `OptFunction`, `Objective`, `Constraint`, `Optimizer`, result containers, `Pipeline` |
 | `iwopy.wrappers` | Reusable adaptations of problems and functions | `SimpleProblem`, `SimpleObjective`, `SimpleConstraint`, `ProblemWrapper`, `LocalFD`, `DiscretizeRegGrid` |
 | `iwopy.interfaces.scipy` | Translation to SciPy optimization methods | SciPy optimizer adapter, bounds, constraints, callbacks, and Jacobians |
+| `iwopy.interfaces.cma` | Population-vectorized pycma CMA-ES integration | Continuous single-objective ask/tell, native augmented-Lagrangian constraints, callbacks, and finalized results |
 | `iwopy.interfaces.pymoo` | Single- and multi-objective pymoo integration | Mixed/integer/float representations, algorithm factories, population evaluation, result conversion |
 | `iwopy.interfaces.pygmo` | Serial PyGMO integration | UDP translation, algorithms, fitness/batch fitness, callbacks, and result conversion |
 | `iwopy.optimizers` | Native iwopy optimizer implementations | `GG` and `SLSQP`; depends on core contracts and SciPy mathematics |
@@ -255,6 +256,31 @@ multi-objective result conversion. Algorithm names resolved by the factory are
 public selectors. Constraint conversion and representation changes require
 focused adapter tests against supported pymoo versions.
 
+### pycma
+
+`Optimizer_cma` requires one objective, no integer variables, and at least one
+floating variable. Each CMA-ES ask/tell generation makes one
+`Problem.evaluate_population()` call for objectives and constraints. The adapter
+negates maximization objectives only at the backend boundary, translates box
+bounds, and passes nonpositive constraint residuals to pycma's native augmented
+Lagrangian. Finite lower bounds precede finite upper bounds, with component
+registration order retained within each group. Constraint-owned tolerances
+expand the bounds; equality constraints require positive tolerance.
+
+Each completed generation emits an `iteration` callback with the evaluated
+population, original objective signs and constraint values, and cumulative
+backend evaluation count excluding finalization. A solve starts a fresh strategy
+from the problem's initial values. The best feasible solution is finalized
+through the problem; if none was feasible, the backend's favorite point is
+returned with `success=False`. Success also requires convergence rather than
+only a budget stop, and finite, feasible final values. `stop_conditions` records
+the backend termination reasons.
+
+Backend logging stays disabled regardless of iwopy verbosity, although pycma's
+constraint logger may create an empty `outcmaes/` directory. Native options are
+trusted configuration; iwopy manages variable representation, bounds, callbacks,
+verbosity, and logging. See [ADR-0006](adr/0006-vectorized-pycma-interface.md).
+
 ### PyGMO
 
 The PyGMO adapter is serial. Decision vectors place floating variables before
@@ -267,8 +293,9 @@ The PyGMO UDP expands each registered constraint's tolerance into its `c_tol`
 vector when the adapter is constructed; the core problem does not own that
 backend representation.
 
-pymoo and PyGMO imports are lazy and report installation guidance when their
-extras are unavailable. Importing base `iwopy` must not require either package.
+pycma, pymoo, and PyGMO imports are lazy and report installation guidance when
+their extras are unavailable. Importing base `iwopy` must not require any of
+these packages. pycma is loaded during optimizer initialization.
 
 ## Extension Points
 
@@ -301,7 +328,8 @@ distinct.
 iwopy does not own a persistent database. It receives caller-defined Python
 objects, arrays, callables, paths, and backend settings; holds optimization state
 in memory; and writes files only through explicit examples, callbacks, pipelines,
-or caller code.
+or caller code. The pycma constraint logger may create an empty `outcmaes/`
+directory during a constrained solve, but the adapter disables backend log files.
 
 - Validate variable maps, shapes, bounds, component selections, backend options,
 	and paths at the owning boundary.
@@ -347,6 +375,9 @@ is forward-only by default under
 
 ## Cross-Cutting Decisions
 
+- pycma CMA-ES uses genuine population evaluation and native augmented-Lagrangian
+	constraint handling, with a lazy `cma>=4.4.0` extra and explicit continuous,
+	single-objective support. See [ADR-0006](adr/0006-vectorized-pycma-interface.md).
 - Development is strictly forward-looking by default. Superseded code and
 	contracts are removed rather than kept behind compatibility shims; a bounded
 	legacy exception requires explicit authorization and a recorded removal

@@ -94,6 +94,9 @@ Backend events
     * - ``Optimizer_pymoo``
       - Completed pymoo generation
       - Full current population
+    * - ``Optimizer_cma``
+      - Completed pycma ask/tell generation
+      - Full evaluated population; counts exclude finalization
     * - ``Optimizer_pygmo``
       - Live fitness evaluation, except for IPOPT
       - One point or one evaluated batch

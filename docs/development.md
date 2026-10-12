@@ -53,9 +53,10 @@ extra. Multiple extras are combined by repeating `--extra`.
 |---|---|
 | Main dependencies | NumPy, SciPy, and matplotlib runtime support |
 | `scipy` | Explicit SciPy integration selection; SciPy is also a base dependency |
+| `cma` | pycma CMA-ES interface, requiring `cma>=4.4.0` for constrained ask/tell |
 | `pymoo` | pymoo optimizer interface |
 | `pygmo` | PyGMO optimizer interface |
-| `opt` | Aggregate SciPy, pymoo, and PyGMO integrations |
+| `opt` | Aggregate SciPy, pycma, pymoo, and PyGMO integrations |
 | `test` | All solver integrations, pytest, notebook execution, pre-commit, and mypy |
 | `dev` | Contributor hooks, mypy, object-size inspection, and Jupyter |
 | `doc` | Sphinx, AutoAPI, numpydoc, Immaterial, MyST-NB, and documentation notebooks |
@@ -88,6 +89,7 @@ and the nearest tests.
 | Finite differences | `iwopy/wrappers/local_fd.py` | Gradient assembly and analytical/numerical tests |
 | Problem wrapper or discretization | `iwopy/wrappers/` | Underlying core problem, grid utility, and core tests |
 | SciPy translation | `iwopy/interfaces/scipy/` | Core gradients/results and `tests/scipy/` |
+| pycma translation | `iwopy/interfaces/cma/` | Ask/tell batching, constraint bounds/tolerances, callbacks/results, and `tests/cma/` |
 | pymoo translation | `iwopy/interfaces/pymoo/` | Factory, representation, results, and `tests/pymoo/` |
 | PyGMO translation | `iwopy/interfaces/pygmo/` | UDP ordering, callbacks/results, and `tests/pygmo/` |
 | Native optimizer | `iwopy/optimizers/` | Core optimizer contract and optimizer tests |
@@ -172,6 +174,7 @@ The test directories encode package ownership:
 | `tests/core/` | Lifecycle, variable maps, functions, gradients, memory, callbacks, and discretization |
 | `tests/optimizers/` | Native GG and SLSQP behavior |
 | `tests/scipy/` | SciPy adapter values, constraints, gradients, and results |
+| `tests/cma/` | pycma population batching, objective signs, bounds/tolerances, callbacks, lifecycle, and stop/success conversion |
 | `tests/pymoo/` | pymoo variable representations, population evaluation, algorithms, and results |
 | `tests/pygmo/` | PyGMO vector/fitness ordering, algorithms, callbacks, and results |
 | `tests/test_package.py` | Package import and metadata surface |
@@ -231,6 +234,17 @@ mixed, individual, population, single-objective, or multi-objective as relevant.
 
 Optional-backend tests use the declared `test` extra. Keep tests deterministic
 and small; do not depend on backend default randomness without an explicit seed.
+
+For pycma, test a solve with individual evaluation disabled, the fitness and
+constraint rows passed to `tell`, maximization signs, general constraint bounds,
+equality tolerance bands, and unsuccessful budget or infeasible stops. Include
+silent and verbose solves in a temporary directory; no backend log files may be
+written, though pycma can create an empty `outcmaes/` directory. Import tests block
+the optional backend in a fresh process. Check the minimum supported backend:
+
+```console
+uv run --with 'cma==4.4.0' pytest tests/cma tests/test_package.py -q
+```
 
 ### Callbacks, Pipelines, And Plots
 
