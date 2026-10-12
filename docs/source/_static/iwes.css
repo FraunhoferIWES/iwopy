@@ -37,7 +37,7 @@ input {
 }
 
 .md-typeset .iwopy-logo {
-  width: calc(2 * var(--iwes-logo-minimum-width));
+  width: 100%;
   max-width: 100%;
   height: auto;
   margin-block: var(--iwes-spacing-4);

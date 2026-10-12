@@ -298,6 +298,8 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
     Napoleon rather than the theme-incompatible numpydoc extension.
     Restored the supplied logo on the homepage and README without artwork changes
     and corrected the pymoo template's stale mixed-variable documentation.
+    The README and homepage logos now span their content line width while preserving
+    aspect ratio, alternative text, and the supplied dark-mode variant.
   - Added iwopy-specific agentic coding policy, architecture, naming,
     development, docstring, data-classification, decision, and Fraunhofer IWES
     visual-design guidance.

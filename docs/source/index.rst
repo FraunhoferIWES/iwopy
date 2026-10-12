@@ -4,6 +4,7 @@ IWOPY
 
 .. image:: ../../Logo_IWOPY.svg
     :alt: IWOPY logo
+    :width: 100%
     :align: center
     :class: iwopy-logo
 

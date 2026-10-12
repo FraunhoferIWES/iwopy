@@ -75,10 +75,16 @@ def test_logo_is_present_and_catalog_links_api_instead_of_embedding_classes():
     readme = (ROOT / "README.md").read_text()
     assert ".. image:: ../../Logo_IWOPY.svg" in index
     assert ":alt: IWOPY logo" in index
+    assert ":width: 100%" in index
     assert 'src="Logo_IWOPY.svg"' in readme
+    assert 'src="Logo_IWOPY.svg" width="100%"' in readme
     assert 'srcset="Logo_IWOPY_white.svg"' in readme
     assert (ROOT / "Logo_IWOPY.svg").is_file()
     assert (ROOT / "Logo_IWOPY_white.svg").is_file()
+    css = (SOURCE / "_static/iwes.css").read_text()
+    logo_styles = re.search(r"\.md-typeset \.iwopy-logo\s*\{([^}]+)\}", css).group(1)
+    assert re.search(r"\bwidth:\s*100%;", logo_styles)
+    assert re.search(r"\bheight:\s*auto;", logo_styles)
     catalog = (SOURCE / "optimizer_catalog.rst").read_text()
     assert ".. autoclass::" not in catalog
     for backend in (

@@ -509,7 +509,9 @@ is forward-only by default under
 	base scale; the 14px footer is secondary text. No browser application or shared
 	matplotlib token adapter is introduced. The original color logo is restored
 	on the white homepage without artwork changes; README uses the original white
-	variant for dark color schemes. Repeated installation/release prose is removed.
+	variant for dark color schemes. Both logos fill the available content line width
+	with automatic proportional height, retained clear space, and no viewport overflow.
+	Repeated installation/release prose is removed.
 	Existing token `needs-review` flags remain authoritative. See
 	[ADR-0008](adr/0008-readable-corporate-documentation.md), with the logo decision
 	superseded by [ADR-0009](adr/0009-restored-logo-and-catalog-guidance.md).

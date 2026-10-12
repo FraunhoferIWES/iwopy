@@ -4,7 +4,7 @@ Fraunhofer IWES optimization tools in Python
 
 <picture>
 	<source media="(prefers-color-scheme: dark)" srcset="Logo_IWOPY_white.svg">
-	<img alt="IWOPY logo" src="Logo_IWOPY.svg" width="240">
+	<img alt="IWOPY logo" src="Logo_IWOPY.svg" width="100%">
 </picture>
 
 ## Overview
@@ -15,7 +15,7 @@ a shared Python interface. Available external integrations include:
 - [pymoo](https://pymoo.org/index.html)
 - [pygmo](https://esa.github.io/pygmo2/index.html)
 - [scipy](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html)
-- [pycma](https://github.com/CMA-ES/pycma), with vectorized CMA-ES population evaluation
+- [pycma](https://github.com/CMA-ES/pycma)
 - [Nevergrad](https://facebookresearch.github.io/nevergrad/)
 - [Optuna](https://optuna.org/)
 - [DEAP](https://deap.readthedocs.io/)
