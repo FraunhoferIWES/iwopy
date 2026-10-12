@@ -26,8 +26,7 @@ evaluation batches candidates or derivative points when the chosen backend suppo
 
 The [optimizer catalog](https://fraunhoferiwes.github.io/iwopy/optimizer_catalog.html)
 lists every selectable optimizer with a short description and a runnable,
-explicit Python setup. SciPy differential evolution, Nevergrad, Optuna, and
-DEAP support batched search evaluations.
+explicit Python setup. 
 
 Documentation: [https://fraunhoferiwes.github.io/iwopy](https://fraunhoferiwes.github.io/iwopy)
 
