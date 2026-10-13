@@ -5,17 +5,26 @@ Interface to the `scipy` package
 ``Optimizer_scipy`` solves continuous single-objective problems with any
 algorithm exposed by :func:`scipy.optimize.minimize`. For gradient-capable
 methods, it supplies the complete objective and constraint Jacobian through
-``Problem.get_gradients``. Objective and constraint callbacks at the same
-point share one cached Jacobian calculation.
+``Problem.get_jacobian``. Objective and constraint callbacks at the same
+point share one cached CSR Jacobian calculation.
+
+``trust-constr`` receives CSR constraint Jacobians without a dense intermediate.
+Its native ``sparse_jacobian`` option defaults to ``True``; explicit values are
+preserved. Set it to ``False`` when selecting a dense-only ``QRFactorization``
+or ``SVDFactorization``. Other methods, including SLSQP, receive dense
+constraint arrays as required by their native interface. Scalar objective
+gradients remain dense vectors for every SciPy method. Sparse callbacks do not
+remove dense Hessian approximations or prevent every native factorization
+fallback to dense storage.
 
 By default, Jacobians are requested with ``pop=True``. A wrapper such as
 ``LocalFD`` can therefore evaluate all finite-difference points together
 through the problem's population interface. Set ``vectorize=False`` to use
-serial iwopy gradient evaluation. The interface does not fall back to SciPy's
+serial iwopy Jacobian evaluation. The interface does not fall back to SciPy's
 scalar finite differences, so every required derivative must be analytical or
 provided by a problem wrapper.
 
-The gradient path applies to ``CG``, ``BFGS``, ``Newton-CG``, ``L-BFGS-B``,
+The derivative path applies to ``CG``, ``BFGS``, ``Newton-CG``, ``L-BFGS-B``,
 ``TNC``, ``SLSQP``, ``trust-constr``, ``dogleg``, ``trust-ncg``,
 ``trust-exact``, and ``trust-krylov``, as well as SciPy's automatically chosen
 default and custom callable methods. Methods that require a Hessian or

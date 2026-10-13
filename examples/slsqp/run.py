@@ -36,7 +36,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--no-pop",
-        help="Disable population-based finite-difference gradients",
+        help="Disable population-based finite-difference Jacobians",
         action="store_true",
     )
     args = parser.parse_args()
@@ -72,5 +72,5 @@ if __name__ == "__main__":
     solver.finalize(results)
 
     print(results)
-    print(f"Vectorized gradients: pop={not args.no_pop}")
+    print(f"Vectorized Jacobians: pop={not args.no_pop}")
     print("Expected constrained optimum: x = y = 0.5")

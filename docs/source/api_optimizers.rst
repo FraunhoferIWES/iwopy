@@ -15,6 +15,11 @@ problems with variable bounds and lower, upper, two-sided, or equality
 constraints. It supplies SciPy's SLSQP implementation with the complete
 iwopy Jacobian at every iterate.
 
+Jacobians remain in CSR cache storage. Native SLSQP callbacks receive only
+their requested rows as dense arrays; its native workspace remains dense.
+GG uses lazy CSR cache slots and sparse matrix-vector constraint predictions,
+expanding individual rows only for projection steps.
+
 SLSQP expands the tolerance owned by each registered constraint in component
 order and relaxes the corresponding lower and upper solver bounds. A
 positive-tolerance equality becomes two inequalities; set a constraint's
@@ -29,16 +34,16 @@ bounds where available. Function evaluations, final results, and
 ``scipy_results.x`` remain in the problem's physical coordinates.
 
 By default, all Jacobians are requested with
-``Problem.get_gradients(..., pop=True)``. Analytical derivatives use their
+``Problem.get_jacobian(..., pop=True)``. Analytical derivatives use their
 usual iwopy interface. Missing derivatives must be provided by a wrapper such
 as ``LocalFD``; its finite-difference points are evaluated together through
 the problem's population interface. Set ``vectorize=False`` to use iwopy's
-serial gradient evaluation instead. The optimizer never falls back to SciPy's
+serial Jacobian evaluation instead. The optimizer never falls back to SciPy's
 finite differences.
 
 When finite differences need the unperturbed function values,
 ``SLSQP`` passes its cached objective and constraint values to the
-gradient calculation. ``LocalFD`` then excludes the duplicate center point
+Jacobian calculation. ``LocalFD`` then excludes the duplicate center point
 from both population and serial finite-difference evaluations.
 
 With positive ``solve`` verbosity, SLSQP reports every accepted iteration with
@@ -52,7 +57,7 @@ Callbacks for both iwopy optimizers and all external interfaces use the common
 iwopy callback API described in :doc:`callbacks`.
 
 A complete derivative-free constrained example using ``LocalFD`` is available
-in ``examples/slsqp/run.py``. Pass ``--no-pop`` to compare serial gradient
+in ``examples/slsqp/run.py``. Pass ``--no-pop`` to compare serial Jacobian
 evaluation with the default population-based mode.
 
 .. toctree::

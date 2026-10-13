@@ -5,6 +5,7 @@ from typing import Literal, overload
 
 import numpy as np
 from numpy.typing import ArrayLike
+from scipy.sparse import csr_matrix
 
 from iwopy.utils import RegularDiscretizationGrid, new_instance
 
@@ -413,7 +414,7 @@ class Problem(Base, metaclass=ABCMeta):
         else:
             return varsi, varsf
 
-    def calc_gradients(
+    def calc_jacobian(
         self,
         vars_int: np.ndarray,
         vars_float: np.ndarray,
@@ -425,13 +426,12 @@ class Problem(Base, metaclass=ABCMeta):
         pop: bool = False,
         verbosity: int = 0,
         func_values: np.ndarray | None = None,
-    ) -> np.ndarray:
+    ) -> csr_matrix:
         """
-        The actual gradient calculation, not to be called directly
-        (call `get_gradients` instead).
+        Assemble a CSR Jacobian from analytical partial derivatives.
 
-        Can be overloaded in derived classes, the base class only considers
-        analytic derivatives.
+        Call ``get_jacobian`` instead of calling this method directly.
+        Derived classes can supply numerical derivatives for unresolved entries.
 
         Parameters
         ----------
@@ -440,11 +440,9 @@ class Problem(Base, metaclass=ABCMeta):
         vars_float
             The float variable values, shape: (n_vars_float,)
         func
-            The functions to be differentiated, or None
-            for a list of all objectives and all constraints
-            (in that order)
+            The initialized function to differentiate.
         components
-            The function's component selection, or None for all
+            Component indices in the requested row order, or None for all.
         ivars
             The indices of the function int variables in the problem
         fvars
@@ -453,8 +451,8 @@ class Problem(Base, metaclass=ABCMeta):
             The function float variable indices wrt which the
             derivatives are to be calculated
         func_values
-            Previously calculated function values at the given variables,
-            shape: (n_components,)
+            Previously calculated values for the selected components, with
+            shape ``(n_components,)``. The analytical implementation ignores them.
         pop
             Flag for vectorizing calculations via population
         verbosity
@@ -462,9 +460,10 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        gradients
-            The gradients of the functions, shape:
-            (n_components, n_vrs)
+        jacobian
+            CSR Jacobian with shape ``(n_components, n_vrs)``. Independent
+            entries and exact zeros are not stored. Unavailable analytical
+            derivatives remain explicitly stored as ``NaN``.
         """
         n_vars = len(vrs)
         n_cmpnts = func.n_components() if components is None else len(components)
@@ -476,26 +475,42 @@ class Problem(Base, metaclass=ABCMeta):
             if components is None
             else np.asarray(components, dtype=int)
         )
-        dependencies = func.vardeps_float()[component_indices]
-        gradients = np.zeros((n_cmpnts, n_vars), dtype=np.float64)
-        for vi, v in enumerate(vrs):
-            if v in fvars:
-                func_var = fvars.index(v)
-                dependent = np.flatnonzero(dependencies[:, func_var])
-                if not len(dependent):
-                    continue
-                selected_components = (
-                    components
-                    if len(dependent) == n_cmpnts
-                    else component_indices[dependent]
-                )
-                gradients[dependent, vi] = func.ana_deriv(
-                    varsi, varsf, func_var, selected_components
-                )
+        dependencies = func.vardeps_float()
+        rows: list[np.ndarray] = []
+        columns: list[np.ndarray] = []
+        values: list[np.ndarray] = []
+        for vi, func_var in enumerate(vrs):
+            dependent = np.flatnonzero(dependencies[component_indices, func_var])
+            if not len(dependent):
+                continue
+            selected_components = (
+                components
+                if len(dependent) == n_cmpnts
+                else component_indices[dependent]
+            )
+            derivatives = np.broadcast_to(
+                np.asarray(
+                    func.ana_deriv(varsi, varsf, func_var, selected_components),
+                    dtype=np.float64,
+                ),
+                (len(dependent),),
+            )
+            nonzero = derivatives != 0.0
+            rows.append(dependent[nonzero])
+            columns.append(np.full(np.count_nonzero(nonzero), vi, dtype=int))
+            values.append(derivatives[nonzero])
 
-        return gradients
+        if not values:
+            return csr_matrix((n_cmpnts, n_vars), dtype=np.float64)
+        return csr_matrix(
+            (
+                np.concatenate(values),
+                (np.concatenate(rows), np.concatenate(columns)),
+            ),
+            shape=(n_cmpnts, n_vars),
+        )
 
-    def get_gradients(
+    def get_jacobian(
         self,
         vars_int: np.ndarray,
         vars_float: np.ndarray,
@@ -505,10 +520,9 @@ class Problem(Base, metaclass=ABCMeta):
         pop: bool = False,
         verbosity: int = 0,
         func_values: np.ndarray | None = None,
-    ) -> np.ndarray:
+    ) -> csr_matrix:
         """
-        Obtain gradients of a function that is linked to the
-        problem.
+        Obtain a CSR Jacobian for a function linked to this problem.
 
         The func object typically is a `iwopy.core.OptFunctionList`
         object that contains a selection of objectives and/or constraints
@@ -527,14 +541,15 @@ class Problem(Base, metaclass=ABCMeta):
             for a list of all objectives and all constraints
             (in that order)
         components
-            The function's component selection, or None for all
+            Component indices in the requested row order, or None for all.
         vars
-            The float variables wrt which the
-            derivatives are to be calculated, or
-            None for all
+            Floating variable names, integer problem-variable indices, or name
+            patterns, or None for all problem floating variables. Selection
+            order and repeated matches are preserved. Every selected variable
+            must belong to the function.
         func_values
-            Previously calculated function values at the given variables,
-            shape: (n_components,)
+            Previously calculated values in the selected component order,
+            with shape ``(n_components,)``. Numerical wrappers can reuse them.
         verbosity
             The verbosity level, 0 = silent
         pop
@@ -542,16 +557,26 @@ class Problem(Base, metaclass=ABCMeta):
 
         Returns
         -------
-        gradients
-            The gradients of the functions, shape:
-            (n_components, n_vars)
+        jacobian
+            CSR Jacobian with shape ``(n_components, n_vars)``. Rows follow
+            the selected component order and columns the selected floating
+            variable order. Independent entries and exact zeros are implicit.
+            Use ``jacobian.toarray()`` when a dense array is required.
+
+        Raises
+        ------
+        ValueError
+            If the function belongs to another problem, a selected variable
+            is unavailable, or an analytical derivative remains unresolved.
+        TypeError
+            If a variable selector is neither a name nor an integer index.
         """
         # set and check func:
         if func is None:
             func = ProblemDefaultFunc(self)
         if func.problem is not self:
             raise ValueError(
-                f"Problem '{self.name}': Attempt to calculate gradient for function '{func.name}' which is linked to different problem '{func.problem.name}'"
+                f"Problem '{self.name}': Attempt to calculate Jacobian for function '{func.name}' which is linked to different problem '{func.problem.name}'"
             )
         if not func.initialized:
             func.initialize(verbosity=(0 if verbosity < 2 else verbosity - 1))
@@ -592,12 +617,12 @@ class Problem(Base, metaclass=ABCMeta):
         for v in vars:
             if v not in hvnmsf:
                 raise ValueError(
-                    f"Problem '{self.name}': Selected gradient variable '{v}' not in function variables '{hvnmsf}' for function '{func.name}'"
+                    f"Problem '{self.name}': Selected Jacobian variable '{v}' not in function variables '{hvnmsf}' for function '{func.name}'"
                 )
             vrs.append(hvnmsf.index(v))
 
-        # calculate gradients:
-        gradients = self.calc_gradients(
+        # calculate jacobian:
+        jacobian = self.calc_jacobian(
             vars_int,
             vars_float,
             func,
@@ -611,14 +636,14 @@ class Problem(Base, metaclass=ABCMeta):
         )
 
         # check success:
-        nog = np.where(np.isnan(gradients))[1]
+        nog = jacobian.indices[np.isnan(jacobian.data)]
         if len(nog):
             nvrs = np.unique(np.array(vars)[nog]).tolist()
             raise ValueError(
                 f"Problem '{self.name}': Failed to calculate derivatives for variables {nvrs}. Maybe wrap this problem into DiscretizeRegGrid?"
             )
 
-        return gradients
+        return jacobian
 
     def initialize(self, verbosity: int = 1) -> None:
         """
@@ -1077,7 +1102,7 @@ class Problem(Base, metaclass=ABCMeta):
 class ProblemDefaultFunc(OptFunctionList[OptFunction]):
     """
     The default function of a problem
-    for gradient calculations.
+    for Jacobian calculations.
     """
 
     def __init__(self, problem: Problem) -> None:

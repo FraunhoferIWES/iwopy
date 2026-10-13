@@ -43,7 +43,7 @@ supported, are flat keyword arguments: SciPy minimization's ``maxiter`` and
 ``ftol`` become native method options, while ``tol``, ``hess``, and ``hessp``
 remain top-level controls. There are no common parameter dictionaries or
 ``Optimizer.new`` entry point. ``vectorize`` consistently controls iwopy
-population evaluation or gradient batching; pycma always evaluates populations.
+population evaluation or Jacobian batching; pycma always evaluates populations.
 ``pop_size`` denotes an absolute population size, except that SciPy DE retains
 its native ``popsize`` multiplier per free dimension. ``memory_size`` denotes
 visited-point capacity for GG and evaluation-cache capacity for SLSQP and
@@ -54,6 +54,36 @@ Optional dependencies retain their adapter lifecycle: PyGMO loads during
 construction; other optional adapters load during initialization. Selecting one
 family does not load another family's optional backend. Native subsolver objects
 are backend configuration, not outer iwopy optimizer creation.
+
+Jacobians
+^^^^^^^^^
+
+``Problem.get_jacobian()`` returns a SciPy CSR matrix with component rows and
+selected floating-variable columns. Default rows order objectives before
+constraints. ``calc_jacobian()`` is the extension point for analytical or
+numerical assembly. Exact zeros are implicit; unavailable analytical partial
+derivatives remain explicit ``NaN`` entries until a wrapper resolves them.
+Unresolved entries are rejected before returning a complete Jacobian.
+
+The matrix is a Jacobian even for a single component. A scalar objective's
+gradient is its one-dimensional row vector. Convert only at a dense boundary:
+
+.. code-block:: python
+
+    import numpy as np
+    from iwopy.benchmarks import QuadraticProblem
+
+    problem = QuadraticProblem()
+    jacobian = problem.get_jacobian(
+        np.empty(0, dtype=np.int32),
+        np.asarray(problem.initial_values_float()),
+    )
+    objective_gradient = jacobian.getrow(0).toarray().ravel()
+
+``LocalFD`` fills only unavailable stored derivatives, retaining analytical
+values and independent entries. The matrix APIs use singular Jacobian names
+without legacy aliases. See :doc:`api_optimizers` and
+:doc:`api_interfaces_scipy` for native sparse and dense boundaries.
 
 Pipelines
 ^^^^^^^^^

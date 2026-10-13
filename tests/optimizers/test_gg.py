@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from scipy.sparse import isspmatrix_csr
 
 import iwopy
 from iwopy.optimizers import GG
@@ -145,6 +146,26 @@ def test_gg_skips_callback_data_without_callbacks(monkeypatch):
     )
 
     solver.solve(verbosity=0)
+
+
+def test_gg_keeps_lazy_sparse_jacobian_cache():
+    problem = make_problem(initial=2.0)
+    solver = GG(
+        problem=problem,
+        step_max=0.5,
+        step_min=0.01,
+        memory_size=4,
+        max_iterations=2,
+    )
+    solver.initialize(verbosity=0)
+    assert solver.memory[1] == [None] * 4
+
+    solver.solve(verbosity=0)
+
+    stored = [jacobian for jacobian in solver.memory[1] if jacobian is not None]
+    assert stored
+    assert all(isspmatrix_csr(jacobian) for jacobian in stored)
+    assert len(stored) <= 4
 
 
 @pytest.mark.parametrize("vectorized", [False, True])

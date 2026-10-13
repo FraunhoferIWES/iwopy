@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.sparse import csr_matrix
 
 from iwopy.core import (
     Optimizer,
@@ -20,6 +21,14 @@ class GG(Optimizer):
     Once a feasible point is reached, infeasible trial batches leave
     it unchanged and trigger step reduction. Infeasible trial points
     may be accepted only while recovering from an infeasible start.
+    Jacobians are stored in lazy CSR cache slots. Constraint predictions use
+    sparse matrix-vector products; projections expand only individual rows.
+
+    Attributes
+    ----------
+    memory
+        Ring buffers for visited variables, CSR Jacobians, objective values,
+        and feasibility flags, in that order. Unused Jacobian slots are None.
     """
 
     def __init__(
@@ -51,7 +60,7 @@ class GG(Optimizer):
         vectorize
             Whether trial evaluation uses populations.
         n_max_steps
-            Maximum number of trials without a fresh gradient.
+            Maximum number of trials without a fresh Jacobian.
         memory_size
             Number of memorized visited points.
         max_iterations
@@ -67,7 +76,9 @@ class GG(Optimizer):
         self.vectorize = vectorize
         self.n_max_steps = n_max_steps
         self.memory_size = memory_size
-        self.memory: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray] | None = None
+        self.memory: (
+            tuple[np.ndarray, list[csr_matrix | None], np.ndarray, np.ndarray] | None
+        ) = None
         self.max_iterations = max_iterations
         self.n_iterations = 0
 
@@ -172,10 +183,9 @@ class GG(Optimizer):
         self.step_max = smax
         self.step_min = smin
 
-        n_funcs = 1 + self.problem.n_constraints
         self.memory = (
             np.zeros((self.memory_size, n_vars), dtype=np.float64),
-            np.zeros((self.memory_size, n_funcs, n_vars), dtype=np.float64),
+            [None] * self.memory_size,
             np.zeros(self.memory_size, dtype=np.float64),
             np.zeros(self.memory_size, dtype=bool),
         )
@@ -308,7 +318,7 @@ class GG(Optimizer):
         Raises
         ------
         ValueError
-            If an objective or constraint gradient is non-finite.
+            If an objective or constraint Jacobian entry is non-finite.
         """
         super().solve(verbosity, callbacks)
         step_max = self.step_max
@@ -365,15 +375,15 @@ class GG(Optimizer):
             )
             if np.any(sel):
                 jmem = np.where(sel)[0][0]
-                grads = memory[1][jmem]
+                jacobian = memory[1][jmem]
                 step /= self.step_div_factor
                 level += 1
             else:
                 # fresh calculation:
-                grads = self.problem.get_gradients(inone, x, pop=self.vectorize)
-                if not np.all(np.isfinite(grads)):
+                jacobian = self.problem.get_jacobian(inone, x, pop=self.vectorize)
+                if not np.all(np.isfinite(jacobian.data)):
                     raise ValueError(
-                        f"Optimizer '{self.name}': Non-finite objective or constraint gradient at current point."
+                        f"Optimizer '{self.name}': Non-finite objective or constraint Jacobian entry at current point."
                     )
                 step = step_max.copy()
                 level = 0
@@ -381,7 +391,7 @@ class GG(Optimizer):
                 # memorize:
                 jmem = imem
                 memory[0][jmem] = x
-                memory[1][jmem] = grads
+                memory[1][jmem] = jacobian
                 memory[2][jmem] = obs[0]
                 memory[3][jmem] = not recover
                 imem = (imem + 1) % self.memory_size
@@ -391,9 +401,12 @@ class GG(Optimizer):
             self.n_iterations = count
 
             # project out directions of constraint violation:
-            grad = grads[0].copy() if not maximize else -grads[0]
+            assert jacobian is not None
+            grad = jacobian[0].toarray().ravel()
+            if maximize:
+                grad = -grad
             deltax = self._grad2deltax(-grad, step)
-            ncons = cons + np.einsum("cd,d->c", grads[1:], deltax)
+            ncons = cons + jacobian[1:] @ deltax
             nvalid = self.problem.check_constraints_individual(ncons)
             newbad = valid & ~nvalid
             newgood = ~valid & nvalid
@@ -403,13 +416,14 @@ class GG(Optimizer):
                 cmax = cmaxs[ci]
                 value = ncons[ci] if newbad[ci] else cons[ci]
                 side, _ = self._constraint_side(value, cmin, cmax)
-                norm = np.linalg.norm(grads[1 + ci])
+                constraint_grad = jacobian[1 + ci].toarray().ravel()
+                norm = np.linalg.norm(constraint_grad)
                 if side == 0.0:
                     continue
                 if norm == 0.0:
                     stalled = True
                     break
-                n = side * grads[1 + ci] / norm
+                n = side * constraint_grad / norm
                 grad -= np.dot(grad, n) * n
 
             if stalled:
@@ -426,17 +440,19 @@ class GG(Optimizer):
                 cmax = cmaxs[ci]
                 side, _ = self._constraint_side(cons[ci], cmin, cmax)
                 if side != 0.0:
-                    deltax[:] += self._grad2deltax(-side * grads[1 + ci], step)
+                    constraint_grad = jacobian[1 + ci].toarray().ravel()
+                    deltax[:] += self._grad2deltax(-side * constraint_grad, step)
 
             # linear approximation when crossing constraint bondary:
             for ci in np.where(cnews)[0]:
-                m = np.linalg.norm(grads[1 + ci])
+                constraint_grad = jacobian[1 + ci].toarray().ravel()
+                m = np.linalg.norm(constraint_grad)
                 if np.abs(m) > 0:
                     cmin = cmins[ci]
                     cmax = cmaxs[ci]
                     value = ncons[ci] if newbad[ci] else cons[ci]
                     _, target = self._constraint_side(value, cmin, cmax)
-                    deltax[0] += grads[1 + ci] * (target - cons[ci]) / m**2
+                    deltax[0] += constraint_grad * (target - cons[ci]) / m**2
             newx = self._get_newx(x, deltax)
 
             if not len(newx):

@@ -192,7 +192,7 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
   - Unified problem summaries across optimizer output.
 - Optimizers:
   - Added `SLSQP` for constrained single-objective problems, with automatic
-    dimensionless scaling, vectorized iwopy gradients, evaluation-free progress
+    dimensionless scaling, vectorized iwopy Jacobians, evaluation-free progress
     output, and reuse of cached function values in `LocalFD`.
   - Hardened `GG` for zero and non-finite gradients, general constraint bounds,
     stalled constraints, hard iteration limits, and convergence edge cases.
@@ -236,6 +236,11 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Python versions:
   - Added support for Python 3.14
 - Core:
+  - Replaced dense Jacobian assembly and optimizer caches with SciPy CSR storage.
+    Matrix APIs are now `Problem.get_jacobian()` and `calc_jacobian()`;
+    scalar gradients and backend-required native names retain their meaning.
+    Analytical and numerical assembly preserves implicit zeros, missing-derivative
+    diagnostics, mapped variables, and selected component/variable order.
   - Added standalone `iwopy.create_optimizer` selection by backend family
     and algorithm, including a PyGMO-backed `nlopt` family. All maintained
     examples and notebooks import it from the root; core owns the same function,
@@ -247,6 +252,10 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
     `iwopy.benchmarks`, replacing the optimizer examples' local shared-case module.
     All catalog scripts now use installed-package imports without path setup.
 - Interfaces:
+  - Kept `trust-constr` constraint Jacobians sparse through the SciPy callback,
+    defaulting native `sparse_jacobian` to true while preserving explicit options.
+    SLSQP retains its required dense callback boundary; PyGMO reads sparse
+    fitness-Jacobian entries without densification.
   - Replaced optimizer parameter dictionaries with explicit per-class controls
     and flat native keyword forwarding. Aligned `optimizer`, `vectorize`,
     `memory_size`, and absolute `pop_size` where applicable; SciPy DE preserves
@@ -282,11 +291,11 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
     boundaries.
   - Fixed combined analytical Jacobians for functions with disjoint variable
     dependencies, restored constraint bounds through problem wrappers, and
-    cleared SciPy value and gradient caches between solves.
+    cleared SciPy value and Jacobian caches between solves.
   - Skipped structurally independent components when assembling analytical
     Jacobians.
   - Avoided evaluating analytically differentiated function components during
-    vectorized `LocalFD` gradients.
+    vectorized `LocalFD` Jacobians.
 - Development:
   - Made optimizer/catalog, SciPy DE, benchmark, and documentation regressions
     explicit in regular and release CI across Python 3.10 through 3.14, with
@@ -300,7 +309,7 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
     added constrained NSGA2/NSGA3 Pareto flows with explicit weighted selection,
     bringing the catalog to 81 runnable scripts.
     The Vectorized Interfaces overview now covers all adapters with equal API-linked
-    descriptions and distinguishes search, gradient, and batch-fitness vectorization.
+    descriptions and distinguishes search, Jacobian, and batch-fitness vectorization.
   - Reworked every optimizer setup with important controls on individually annotated
     value lines. Kept demo runs short and added production starting suggestions,
     protected by format/budget regressions. Local PyGMO solvers use one starting

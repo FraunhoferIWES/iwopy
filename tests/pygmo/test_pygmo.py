@@ -173,7 +173,7 @@ def test_pygmo_uses_constraint_owned_tolerance():
 
 
 @pytest.mark.parametrize("maximize", [False, True])
-def test_pygmo_gradient_matches_fitness_direction(maximize):
+def test_pygmo_gradient_matches_fitness_direction(maximize, monkeypatch):
     class LinearObjective(iwopy.SimpleObjective):
         def __init__(self, problem):
             super().__init__(
@@ -202,6 +202,10 @@ def test_pygmo_gradient_matches_fitness_direction(maximize):
 
     numerical = (udp.fitness(x + step)[0] - udp.fitness(x - step)[0]) / (2 * step)
 
+    def unexpected_dense_conversion(*args, **kwargs):
+        raise AssertionError("PyGMO must not densify the fitness Jacobian")
+
+    monkeypatch.setattr("scipy.sparse.csr_matrix.toarray", unexpected_dense_conversion)
     assert udp.gradient(x)[0] == pytest.approx(numerical)
 
 

@@ -84,19 +84,19 @@ and the nearest tests.
 |---|---|---|
 | Base lifecycle or initialization | `iwopy/core/base.py` | Derived core types and lifecycle tests |
 | Variable mapping or evaluation | `iwopy/core/problem.py` | Function lists/subsets, memory, interfaces, and core tests |
-| Objective or constraint contract | `iwopy/core/` | Problem registration, component ordering, gradients, and tests |
+| Objective or constraint contract | `iwopy/core/` | Problem registration, component ordering, Jacobians, and tests |
 | Result container or Pareto plotting | `iwopy/core/opt_results.py` | Backend finalization, examples, and output tests |
 | Callback or history behavior | `iwopy/core/optimizer_callback.py` | Optimizer dispatch and callback/example tests |
 | Optimizer creation/configuration | `iwopy/core/optimizer_factory.py` and the selected constructor | `tests/core/test_optimizer_factory.py`, explicit keywords, optional loading, and examples/notebooks |
 | Pipeline behavior | `iwopy/core/pipeline.py` | Stage implementations and pipeline users |
 | Simple callable API | `iwopy/wrappers/simple_*.py` | Core function/problem contract and examples |
-| Finite differences | `iwopy/wrappers/local_fd.py` | Gradient assembly and analytical/numerical tests |
+| Finite differences | `iwopy/wrappers/local_fd.py` | Jacobian assembly and analytical/numerical tests |
 | Problem wrapper or discretization | `iwopy/wrappers/` | Underlying core problem, grid utility, and core tests |
-| SciPy translation | `iwopy/interfaces/scipy/` | Core gradients/results and `tests/scipy/` |
+| SciPy translation | `iwopy/interfaces/scipy/` | Core Jacobians/results and `tests/scipy/` |
 | pycma translation | `iwopy/interfaces/cma/` | Ask/tell batching, constraint bounds/tolerances, callbacks/results, and `tests/cma/` |
 | Bounded population adapters | `iwopy/interfaces/_population.py` and `scipy/de.py`, `nevergrad/`, `optuna/`, `deap/` | Shared constraints, selection/finalization, diagnostics, and `tests/interfaces/` |
 | Optimizer catalog | `docs/source/optimizer_catalog.rst` and `examples/optimizers/` | Guarded factory calls, package-aware runs, and selector/link coverage |
-| Catalog benchmark problems | `iwopy/benchmarks/quadratic.py` | Public exports, individual/population values, lifecycle, gradients, and `tests/test_benchmarks.py` |
+| Catalog benchmark problems | `iwopy/benchmarks/quadratic.py` | Public exports, individual/population values, lifecycle, Jacobians, and `tests/test_benchmarks.py` |
 | pymoo translation | `iwopy/interfaces/pymoo/` | Factory, representation, results, and `tests/pymoo/` |
 | PyGMO translation | `iwopy/interfaces/pygmo/` | UDP ordering, callbacks/results, and `tests/pygmo/` |
 | iwopy optimizer | `iwopy/optimizers/` | Core optimizer contract and optimizer tests |
@@ -126,7 +126,7 @@ Run the narrowest applicable command first:
 uv run pytest tests/path/test_module.py::test_behavior -q
 
 # One test module or package area
-uv run pytest tests/core/test_gradients_ana.py -q
+uv run pytest tests/core/test_jacobian_ana.py -q
 
 # Production type checking, as configured in pyproject.toml
 uv run mypy iwopy
@@ -233,9 +233,9 @@ The test directories encode package ownership:
 
 | Area | Purpose |
 |---|---|
-| `tests/core/` | Lifecycle, variable maps, functions, gradients, memory, callbacks, and discretization |
+| `tests/core/` | Lifecycle, variable maps, functions, Jacobians, memory, callbacks, and discretization |
 | `tests/optimizers/` | iwopy GG and SLSQP behavior |
-| `tests/scipy/` | SciPy adapter values, constraints, gradients, and results |
+| `tests/scipy/` | SciPy adapter values, constraints, Jacobians, and results |
 | `tests/cma/` | pycma population batching, objective signs, bounds/tolerances, callbacks, lifecycle, and stop/success conversion |
 | `tests/pymoo/` | pymoo variable representations, population evaluation, algorithms, and results |
 | `tests/pygmo/` | PyGMO vector/fitness ordering, algorithms, callbacks, and results |
@@ -289,6 +289,14 @@ For analytical derivatives:
 A derivative unit test does not replace an optimizer integration test when the
 change affects backend Jacobian assembly.
 
+`Problem.get_jacobian()` and `calc_jacobian()` use CSR storage. Matrix tests
+assert shape, order, `nnz`, missing-derivative errors, and implicit zeros.
+Compare numerical values through `.toarray()` only in small expectations;
+storage regressions sum `data.nbytes`, `indices.nbytes`, and `indptr.nbytes`
+without claiming process-wide or peak-memory measurements. Solver tests verify
+sparse caches, sparse `trust-constr` constraint callbacks, required dense SLSQP
+callbacks, and PyGMO's non-densifying native `gradient` protocol.
+
 ### Backends And Optimizers
 
 Backend tests assert compatibility validation, variable/fitness ordering,
@@ -330,7 +338,7 @@ and explicit weighted selection. Category tests require every setup exactly once
 in the six non-empty objective/constraint/search groups and omit empty categories.
 Scripts import shared cases from `iwopy.benchmarks` without adding an example
 directory to `sys.path`. Benchmark tests cover initialized construction, known
-values, individual/population agreement, mixed gradients, constraint boundaries,
+values, individual/population agreement, mixed Jacobians, constraint boundaries,
 and rejected late registration. The interface overview covers all adapters rather
 than distinguishing new integrations from established ones.
 
@@ -490,7 +498,7 @@ expected contract.
 - Validate problem compatibility before invoking the backend.
 - Preserve backend variable, fitness, constraint, and callback ordering.
 - Test success, infeasibility/failure, result conversion, and optional imports.
-- Cover analytical/numerical gradients and population behavior where supported.
+- Cover analytical/numerical Jacobians and population behavior where supported.
 - Update extras, backend docs, examples, and the current changelog section where
 	affected.
 

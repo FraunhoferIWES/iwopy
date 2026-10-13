@@ -239,8 +239,8 @@ SciPy Minimization
 ~~~~~~~~~~~~~~~~~~~~
 
 ``Optimizer_scipy`` performs scalar objective search. Its default
-``vectorize=True`` batches iwopy gradient evaluation; ``vectorize=False``
-uses individual gradient evaluation. Unconstrained methods ignore forwarded
+``vectorize=True`` batches iwopy Jacobian evaluation; ``vectorize=False``
+uses individual Jacobian evaluation. Unconstrained methods ignore forwarded
 bounds. Curvature-based catalog cases supply the quadratic Hessian; iwopy does
 not manufacture a general Hessian.
 

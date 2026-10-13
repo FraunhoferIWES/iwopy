@@ -36,7 +36,8 @@ Both scripts save objective-history plots to the Git-ignored
 Notebook workflows
 ^^^^^^^^^^^^^^^^^^
 
-The notebooks explore gradients, multi-objective results, and mixed variables.
+The notebooks explore analytical and numerical derivatives, multi-objective
+results, and mixed variables.
 Some require pymoo or PyGMO; see their imports and :doc:`installation`.
 
 .. toctree::

@@ -127,7 +127,7 @@ population axis even when the trailing variable count is zero.
 
 `n_objectives` and `n_constraints` count scalar components. `n_functions`
 counts function objects. Function lists concatenate components in registration
-order. Combined gradient/function ordering places objectives before constraints.
+order. Combined Jacobian/function ordering places objectives before constraints.
 
 Use `var_names_int` and `var_names_float` for ordered problem variable names.
 Existing methods such as `var_names_int()` remain callable APIs; do not convert
@@ -149,9 +149,18 @@ them to attributes without a deliberate contract change.
 - `ana_deriv(..., var, components)` returns one derivative per selected
 	component for one floating variable. Use `NaN` for unavailable analytical
 	derivatives and zero only for known independence.
-- A complete Jacobian from `get_gradients()` has component rows and selected
-	floating-variable columns. Never rely on the word `gradient` to communicate
-	orientation.
+- A scalar function's `gradient` is a one-dimensional vector over floating
+	variables. A `jacobian` is a component-by-variable matrix, including when it
+	contains only one component row. Do not call that matrix `gradients`.
+- `Problem.get_jacobian()` and `calc_jacobian()` return SciPy CSR matrices with
+	selected component rows and selected floating-variable columns. Matrix
+	variables and caches use singular `jacobian` names; implicit zeros and stored
+	unavailable `NaN` entries retain their distinct meanings.
+- PyGMO requires native `gradient`, `has_gradient`, and `gradient_sparsity`
+	method names for its fitness Jacobian. Keep those names, but describe the
+	matrix and its flattened entries as a Jacobian. SciPy's native `jac` objective
+	callback returns a scalar objective's gradient vector.
+	See [ADR-0014](adr/0014-sparse-jacobians.md).
 
 ## Results And Evaluation Names
 
@@ -193,7 +202,7 @@ them to attributes without a deliberate contract change.
 	upper bounds, preserving iwopy component order within each group.
 - The vectorized SciPy differential-evolution adapter is `Optimizer_scipy_de`,
 	with explicit controls and flat native keywords, and its native result in `scipy_results`.
-	Distinguish search-population vectorization from `Optimizer_scipy` gradient batching.
+	Distinguish search-population vectorization from `Optimizer_scipy` Jacobian batching.
 - The distribution, import, interface package, and extra names are `nevergrad`,
 	`optuna`, and `deap`; public classes are `Optimizer_nevergrad`, `Optimizer_optuna`,
 	and `Optimizer_deap`. Select algorithms/samplers using `optimizer` and preserve
@@ -210,7 +219,7 @@ them to attributes without a deliberate contract change.
 	owns the synthetic `QuadraticProblem`, `ParetoProblem`, and `MixedProblem` classes,
 	curated through `iwopy.benchmarks`; do not use example-local helpers or path injection.
 - `vectorize` is the optimizer-level iwopy evaluation flag. It controls native
-	batch evaluation for SciPy DE, Nevergrad, Optuna, and DEAP, gradient batching
+	batch evaluation for SciPy DE, Nevergrad, Optuna, and DEAP, Jacobian batching
 	for GG/SLSQP/SciPy minimization, pymoo population evaluation, and PyGMO batch
 	fitness. PyGMO defaults to false; the other selectable flags default to true.
 	pycma always evaluates populations. Backend-internal `pop` or `vectorized`

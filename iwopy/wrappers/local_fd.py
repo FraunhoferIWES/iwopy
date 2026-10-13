@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 
 import numpy as np
+from scipy.sparse import csr_matrix
 
 from iwopy.core import (
     OptFunction,
@@ -18,6 +19,8 @@ class LocalFD(ProblemWrapper):
 
     When population evaluation is enabled, only function components without
     analytical derivatives are calculated at the finite-difference points.
+    Jacobians use CSR storage, and numerical estimates replace only unresolved
+    entries, preserving analytical derivatives and structural zeros.
     """
 
     def __init__(
@@ -152,15 +155,10 @@ class LocalFD(ProblemWrapper):
             if self.n_vars_int:
                 batch_int[:] = vars_int[None, :]
             results = self.apply_population(batch_int, batch_float)
-            if isinstance(func, ProblemDefaultFunc):
-                fvarsi, fvarsf = self._find_vars(batch_int, batch_float, func)
-                values[start:stop] = func.calc_population(
-                    fvarsi, fvarsf, results, components=components
-                )
-            else:
-                values[start:stop] = func.calc_population(
-                    batch_int, batch_float, results, components
-                )
+            fvarsi, fvarsf = self._find_vars(batch_int, batch_float, func)
+            values[start:stop] = func.calc_population(
+                fvarsi, fvarsf, results, components=components
+            )
         return values
         sel = (self._orderb == -1) | (self._orderb == 1) | (self._orderb == 2)
         if not np.all(sel):
@@ -175,25 +173,25 @@ class LocalFD(ProblemWrapper):
         order: np.ndarray,
         orderb: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """Helper function that provides gradient coeffs"""
+        """Provide finite-difference stencil points and derivative weights."""
 
         # prepare:
         n_vars = len(gvars)
         vmin = np.array(self.min_values_float(), dtype=np.float64)[gvars]
         vmax = np.array(self.max_values_float(), dtype=np.float64)[gvars]
         x0 = varsf
-        d = self._d[gvars]
+        d = self._d[[self._vinds.index(vi) for vi in gvars]]
 
-        xplus = np.zeros((self.n_vars_float, self.n_vars_float), dtype=np.float64)
+        xplus = np.zeros((n_vars, n_vars), dtype=np.float64)
         np.fill_diagonal(xplus, d)
         xplus += x0[None, :]
-        xminus = np.zeros((self.n_vars_float, self.n_vars_float), dtype=np.float64)
+        xminus = np.zeros((n_vars, n_vars), dtype=np.float64)
         np.fill_diagonal(xminus, -d)
         xminus += x0[None, :]
         xminus2 = None
         xplus2 = None
 
-        pts = np.zeros((n_vars, 2, self.n_vars_float), dtype=np.float64)
+        pts = np.zeros((n_vars, 2, n_vars), dtype=np.float64)
         cfs = np.zeros((n_vars, n_vars, 2), dtype=np.float64)
         cf0 = np.zeros(n_vars, dtype=np.float64)
 
@@ -272,7 +270,7 @@ class LocalFD(ProblemWrapper):
 
         return pts, cfs
 
-    def calc_gradients(
+    def calc_jacobian(
         self,
         vars_int: np.ndarray,
         vars_float: np.ndarray,
@@ -284,13 +282,12 @@ class LocalFD(ProblemWrapper):
         pop: bool = False,
         verbosity: int = 0,
         func_values: np.ndarray | None = None,
-    ) -> np.ndarray:
+    ) -> csr_matrix:
         """
-        The actual gradient calculation, not to be called directly
-        (call `get_gradients` instead).
+        Assemble analytical and finite-difference derivatives in CSR storage.
 
-        Can be overloaded in derived classes, the base class only considers
-        analytic derivatives.
+        Call ``get_jacobian`` instead of calling this method directly.
+        Numerical estimates fill only unresolved analytical entries.
 
         Parameters
         ----------
@@ -321,12 +318,18 @@ class LocalFD(ProblemWrapper):
 
         Returns
         -------
-        gradients
-            The gradients of the functions, shape:
-            (n_components, n_vrs)
+        jacobian
+            CSR Jacobian with shape ``(n_components, n_vrs)``. Structural
+            zeros and exact numerical zeros are not stored. Entries without
+            an analytical derivative or configured step remain ``NaN``.
+
+        Raises
+        ------
+        ValueError
+            If supplied center values have the wrong selected-component shape.
         """
-        # get analytic gradient results:
-        gradients = super().calc_gradients(
+        # get analytical Jacobian results:
+        jacobian = super().calc_jacobian(
             vars_int,
             vars_float,
             func,
@@ -337,24 +340,28 @@ class LocalFD(ProblemWrapper):
             verbosity=verbosity,
         )
 
-        # find variables and components of unsolved gradients:
-        gnan = np.isnan(gradients)
-        gvars = np.unique(np.where(np.any(gnan, axis=0))[0])
-        pvars = np.array(fvars)[gvars]
-        gvars = [vi for vi in pvars if vi in self._vinds]
+        # find variables and components with unresolved derivatives:
+        coordinates = jacobian.tocoo()
+        missing = np.flatnonzero(np.isnan(jacobian.data))
+        gcolumns = np.unique(coordinates.col[missing])
+        selected_vars = np.array(fvars, dtype=int)[np.array(vrs, dtype=int)]
+        pvars = selected_vars[gcolumns]
+        supported = np.isin(pvars, self._vinds)
+        gcolumns = gcolumns[supported]
+        gvars = np.unique(pvars[supported]).tolist()
+        missing = missing[np.isin(coordinates.col[missing], gcolumns)]
         ivars = [self._vinds.index(vi) for vi in gvars]
         cmpnts = (
             np.arange(func.n_components())
             if components is None
             else np.array(components)
         )
-        cmptsi = np.unique(np.where(np.any(gnan, axis=1))[0])
+        cmptsi = np.unique(coordinates.row[missing])
         fcmpts = cmpnts[cmptsi]
         if not len(gvars) or not len(fcmpts):
-            return gradients
-        del gnan
+            return jacobian
 
-        # get gradient eval points and coeffs:
+        # get finite-difference points and weights:
         varsf = vars_float[gvars]
         order = self._order[ivars]
         orderb = self._orderb[ivars]
@@ -363,7 +370,7 @@ class LocalFD(ProblemWrapper):
         center_coeffs = None
         if func_values is not None and len(epts) and np.array_equal(epts[-1], varsf):
             func_values = np.asarray(func_values, dtype=np.float64)
-            n_cmpnts = gradients.shape[0]
+            n_cmpnts = jacobian.shape[0]
             if func_values.shape != (n_cmpnts,):
                 raise ValueError(
                     f"Problem '{self.name}': Expected func_values shape "
@@ -389,15 +396,19 @@ class LocalFD(ProblemWrapper):
                     del os, cs
                 else:
                     results = self.apply_individual(vars_int, vf)
-                    values[i] = func.calc_individual(vars_int, vf, results, fcmpts)
+                    fvarsi, fvarsf = self._find_vars(vars_int, vf, func)
+                    values[i] = func.calc_individual(fvarsi, fvarsf, results, fcmpts)
                     del results
 
         # recombine results:
-        gradients[np.ix_(cmptsi, gvars)] = np.einsum("pc,vp->cv", values, coeffs)
+        numerical = np.einsum("pc,vp->cv", values, coeffs)
         if center_coeffs is not None:
             assert func_values is not None
-            gradients[np.ix_(cmptsi, gvars)] += (
-                func_values[fcmpts, None] * center_coeffs[None, :]
-            )
+            numerical += func_values[cmptsi, None] * center_coeffs[None, :]
+        jacobian.data[missing] = numerical[
+            np.searchsorted(cmptsi, coordinates.row[missing]),
+            np.searchsorted(gvars, selected_vars[coordinates.col[missing]]),
+        ]
+        jacobian.eliminate_zeros()
 
-        return gradients
+        return jacobian

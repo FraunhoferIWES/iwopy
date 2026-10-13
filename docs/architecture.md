@@ -179,25 +179,36 @@ bounds, while zero tolerance requests exact bounds. See
 [ADR-0003](adr/0003-constraint-owned-solver-tolerances.md).
 
 Simple objectives and constraints expose `f(*x)` and optional analytical
-gradient `g()`. Integer function arguments precede floating arguments. Keep the
+partial derivatives through `g(var, *x, components)`. Integer function arguments
+precede floating arguments. Keep the
 callable convention aligned with the function's variable mapping.
 
 ### Derivatives
 
 `ana_deriv()` returns selected-component derivatives for one floating variable.
-Unavailable analytical values use `NaN`, allowing the gradient assembler to
+Unavailable analytical values use `NaN`, allowing the Jacobian assembler to
 distinguish them from exact zero. Dependency masks identify structurally
 independent component/variable pairs.
 
-`Problem.get_gradients()` returns shape
-`(n_selected_components, n_selected_float_variables)`. It assembles analytical
-values, zeros independent entries, and rejects unresolved `NaN` values. Default
-combined-function gradients order objective components before constraint
-components.
+`Problem.get_jacobian()` returns a SciPy CSR matrix with shape
+`(n_selected_components, n_selected_float_variables)`. `calc_jacobian()` assembles
+analytical entries directly into sparse storage without allocating a dense
+Jacobian. Independent entries and exact zeros are implicit; unresolved `NaN`
+entries remain explicit until numerical wrapping resolves them or validation
+rejects them. Default combined-function Jacobians order objective components
+before constraint components. Selection order, including repeated variables,
+is preserved. Use `.toarray()` only at a boundary requiring dense storage.
+
+A scalar function's gradient is a vector over variables, not the complete
+component-by-variable Jacobian. The matrix APIs use singular `jacobian` names;
+the former plural-gradient matrix APIs are removed, without aliases. Dependency
+masks currently remain dense boolean arrays.
 
 `LocalFD` supplies numerical derivatives for wrapped functions, with bounded
 finite-difference population batches where configured. Numerical wrapping must
-preserve the original component and variable order.
+preserve the original component and variable order. It fills only unresolved
+stored entries, preserving analytical derivatives and structural zeros, and
+reuses center values in selected-component order.
 
 ### Results And Callbacks
 
@@ -250,7 +261,7 @@ selector, without requiring a nested selector from the caller.
 
 Every optimizer has explicit parameters and, where appropriate, flat native
 algorithm keywords. There are no common parameter dictionaries or class factory
-entry points. `vectorize` governs iwopy population evaluation or gradient
+entry points. `vectorize` governs iwopy population evaluation or Jacobian
 batching; pycma always uses populations. `pop_size` is an absolute count;
 SciPy DE retains native `popsize` as a per-free-dimension multiplier.
 `memory_size` controls visited-point memory for GG and evaluation caching for
@@ -263,16 +274,25 @@ behavior, and dependency-loading timing remain adapter-owned. See
 ### iwopy Optimizers
 
 `GG` is a constrained local Greedy Gradient optimizer. `SLSQP` uses SciPy with
-iwopy gradients and scaling. Both require continuous, single-objective problems.
+iwopy Jacobians and scaling. Both require continuous, single-objective problems.
 SLSQP derives and applies component tolerances from the registered constraint
 objects. They own optimizer-specific convergence and step behavior, not problem
 application semantics.
 
 GG keeps feasible iterates feasible and accepts only improving feasible trials
 after feasibility is reached. A batch without feasible candidates leaves the
-current point unchanged and triggers step reduction through the gradient memory.
+current point unchanged and triggers step reduction through the Jacobian cache.
 Infeasible fallback steps are limited to recovery from an initially infeasible
 point. See [ADR-0005](adr/0005-gg-feasible-iterates.md).
+
+GG uses lazy CSR Jacobian ring-buffer slots and sparse matrix-vector products
+for constraint prediction, expanding only individual rows for projections.
+SLSQP caches CSR Jacobians and converts only requested rows to the dense native
+callbacks. Native SLSQP workspace remains dense. The existing core problem and
+optimizer orchestration stays in its owning modules rather than undergoing an
+unrelated size-only refactor; sparse assembly and finite-difference routines
+exceed the 40-line guideline to keep selection, numerical state, and ordering
+checks together. See [ADR-0014](adr/0014-sparse-jacobians.md).
 
 ### SciPy
 
@@ -280,6 +300,14 @@ point. See [ADR-0005](adr/0005-gg-feasible-iterates.md).
 floating variable. It translates bounds and constraints, dispatches callbacks,
 and supplies iwopy Jacobians to methods that consume gradients. SciPy is a base
 dependency, not an optional import.
+
+SciPy minimization caches CSR Jacobians. Objective callbacks return dense
+gradient vectors. `trust-constr` constraint callbacks retain CSR storage and
+default native `sparse_jacobian` to true; explicit native settings remain
+authoritative. Dense-only factorizations require `sparse_jacobian=False`.
+Other native methods receive dense constraint Jacobians where needed. Sparse
+constraint Jacobians do not remove dense Hessian approximations or guarantee
+that a native factorization never densifies.
 
 `Optimizer_scipy_de` separately supports bounded floating, integer, and mixed
 population search. It uses deferred single-worker vectorization without polishing
@@ -411,7 +439,7 @@ Tests protect short explicit limits, comment placement, and production guidance.
 GG/SLSQP use the source label and example prefix `iwopy`, not `native`.
 
 The catalog's Vectorized Interfaces section covers every adapter with API links,
-distinguishing population search, gradient batching, and optional batch fitness.
+distinguishing population search, Jacobian batching, and optional batch fitness.
 SciPy DE, Nevergrad, Optuna, and DEAP expose `vectorize=True` by default. False
 routes each ordered batch through individual evaluation without changing native
 batch generation, caches, budgets, callbacks, constraints, or result selection.
@@ -497,6 +525,12 @@ is forward-only by default under
 
 ## Cross-Cutting Decisions
 
+- Component-by-variable derivatives use the singular Jacobian terminology and
+	CSR storage throughout core, wrappers, and caches. Native scalar gradients
+	remain dense vectors; PyGMO's required `gradient` protocol names are retained
+	for its sparse fitness-Jacobian entries. `trust-constr` receives sparse
+	constraint callbacks, while SLSQP retains its required dense boundary. See
+	[ADR-0014](adr/0014-sparse-jacobians.md).
 - Optimizer creation uses a standalone `iwopy.create_optimizer` function owned by core,
 	with explicit per-class keywords and flat native forwarding, unchanged public
 	class names, and a dedicated PyGMO-backed `nlopt` family. All maintained

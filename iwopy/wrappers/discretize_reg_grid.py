@@ -127,7 +127,7 @@ class DiscretizeRegGrid(LocalFD):
         order: np.ndarray,
         orderb: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """Helper function that provides gradient coeffs"""
+        """Provide regular-grid stencil points and derivative weights."""
         grid = self.grid
         assert grid is not None
         gpts, coeffs = grid.grad_coeffs(varsf[None, :], gvars, order, orderb)

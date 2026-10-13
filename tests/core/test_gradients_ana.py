@@ -1,4 +1,6 @@
 import numpy as np
+import pytest
+from scipy.sparse import isspmatrix_csr
 
 import iwopy
 
@@ -72,13 +74,15 @@ class SparseObjective(iwopy.Objective):
             ]
         )
 
-    def calc_individual(self, vars_int, vars_float, problem_results):
+    def calc_individual(self, vars_int, vars_float, problem_results, components=None):
         x, y = vars_float
-        return np.array([x, 2.0 * y, 1.0])
+        values = np.array([x, 2.0 * y, 1.0])
+        return values if components is None else values[components]
 
-    def calc_population(self, vars_int, vars_float, problem_results):
+    def calc_population(self, vars_int, vars_float, problem_results, components=None):
         x, y = vars_float.T
-        return np.column_stack([x, 2.0 * y, np.ones(len(x))])
+        values = np.column_stack([x, 2.0 * y, np.ones(len(x))])
+        return values if components is None else values[:, components]
 
     def ana_deriv(self, vars_int, vars_float, var, components=None):
         selected = np.arange(self.n_components()) if components is None else components
@@ -92,7 +96,7 @@ class SparseObjective(iwopy.Objective):
 def _calc(p, f, p0, o, lim, pop):
     print("p0 =", p0)
 
-    g = p.get_gradients(vars_int=[], vars_float=p0)[0]
+    g = p.get_jacobian(vars_int=[], vars_float=p0, pop=pop)[0].toarray().ravel()
     print("g =", g)
 
     a = f.ana_grad(p0)
@@ -176,7 +180,7 @@ def test_o2_pop():
         _calc(p, f, p0, 2, 0.01, True)
 
 
-def test_analytical_gradients_zero_disjoint_variable_dependencies():
+def test_analytical_jacobian_zero_disjoint_variable_dependencies():
     problem = iwopy.SimpleProblem(
         "disjoint",
         float_vars=["x", "y"],
@@ -186,15 +190,16 @@ def test_analytical_gradients_zero_disjoint_variable_dependencies():
     problem.add_objective(SingleVarObjective(problem, "fy", "y", scale=2.0))
     problem.initialize(verbosity=0)
 
-    gradients = problem.get_gradients(
+    jacobian = problem.get_jacobian(
         np.array([], dtype=np.int32),
         np.array([3.0, 4.0]),
     )
 
-    np.testing.assert_allclose(gradients, [[6.0, 0.0], [0.0, 16.0]])
+    assert isspmatrix_csr(jacobian)
+    np.testing.assert_allclose(jacobian.toarray(), [[6.0, 0.0], [0.0, 16.0]])
 
 
-def test_analytical_gradients_select_dependent_components():
+def test_analytical_jacobian_select_dependent_components():
     problem = iwopy.SimpleProblem(
         "sparse",
         float_vars=["x", "y"],
@@ -204,13 +209,15 @@ def test_analytical_gradients_select_dependent_components():
     problem.add_objective(objective)
     problem.initialize(verbosity=0)
 
-    gradients = problem.get_gradients(
+    jacobian = problem.get_jacobian(
         np.array([], dtype=np.int32),
         np.array([3.0, 4.0]),
     )
 
+    assert isspmatrix_csr(jacobian)
+    assert jacobian.nnz == 2
     np.testing.assert_allclose(
-        gradients,
+        jacobian.toarray(),
         [
             [1.0, 0.0],
             [0.0, 2.0],
@@ -218,6 +225,184 @@ def test_analytical_gradients_select_dependent_components():
         ],
     )
     assert objective.derivative_calls == [(0, [0]), (1, [1])]
+
+
+def test_sparse_jacobian_preserves_component_and_variable_selection_order():
+    problem = iwopy.SimpleProblem(
+        "selected", float_vars=["x", "y"], init_values_float=[0.0, 0.0]
+    )
+    problem.add_objective(SparseObjective(problem))
+    problem.initialize(verbosity=0)
+
+    jacobian = problem.get_jacobian(
+        np.array([], dtype=np.int32),
+        np.array([3.0, 4.0]),
+        components=[1, 0],
+        vars=["y", "x", "y"],
+    )
+
+    assert jacobian.shape == (2, 3)
+    np.testing.assert_allclose(jacobian.toarray(), [[2.0, 0.0, 2.0], [0.0, 1.0, 0.0]])
+
+
+def test_sparse_jacobian_respects_function_variable_mapping():
+    problem = iwopy.SimpleProblem(
+        "mapped", float_vars=["x", "y"], init_values_float=[0.0, 0.0]
+    )
+    objective = SingleVarObjective(problem, "fy", "y", scale=2.0)
+    problem.add_objective(objective)
+    problem.initialize(verbosity=0)
+
+    jacobian = problem.get_jacobian(
+        np.array([], dtype=np.int32), np.array([3.0, 4.0]), func=objective, vars=["y"]
+    )
+
+    np.testing.assert_allclose(jacobian.toarray(), [[16.0]])
+
+
+@pytest.mark.parametrize(
+    ("components", "variables", "shape"),
+    [([], None, (0, 2)), (None, [], (3, 0)), ([2], None, (1, 2))],
+)
+def test_sparse_jacobian_empty_and_independent_selections(components, variables, shape):
+    problem = iwopy.SimpleProblem(
+        "empty", float_vars=["x", "y"], init_values_float=[0.0, 0.0]
+    )
+    problem.add_objective(SparseObjective(problem))
+    problem.initialize(verbosity=0)
+
+    jacobian = problem.get_jacobian(
+        np.array([], dtype=np.int32),
+        np.array([3.0, 4.0]),
+        components=components,
+        vars=variables,
+    )
+
+    assert isspmatrix_csr(jacobian)
+    assert jacobian.shape == shape
+    assert jacobian.nnz == 0
+
+
+def test_sparse_jacobian_does_not_store_exact_zeros(monkeypatch):
+    problem = iwopy.SimpleProblem(
+        "zero", float_vars=["x", "y"], init_values_float=[0.0, 0.0]
+    )
+    objective = SparseObjective(problem)
+    monkeypatch.setattr(objective, "ana_deriv", lambda *args, **kwargs: 0.0)
+    problem.add_objective(objective)
+    problem.initialize(verbosity=0)
+
+    jacobian = problem.get_jacobian(np.array([], dtype=np.int32), np.zeros(2))
+
+    assert jacobian.shape == (3, 2)
+    assert jacobian.nnz == 0
+
+
+@pytest.mark.parametrize("wrapped", [False, True])
+def test_sparse_jacobian_reports_unresolved_variable(monkeypatch, wrapped):
+    problem = iwopy.SimpleProblem(
+        "missing", float_vars=["x", "y"], init_values_float=[0.0, 0.0]
+    )
+    objective = SparseObjective(problem)
+    monkeypatch.setattr(
+        objective,
+        "ana_deriv",
+        lambda vars_int, vars_float, var, components=None: np.nan if var == 1 else 1.0,
+    )
+    problem.add_objective(objective)
+    problem.initialize(verbosity=0)
+    if wrapped:
+        problem = iwopy.LocalFD(problem, deltas={"x": 1e-5})
+        problem.initialize(verbosity=0)
+
+    with pytest.raises(ValueError, match=r"derivatives for variables \['y'\]"):
+        problem.get_jacobian(np.array([], dtype=np.int32), np.array([3.0, 4.0]))
+
+
+def test_sparse_jacobian_storage_scales_with_nonzero_entries():
+    n_vars = 256
+    variable_names = [f"x{index}" for index in range(n_vars)]
+    problem = iwopy.SimpleProblem(
+        "diagonal", float_vars=variable_names, init_values_float=np.ones(n_vars)
+    )
+    for variable in variable_names:
+        problem.add_objective(
+            SingleVarObjective(problem, variable, variable, scale=1.0)
+        )
+    problem.initialize(verbosity=0)
+
+    jacobian = problem.get_jacobian(np.array([], dtype=np.int32), np.ones(n_vars))
+
+    assert jacobian.shape == (n_vars, n_vars)
+    assert jacobian.nnz == n_vars
+    np.testing.assert_allclose(jacobian.data, 2.0)
+    storage = jacobian.data.nbytes + jacobian.indices.nbytes + jacobian.indptr.nbytes
+    assert storage < n_vars * n_vars * np.dtype(np.float64).itemsize / 100
+
+
+@pytest.mark.parametrize("pop", [False, True])
+@pytest.mark.parametrize(
+    ("components", "variables", "expected"),
+    [
+        ([1, 0], ["y", "x", "y"], [[2.0, 0.0, 2.0], [0.0, 1.0, 0.0]]),
+        ([2, 0], ["x"], [[0.0], [1.0]]),
+    ],
+)
+def test_sparse_finite_differences_preserve_selections_and_center_values(
+    monkeypatch, pop, components, variables, expected
+):
+    problem = iwopy.SimpleProblem(
+        "selected_fd", float_vars=["x", "y"], init_values_float=[0.0, 0.0]
+    )
+    objective = SparseObjective(problem)
+    monkeypatch.setattr(objective, "ana_deriv", lambda *args, **kwargs: np.nan)
+    problem.add_objective(objective)
+    problem.initialize(verbosity=0)
+    problem = iwopy.LocalFD(problem, deltas=1e-5)
+    problem.initialize(verbosity=0)
+
+    jacobian = problem.get_jacobian(
+        np.array([], dtype=np.int32),
+        np.array([3.0, 4.0]),
+        components=components,
+        vars=variables,
+        func_values=np.array([3.0, 8.0, 1.0])[components],
+        pop=pop,
+    )
+
+    assert isspmatrix_csr(jacobian)
+    np.testing.assert_allclose(jacobian.toarray(), expected, atol=1e-8)
+
+
+@pytest.mark.parametrize("pop", [False, True])
+def test_sparse_finite_differences_preserve_analytical_and_independent_entries(
+    monkeypatch, pop
+):
+    problem = iwopy.SimpleProblem(
+        "sparse_fd", float_vars=["x", "y"], init_values_float=[0.0, 0.0]
+    )
+    objective = SparseObjective(problem)
+    monkeypatch.setattr(
+        objective,
+        "ana_deriv",
+        lambda vars_int, vars_float, var, components=None: np.full(
+            len(components), np.nan if var == 0 else 2.0
+        ),
+    )
+    problem.add_objective(objective)
+    problem.initialize(verbosity=0)
+    problem = iwopy.LocalFD(problem, deltas={"x": 1e-5})
+    problem.initialize(verbosity=0)
+
+    jacobian = problem.get_jacobian(
+        np.array([], dtype=np.int32), np.array([3.0, 4.0]), pop=pop
+    )
+
+    assert isspmatrix_csr(jacobian)
+    assert jacobian.nnz == 2
+    np.testing.assert_allclose(
+        jacobian.toarray(), [[1.0, 0.0], [0.0, 2.0], [0.0, 0.0]], atol=1e-8
+    )
 
 
 if __name__ == "__main__":

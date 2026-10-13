@@ -3,6 +3,7 @@ from typing import Any
 
 import numpy as np
 from scipy.optimize import minimize
+from scipy.sparse import csr_matrix
 
 from iwopy.core import (
     Optimizer,
@@ -36,8 +37,11 @@ class Optimizer_scipy(Optimizer):
     Interface to the scipy optimizers.
 
     Gradient-capable solvers receive objective and constraint Jacobians from
-    ``Problem.get_gradients``. By default, numerical gradient points are
+    ``Problem.get_jacobian``. By default, finite-difference points are
     evaluated through the problem's population interface.
+    Jacobians are cached in CSR storage. ``trust-constr`` receives sparse
+    constraint Jacobians; other methods receive dense requested rows. Scalar
+    objective gradients are always dense vectors.
     """
 
     def __init__(
@@ -67,13 +71,15 @@ class Optimizer_scipy(Optimizer):
         memory_size
             Positive evaluation-cache capacity.
         vectorize
-            Population-based gradient evaluation; derivative-free methods
+            Population-based Jacobian evaluation; derivative-free methods
             are unaffected.
         name
             Optimizer name.
         kwargs
             Flat native method options, such as maxiter, ftol, gtol and eps.
             Bounds, callback, constraints, method and Jacobians are managed.
+            For trust-constr, sparse_jacobian defaults to True; explicit native
+            settings are preserved. Use False with dense-only factorizations.
         """
         super().__init__(problem, name)
         self._validate_kwargs(kwargs)
@@ -82,6 +88,8 @@ class Optimizer_scipy(Optimizer):
         if "method" in self._native_pars:
             raise ValueError("SciPy: select the method with optimizer")
         self._native_pars["method"] = optimizer
+        if self._uses_sparse_constraints():
+            self._native_pars["options"].setdefault("sparse_jacobian", True)
         if hess is not None:
             self._native_pars["hess"] = hess
         if hessp is not None:
@@ -92,7 +100,7 @@ class Optimizer_scipy(Optimizer):
             dict[tuple[object, ...], tuple[np.ndarray, np.ndarray, object | None]]
             | None
         ) = None
-        self._gradient_mem: dict[tuple[object, ...], np.ndarray] | None = None
+        self._jacobian_mem: dict[tuple[object, ...], csr_matrix] | None = None
         self._constraints_scipy: list[dict[str, object]] | None = None
         self._callback_iteration = 0
 
@@ -104,6 +112,11 @@ class Optimizer_scipy(Optimizer):
             or callable(method)
             or str(method).lower() in _GRADIENT_METHODS
         )
+
+    def _uses_sparse_constraints(self) -> bool:
+        """Return whether the native method supports sparse constraint Jacobians."""
+        method = self._native_pars.get("method")
+        return isinstance(method, str) and method.lower() == "trust-constr"
 
     def print_info(self) -> None:
         """Print solver info, called before solving"""
@@ -164,7 +177,7 @@ class Optimizer_scipy(Optimizer):
         if verbosity:
             print(f"Using optimizer memory, size: {self.memory_size}")
         self._mem = {}
-        self._gradient_mem = {}
+        self._jacobian_mem = {}
 
         super().initialize(verbosity)
 
@@ -206,15 +219,15 @@ class Optimizer_scipy(Optimizer):
 
         return memory[key]
 
-    def _get_gradients(self, x: np.ndarray) -> np.ndarray:
+    def _get_jacobian(self, x: np.ndarray) -> csr_matrix:
         """Return the cached objective and constraint Jacobian."""
-        memory = self._gradient_mem
+        memory = self._jacobian_mem
         assert memory is not None
         key = tuple(x)
         if key not in memory:
             objs, cons, _ = self._get_results(x)
             try:
-                gradients = self.problem.get_gradients(
+                jacobian = self.problem.get_jacobian(
                     np.array([], dtype=np.int32),
                     np.asarray(x, dtype=np.float64),
                     func_values=np.r_[objs, cons],
@@ -229,19 +242,19 @@ class Optimizer_scipy(Optimizer):
                 self.problem.n_objectives + self.problem.n_constraints,
                 self.problem.n_vars_float,
             )
-            if gradients.shape != shape:
+            if jacobian.shape != shape:
                 raise ValueError(
-                    f"Optimizer '{self.name}': Expected gradient shape {shape}, "
-                    f"received {gradients.shape}."
+                    f"Optimizer '{self.name}': Expected Jacobian shape {shape}, "
+                    f"received {jacobian.shape}."
                 )
-            if not np.all(np.isfinite(gradients)):
+            if not np.all(np.isfinite(jacobian.data)):
                 raise ValueError(
                     f"Optimizer '{self.name}': Non-finite objective or constraint "
-                    "gradient."
+                    "Jacobian entry."
                 )
             if len(memory) >= self.memory_size and memory:
                 del memory[next(iter(memory))]
-            memory[key] = gradients
+            memory[key] = jacobian
         return memory[key]
 
     def _objective(self, x: np.ndarray) -> float:
@@ -267,7 +280,7 @@ class Optimizer_scipy(Optimizer):
     def _objective_jac(self, x: np.ndarray) -> np.ndarray:
         """Return the minimization-oriented objective gradient."""
         sign = -1.0 if self.problem.maximize_objs[0] else 1.0
-        return sign * self._get_gradients(x)[0]
+        return sign * self._get_jacobian(x)[0].toarray().ravel()
 
     def _constraint_values(
         self,
@@ -286,11 +299,14 @@ class Optimizer_scipy(Optimizer):
         indices: np.ndarray,
         bounds: np.ndarray,
         sign: float,
-    ) -> np.ndarray:
+    ) -> np.ndarray | csr_matrix:
         """Return one grouped constraint Jacobian."""
         del bounds
         rows = self.problem.n_objectives + indices
-        return sign * self._get_gradients(x)[rows]
+        jacobian = sign * self._get_jacobian(x)[rows]
+        if self._uses_sparse_constraints():
+            return jacobian
+        return jacobian.toarray()
 
     def _make_constraint(
         self,
@@ -419,7 +435,7 @@ class Optimizer_scipy(Optimizer):
         super().solve(verbosity, callbacks)
         self._callback_iteration = 0
         self._mem = {}
-        self._gradient_mem = {}
+        self._jacobian_mem = {}
 
         # Initial values:
         x0 = np.asarray(self.problem.initial_values_float(), dtype=np.float64)

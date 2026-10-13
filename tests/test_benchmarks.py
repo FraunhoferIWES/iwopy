@@ -55,10 +55,10 @@ def test_constrained_pareto_boundary_and_infeasible_initial_point():
     assert problem.cons.functions[0].tol == 0.0
 
 
-def test_mixed_quadratic_gradient_uses_float_after_integer_variables():
+def test_mixed_quadratic_jacobian_uses_float_after_integer_variables():
     problem = MixedProblem()
-    gradient = problem.get_gradients(np.array([1], dtype=np.int32), np.array([0.5]))
-    np.testing.assert_allclose(gradient, [[0.5]])
+    jacobian = problem.get_jacobian(np.array([1], dtype=np.int32), np.array([0.5]))
+    np.testing.assert_allclose(jacobian.toarray(), [[0.5]])
 
 
 def test_initialized_quadratic_rejects_additional_objectives():

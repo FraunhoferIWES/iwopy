@@ -117,7 +117,7 @@ PyGMO exposes optimization as one opaque ``evolve()`` call and has no common
 live generation callback across its algorithms. iwopy therefore reports exact
 fitness evaluations instead of simulating generations or relying on
 algorithm-specific post-run logs. PyGMO's IPOPT progress log reports objective
-evaluations without decision vectors, while gradient requests do not identify
+evaluations without decision vectors, while fitness-Jacobian requests do not identify
 IPOPT iterations reliably. Supplying callbacks to PyGMO IPOPT therefore raises
 ``NotImplementedError``.
 

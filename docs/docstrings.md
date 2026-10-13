@@ -364,7 +364,13 @@ Simple callable objectives and constraints document argument order: integer
 function variables precede floating function variables. State the expected
 return for one or multiple components.
 
-## Derivatives And Gradients
+## Derivatives And Jacobians
+
+Use `gradient` for a scalar function's vector of partial derivatives and
+`Jacobian` for a component-by-variable matrix, even with a single component row.
+Use singular `jacobian` return labels and variable names for matrices. Preserve
+backend-required protocol names such as PyGMO's `gradient`, explaining their
+Jacobian meaning in the docstring.
 
 For derivative APIs, document:
 
@@ -381,11 +387,12 @@ For derivative APIs, document:
 ```python
 Returns
 -------
-gradients
-    Derivatives with shape
+jacobian
+    CSR Jacobian with shape
     ``(n_selected_components, n_selected_float_variables)``. Rows follow the
     requested component order and columns follow the requested floating-variable
-    order.
+    order. Independent entries and exact zeros are implicit; unresolved
+    analytical derivatives are explicitly stored as NaN before validation.
 ```
 
 If a combined function list is accepted, state that objective components precede

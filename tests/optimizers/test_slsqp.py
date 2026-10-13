@@ -3,6 +3,7 @@ from time import perf_counter, sleep
 import numpy as np
 import pytest
 from scipy.optimize import OptimizeResult
+from scipy.sparse import isspmatrix_csr
 
 import iwopy
 from iwopy.optimizers import SLSQP
@@ -101,6 +102,8 @@ def test_slsqp_solves_analytical_quadratic():
     assert result.success
     assert result.vars_float == pytest.approx([1.0], abs=1e-7)
     assert result.objs == pytest.approx([0.0], abs=1e-12)
+    assert solver._jacobian_mem
+    assert all(isspmatrix_csr(jacobian) for jacobian in solver._jacobian_mem.values())
 
 
 def test_slsqp_skips_callback_data_without_callbacks(monkeypatch):
@@ -346,7 +349,7 @@ def test_slsqp_supports_maximization_and_variable_bounds():
     assert result.objs == pytest.approx([4.0], abs=1e-7)
 
 
-def test_slsqp_uses_population_for_local_fd_gradients(monkeypatch):
+def test_slsqp_uses_population_for_local_fd_jacobian(monkeypatch):
     problem = make_problem(initial=2.0, target=1.0, ana_deriv=False)
     problem.add_constraint(
         LinearConstraint(
@@ -361,9 +364,9 @@ def test_slsqp_uses_population_for_local_fd_gradients(monkeypatch):
     problem.initialize(verbosity=0)
     population_calls = 0
     population_sizes = []
-    gradient_pop_flags = []
+    jacobian_pop_flags = []
     original = problem.apply_population
-    original_gradients = problem.get_gradients
+    original_jacobian = problem.get_jacobian
 
     def count_population(*args, **kwargs):
         nonlocal population_calls
@@ -371,12 +374,12 @@ def test_slsqp_uses_population_for_local_fd_gradients(monkeypatch):
         population_sizes.append(len(args[1]))
         return original(*args, **kwargs)
 
-    def record_gradient_mode(*args, **kwargs):
-        gradient_pop_flags.append(kwargs.get("pop"))
-        return original_gradients(*args, **kwargs)
+    def record_jacobian_mode(*args, **kwargs):
+        jacobian_pop_flags.append(kwargs.get("pop"))
+        return original_jacobian(*args, **kwargs)
 
     monkeypatch.setattr(problem, "apply_population", count_population)
-    monkeypatch.setattr(problem, "get_gradients", record_gradient_mode)
+    monkeypatch.setattr(problem, "get_jacobian", record_jacobian_mode)
     solver = SLSQP(
         problem=problem,
         tol=1e-8,
@@ -394,8 +397,8 @@ def test_slsqp_uses_population_for_local_fd_gradients(monkeypatch):
     assert not np.any(problem.check_constraints_population(outside_tolerance[None, :]))
     assert population_calls > 0
     assert all(size == 1 for size in population_sizes)
-    assert gradient_pop_flags
-    assert all(gradient_pop_flags)
+    assert jacobian_pop_flags
+    assert all(jacobian_pop_flags)
 
 
 def test_local_fd_rejects_wrong_center_value_shape():
@@ -405,7 +408,7 @@ def test_local_fd_rejects_wrong_center_value_shape():
     problem.initialize(verbosity=0)
 
     with pytest.raises(ValueError, match="func_values shape"):
-        problem.get_gradients(
+        problem.get_jacobian(
             np.array([], dtype=np.int32),
             np.array([2.0]),
             func_values=np.array([1.0, 2.0]),
@@ -421,13 +424,13 @@ def test_local_fd_population_evaluates_only_numerical_components():
     problem = LocalFD(problem, deltas={"x": 1e-5})
     problem.initialize(verbosity=0)
 
-    gradients = problem.get_gradients(
+    jacobian = problem.get_jacobian(
         np.array([], dtype=np.int32),
         np.array([2.0]),
         pop=True,
     )
 
-    np.testing.assert_allclose(gradients, [[2.0], [1.0]], atol=1e-4)
+    np.testing.assert_allclose(jacobian.toarray(), [[2.0], [1.0]], atol=1e-4)
     assert constraint.population_calls == 0
 
 
@@ -459,14 +462,14 @@ def test_local_fd_bounds_population_size(
         return apply_population(*args, **kwargs)
 
     monkeypatch.setattr(problem, "apply_population", record_population)
-    gradients = problem.get_gradients(
+    jacobian = problem.get_jacobian(
         np.array([], dtype=np.int32),
         np.array([1.0, 2.0, 3.0]),
         func_values=np.array([14.0]),
         pop=True,
     )
 
-    np.testing.assert_allclose(gradients, [[2.0, 4.0, 6.0]], atol=1e-4)
+    np.testing.assert_allclose(jacobian.toarray(), [[2.0, 4.0, 6.0]], atol=1e-4)
     assert population_sizes == expected_sizes
 
 
@@ -499,14 +502,14 @@ def test_local_fd_reuses_center_values_in_serial_mode(monkeypatch):
         return original(*args, **kwargs)
 
     monkeypatch.setattr(problem, "evaluate_individual", count_individual)
-    gradients = problem.get_gradients(
+    jacobian = problem.get_jacobian(
         np.array([], dtype=np.int32),
         np.array([2.0]),
         func_values=np.array([1.0]),
         pop=False,
     )
 
-    np.testing.assert_allclose(gradients, [[2.0]], atol=1e-4)
+    np.testing.assert_allclose(jacobian.toarray(), [[2.0]], atol=1e-4)
     assert individual_calls == 1
 
 
@@ -531,24 +534,24 @@ def test_local_fd_second_order_lower_bounds_use_correct_stencil():
     problem = LocalFD(problem, deltas={"x": 0.1}, fd_order={"x": 2})
     problem.initialize(verbosity=0)
 
-    gradients = problem.get_gradients(np.array([], dtype=np.int32), np.array([0.4]))
+    jacobian = problem.get_jacobian(np.array([], dtype=np.int32), np.array([0.4]))
 
-    assert gradients[0, 0] == pytest.approx(0.48, abs=1e-2)
+    assert jacobian[0, 0] == pytest.approx(0.48, abs=1e-2)
 
 
-def test_slsqp_can_disable_population_gradients(monkeypatch):
+def test_slsqp_can_disable_population_jacobian(monkeypatch):
     problem = make_problem(initial=2.0, target=1.0, ana_deriv=False)
     problem.initialize()
     problem = LocalFD(problem, deltas={"x": 1e-5})
     problem.initialize(verbosity=0)
-    gradient_pop_flags = []
-    original_gradients = problem.get_gradients
+    jacobian_pop_flags = []
+    original_jacobian = problem.get_jacobian
 
-    def record_gradient_mode(*args, **kwargs):
-        gradient_pop_flags.append(kwargs.get("pop"))
-        return original_gradients(*args, **kwargs)
+    def record_jacobian_mode(*args, **kwargs):
+        jacobian_pop_flags.append(kwargs.get("pop"))
+        return original_jacobian(*args, **kwargs)
 
-    monkeypatch.setattr(problem, "get_gradients", record_gradient_mode)
+    monkeypatch.setattr(problem, "get_jacobian", record_jacobian_mode)
     solver = SLSQP(
         problem=problem,
         vectorize=False,
@@ -559,11 +562,11 @@ def test_slsqp_can_disable_population_gradients(monkeypatch):
 
     assert result.success
     assert result.vars_float == pytest.approx([1.0], abs=1e-4)
-    assert gradient_pop_flags
-    assert not any(gradient_pop_flags)
+    assert jacobian_pop_flags
+    assert not any(jacobian_pop_flags)
 
 
-def test_local_fd_pop_true_is_faster_than_serial_gradient_evaluation():
+def test_local_fd_pop_true_is_faster_than_serial_jacobian_evaluation():
     n_vars = 8
     base_problem = iwopy.SimpleProblem(
         "slow_quadratic",
@@ -580,7 +583,7 @@ def test_local_fd_pop_true_is_faster_than_serial_gradient_evaluation():
 
     def measure(pop):
         start = perf_counter()
-        problem.get_gradients(vars_int, vars_float, pop=pop)
+        problem.get_jacobian(vars_int, vars_float, pop=pop)
         return perf_counter() - start
 
     serial_times = [measure(pop=False) for _ in range(3)]

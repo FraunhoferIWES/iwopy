@@ -3,6 +3,7 @@ from typing import Any, TypeVar, cast
 import numpy as np
 from numpy.typing import ArrayLike
 from scipy.optimize import OptimizeResult, minimize
+from scipy.sparse import csr_matrix
 
 from iwopy.core import (
     Optimizer,
@@ -21,9 +22,11 @@ class SLSQP(Optimizer):
     """Gradient-based SLSQP optimizer for continuous problems.
 
     The complete objective and constraint Jacobian is obtained through
-    ``Problem.get_gradients(..., pop=True)`` at each iterate. Hence missing
+    ``Problem.get_jacobian(..., pop=True)`` at each iterate. Hence missing
     analytical derivatives can be supplied by a population-capable problem
     wrapper such as :class:`iwopy.wrappers.LocalFD`.
+    Jacobians are cached in CSR storage and only the rows requested by native
+    SciPy callbacks are converted to dense arrays.
 
     Constraint bounds are relaxed by the feasibility tolerance owned by each
     registered :class:`iwopy.core.Constraint`. A small inward numerical reserve
@@ -49,9 +52,9 @@ class SLSQP(Optimizer):
         tol
             Native aggregate stopping tolerance; None uses SciPy defaults.
         memory_size
-            Maximum number of cached value and gradient evaluations.
+            Maximum number of cached value and Jacobian evaluations.
         vectorize
-            Whether gradients use population-based function evaluation.
+            Whether Jacobian evaluation uses population-based function evaluation.
         name
             The optimizer name.
         kwargs
@@ -67,7 +70,7 @@ class SLSQP(Optimizer):
         self._value_mem: (
             dict[tuple[float, ...], tuple[np.ndarray, np.ndarray]] | None
         ) = None
-        self._gradient_mem: dict[tuple[float, ...], np.ndarray] | None = None
+        self._jacobian_mem: dict[tuple[float, ...], csr_matrix] | None = None
         self._constraints_scipy: list[dict[str, object]] | None = None
         self._constraint_lower: np.ndarray | None = None
         self._constraint_upper: np.ndarray | None = None
@@ -129,7 +132,7 @@ class SLSQP(Optimizer):
             )
 
         self._value_mem = {}
-        self._gradient_mem = {}
+        self._jacobian_mem = {}
         self._initialize_scaling()
         self._constraints_scipy = self._make_constraints()
         super().initialize(verbosity)
@@ -201,15 +204,15 @@ class SLSQP(Optimizer):
             self._remember(memory, key, values)
         return memory[key]
 
-    def _get_gradients(self, x: np.ndarray) -> np.ndarray:
+    def _get_jacobian(self, x: np.ndarray) -> csr_matrix:
         """Return the vectorized objective and constraint Jacobian."""
-        memory = self._gradient_mem
+        memory = self._jacobian_mem
         assert memory is not None
         key = tuple(float(value) for value in x)
         if key not in memory:
             try:
                 objs, cons = self._get_values(x)
-                gradients = self.problem.get_gradients(
+                jacobian = self.problem.get_jacobian(
                     np.array([], dtype=np.int32),
                     np.asarray(x, dtype=np.float64),
                     func_values=np.r_[objs, cons],
@@ -221,16 +224,16 @@ class SLSQP(Optimizer):
                     "objective and constraint Jacobian."
                 ) from error
             shape = (1 + self.problem.n_constraints, self.problem.n_vars_float)
-            if gradients.shape != shape:
+            if jacobian.shape != shape:
                 raise ValueError(
-                    f"Optimizer '{self.name}': Expected gradient shape {shape}, "
-                    f"received {gradients.shape}."
+                    f"Optimizer '{self.name}': Expected Jacobian shape {shape}, "
+                    f"received {jacobian.shape}."
                 )
-            if not np.all(np.isfinite(gradients)):
+            if not np.all(np.isfinite(jacobian.data)):
                 raise ValueError(
-                    f"Optimizer '{self.name}': Non-finite objective or constraint gradient."
+                    f"Optimizer '{self.name}': Non-finite objective or constraint Jacobian entry."
                 )
-            self._remember(memory, key, gradients)
+            self._remember(memory, key, jacobian)
         return memory[key]
 
     def _objective(self, scaled: np.ndarray) -> float:
@@ -246,7 +249,7 @@ class SLSQP(Optimizer):
         sign = -1.0 if self.problem.maximize_objs[0] else 1.0
         var_scale = self.var_scale
         assert var_scale is not None
-        return sign * self._get_gradients(x)[0] * var_scale
+        return sign * self._get_jacobian(x)[0].toarray().ravel() * var_scale
 
     def _constraint_values(
         self,
@@ -272,7 +275,7 @@ class SLSQP(Optimizer):
         x = self._to_problem_vars(scaled)
         var_scale = self.var_scale
         assert var_scale is not None
-        return sign * self._get_gradients(x)[1 + indices] * var_scale
+        return sign * self._get_jacobian(x)[1 + indices].toarray() * var_scale
 
     def _make_constraint(
         self,

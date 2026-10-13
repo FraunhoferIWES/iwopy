@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from scipy.optimize import OptimizeResult
+from scipy.sparse import isspmatrix_csr
 
 import iwopy
 from iwopy import SimpleConstraint
@@ -298,14 +299,21 @@ def test_scipy_cache_respects_capacity():
     )
     solver.initialize(verbosity=0)
 
-    solver._get_results(np.array([1.0]))
-    solver._get_results(np.array([2.0]))
+    first = solver._get_jacobian(np.array([1.0]))
+    second = solver._get_jacobian(np.array([2.0]))
 
     assert solver._mem is not None
     assert len(solver._mem) == 1
+    assert solver._jacobian_mem is not None
+    assert len(solver._jacobian_mem) == 1
+    assert (1.0,) not in solver._jacobian_mem
+    assert isspmatrix_csr(first)
+    assert isspmatrix_csr(second)
+    assert first.nnz == 0
+    assert solver._get_jacobian(np.array([2.0])) is second
 
 
-def test_scipy_uses_population_for_local_fd_gradients(monkeypatch):
+def test_scipy_uses_population_for_local_fd_jacobian(monkeypatch):
     base_problem = iwopy.SimpleProblem(
         "quadratic_fd",
         float_vars=["x", "y"],
@@ -458,12 +466,13 @@ def test_scipy_honors_constraint_bounds(method):
     assert np.all(problem.check_constraints_individual(result.cons))
 
 
-def test_scipy_groups_general_constraint_bounds(monkeypatch):
+@pytest.mark.parametrize("method", ["SLSQP", "trust-constr"])
+def test_scipy_groups_general_constraint_bounds(method, monkeypatch):
     problem = make_quadratic_problem(initialize=False)
     problem.add_constraint(GeneralBounds(problem))
     problem.initialize(verbosity=0)
     solver = Optimizer_scipy(
-        optimizer="SLSQP",
+        optimizer=method,
         problem=problem,
     )
     solver.initialize(verbosity=0)
@@ -482,18 +491,43 @@ def test_scipy_groups_general_constraint_bounds(monkeypatch):
             ],
             [1.0, 3.0, -2.0],
         )
-        np.testing.assert_allclose(
-            [
-                constraint["jac"](x0, *constraint["args"])[0, 0]
-                for constraint in constraints
-            ],
-            [1.0, 1.0, -1.0],
+        jacobians = [
+            constraint["jac"](x0, *constraint["args"]) for constraint in constraints
+        ]
+        assert all(
+            isspmatrix_csr(jacobian) == (method == "trust-constr")
+            for jacobian in jacobians
         )
+        np.testing.assert_allclose(
+            [jacobian[0, 0] for jacobian in jacobians], [1.0, 1.0, -1.0]
+        )
+        if method == "trust-constr":
+            assert kwargs["options"]["sparse_jacobian"] is True
         return OptimizeResult(success=False)
 
     monkeypatch.setattr("iwopy.interfaces.scipy.optimizer.minimize", fake_minimize)
 
     solver.solve(verbosity=0)
+
+
+@pytest.mark.parametrize("sparse_jacobian", [False, None])
+def test_scipy_trust_constr_preserves_explicit_jacobian_format(sparse_jacobian):
+    problem = make_quadratic_problem(initialize=False)
+    problem.add_constraint(LowerBound(problem))
+    problem.initialize(verbosity=0)
+    solver = Optimizer_scipy(
+        optimizer="trust-constr",
+        problem=problem,
+        sparse_jacobian=sparse_jacobian,
+        tol=1e-9,
+    )
+    solver.initialize(verbosity=0)
+
+    result = solver.solve(verbosity=0)
+
+    assert solver._native_pars["options"]["sparse_jacobian"] is sparse_jacobian
+    assert result.success
+    assert result.vars_float == pytest.approx([1.5], abs=2e-4)
 
 
 def test_scipy_orients_maximization_objective_and_gradient():
@@ -519,16 +553,16 @@ def test_scipy_orients_maximization_objective_and_gradient():
     assert result.objs == pytest.approx([9.0], abs=1e-7)
 
 
-def test_scipy_can_disable_population_gradients(monkeypatch):
+def test_scipy_can_disable_population_jacobian(monkeypatch):
     problem = make_quadratic_problem()
-    gradient_pop_flags = []
-    get_gradients = problem.get_gradients
+    jacobian_pop_flags = []
+    get_jacobian = problem.get_jacobian
 
-    def record_gradient_mode(*args, **kwargs):
-        gradient_pop_flags.append(kwargs.get("pop"))
-        return get_gradients(*args, **kwargs)
+    def record_jacobian_mode(*args, **kwargs):
+        jacobian_pop_flags.append(kwargs.get("pop"))
+        return get_jacobian(*args, **kwargs)
 
-    monkeypatch.setattr(problem, "get_gradients", record_gradient_mode)
+    monkeypatch.setattr(problem, "get_jacobian", record_jacobian_mode)
     solver = Optimizer_scipy(
         optimizer="L-BFGS-B",
         problem=problem,
@@ -539,22 +573,22 @@ def test_scipy_can_disable_population_gradients(monkeypatch):
     result = solver.solve(verbosity=0)
 
     assert result.success
-    assert gradient_pop_flags
-    assert not any(gradient_pop_flags)
+    assert jacobian_pop_flags
+    assert not any(jacobian_pop_flags)
 
 
 def test_scipy_reuses_combined_jacobian_for_constraints(monkeypatch):
     problem = make_quadratic_problem(initialize=False)
     problem.add_constraint(LowerBound(problem))
     problem.initialize(verbosity=0)
-    gradient_pop_flags = []
-    get_gradients = problem.get_gradients
+    jacobian_pop_flags = []
+    get_jacobian = problem.get_jacobian
 
-    def record_gradient_mode(*args, **kwargs):
-        gradient_pop_flags.append(kwargs.get("pop"))
-        return get_gradients(*args, **kwargs)
+    def record_jacobian_mode(*args, **kwargs):
+        jacobian_pop_flags.append(kwargs.get("pop"))
+        return get_jacobian(*args, **kwargs)
 
-    monkeypatch.setattr(problem, "get_gradients", record_gradient_mode)
+    monkeypatch.setattr(problem, "get_jacobian", record_jacobian_mode)
     solver = Optimizer_scipy(
         optimizer="SLSQP",
         problem=problem,
@@ -575,7 +609,7 @@ def test_scipy_reuses_combined_jacobian_for_constraints(monkeypatch):
 
     solver.solve(verbosity=0)
 
-    assert gradient_pop_flags == [True]
+    assert jacobian_pop_flags == [True]
 
 
 def test_scipy_gradient_method_requires_problem_derivatives():
@@ -596,7 +630,7 @@ def test_scipy_gradient_method_requires_problem_derivatives():
         solver.solve(verbosity=0)
 
 
-def test_scipy_clears_value_and_gradient_caches_between_solves(monkeypatch):
+def test_scipy_clears_value_and_jacobian_caches_between_solves(monkeypatch):
     problem = iwopy.SimpleProblem(
         "mutable",
         float_vars=["x"],

@@ -183,12 +183,15 @@ class UDP:
         return self.problem.n_vars_int
 
     def has_gradient(self) -> bool:
-        """Check whether gradient evaluation is available."""
+        """Report fitness-Jacobian support through PyGMO's native protocol."""
         return True
 
     def gradient(self, x: np.ndarray) -> list[float]:
         """
-        Calculate the flattened fitness gradient.
+        Return fitness-Jacobian entries in PyGMO sparsity order.
+
+        PyGMO requires the native name ``gradient`` for this Jacobian callback.
+        Entries are read directly from CSR storage without densifying the matrix.
 
         Parameters
         ----------
@@ -197,8 +200,9 @@ class UDP:
 
         Returns
         -------
-        gradient
-            The gradient entries selected by the sparsity pattern
+        jacobian_values
+            Entries selected by ``gradient_sparsity()``, with objective signs
+            converted to PyGMO's minimization convention.
         """
         sparsity = self.gradient_sparsity()
         if not sparsity:
@@ -225,7 +229,7 @@ class UDP:
         varsf = x[: self.problem.n_vars_float]
         varsi = x[self.problem.n_vars_float :].astype(np.int32)
 
-        grad = self.problem.get_gradients(
+        jacobian = self.problem.get_jacobian(
             varsi,
             varsf,
             vars=vrs,
@@ -238,19 +242,19 @@ class UDP:
         objective_signs = np.where(self.problem.maximize_objs, -1.0, 1.0)
         return [
             float(
-                grad[component_rows[c], list(vrs).index(v)]
+                jacobian[component_rows[c], list(vrs).index(v)]
                 * (objective_signs[c] if c < self.problem.n_objectives else 1.0)
             )
             for c, v in spars
         ]
 
     def has_gradient_sparsity(self) -> bool:
-        """Check whether a gradient sparsity pattern is available."""
+        """Report Jacobian-sparsity support through PyGMO's native protocol."""
         return True
 
     def gradient_sparsity(self) -> list[list[int]]:
         """
-        Get the fitness-gradient sparsity pattern.
+        Get the fitness-Jacobian sparsity pattern required by PyGMO.
 
         Returns
         -------
