@@ -5,7 +5,7 @@ import numpy as np
 from model import ChargesProblem
 
 from iwopy import LocalFD
-from iwopy.interfaces.pygmo import Optimizer_pygmo
+from iwopy import create_optimizer
 
 if __name__ == "__main__":
     # np.random.seed(42)
@@ -46,10 +46,12 @@ if __name__ == "__main__":
     gproblem = LocalFD(problem, deltas=1e-2, fd_order=args.order)
     gproblem.initialize()
 
-    solver = Optimizer_pygmo(
-        gproblem,
-        problem_pars={"pop": not args.no_pop},
-        algo_pars={"type": "ipopt", "tol": 1e-4},
+    solver = create_optimizer(
+        family="pygmo",  # Optimizer family
+        optimizer="ipopt",  # Algorithm to use
+        problem=gproblem,
+        vectorize=not args.no_pop,
+        tol=1e-4,
     )
     solver.initialize()
 

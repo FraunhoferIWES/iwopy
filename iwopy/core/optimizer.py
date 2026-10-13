@@ -1,9 +1,7 @@
 from abc import ABCMeta, abstractmethod
-from typing import TypeVar
+from typing import Any, TypeVar
 
 import numpy as np
-
-from iwopy.utils import new_instance
 
 from .base import Base
 from .optimizer_callback import (
@@ -34,6 +32,28 @@ class Optimizer(Base, metaclass=ABCMeta):
         self.problem = problem
         self.name = name
         self._callback_dispatcher = _OptimizerCallbackDispatcher(None)
+
+    def _validate_kwargs(self, kwargs: dict[str, Any]) -> None:
+        unsupported = {
+            "algo_pars",
+            "problem_pars",
+            "setup_pars",
+            "term_pars",
+            "scipy_pars",
+            "cma_pars",
+            "optimizer_pars",
+            "sampler_pars",
+            "options",
+            "mem_size",
+            "vectorized",
+            "algorithm",
+            "sampler",
+        }.intersection(kwargs)
+        if unsupported:
+            raise TypeError(
+                f"Optimizer '{self.name}' accepts explicit keyword parameters, not "
+                + ", ".join(sorted(unsupported))
+            )
 
     def print_info(self) -> None:
         """Print solver info, called before solving"""
@@ -176,21 +196,3 @@ class Optimizer(Base, metaclass=ABCMeta):
                                     val = np.min(opt_results.objs[:, i0 + i])
                                 print(f"  Best {names[i]} = {val}")
                         i0 = i1
-
-    @classmethod
-    def new(cls, package: str, optimizer: str, *args: object, **kwargs: object) -> "Optimizer":
-        """
-        Run-time optimizer factory.
-
-        Parameters
-        ----------
-        package
-            The package containing the optimizer
-        optimizer
-            The selected derived class name
-        args
-            Additional parameters for constructor
-        kwargs
-            Additional parameters for constructor
-        """
-        #return new_instance(cls, optimizer_type, *args, **kwargs)

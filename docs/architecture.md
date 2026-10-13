@@ -66,7 +66,8 @@ flowchart LR
 	initialization.
 3. Initialize the problem, which fixes function/component metadata and variable
 	mappings.
-4. Construct and initialize an optimizer for the problem.
+4. Construct an optimizer with `iwopy.create_optimizer(family, optimizer,
+   problem, **kwargs)`, then initialize it separately.
 5. Call `solve(callbacks=...)`; the optimizer evaluates individuals or
 	populations through the problem contract.
 6. Solver implementations finalize selected individuals or populations through
@@ -81,7 +82,7 @@ existing problem. Those paths still use the same core lifecycle.
 
 | Module | Owns | Main interfaces and dependencies |
 |---|---|---|
-| `iwopy.core` | Base lifecycle, problems, functions, memory, optimizers, callbacks, results, and pipelines | `Base`, `Problem`, `OptFunction`, `Objective`, `Constraint`, `Optimizer`, result containers, `Pipeline` |
+| `iwopy.core` | Base lifecycle, problems, functions, memory, optimizer creation, callbacks, results, and pipelines | `Base`, `Problem`, `OptFunction`, `Objective`, `Constraint`, `Optimizer`, `create_optimizer`, result containers, `Pipeline` |
 | `iwopy.wrappers` | Reusable adaptations of problems and functions | `SimpleProblem`, `SimpleObjective`, `SimpleConstraint`, `ProblemWrapper`, `LocalFD`, `DiscretizeRegGrid` |
 | `iwopy.interfaces.scipy` | Translation to SciPy optimization methods | SciPy optimizer adapter, bounds, constraints, callbacks, and Jacobians |
 | `iwopy.interfaces._population` | Private shared contract for the four new bounded population adapters | Validation, float-before-integer conversion, constraint residuals, evaluated-candidate selection, callback snapshots, and finalization; no external backend imports |
@@ -97,7 +98,7 @@ existing problem. Those paths still use the same core lifecycle.
 | `examples` and `notebooks` | Executable public workflows | Public APIs and declared optimizer extras |
 | `tests` | Core, optimizer, backend, package, and callback-example coverage | May inspect internals only when the internal contract itself is under test |
 
-The package root exposes `Problem`, `Objective`, `Constraint`, `Memory`, pipeline
+The package root exposes `create_optimizer`, `Problem`, `Objective`, `Constraint`, `Memory`, pipeline
 and callback APIs, wrappers, and the principal subpackages. Lower-level
 `Optimizer`, `OptFunction`, and optimization result classes are curated through
 `iwopy.core`. Internal helpers do not become public merely because another
@@ -231,6 +232,34 @@ stage-reported failure, or an exception. See
 
 ## Optimizer And Backend Boundaries
 
+### Creation And Configuration
+
+`iwopy.core.optimizer_factory` owns the standalone `create_optimizer` function,
+re-exported from `iwopy` and `iwopy.core` as the same function object. Maintained
+examples and notebooks import it from the package root.
+Its case-sensitive family/algorithm selection dispatches only to known iwopy
+classes and returns an uninitialized optimizer. It neither initializes the
+problem nor solves it. Maintained examples and notebooks use this function;
+public optimizer class names and direct constructors remain available.
+
+Families are `iwopy`, `scipy`, `cma`, `pymoo`, `pygmo`, `nlopt`, `nevergrad`,
+`optuna`, and `deap`. SciPy minimizes by method name, callable, or default;
+`differential_evolution` selects its separate population adapter. The `nlopt`
+family uses PyGMO internally and supplies both its driver and native solver
+selector, without requiring a nested selector from the caller.
+
+Every optimizer has explicit parameters and, where appropriate, flat native
+algorithm keywords. There are no common parameter dictionaries or class factory
+entry points. `vectorize` governs iwopy population evaluation or gradient
+batching; pycma always uses populations. `pop_size` is an absolute count;
+SciPy DE retains native `popsize` as a per-free-dimension multiplier.
+`memory_size` controls visited-point memory for GG and evaluation caching for
+SLSQP and SciPy minimization.
+Adapter-private dictionaries translate explicit controls to backend contracts;
+they are not a public grouped-configuration API. Numerical algorithms, callback
+behavior, and dependency-loading timing remain adapter-owned. See
+[ADR-0013](adr/0013-optimizer-creation.md).
+
 ### iwopy Optimizers
 
 `GG` is a constrained local Greedy Gradient optimizer. `SLSQP` uses SciPy with
@@ -343,7 +372,7 @@ produces a single champion in `SingleObjOptResults`. Do not infer multi-objectiv
 result support from UDP metadata alone.
 
 The PyGMO UDP expands each registered constraint's tolerance into its `c_tol`
-vector when the adapter is constructed; the core problem does not own that
+vector when the adapter is initialized; the core problem does not own that
 backend representation.
 
 pycma, pymoo, PyGMO, Nevergrad, Optuna, and DEAP imports are lazy and report installation guidance when
@@ -351,8 +380,8 @@ their extras are unavailable. Importing base `iwopy` must not require any of
 these packages. pycma, Nevergrad, Optuna, and DEAP are loaded during optimizer initialization.
 
 The optimizer catalog covers every named public selector, SciPy's default and
-callable extension point, and PyGMO's NLopt subsolvers. Each row links to a direct
-constructor script under `examples/optimizers/`, guarded by `__main__`; only
+callable extension point, and PyGMO's NLopt subsolvers. Each row links to an explicit
+factory-call script under `examples/optimizers/`, guarded by `__main__`; only
 synthetic problem definitions are shared through `iwopy.benchmarks.quadratic`.
 The package exports `QuadraticProblem`, `ParetoProblem`, and `MixedProblem` directly
 from `iwopy.benchmarks`; constructors initialize silently, imports do not instantiate
@@ -367,7 +396,7 @@ methods can also solve unconstrained problems. Single-run covariance/hill-climbi
 methods are local adaptation here, not claimed global optimizers. Unconstrained
 and constrained NSGA2/NSGA3 Pareto flows show actual iwopy results and explicit
 weighted compromise selection; their demonstrated restriction determines their
-table. There are 81 direct scripts covering 79 selectors plus two constrained
+table. There are 81 factory-call scripts covering 79 selectors plus two constrained
 Pareto flows. Empty local multi-objective categories are omitted.
 Tests execute every script and verify
 inert imports, links, and selector coverage. Optional installations and native
@@ -468,13 +497,18 @@ is forward-only by default under
 
 ## Cross-Cutting Decisions
 
+- Optimizer creation uses a standalone `iwopy.create_optimizer` function owned by core,
+	with explicit per-class keywords and flat native forwarding, unchanged public
+	class names, and a dedicated PyGMO-backed `nlopt` family. All maintained
+	examples and notebooks use it without compatibility entry points. See
+	[ADR-0013](adr/0013-optimizer-creation.md).
 - Optimizer catalog examples use annotated value lines and short explicit runs,
 	with production starting suggestions in comments. GG/SLSQP are sourced as
 	`iwopy`; external native behavior keeps its existing terminology. See
 	[ADR-0012](adr/0012-optimizer-example-guidance.md).
 - SciPy DE, Nevergrad, Optuna, and DEAP use true population search with explicit
 	bounded single-objective contracts. The catalog links every public selector to
-	a direct guarded script, tested with package-aware skips. New optional extras
+	a guarded factory-call script, tested with package-aware skips. New optional extras
 	are lazy; Nevergrad alone constrains NumPy <2.4 based on observed upstream
 	behavior. See [ADR-0007](adr/0007-vectorized-interfaces-and-optimizer-catalog.md).
 - Shared quadratic catalog cases are public `iwopy.benchmarks` definitions with

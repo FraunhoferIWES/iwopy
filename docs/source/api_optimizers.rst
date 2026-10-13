@@ -2,6 +2,14 @@ iwopy.optimizers
 ----------------
 `iwopy`'s own optimizer implementations.
 
+Construct ``GG`` or ``SLSQP`` with explicit parameters, or use
+``create_optimizer(family="iwopy", optimizer="GG", problem=..., ...)``
+and the corresponding ``SLSQP`` selector. GG requires ``step_max`` and
+``step_min`` and exposes ``step_div_factor``, ``f_tol``, ``n_max_steps``,
+``max_iterations``, ``memory_size``, and ``vectorize``. SLSQP exposes ``tol``,
+``memory_size``, and ``vectorize``; flat native method options such as
+``maxiter`` and ``ftol`` are forwarded to SciPy. See :doc:`api_core`.
+
 The ``SLSQP`` class solves smooth, continuous, single-objective
 problems with variable bounds and lower, upper, two-sided, or equality
 constraints. It supplies SciPy's SLSQP implementation with the complete
@@ -24,7 +32,7 @@ By default, all Jacobians are requested with
 ``Problem.get_gradients(..., pop=True)``. Analytical derivatives use their
 usual iwopy interface. Missing derivatives must be provided by a wrapper such
 as ``LocalFD``; its finite-difference points are evaluated together through
-the problem's population interface. Set ``vectorized=False`` to use iwopy's
+the problem's population interface. Set ``vectorize=False`` to use iwopy's
 serial gradient evaluation instead. The optimizer never falls back to SciPy's
 finite differences.
 

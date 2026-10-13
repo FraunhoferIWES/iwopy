@@ -63,7 +63,11 @@ def make_problem(initial=0.0):
 
 def test_gg_zero_gradient_returns_zero_step():
     problem = make_problem()
-    solver = GG(problem, step_max=1.0, step_min=0.1)
+    solver = GG(
+        problem=problem,
+        step_max=1.0,
+        step_min=0.1,
+    )
 
     step = solver._grad2deltax(np.array([0.0]), np.array([1.0]))
 
@@ -72,7 +76,11 @@ def test_gg_zero_gradient_returns_zero_step():
 
 def test_gg_accepts_feasible_initial_optimum():
     problem = make_problem()
-    solver = GG(problem, step_max=1.0, step_min=1.0)
+    solver = GG(
+        problem=problem,
+        step_max=1.0,
+        step_min=1.0,
+    )
     solver.initialize()
 
     result = solver.solve(verbosity=0)
@@ -98,12 +106,12 @@ def test_gg_rejects_infeasible_trials_and_backtracks(
     problem.add_constraint(constraint)
     problem.initialize()
     solver = GG(
-        problem,
+        problem=problem,
         step_max=1.0,
         step_min=0.1,
         n_max_steps=1,
+        vectorize=vectorized,
         max_iterations=max_iterations,
-        vectorized=vectorized,
     )
     solver.initialize()
     history = iwopy.OptimizationHistory()
@@ -121,7 +129,7 @@ def test_gg_rejects_infeasible_trials_and_backtracks(
 def test_gg_skips_callback_data_without_callbacks(monkeypatch):
     problem = make_problem(initial=2.0)
     solver = GG(
-        problem,
+        problem=problem,
         step_max=0.5,
         step_min=0.01,
         max_iterations=1,
@@ -150,12 +158,12 @@ def test_gg_reports_completed_iterations(vectorized, capsys):
     problem.add_constraint(BoundedConstraint(problem, "bounded", mins=1.65, maxs=3.0))
     problem.initialize()
     solver = GG(
-        problem,
+        problem=problem,
         step_max=0.1,
         step_min=0.01,
-        max_iterations=2,
         n_max_steps=1,
-        vectorized=vectorized,
+        vectorize=vectorized,
+        max_iterations=2,
     )
     solver.initialize()
     history = iwopy.OptimizationHistory()
@@ -186,7 +194,7 @@ def test_gg_reports_completed_iterations(vectorized, capsys):
 def test_gg_zero_iteration_limit_has_no_intermediate_state():
     problem = make_problem(initial=1.0)
     solver = GG(
-        problem,
+        problem=problem,
         step_max=0.5,
         step_min=0.01,
         max_iterations=0,
@@ -220,7 +228,10 @@ def test_gg_rejects_invalid_configuration(kwargs):
     problem = make_problem()
     parameters = {"step_max": 1.0, "step_min": 0.1}
     parameters.update(kwargs)
-    solver = GG(problem, **parameters)
+    solver = GG(
+        problem=problem,
+        **parameters,
+    )
 
     with pytest.raises(ValueError):
         solver.initialize()
@@ -242,7 +253,11 @@ def test_gg_uses_constraint_bounds_and_tolerance():
     constraint.tol = 0.1
     problem.add_constraint(constraint)
     problem.initialize()
-    solver = GG(problem, step_max=1.0, step_min=0.1)
+    solver = GG(
+        problem=problem,
+        step_max=1.0,
+        step_min=0.1,
+    )
 
     assert np.array_equal(
         solver._constraint_side(0.0, 1.0, 2.0),
@@ -260,7 +275,12 @@ def test_gg_recovers_to_lower_constraint_bound():
     problem.add_objective(Quadratic(problem))
     problem.add_constraint(BoundedConstraint(problem, "c", mins=1.0, maxs=2.0))
     problem.initialize()
-    solver = GG(problem, step_max=0.5, step_min=0.01, max_iterations=100)
+    solver = GG(
+        problem=problem,
+        step_max=0.5,
+        step_min=0.01,
+        max_iterations=100,
+    )
     solver.initialize()
 
     result = solver.solve(verbosity=0)
@@ -278,7 +298,12 @@ def test_gg_max_iterations_is_hard_limit_for_infeasible_start():
     problem.add_objective(Quadratic(problem))
     problem.add_constraint(BoundedConstraint(problem, "c", mins=1.0, maxs=2.0))
     problem.initialize()
-    solver = GG(problem, step_max=0.5, step_min=0.01, max_iterations=0)
+    solver = GG(
+        problem=problem,
+        step_max=0.5,
+        step_min=0.01,
+        max_iterations=0,
+    )
     solver.initialize()
 
     result = solver.solve(verbosity=0)
@@ -295,7 +320,11 @@ def test_gg_rejects_nonfinite_gradients():
     )
     problem.add_objective(NonFiniteGradient(problem))
     problem.initialize()
-    solver = GG(problem, step_max=0.5, step_min=0.01)
+    solver = GG(
+        problem=problem,
+        step_max=0.5,
+        step_min=0.01,
+    )
     solver.initialize()
 
     with pytest.raises(ValueError):
@@ -311,7 +340,11 @@ def test_gg_stops_on_infeasible_zero_gradient_constraint():
     problem.add_objective(Quadratic(problem))
     problem.add_constraint(FlatConstraint(problem, "c", mins=1.0, maxs=2.0))
     problem.initialize()
-    solver = GG(problem, step_max=0.5, step_min=0.01)
+    solver = GG(
+        problem=problem,
+        step_max=0.5,
+        step_min=0.01,
+    )
     solver.initialize()
     history = iwopy.OptimizationHistory()
 

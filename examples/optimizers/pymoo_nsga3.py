@@ -1,24 +1,17 @@
 from iwopy.benchmarks import ParetoProblem
-from iwopy.interfaces.pymoo import Optimizer_pymoo
+from iwopy import create_optimizer
 
 if __name__ == "__main__":
     problem = ParetoProblem()
-    solver = Optimizer_pymoo(
-        problem,
-        problem_pars={
-            "vectorize": True,  # Evaluate each generation as an iwopy population
-        },
-        algo_pars={
-            "type": "NSGA3",  # Reference-direction non-dominated sorting
-            "n_partitions": 12,  # Production: choose partitions for 100+ directions
-        },
-        setup_pars={
-            "seed": 42,  # Reproducible sampling and variation
-        },
-        term_pars={
-            "n_max_gen": 10,  # Demo generations; production start: 1000
-            "ftol": 1e-6,  # Objective-space convergence tolerance
-        },
+    solver = create_optimizer(
+        family="pymoo",  # Optimizer family
+        optimizer="NSGA3",  # Reference-direction non-dominated sorting
+        problem=problem,
+        n_partitions=12,  # Production: choose partitions for 100+ directions
+        vectorize=True,  # Evaluate each generation as an iwopy population
+        seed=42,  # Reproducible sampling and variation
+        n_max_gen=10,  # Demo generations; production start: 1000
+        ftol=1e-6,  # Objective-space convergence tolerance
     )
     solver.initialize(verbosity=0)
     result = solver.solve(verbosity=0)

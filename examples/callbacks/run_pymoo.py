@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 import iwopy
 from iwopy.benchmarks.branin import BraninProblem
-from iwopy.interfaces.pymoo import Optimizer_pymoo
+from iwopy import create_optimizer
 
 
 class GenerationOutput(iwopy.OptimizerCallback):
@@ -39,11 +39,15 @@ def main(output_dir: Path | None = None, n_generations: int = 20) -> Path:
     problem = BraninProblem(initial_values=(1.0, 1.0))
     problem.initialize(verbosity=0)
 
-    solver = Optimizer_pymoo(
-        problem,
-        problem_pars={"vectorize": True},
-        algo_pars={"type": "GA", "pop_size": 30, "seed": 42},
-        term_pars=("n_gen", n_generations),
+    solver = create_optimizer(
+        family="pymoo",  # Optimizer family
+        optimizer="GA",  # Algorithm to use
+        problem=problem,
+        vectorize=True,
+        pop_size=30,
+        seed=42,
+        termination="n_gen",
+        n_max_gen=n_generations,
     )
     solver.initialize(verbosity=0)
     history = iwopy.OptimizationHistory()

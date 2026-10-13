@@ -71,6 +71,29 @@ conda install -c conda-forge iwopy
 See the [installation guide](https://fraunhoferiwes.github.io/iwopy/installation.html)
 for environment setup and development-branch installation.
 
+## Optimizer Creation
+
+Select a backend family and algorithm through the standalone factory:
+
+```python
+from iwopy.benchmarks import QuadraticProblem
+from iwopy import create_optimizer
+
+solver = create_optimizer(
+	family="iwopy",
+	optimizer="SLSQP",
+	problem=QuadraticProblem(),
+	maxiter=100,
+)
+solver.initialize(verbosity=0)
+results = solver.solve(verbosity=0)
+```
+
+Optimizer classes use explicit parameters and flat native keyword options.
+Existing class names remain available. See the
+[creation API](https://fraunhoferiwes.github.io/iwopy/api_core.html#optimizer-creation)
+for all families, including SciPy methods and PyGMO-backed NLopt solvers.
+
 ## Development
 
 ```console

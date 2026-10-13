@@ -87,6 +87,7 @@ and the nearest tests.
 | Objective or constraint contract | `iwopy/core/` | Problem registration, component ordering, gradients, and tests |
 | Result container or Pareto plotting | `iwopy/core/opt_results.py` | Backend finalization, examples, and output tests |
 | Callback or history behavior | `iwopy/core/optimizer_callback.py` | Optimizer dispatch and callback/example tests |
+| Optimizer creation/configuration | `iwopy/core/optimizer_factory.py` and the selected constructor | `tests/core/test_optimizer_factory.py`, explicit keywords, optional loading, and examples/notebooks |
 | Pipeline behavior | `iwopy/core/pipeline.py` | Stage implementations and pipeline users |
 | Simple callable API | `iwopy/wrappers/simple_*.py` | Core function/problem contract and examples |
 | Finite differences | `iwopy/wrappers/local_fd.py` | Gradient assembly and analytical/numerical tests |
@@ -94,7 +95,7 @@ and the nearest tests.
 | SciPy translation | `iwopy/interfaces/scipy/` | Core gradients/results and `tests/scipy/` |
 | pycma translation | `iwopy/interfaces/cma/` | Ask/tell batching, constraint bounds/tolerances, callbacks/results, and `tests/cma/` |
 | Bounded population adapters | `iwopy/interfaces/_population.py` and `scipy/de.py`, `nevergrad/`, `optuna/`, `deap/` | Shared constraints, selection/finalization, diagnostics, and `tests/interfaces/` |
-| Optimizer catalog | `docs/source/optimizer_catalog.rst` and `examples/optimizers/` | Direct guarded constructors, package-aware runs, and selector/link coverage |
+| Optimizer catalog | `docs/source/optimizer_catalog.rst` and `examples/optimizers/` | Guarded factory calls, package-aware runs, and selector/link coverage |
 | Catalog benchmark problems | `iwopy/benchmarks/quadratic.py` | Public exports, individual/population values, lifecycle, gradients, and `tests/test_benchmarks.py` |
 | pymoo translation | `iwopy/interfaces/pymoo/` | Factory, representation, results, and `tests/pymoo/` |
 | PyGMO translation | `iwopy/interfaces/pygmo/` | UDP ordering, callbacks/results, and `tests/pygmo/` |
@@ -105,6 +106,14 @@ Useful searches include the class or method name, variable/component name,
 shape count, backend selector, callback event, and result attribute. Search
 examples and notebooks before changing constructors or factory names; they are
 public call sites.
+
+Use `create_optimizer` from the `iwopy` root in maintained examples and notebooks.
+Keep explicit class keywords aligned where their meanings match, and forward
+additional native options as flat keywords. Do not introduce common parameter
+dictionaries, class factory wrappers, or compatibility signatures. Factory tests
+cover dispatch without initialization, optional loading, and real solves; catalog
+tests enforce factory-only creation throughout all examples and notebook cells.
+See [ADR-0013](adr/0013-optimizer-creation.md).
 
 Do not treat `build/lib/iwopy/` as source. The maintained package is `iwopy/`.
 

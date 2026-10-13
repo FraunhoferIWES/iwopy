@@ -44,7 +44,10 @@ def test_de_evaluates_mixed_populations_without_scalar_calls(monkeypatch):
     monkeypatch.setattr(problem, "evaluate_population", record)
     monkeypatch.setattr(problem, "evaluate_individual", scalar_forbidden)
     solver = Optimizer_scipy_de(
-        problem, scipy_pars={"seed": 42, "popsize": 5, "maxiter": 150}
+        problem=problem,
+        seed=42,
+        popsize=5,
+        maxiter=150,
     )
     solver.initialize(verbosity=0)
     history = OptimizationHistory()
@@ -61,7 +64,9 @@ def test_de_evaluates_mixed_populations_without_scalar_calls(monkeypatch):
 
 def test_constraint_and_feasible_subset_share_one_evaluation(monkeypatch):
     problem = make_problem()
-    solver = Optimizer_scipy_de(problem)
+    solver = Optimizer_scipy_de(
+        problem=problem,
+    )
     solver.initialize(verbosity=0)
     values = np.array([[0.0, 0.1, 0.2], [-0.5, 0.0, 0.5], [1.0, 2.0, 3.0]])
     solver._constraints(values)
@@ -91,6 +96,9 @@ def test_constraint_and_feasible_subset_share_one_evaluation(monkeypatch):
     ],
 )
 def test_internally_managed_de_options(option):
-    solver = Optimizer_scipy_de(make_problem(), scipy_pars={option: None})
-    with pytest.raises(ValueError, match="Internally managed"):
+    with pytest.raises((ValueError, TypeError), match="managed|explicit keyword"):
+        solver = Optimizer_scipy_de(
+            problem=make_problem(),
+            **{option: None},
+        )
         solver.initialize(verbosity=0)

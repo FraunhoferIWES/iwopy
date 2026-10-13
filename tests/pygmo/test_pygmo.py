@@ -32,10 +32,14 @@ def test_additional_pygmo_algorithms_are_available(algorithm):
     problem = RosenbrockProblem()
     problem.initialize()
 
-    algo_pars = {"type": algorithm}
+    algorithm_options = {}
     if algorithm != "compass_search":
-        algo_pars.update(gen=1, seed=42)
-    solver = Optimizer_pygmo(problem, algo_pars=algo_pars)
+        algorithm_options.update(gen=1, seed=42)
+    solver = Optimizer_pygmo(
+        optimizer=algorithm,
+        problem=problem,
+        **algorithm_options,
+    )
     solver.initialize(verbosity=0)
 
     assert solver.algo is not None
@@ -46,13 +50,11 @@ def test_ipopt_parameters_accept_numpy_scalars_and_booleans():
     problem.initialize()
 
     solver = Optimizer_pygmo(
-        problem,
-        algo_pars={
-            "type": "ipopt",
-            "tol": np.float64(1e-6),
-            "max_iter": np.int64(100),
-            "print_timing_statistics": np.bool_(False),
-        },
+        optimizer="ipopt",
+        problem=problem,
+        print_timing_statistics=np.bool_(False),
+        tol=np.float64(1e-6),
+        max_iter=np.int64(100),
     )
     solver.initialize(verbosity=0)
 
@@ -68,8 +70,9 @@ def test_ipopt_rejects_unsupported_parameter_types():
 
     with pytest.raises(TypeError, match="unsupported type list"):
         Optimizer_pygmo(
-            problem,
-            algo_pars={"type": "ipopt", "tol": [1e-6]},
+            optimizer="ipopt",
+            problem=problem,
+            tol=[1e-6],
         ).initialize(verbosity=0)
 
 
@@ -78,8 +81,10 @@ def test_ipopt_solves_analytic_rosenbrock():
     problem.initialize()
 
     solver = Optimizer_pygmo(
-        problem,
-        algo_pars={"type": "ipopt", "tol": 1e-8, "max_iter": 100},
+        optimizer="ipopt",
+        problem=problem,
+        tol=1e-8,
+        max_iter=100,
     )
     solver.initialize(verbosity=0)
     results = solver.solve(verbosity=0)
@@ -92,8 +97,9 @@ def test_ipopt_rejects_callbacks():
     problem = RosenbrockProblem(initial=[-1.0, 1.0], ana_deriv=True)
     problem.initialize(verbosity=0)
     solver = Optimizer_pygmo(
-        problem,
-        algo_pars={"type": "ipopt", "max_iter": 1},
+        optimizer="ipopt",
+        problem=problem,
+        max_iter=1,
     )
     solver.initialize(verbosity=0)
     history = iwopy.OptimizationHistory()
@@ -108,8 +114,9 @@ def test_ipopt_validates_callbacks_before_capability_check():
     problem = RosenbrockProblem(initial=[-1.0, 1.0], ana_deriv=True)
     problem.initialize(verbosity=0)
     solver = Optimizer_pygmo(
-        problem,
-        algo_pars={"type": "ipopt", "max_iter": 1},
+        optimizer="ipopt",
+        problem=problem,
+        max_iter=1,
     )
     solver.initialize(verbosity=0)
 
@@ -126,9 +133,9 @@ def test_pygmo_rejects_callback_mode():
     problem = RosenbrockProblem(ana_deriv=True)
     problem.initialize(verbosity=0)
     solver = Optimizer_pygmo(
-        problem,
-        algo_pars={"type": "de"},
-        setup_pars={"callback_mode": "iteration"},
+        optimizer="de",
+        problem=problem,
+        callback_mode="iteration",
     )
 
     with pytest.raises(ValueError, match="callback_mode is not supported"):
@@ -230,10 +237,12 @@ def test_pygmo_batch_callback_reports_iwopy_values():
     problem.add_objective(MaximizeX(problem))
     problem.initialize(verbosity=0)
     solver = Optimizer_pygmo(
-        problem,
-        problem_pars={"pop": True},
-        algo_pars={"type": "pso_gen", "gen": 1, "seed": 42},
-        setup_pars={"pop_size": 8},
+        optimizer="pso_gen",
+        problem=problem,
+        vectorize=True,
+        seed=42,
+        pop_size=8,
+        gen=1,
     )
     solver.initialize(verbosity=0)
     history = iwopy.OptimizationHistory()
@@ -256,9 +265,11 @@ def test_pygmo_callback_sink_is_removed_after_solve():
     problem = RosenbrockProblem()
     problem.initialize(verbosity=0)
     solver = Optimizer_pygmo(
-        problem,
-        algo_pars={"type": "de", "gen": 1, "seed": 42},
-        setup_pars={"pop_size": 8},
+        optimizer="de",
+        problem=problem,
+        seed=42,
+        pop_size=8,
+        gen=1,
     )
     solver.initialize(verbosity=0)
     history = iwopy.OptimizationHistory()
@@ -276,9 +287,11 @@ def test_pygmo_does_not_create_sink_without_callbacks(monkeypatch):
     problem = RosenbrockProblem()
     problem.initialize(verbosity=0)
     solver = Optimizer_pygmo(
-        problem,
-        algo_pars={"type": "de", "gen": 1, "seed": 42},
-        setup_pars={"pop_size": 8},
+        optimizer="de",
+        problem=problem,
+        seed=42,
+        pop_size=8,
+        gen=1,
     )
     solver.initialize(verbosity=0)
 
@@ -303,9 +316,11 @@ def test_pygmo_callback_errors_propagate():
     problem = RosenbrockProblem()
     problem.initialize(verbosity=0)
     solver = Optimizer_pygmo(
-        problem,
-        algo_pars={"type": "de", "gen": 1, "seed": 42},
-        setup_pars={"pop_size": 8},
+        optimizer="de",
+        problem=problem,
+        seed=42,
+        pop_size=8,
+        gen=1,
     )
     solver.initialize(verbosity=0)
 

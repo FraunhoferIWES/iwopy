@@ -59,36 +59,81 @@ class Optimizer_pymoo(Optimizer):
     def __init__(
         self,
         problem: Problem,
-        problem_pars: dict[str, Any],
-        algo_pars: dict[str, Any],
-        setup_pars: dict[str, Any] | None = None,
-        term_pars: dict[str, Any] | tuple[Any, ...] | list[Any] | None = None,
+        optimizer: str = "GA",
+        *,
+        pop_size: int | None = None,
+        seed: int | None = None,
+        vectorize: bool = True,
+        store_prob_res: bool = False,
+        save_history: bool = False,
+        termination: Any = "iwopy",
+        n_max_gen: int | None = None,
+        n_max_evals: int | float | None = None,
+        ftol: float | None = None,
+        period: int | None = None,
+        xtol: float | None = None,
+        cvtol: float | None = None,
+        name: str = "Optimizer_pymoo",
+        **kwargs: Any,
     ) -> None:
         """
         Parameters
         ----------
         problem
             The problem to optimize
-        problem_pars
-            Parameters for the problem
-        algo_pars
-            Parameters for the alorithm
-        setup_pars
-            Parameters for the calculation setup
-        term_pars
-            Parameters for the termination conditions
+        optimizer
+            Native algorithm name, such as GA, NSGA2, or MixedVariableGA.
+        pop_size
+            Absolute population size; None uses the algorithm's native default.
+        seed
+            Native run seed; None keeps native randomization.
+        vectorize
+            Whether problem evaluation uses populations.
+        store_prob_res
+            Store current problem results for single-objective evaluation.
+        save_history
+            Retain native per-generation algorithm history.
+        termination
+            iwopy or default convergence, n_gen or n_eval limits, or a native
+            pymoo termination object.
+        n_max_gen, n_max_evals
+            Generation and evaluation limits; None keeps backend defaults.
+        ftol, period, xtol, cvtol
+            Native convergence tolerance/window settings. None keeps defaults.
+        name
+            Optimizer name.
+        kwargs
+            Flat native algorithm options, excluding its type selector.
         """
-        if term_pars is None:
-            term_pars = {}
-        if setup_pars is None:
-            setup_pars = {}
-        super().__init__(problem)
-
-        self.problem_pars = problem_pars
-        self.algo_pars = algo_pars
-        self.setup_pars = setup_pars
-        self.term_pars = term_pars
-
+        super().__init__(problem, name)
+        self._validate_kwargs(kwargs)
+        if "type" in kwargs:
+            raise ValueError("pymoo: select the algorithm with optimizer")
+        self.optimizer = optimizer
+        self.vectorize = vectorize
+        self.store_prob_res = store_prob_res
+        self.seed = seed
+        self.save_history = save_history
+        self._algorithm_kwargs = dict(kwargs)
+        if pop_size is not None:
+            self._algorithm_kwargs["pop_size"] = pop_size
+        self._termination_kwargs = {"type": termination}
+        for key, value in (
+            ("n_max_gen", n_max_gen),
+            ("n_max_evals", n_max_evals),
+            ("ftol", ftol),
+            ("period", period),
+            ("xtol", xtol),
+            ("cvtol", cvtol),
+        ):
+            if value is not None:
+                self._termination_kwargs[key] = value
+        if isinstance(termination, str) and termination in {"n_gen", "n_eval"}:
+            key = "n_max_gen" if termination == "n_gen" else "n_max_evals"
+            self._termination_kwargs = {
+                "type": termination,
+                key: self._termination_kwargs.get(key, 1000),
+            }
         self.pymoo_problem: Any | None = None
         self.algo: Any | None = None
         self.term: Any | None = None
@@ -98,33 +143,19 @@ class Optimizer_pymoo(Optimizer):
         """Print solver info, called before solving"""
         super().print_info()
 
-        for k, v in self.problem_pars.items():
-            if isinstance(v, (int, float, str)):
-                print(f"  {k}: {v}")
-
-        if len(self.algo_pars):
+        if len(self._algorithm_kwargs):
             print("\nAlgorithm:")
             print("----------")
-            for k, v in self.algo_pars.items():
+            for k, v in self._algorithm_kwargs.items():
                 if isinstance(v, (int, float, str)):
                     print(f"  {k}: {v}")
 
-        if len(self.setup_pars):
-            print("\nSetup:")
-            print("------")
-            for k, v in self.setup_pars.items():
-                if isinstance(v, (int, float, str)):
-                    print(f"  {k}: {v}")
-
-        if len(self.term_pars):
+        if len(self._termination_kwargs):
             print("\nTermination:")
             print("------------")
-            if isinstance(self.term_pars, (tuple, list)):
-                print(f"  {self.term_pars[0]}: {self.term_pars[1]}")
-            else:
-                for k, v in self.term_pars.items():
-                    if isinstance(v, (int, float, str)):
-                        print(f"  {k}: {v}")
+            for k, v in self._termination_kwargs.items():
+                if isinstance(v, (int, float, str)):
+                    print(f"  {k}: {v}")
         print()
 
     def initialize(self, verbosity: int = 1) -> None:
@@ -136,25 +167,29 @@ class Optimizer_pymoo(Optimizer):
         verbosity
             The verbosity level, 0 = silent
         """
-        if "callback" in self.setup_pars:
+        if "callback" in self._algorithm_kwargs:
             raise ValueError(
                 f"Optimizer '{self.name}': pymoo callback is managed internally."
             )
         if self.problem.n_objectives <= 1:
             self.pymoo_problem = SingleObjProblemTemplate.get_class()(
-                self.problem, **self.problem_pars
+                self.problem,
+                vectorize=self.vectorize,
+                store_prob_res=self.store_prob_res,
             )
         else:
             self.pymoo_problem = MultiObjProblemTemplate.get_class()(
-                self.problem, **self.problem_pars
+                self.problem, vectorize=self.vectorize
             )
 
         if verbosity:
             print("Initializing", type(self).__name__)
 
         factory = Factory(self.pymoo_problem, verbosity)
-        self.algo = factory.get_algorithm(self.algo_pars)
-        self.term = factory.get_termination(self.term_pars)
+        self.algo = factory.get_algorithm(
+            {"type": self.optimizer, **self._algorithm_kwargs}
+        )
+        self.term = factory.get_termination(self._termination_kwargs)
 
         super().initialize(verbosity)
 
@@ -248,9 +283,9 @@ class Optimizer_pymoo(Optimizer):
         super().solve(verbosity, callbacks)
 
         # run pymoo solver:
-        setup_pars = self.setup_pars.copy()
+        run_kwargs = {"seed": self.seed, "save_history": self.save_history}
         if self._has_callbacks:
-            setup_pars["callback"] = _PymooCallbackTemplate.get_class()(self)
+            run_kwargs["callback"] = _PymooCallbackTemplate.get_class()(self)
         pymoo_problem = self.pymoo_problem
         assert pymoo_problem is not None
         assert self.algo is not None
@@ -260,7 +295,7 @@ class Optimizer_pymoo(Optimizer):
             algorithm=self.algo,
             termination=self.term,
             verbose=verbosity > 0,
-            **setup_pars,
+            **run_kwargs,
         )
 
         results: SingleObjOptResults | MultiObjOptResults = pymoo_problem.finalize(

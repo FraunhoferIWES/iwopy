@@ -3,7 +3,7 @@ import argparse
 import matplotlib.pyplot as plt
 from model import GridProblem, MaxN
 
-from iwopy.interfaces.pymoo import Optimizer_pymoo
+from iwopy import create_optimizer
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -39,18 +39,15 @@ if __name__ == "__main__":
     plt.show()
     plt.close(fig)
 
-    solver = Optimizer_pymoo(
-        problem,
-        problem_pars={
-            "vectorize": args.pop,
-        },
-        algo_pars={
-            "type": args.algo,
-            "pop_size": args.n_pop,
-            "seed": args.seed,
-        },
-        setup_pars={},
-        term_pars=("n_evals", 1000),
+    solver = create_optimizer(
+        family="pymoo",  # Optimizer family
+        optimizer=args.algo,  # Algorithm to use
+        problem=problem,
+        vectorize=args.pop,
+        pop_size=args.n_pop,
+        seed=args.seed,
+        termination="n_eval",
+        n_max_evals=1000,
     )
     solver.initialize()
 

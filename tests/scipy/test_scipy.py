@@ -35,8 +35,9 @@ def run_branin_slsqp(init_vals, tol):
     prob.initialize()
 
     solver = Optimizer_scipy(
-        prob,
-        scipy_pars={"method": "SLSQP", "tol": tol},
+        optimizer="SLSQP",
+        problem=prob,
+        tol=tol,
     )
     solver.initialize()
 
@@ -194,7 +195,10 @@ def make_quadratic_problem(initialize=True):
 
 def test_scipy_skips_callback_data_without_callbacks(monkeypatch):
     problem = make_quadratic_problem()
-    solver = Optimizer_scipy(problem, scipy_pars={"method": "L-BFGS-B"})
+    solver = Optimizer_scipy(
+        optimizer="L-BFGS-B",
+        problem=problem,
+    )
     solver.initialize(verbosity=0)
 
     def unexpected_callback_data(*args, **kwargs):
@@ -211,7 +215,10 @@ def test_scipy_skips_callback_data_without_callbacks(monkeypatch):
 @pytest.mark.parametrize("method", ["L-BFGS-B", "COBYLA", "trust-constr"])
 def test_scipy_reports_normalized_iterations(method):
     problem = make_quadratic_problem()
-    solver = Optimizer_scipy(problem, scipy_pars={"method": method})
+    solver = Optimizer_scipy(
+        optimizer=method,
+        problem=problem,
+    )
     solver.initialize(verbosity=0)
     history = iwopy.OptimizationHistory()
 
@@ -231,8 +238,9 @@ def test_scipy_reports_normalized_iterations(method):
 def test_scipy_rejects_native_callback_parameter():
     problem = make_quadratic_problem()
     solver = Optimizer_scipy(
-        problem,
-        scipy_pars={"method": "BFGS", "callback": lambda x: None},
+        optimizer="BFGS",
+        problem=problem,
+        callback=lambda x: None,
     )
 
     with pytest.raises(ValueError, match="parameters managed internally: callback"):
@@ -241,7 +249,10 @@ def test_scipy_rejects_native_callback_parameter():
 
 def test_scipy_callback_cache_miss_does_not_evaluate(monkeypatch):
     problem = make_quadratic_problem()
-    solver = Optimizer_scipy(problem, scipy_pars={"method": "BFGS"})
+    solver = Optimizer_scipy(
+        optimizer="BFGS",
+        problem=problem,
+    )
     solver.initialize(verbosity=0)
     history = iwopy.OptimizationHistory()
     solver._callback_dispatcher.callbacks = [history]
@@ -269,7 +280,10 @@ def test_scipy_rejects_integer_variables():
     )
     problem.add_objective(MixedQuadratic(problem))
     problem.initialize(verbosity=0)
-    solver = Optimizer_scipy(problem)
+    solver = Optimizer_scipy(
+        optimizer=None,
+        problem=problem,
+    )
 
     with pytest.raises(ValueError, match="Integer variables are not supported"):
         solver.initialize(verbosity=0)
@@ -277,7 +291,11 @@ def test_scipy_rejects_integer_variables():
 
 def test_scipy_cache_respects_capacity():
     problem = make_quadratic_problem()
-    solver = Optimizer_scipy(problem, mem_size=1)
+    solver = Optimizer_scipy(
+        optimizer=None,
+        problem=problem,
+        memory_size=1,
+    )
     solver.initialize(verbosity=0)
 
     solver._get_results(np.array([1.0]))
@@ -306,9 +324,10 @@ def test_scipy_uses_population_for_local_fd_gradients(monkeypatch):
 
     monkeypatch.setattr(problem, "apply_population", record_population)
     solver = Optimizer_scipy(
-        problem,
-        scipy_pars={"method": "L-BFGS-B", "tol": 1e-9},
-        vectorized=True,
+        optimizer="L-BFGS-B",
+        problem=problem,
+        vectorize=True,
+        tol=1e-9,
     )
     solver.initialize(verbosity=0)
 
@@ -332,8 +351,9 @@ def test_scipy_supports_constraints_through_local_fd():
     problem = LocalFD(base_problem, deltas=1e-5)
     problem.initialize(verbosity=0)
     solver = Optimizer_scipy(
-        problem,
-        scipy_pars={"method": "SLSQP", "tol": 1e-9},
+        optimizer="SLSQP",
+        problem=problem,
+        tol=1e-9,
     )
 
     solver.initialize(verbosity=0)
@@ -363,8 +383,10 @@ def test_scipy_supports_constraints_through_local_fd():
 )
 def test_scipy_supplies_jacobian_to_gradient_methods(method, monkeypatch):
     problem = make_quadratic_problem()
-    scipy_pars = {} if method is None else {"method": method}
-    solver = Optimizer_scipy(problem, scipy_pars=scipy_pars)
+    solver = Optimizer_scipy(
+        optimizer=method,
+        problem=problem,
+    )
     solver.initialize(verbosity=0)
 
     def fake_minimize(fun, x0, *, bounds, **kwargs):
@@ -380,7 +402,10 @@ def test_scipy_supplies_jacobian_to_gradient_methods(method, monkeypatch):
 @pytest.mark.parametrize("method", ["Nelder-Mead", "Powell", "COBYLA", "COBYQA"])
 def test_scipy_omits_jacobian_for_derivative_free_methods(method, monkeypatch):
     problem = make_quadratic_problem()
-    solver = Optimizer_scipy(problem, scipy_pars={"method": method})
+    solver = Optimizer_scipy(
+        optimizer=method,
+        problem=problem,
+    )
     solver.initialize(verbosity=0)
 
     def fake_minimize(fun, x0, *, bounds, **kwargs):
@@ -399,7 +424,10 @@ def test_scipy_supplies_jacobian_to_custom_method(monkeypatch):
         del fun, args, kwargs
         return OptimizeResult(x=x0, success=False)
 
-    solver = Optimizer_scipy(problem, scipy_pars={"method": custom_method})
+    solver = Optimizer_scipy(
+        optimizer=custom_method,
+        problem=problem,
+    )
     solver.initialize(verbosity=0)
 
     def fake_minimize(fun, x0, *, bounds, **kwargs):
@@ -417,8 +445,9 @@ def test_scipy_honors_constraint_bounds(method):
     problem.add_constraint(LowerBound(problem))
     problem.initialize(verbosity=0)
     solver = Optimizer_scipy(
-        problem,
-        scipy_pars={"method": method, "tol": 1e-9},
+        optimizer=method,
+        problem=problem,
+        tol=1e-9,
     )
     solver.initialize(verbosity=0)
 
@@ -433,7 +462,10 @@ def test_scipy_groups_general_constraint_bounds(monkeypatch):
     problem = make_quadratic_problem(initialize=False)
     problem.add_constraint(GeneralBounds(problem))
     problem.initialize(verbosity=0)
-    solver = Optimizer_scipy(problem, scipy_pars={"method": "SLSQP"})
+    solver = Optimizer_scipy(
+        optimizer="SLSQP",
+        problem=problem,
+    )
     solver.initialize(verbosity=0)
 
     def fake_minimize(fun, x0, *, bounds, **kwargs):
@@ -474,7 +506,10 @@ def test_scipy_orients_maximization_objective_and_gradient():
     )
     problem.add_objective(Quadratic(problem, maximize=True))
     problem.initialize(verbosity=0)
-    solver = Optimizer_scipy(problem, scipy_pars={"method": "L-BFGS-B"})
+    solver = Optimizer_scipy(
+        optimizer="L-BFGS-B",
+        problem=problem,
+    )
     solver.initialize(verbosity=0)
 
     result = solver.solve(verbosity=0)
@@ -495,9 +530,9 @@ def test_scipy_can_disable_population_gradients(monkeypatch):
 
     monkeypatch.setattr(problem, "get_gradients", record_gradient_mode)
     solver = Optimizer_scipy(
-        problem,
-        scipy_pars={"method": "L-BFGS-B"},
-        vectorized=False,
+        optimizer="L-BFGS-B",
+        problem=problem,
+        vectorize=False,
     )
     solver.initialize(verbosity=0)
 
@@ -520,7 +555,10 @@ def test_scipy_reuses_combined_jacobian_for_constraints(monkeypatch):
         return get_gradients(*args, **kwargs)
 
     monkeypatch.setattr(problem, "get_gradients", record_gradient_mode)
-    solver = Optimizer_scipy(problem, scipy_pars={"method": "SLSQP"})
+    solver = Optimizer_scipy(
+        optimizer="SLSQP",
+        problem=problem,
+    )
     solver.initialize(verbosity=0)
 
     def fake_minimize(fun, x0, *, bounds, **kwargs):
@@ -548,7 +586,10 @@ def test_scipy_gradient_method_requires_problem_derivatives():
     )
     problem.add_objective(MissingDerivativeQuadratic(problem))
     problem.initialize(verbosity=0)
-    solver = Optimizer_scipy(problem, scipy_pars={"method": "L-BFGS-B"})
+    solver = Optimizer_scipy(
+        optimizer="L-BFGS-B",
+        problem=problem,
+    )
     solver.initialize(verbosity=0)
 
     with pytest.raises(ValueError, match="Failed to determine a finite"):
@@ -564,7 +605,10 @@ def test_scipy_clears_value_and_gradient_caches_between_solves(monkeypatch):
     objective = MutableQuadratic(problem, target=1.0)
     problem.add_objective(objective)
     problem.initialize(verbosity=0)
-    solver = Optimizer_scipy(problem, scipy_pars={"method": "L-BFGS-B"})
+    solver = Optimizer_scipy(
+        optimizer="L-BFGS-B",
+        problem=problem,
+    )
     solver.initialize(verbosity=0)
     solver._objective(np.array([3.0]))
     solver._objective_jac(np.array([3.0]))

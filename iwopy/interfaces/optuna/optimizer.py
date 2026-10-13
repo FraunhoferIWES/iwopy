@@ -21,31 +21,32 @@ class Optimizer_optuna(_PopulationOptimizer):
     def __init__(
         self,
         problem: Problem,
-        sampler: str = "TPESampler",
+        optimizer: str = "TPESampler",
+        *,
         budget: int = 100,
         batch_size: int = 8,
         seed: int | None = None,
-        sampler_pars: dict[str, Any] | None = None,
-        name: str = "Optimizer_optuna",
         vectorize: bool = True,
+        name: str = "Optimizer_optuna",
+        **kwargs: Any,
     ) -> None:
         """
         Parameters
         ----------
         problem
             Initialized single-objective problem with finite, strictly ordered bounds.
-        sampler
+        optimizer
             One of :attr:`samplers`. TPE uses constant-liar pending-trial handling
             by default; native sampler options can override that choice.
-        budget
-            Positive number of completed trials, including the final partial batch.
-        batch_size
-            Positive number of trials suggested before evaluating the ordered batch.
-        seed
-            Optional seed for a fresh sampler on each solve.
-        sampler_pars
-            Copied native sampler options. Seed is managed; deprecated native
+        kwargs
+            Flat native sampler options. Seed is managed; deprecated native
             ``constraints_func`` callbacks cannot be supplied.
+        batch_size
+            Positive number of pending trials.
+        seed
+            Seed for a fresh sampler on each solve.
+        budget
+            Positive completed-trial limit including the final partial batch.
         name
             Optimizer and study name.
         vectorize
@@ -59,11 +60,12 @@ class Optimizer_optuna(_PopulationOptimizer):
             If vectorize is not a boolean.
         """
         super().__init__(problem, name, vectorize)
-        self.sampler = sampler
+        self._validate_kwargs(kwargs)
+        self.sampler = optimizer
         self.budget = budget
         self.batch_size = batch_size
         self.seed = seed
-        self.sampler_pars = dict(sampler_pars or {})
+        self._sampler_kwargs = dict(kwargs)
         self.study: Any = None
 
     def initialize(self, verbosity: int = 1) -> None:
@@ -90,16 +92,16 @@ class Optimizer_optuna(_PopulationOptimizer):
         for label, value in (("budget", self.budget), ("batch_size", self.batch_size)):
             if isinstance(value, bool) or not isinstance(value, Integral) or value < 1:
                 raise ValueError(f"{label} must be a positive integer")
-        conflicts = {"seed", "constraints_func"}.intersection(self.sampler_pars)
+        conflicts = {"seed", "constraints_func"}.intersection(self._sampler_kwargs)
         if conflicts:
             raise ValueError(
-                f"Internally managed sampler_pars: {', '.join(sorted(conflicts))}"
+                f"Internally managed native options: {', '.join(sorted(conflicts))}"
             )
         self._optuna = import_module("optuna", hint="uv sync --extra optuna")
         super().initialize(verbosity)
 
     def _new_study(self) -> Any:
-        options = dict(self.sampler_pars)
+        options = dict(self._sampler_kwargs)
         if self.sampler == "TPESampler":
             options.setdefault("constant_liar", True)
         sampler = getattr(self._optuna.samplers, self.sampler)(

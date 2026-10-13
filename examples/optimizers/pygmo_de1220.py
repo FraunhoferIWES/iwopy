@@ -1,21 +1,17 @@
 from iwopy.benchmarks import QuadraticProblem
-from iwopy.interfaces.pygmo import Optimizer_pygmo
+from iwopy import create_optimizer
 
 if __name__ == "__main__":
     problem = QuadraticProblem()
-    solver = Optimizer_pygmo(
-        problem,
-        algo_pars={
-            "type": "de1220",  # Adapt differential-evolution strategies
-            "gen": 10,  # Demo generations; production start: 1000
-            "ftol": 1e-6,  # Population objective-spread stopping tolerance
-            "xtol": 1e-6,  # Population variable-spread stopping tolerance
-            "seed": 42,  # Reproducible evolution
-        },
-        setup_pars={
-            "pop_size": 20,  # Demo population; production start: 100
-            "seed": 42,  # Reproducible initial population
-        },
+    solver = create_optimizer(
+        family="pygmo",  # Optimizer family
+        optimizer="de1220",  # Adapt differential-evolution strategies
+        problem=problem,
+        seed=42,  # Reproducible evolution
+        pop_size=20,  # Demo population; production start: 100
+        gen=10,  # Demo generations; production start: 1000
+        ftol=1e-6,  # Population objective-spread stopping tolerance
+        xtol=1e-6,  # Population variable-spread stopping tolerance
     )
     solver.initialize(verbosity=0)
     result = solver.solve(verbosity=0)

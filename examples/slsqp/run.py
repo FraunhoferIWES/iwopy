@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 
 import iwopy
-from iwopy.optimizers import SLSQP
+from iwopy import create_optimizer
 
 
 class Quadratic(iwopy.SimpleObjective):
@@ -59,10 +59,13 @@ if __name__ == "__main__":
     )
     problem.initialize()
 
-    solver = SLSQP(
-        problem,
-        scipy_pars={"tol": 1e-9, "options": {"maxiter": 100}},
-        vectorized=not args.no_pop,
+    solver = create_optimizer(
+        family="iwopy",  # Optimizer family
+        optimizer="SLSQP",  # Algorithm to use
+        problem=problem,
+        vectorize=not args.no_pop,
+        tol=1e-9,
+        maxiter=100,
     )
     solver.initialize()
     results = solver.solve()

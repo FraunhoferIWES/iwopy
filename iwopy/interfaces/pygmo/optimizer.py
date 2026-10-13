@@ -60,40 +60,76 @@ class Optimizer_pygmo(Optimizer):
     def __init__(
         self,
         problem: Problem,
-        problem_pars: dict[str, Any] | None = None,
-        algo_pars: dict[str, Any] | None = None,
-        setup_pars: dict[str, Any] | None = None,
+        optimizer: str = "de",
+        *,
+        pop_size: int = 1,
+        seed: int | None = None,
+        vectorize: bool = False,
+        norandom_first: bool | None = None,
+        c_tol: float = 1e-4,
+        problem_verbosity: int = 0,
+        algorithm_verbosity: int = 1,
+        nlopt_optimizer: str | None = None,
+        name: str = "Optimizer_pygmo",
+        **kwargs: Any,
     ) -> None:
         """
         Parameters
         ----------
         problem
             The problem to optimize
-        problem_pars
-            Parameters for the problem
-        algo_pars
-            Parameters for the alorithm
-        setup_pars
-            Parameters for the calculation setup
+        optimizer
+            Native driver name, such as de, ipopt, or nlopt.
+        pop_size
+            Absolute population size. Local solvers operate on one selected member.
+        seed
+            Seed for both the population and native drivers supporting seed.
+        vectorize
+            Enable batch fitness where supported by the selected driver.
+        norandom_first
+            Replace the first individual with problem initial values; None
+            enables this when pop_size is one.
+        c_tol
+            Native population constraint tolerance.
+        problem_verbosity, algorithm_verbosity
+            UDP diagnostics and native algorithm verbosity levels.
+        nlopt_optimizer
+            Native NLopt solver name when optimizer is nlopt. The standalone
+            factory supplies it automatically for family nlopt.
+        name
+            Optimizer name.
+        kwargs
+            Flat native driver options, such as gen, maxeval and max_iter.
         """
-        if setup_pars is None:
-            setup_pars = {}
-        if algo_pars is None:
-            algo_pars = {}
-        if problem_pars is None:
-            problem_pars = {}
-        super().__init__(problem)
+        super().__init__(problem, name)
+        self._validate_kwargs(kwargs)
+        if "type" in kwargs:
+            raise ValueError("pygmo: select the algorithm with optimizer")
+        self.optimizer = optimizer
+        self.pop_size = pop_size
+        self.seed = seed
+        self.vectorize = vectorize
+        self.norandom_first = (
+            pop_size == 1 if norandom_first is None else norandom_first
+        )
+        self.c_tol = c_tol
+        self.problem_verbosity = problem_verbosity
+        self.verbosity = algorithm_verbosity
+        self._algorithm_kwargs = dict(kwargs)
+        if optimizer == "nlopt":
+            if nlopt_optimizer is None:
+                raise ValueError("PyGMO NLopt requires nlopt_optimizer")
+            self._algorithm_kwargs["optimizer"] = nlopt_optimizer
+        elif nlopt_optimizer is not None:
+            raise ValueError("nlopt_optimizer applies only to the NLopt driver")
+        if seed is not None and optimizer not in {"nlopt", "ipopt", "compass_search"}:
+            self._algorithm_kwargs["seed"] = seed
 
         imports.load()
-
-        self.problem_pars = problem_pars
-        self.algo_pars = algo_pars
-        self.setup_pars = setup_pars
 
         self.udp: UDP | None = None
         self.algo: Any | None = None
         self.pop: Any | None = None
-        self.verbosity = 0
 
     def initialize(self, verbosity: int = 1) -> None:
         """
@@ -105,32 +141,27 @@ class Optimizer_pygmo(Optimizer):
             The verbosity level, 0 = silent
         """
 
-        if "callback_mode" in self.setup_pars:
+        if "callback_mode" in self._algorithm_kwargs:
             raise ValueError("PyGMO callback_mode is not supported")
 
         # create pygmo problem:
-        pop = self.problem_pars.get("pop", False)
-        self.udp = UDP(self.problem, **self.problem_pars)
+        self.udp = UDP(
+            self.problem, pop=self.vectorize, verbosity=self.problem_verbosity
+        )
 
         # create algorithm:
-        self.algo = AlgoFactory.new(pop=pop, **self.algo_pars)
+        self.algo = AlgoFactory.new(
+            type=self.optimizer, pop=self.vectorize, **self._algorithm_kwargs
+        )
 
         # create population:
         pygmo = imports.pygmo
         assert pygmo is not None
-        psize = self.setup_pars.get("pop_size", 1)
-        pseed = self.setup_pars.get("seed", None)
-        pnrfi = self.setup_pars.get("norandom_first", psize == 1)
-        self.pop = pygmo.population(self.udp, size=psize, seed=pseed)
-        self.pop.problem.c_tol = [
-            self.setup_pars.get("c_tol", 1e-4)
-        ] * self.pop.problem.get_nc()
-
-        # memorize verbosity level:
-        self.verbosity = self.setup_pars.get("verbosity", 1)
+        self.pop = pygmo.population(self.udp, size=self.pop_size, seed=self.seed)
+        self.pop.problem.c_tol = [self.c_tol] * self.pop.problem.get_nc()
 
         # set first indiviual to initial values:
-        if pnrfi:
+        if self.norandom_first:
             x = np.zeros(self.udp.n_vars_all)
 
             if self.problem.n_vars_float:
@@ -157,7 +188,7 @@ class Optimizer_pygmo(Optimizer):
 
     def _validate_callbacks(self, callbacks: list[OptimizerCallback]) -> None:
         """Reject callbacks when PyGMO cannot expose exact progress states."""
-        if self.algo_pars.get("type") == "ipopt" and callbacks:
+        if self.optimizer == "ipopt" and callbacks:
             raise NotImplementedError(
                 "PyGMO IPOPT does not expose exact live iteration callbacks"
             )

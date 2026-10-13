@@ -17,6 +17,7 @@ from .core import PipelineStage as PipelineStage
 from .core import OptimizationHistory as OptimizationHistory
 from .core import OptimizerCallback as OptimizerCallback
 from .core import OptimizerCallbackData as OptimizerCallbackData
+from .core import create_optimizer as create_optimizer
 from .wrappers import ProblemWrapper as ProblemWrapper
 from .wrappers import DiscretizeRegGrid as DiscretizeRegGrid
 from .wrappers import LocalFD as LocalFD

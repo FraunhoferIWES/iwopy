@@ -11,6 +11,7 @@ from .optimizer import Optimizer as Optimizer
 from .optimizer_callback import OptimizationHistory as OptimizationHistory
 from .optimizer_callback import OptimizerCallback as OptimizerCallback
 from .optimizer_callback import OptimizerCallbackData as OptimizerCallbackData
+from .optimizer_factory import create_optimizer as create_optimizer
 from .pipeline import Pipeline as Pipeline
 from .pipeline import PipelineStage as PipelineStage
 from .problem import Problem as Problem

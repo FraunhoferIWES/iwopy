@@ -68,17 +68,13 @@ def test_integer_ga_keeps_integer_variables(vectorize):
     prob.initialize()
 
     solver = Optimizer_pymoo(
-        prob,
-        problem_pars={
-            "vectorize": vectorize,
-        },
-        algo_pars={
-            "type": "GA",
-            "pop_size": 10,
-            "seed": 42,
-        },
-        setup_pars={},
-        term_pars=("n_gen", 2),
+        optimizer="GA",
+        problem=prob,
+        vectorize=vectorize,
+        pop_size=10,
+        seed=42,
+        termination="n_gen",
+        n_max_gen=2,
     )
     solver.initialize()
     history = OptimizationHistory()
@@ -130,10 +126,13 @@ def test_pymoo_callback_restores_iwopy_population_values():
     problem.add_constraint(LowerUpperConstraints(problem))
     problem.initialize(verbosity=0)
     solver = Optimizer_pymoo(
-        problem,
-        problem_pars={"vectorize": True},
-        algo_pars={"type": "NSGA2", "pop_size": 8, "seed": 42},
-        term_pars=("n_gen", 2),
+        optimizer="NSGA2",
+        problem=problem,
+        vectorize=True,
+        pop_size=8,
+        seed=42,
+        termination="n_gen",
+        n_max_gen=2,
     )
     solver.initialize(verbosity=0)
     history = OptimizationHistory()
@@ -173,10 +172,13 @@ def test_pymoo_callback_normalizes_mixed_variables():
     problem.add_objective(MixedObjective(problem))
     problem.initialize(verbosity=0)
     solver = Optimizer_pymoo(
-        problem,
-        problem_pars={"vectorize": True},
-        algo_pars={"type": "MixedVariableGA", "pop_size": 8, "seed": 42},
-        term_pars=("n_gen", 2),
+        optimizer="MixedVariableGA",
+        problem=problem,
+        vectorize=True,
+        pop_size=8,
+        seed=42,
+        termination="n_gen",
+        n_max_gen=2,
     )
     solver.initialize(verbosity=0)
     history = OptimizationHistory()
@@ -193,24 +195,23 @@ def test_factory_does_not_mutate_reused_algorithm_parameters():
     prob = RecordingIntProblem()
     prob.add_objective(IntObjective(prob))
     prob.initialize()
-    algo_pars = {
-        "type": "GA",
+    algorithm_options = {
         "pop_size": 10,
         "seed": 42,
     }
 
     for _ in range(2):
         solver = Optimizer_pymoo(
-            prob,
-            problem_pars={"vectorize": True},
-            algo_pars=algo_pars,
-            setup_pars={},
-            term_pars=("n_gen", 1),
+            optimizer="GA",
+            problem=prob,
+            **algorithm_options,
+            vectorize=True,
+            termination="n_gen",
+            n_max_gen=1,
         )
         solver.initialize()
 
-    assert algo_pars == {
-        "type": "GA",
+    assert algorithm_options == {
         "pop_size": 10,
         "seed": 42,
     }
@@ -220,33 +221,33 @@ def test_pymoo_rejects_native_callback_parameter():
     problem = RosenbrockProblem()
     problem.initialize(verbosity=0)
     solver = Optimizer_pymoo(
-        problem,
-        problem_pars={"vectorize": True},
-        algo_pars={"type": "GA", "pop_size": 8, "seed": 42},
-        setup_pars={"callback": object()},
-        term_pars=("n_gen", 1),
+        optimizer="GA",
+        problem=problem,
+        vectorize=True,
+        pop_size=8,
+        seed=42,
+        callback=object(),
+        termination="n_gen",
+        n_max_gen=1,
     )
 
     with pytest.raises(ValueError, match="callback is managed internally"):
         solver.initialize(verbosity=0)
 
 
-def test_dict_generation_termination_uses_iwopy_default_type():
+def test_generation_limit_uses_iwopy_default_termination():
     prob = RecordingIntProblem()
     prob.add_objective(IntObjective(prob))
     prob.initialize()
-    term_pars = {"n_max_gen": 2}
+    stopping_options = {"n_max_gen": 2}
 
     solver = Optimizer_pymoo(
-        prob,
-        problem_pars={"vectorize": True},
-        algo_pars={
-            "type": "GA",
-            "pop_size": 10,
-            "seed": 42,
-        },
-        setup_pars={},
-        term_pars=term_pars,
+        optimizer="GA",
+        problem=prob,
+        vectorize=True,
+        pop_size=10,
+        seed=42,
+        **stopping_options,
     )
     solver.initialize()
     solver.solve(verbosity=0)
@@ -257,17 +258,20 @@ def test_dict_generation_termination_uses_iwopy_default_type():
         "MaximumGenerationTermination",
         "MaximumFunctionCallTermination",
     ]
-    assert term_pars == {"n_max_gen": 2}
+    assert stopping_options == {"n_max_gen": 2}
 
 
 def test_pymoo_skips_callback_bridge_without_callbacks(monkeypatch):
     problem = RosenbrockProblem()
     problem.initialize(verbosity=0)
     solver = Optimizer_pymoo(
-        problem,
-        problem_pars={"vectorize": True},
-        algo_pars={"type": "GA", "pop_size": 8, "seed": 42},
-        term_pars=("n_gen", 1),
+        optimizer="GA",
+        problem=problem,
+        vectorize=True,
+        pop_size=8,
+        seed=42,
+        termination="n_gen",
+        n_max_gen=1,
     )
     solver.initialize(verbosity=0)
 
@@ -286,15 +290,13 @@ def test_integer_pymoo_algorithms_keep_integer_variables(algorithm):
     prob.initialize()
 
     solver = Optimizer_pymoo(
-        prob,
-        problem_pars={"vectorize": True},
-        algo_pars={
-            "type": algorithm,
-            "pop_size": 10,
-            "seed": 42,
-        },
-        setup_pars={},
-        term_pars=("n_gen", 2),
+        optimizer=algorithm,
+        problem=prob,
+        vectorize=True,
+        pop_size=10,
+        seed=42,
+        termination="n_gen",
+        n_max_gen=2,
     )
     solver.initialize()
     results = solver.solve(verbosity=0)
@@ -313,11 +315,13 @@ def test_integer_pymoo_algorithms_reject_incompatible_representation(algorithm):
     prob.initialize()
 
     solver = Optimizer_pymoo(
-        prob,
-        problem_pars={"vectorize": True},
-        algo_pars={"type": algorithm, "pop_size": 10, "seed": 42},
-        setup_pars={},
-        term_pars=("n_gen", 1),
+        optimizer=algorithm,
+        problem=prob,
+        vectorize=True,
+        pop_size=10,
+        seed=42,
+        termination="n_gen",
+        n_max_gen=1,
     )
 
     with pytest.raises(ValueError, match="integer|variable"):
@@ -329,16 +333,14 @@ def test_pso_factory_uses_requested_sampling():
     prob.initialize()
 
     solver = Optimizer_pymoo(
-        prob,
-        problem_pars={"vectorize": False},
-        algo_pars={
-            "type": "PSO",
-            "pop_size": 10,
-            "seed": 42,
-            "sampling": "float_random",
-        },
-        setup_pars={},
-        term_pars=("n_gen", 1),
+        optimizer="PSO",
+        problem=prob,
+        sampling="float_random",
+        vectorize=False,
+        pop_size=10,
+        seed=42,
+        termination="n_gen",
+        n_max_gen=1,
     )
     solver.initialize()
 
@@ -353,11 +355,13 @@ def test_factory_supports_additional_pymoo_algorithms(algorithm):
     prob.initialize()
 
     solver = Optimizer_pymoo(
-        prob,
-        problem_pars={"vectorize": False},
-        algo_pars={"type": algorithm, "pop_size": 10, "seed": 42},
-        setup_pars={},
-        term_pars=("n_gen", 1),
+        optimizer=algorithm,
+        problem=prob,
+        vectorize=False,
+        pop_size=10,
+        seed=42,
+        termination="n_gen",
+        n_max_gen=1,
     )
     solver.initialize()
 
@@ -371,17 +375,13 @@ def run_branin_ga(type, init_vals, ngen, npop, pop):
     prob.initialize()
 
     solver = Optimizer_pymoo(
-        prob,
-        problem_pars={
-            "vectorize": pop,
-        },
-        algo_pars={
-            "type": type,
-            "pop_size": npop,
-            "seed": 42,
-        },
-        setup_pars={},
-        term_pars=("n_gen", ngen),
+        optimizer=type,
+        problem=prob,
+        vectorize=pop,
+        pop_size=npop,
+        seed=42,
+        termination="n_gen",
+        n_max_gen=ngen,
     )
     solver.initialize()
     solver.print_info()
@@ -430,17 +430,13 @@ def run_rosen0_ga(type, inits, ngen, npop, pop):
     prob.initialize()
 
     solver = Optimizer_pymoo(
-        prob,
-        problem_pars={
-            "vectorize": pop,
-        },
-        algo_pars={
-            "type": type,
-            "pop_size": npop,
-            "seed": 42,
-        },
-        setup_pars={},
-        term_pars=("n_gen", ngen),
+        optimizer=type,
+        problem=prob,
+        vectorize=pop,
+        pop_size=npop,
+        seed=42,
+        termination="n_gen",
+        n_max_gen=ngen,
     )
     solver.initialize()
     solver.print_info()
@@ -457,17 +453,13 @@ def run_rosen_ga(type, lower, upper, inits, ngen, npop, pop):
     prob.initialize()
 
     solver = Optimizer_pymoo(
-        prob,
-        problem_pars={
-            "vectorize": pop,
-        },
-        algo_pars={
-            "type": type,
-            "pop_size": npop,
-            "seed": 42,
-        },
-        setup_pars={},
-        term_pars=("n_gen", ngen),
+        optimizer=type,
+        problem=prob,
+        vectorize=pop,
+        pop_size=npop,
+        seed=42,
+        termination="n_gen",
+        n_max_gen=ngen,
     )
     solver.initialize()
     solver.print_info()

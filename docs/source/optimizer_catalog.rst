@@ -9,8 +9,10 @@ extension point are also shown. Arbitrary user-written callable implementations
 are not a finite registry. Sampling, crossover, mutation, and termination
 operators are configuration, not additional optimizers.
 
-Each setup link shows a complete, tested Python script with a direct
-``solver = OptimizerClass(...)`` call and explicit parameters. Execution is
+Each setup link shows a complete, tested Python script with an explicit
+``solver = create_optimizer(...)`` call using ``family``, ``optimizer``, and
+flat class/native keyword parameters. See :doc:`api_core` for selection rules.
+Execution is
 inside ``if __name__ == "__main__":``; importing a script does not run it.
 The shared synthetic problem definitions appear below.
 From the repository root, install the optional backends and run any case by its
@@ -237,7 +239,7 @@ SciPy Minimization
 ~~~~~~~~~~~~~~~~~~~~
 
 ``Optimizer_scipy`` performs scalar objective search. Its default
-``vectorized=True`` batches iwopy gradient evaluation; ``vectorized=False``
+``vectorize=True`` batches iwopy gradient evaluation; ``vectorize=False``
 uses individual gradient evaluation. Unconstrained methods ignore forwarded
 bounds. Curvature-based catalog cases supply the quadratic Hessian; iwopy does
 not manufacture a general Hessian.
@@ -273,7 +275,7 @@ for constructor parameters and methods.
 pymoo
 ~~~~~~~~~~~~~~~~~~~~
 
-``Optimizer_pymoo`` uses ``problem_pars={"vectorize": True}`` for population
+``Optimizer_pymoo`` uses ``vectorize=True`` for population
 evaluation; false selects elementwise evaluation. Algorithm choice determines
 single-/multi-objective and mixed-variable support. iwopy translates one-sided
 constraints; NSGA2/NSGA3 return iwopy Pareto results. Install the ``pymoo`` extra.
@@ -284,10 +286,12 @@ for constructor parameters and methods.
 PyGMO
 ~~~~~~~~~~~~~~~~~~~~
 
-``Optimizer_pygmo`` exposes batch fitness with ``problem_pars={"pop": True}``.
+``Optimizer_pygmo`` exposes batch fitness with ``vectorize=True``.
 Use an algorithm with batch-fitness support; enabling the flag alone does not
 make every algorithm vectorized. The catalog uses the default scalar fitness
 path. Multi-objective catalog flows return native populations. Install ``pygmo``.
+Select NLopt leaf solvers with ``family="nlopt"``; they use the same PyGMO
+adapter without caller-supplied nested driver settings.
 
 See the :doc:`Optimizer_pygmo API <_autoapi/iwopy/interfaces/pygmo/optimizer/index>`
 for constructor parameters and methods.

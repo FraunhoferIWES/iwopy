@@ -48,9 +48,7 @@ def make_solver(problem, backend, **kwargs):
         importlib.import_module(f"iwopy.interfaces.{module}"), f"Optimizer_{backend}"
     )
     if backend == "scipy_de":
-        return cls(
-            problem, scipy_pars={"seed": 42, "maxiter": 200, "popsize": 5}, **kwargs
-        )
+        return cls(problem, seed=42, maxiter=200, popsize=5, **kwargs)
     return cls(problem, budget=17, batch_size=4, seed=42, **kwargs)
 
 
@@ -224,14 +222,14 @@ def test_invalid_budget_options(backend, option, value):
     ["NGOpt", "CMA", "DE", "TwoPointsDE", "PSO", "OnePlusOne", "RandomSearch", "TBPSA"],
 )
 def test_nevergrad_selectors(algorithm):
-    solver = make_solver(make_problem(), "nevergrad", algorithm=algorithm)
+    solver = make_solver(make_problem(), "nevergrad", optimizer=algorithm)
     solver.initialize(verbosity=0)
     assert solver.solve(verbosity=0).success
 
 
 @pytest.mark.parametrize("sampler", ["TPESampler", "RandomSampler"])
 def test_optuna_selectors(sampler):
-    solver = make_solver(make_problem(), "optuna", sampler=sampler)
+    solver = make_solver(make_problem(), "optuna", optimizer=sampler)
     solver.initialize(verbosity=0)
     assert solver.solve(verbosity=0).success
     assert len(solver.study.trials) == 17
@@ -243,7 +241,7 @@ def test_deap_selectors_and_random_state(algorithm):
     import random
 
     state = random.getstate()
-    solver = make_solver(make_problem(), "deap", algorithm=algorithm)
+    solver = make_solver(make_problem(), "deap", optimizer=algorithm)
     solver.initialize(verbosity=0)
     assert solver.solve(verbosity=0).success
     assert random.getstate() == state
@@ -335,32 +333,25 @@ def test_unbounded_variables_rejected(backend, monkeypatch):
         make_solver(problem, backend).initialize(verbosity=0)
 
 
-@pytest.mark.parametrize(
-    "backend,option",
-    [("nevergrad", "algorithm"), ("optuna", "sampler"), ("deap", "algorithm")],
-)
-def test_unknown_selectors(backend, option):
+@pytest.mark.parametrize("backend", ["nevergrad", "optuna", "deap"])
+def test_unknown_selectors(backend):
     with pytest.raises(ValueError, match="Unknown"):
-        make_solver(make_problem(), backend, **{option: "unknown"}).initialize(
+        make_solver(make_problem(), backend, optimizer="unknown").initialize(
             verbosity=0
         )
 
 
 @pytest.mark.parametrize(
-    "backend,option,key",
+    "backend,key",
     [
-        ("nevergrad", "optimizer_pars", "budget"),
-        ("nevergrad", "optimizer_pars", "num_workers"),
-        ("nevergrad", "optimizer_pars", "parametrization"),
-        ("optuna", "sampler_pars", "seed"),
-        ("optuna", "sampler_pars", "constraints_func"),
+        ("nevergrad", "num_workers"),
+        ("nevergrad", "parametrization"),
+        ("optuna", "constraints_func"),
     ],
 )
-def test_managed_native_options(backend, option, key):
+def test_managed_native_options(backend, key):
     with pytest.raises(ValueError, match="Internally managed"):
-        make_solver(make_problem(), backend, **{option: {key: None}}).initialize(
-            verbosity=0
-        )
+        make_solver(make_problem(), backend, **{key: None}).initialize(verbosity=0)
 
 
 @pytest.mark.parametrize("backend", ["scipy_de", "nevergrad", "optuna", "deap"])
@@ -491,7 +482,7 @@ def test_invalid_deap_variation_options(options):
 
 
 def test_deap_comma_scheme_selects_only_evaluated_offspring(monkeypatch):
-    solver = make_solver(make_problem(), "deap", algorithm="eaMuCommaLambda")
+    solver = make_solver(make_problem(), "deap", optimizer="eaMuCommaLambda")
     solver.initialize(verbosity=0)
     select = solver._tools.selTournament
     selected_sizes = []

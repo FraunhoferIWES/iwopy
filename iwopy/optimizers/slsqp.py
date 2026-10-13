@@ -11,6 +11,7 @@ from iwopy.core import (
     Problem,
     SingleObjOptResults,
 )
+from iwopy.interfaces.scipy._options import minimize_options
 
 
 _CacheValueT = TypeVar("_CacheValueT")
@@ -32,10 +33,12 @@ class SLSQP(Optimizer):
     def __init__(
         self,
         problem: Problem,
-        scipy_pars: dict[str, object] | None = None,
-        mem_size: int = 100,
-        vectorized: bool = True,
+        *,
+        tol: float | None = None,
+        memory_size: int = 100,
+        vectorize: bool = True,
         name: str = "SLSQP",
+        **kwargs: Any,
     ) -> None:
         """Initialize the SLSQP optimizer.
 
@@ -43,21 +46,23 @@ class SLSQP(Optimizer):
         ----------
         problem
             The continuous single-objective problem to optimize.
-        scipy_pars
-            Additional parameters for :func:`scipy.optimize.minimize`.
-            The parameters ``method``, ``jac``, ``bounds``, and
-            ``constraints`` are managed by this optimizer.
-        mem_size
+        tol
+            Native aggregate stopping tolerance; None uses SciPy defaults.
+        memory_size
             Maximum number of cached value and gradient evaluations.
-        vectorized
+        vectorize
             Whether gradients use population-based function evaluation.
         name
             The optimizer name.
+        kwargs
+            Flat native SLSQP options, such as maxiter, ftol and eps. Method,
+            bounds, constraints, callbacks and Jacobians are managed by iwopy.
         """
         super().__init__(problem, name)
-        self.scipy_pars = {} if scipy_pars is None else scipy_pars.copy()
-        self.mem_size = mem_size
-        self.vectorized = vectorized
+        self._validate_kwargs(kwargs)
+        self._native_pars = minimize_options(kwargs, tol)
+        self.memory_size = memory_size
+        self.vectorize = vectorize
         self.scipy_results: OptimizeResult | None = None
         self._value_mem: (
             dict[tuple[float, ...], tuple[np.ndarray, np.ndarray]] | None
@@ -76,10 +81,10 @@ class SLSQP(Optimizer):
         """Print solver info, called before solving"""
         super().print_info()
 
-        if len(self.scipy_pars):
+        if len(self._native_pars):
             print("\nScipy parameters:")
             print("-----------------")
-            for k, v in self.scipy_pars.items():
+            for k, v in self._native_pars.items():
                 if isinstance(v, (int, float, str)):
                     print(f"  {k}: {v}")
 
@@ -107,16 +112,16 @@ class SLSQP(Optimizer):
                 f"Optimizer '{self.name}': At least one float variable is required."
             )
         if (
-            isinstance(self.mem_size, (bool, np.bool_))
-            or not isinstance(self.mem_size, (int, np.integer))
-            or self.mem_size < 1
+            isinstance(self.memory_size, (bool, np.bool_))
+            or not isinstance(self.memory_size, (int, np.integer))
+            or self.memory_size < 1
         ):
             raise ValueError(
-                f"Optimizer '{self.name}': mem_size must be a positive integer."
+                f"Optimizer '{self.name}': memory_size must be a positive integer."
             )
 
         reserved = {"method", "jac", "bounds", "constraints", "callback"}
-        conflicts = reserved.intersection(self.scipy_pars)
+        conflicts = reserved.intersection(self._native_pars)
         if conflicts:
             names = ", ".join(sorted(conflicts))
             raise ValueError(
@@ -179,7 +184,7 @@ class SLSQP(Optimizer):
         value: _CacheValueT,
     ) -> _CacheValueT:
         """Store a cache entry and evict the oldest one if required."""
-        if len(memory) >= self.mem_size:
+        if len(memory) >= self.memory_size:
             del memory[next(iter(memory))]
         memory[key] = value
         return value
@@ -208,7 +213,7 @@ class SLSQP(Optimizer):
                     np.array([], dtype=np.int32),
                     np.asarray(x, dtype=np.float64),
                     func_values=np.r_[objs, cons],
-                    pop=self.vectorized,
+                    pop=self.vectorize,
                 )
             except ValueError as error:
                 raise ValueError(
@@ -442,7 +447,7 @@ class SLSQP(Optimizer):
             bounds=bounds,
             constraints=constraints_scipy,
             callback=self._progress_callback if report_progress else None,
-            **cast(dict[str, Any], self.scipy_pars),
+            **cast(dict[str, Any], self._native_pars),
         )
         scipy_results = self.scipy_results
         if not report_progress:

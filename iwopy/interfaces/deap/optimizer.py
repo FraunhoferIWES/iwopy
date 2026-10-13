@@ -28,36 +28,34 @@ class Optimizer_deap(_PopulationOptimizer):
     def __init__(
         self,
         problem: Problem,
-        algorithm: str = "eaMuPlusLambda",
+        optimizer: str = "eaMuPlusLambda",
+        *,
         budget: int = 100,
         batch_size: int = 20,
         seed: int | None = None,
         cxpb: float = 0.5,
         mutpb: float = 0.2,
-        name: str = "Optimizer_deap",
         vectorize: bool = True,
+        name: str = "Optimizer_deap",
     ) -> None:
         """
         Parameters
         ----------
         problem
             Initialized single-objective problem with finite, strictly ordered bounds.
-        algorithm
+        optimizer
             One of :attr:`algorithms`; selects the DEAP variation/replacement scheme.
-        budget
-            Positive candidate evaluation budget, including initialization and
-            reproduced offspring. The last offspring population may be smaller.
+        cxpb, mutpb
+            Crossover and mutation probabilities in the closed interval zero
+            to one; their sum cannot exceed one for mu/lambda schemes.
         batch_size
-            Population and regular offspring size, at least two.
+            Population/offspring size, at least two.
         seed
-            Optional fresh-solve seed. Python's global random state is restored
-            after execution, including exceptions. Run this adapter serially:
-            DEAP's operators use Python's global random generator.
-        cxpb
-            Crossover probability in the closed interval zero to one.
-        mutpb
-            Mutation probability in the closed interval zero to one. For the
-            mu/lambda schemes its sum with ``cxpb`` cannot exceed one.
+            Fresh-solve seed. Python's global random state is restored even
+            after errors; run serially because native operators use it.
+        budget
+            Positive candidate evaluation limit, including initialization and
+            reproduction. The final offspring population may be smaller.
         name
             Optimizer name.
         vectorize
@@ -71,7 +69,7 @@ class Optimizer_deap(_PopulationOptimizer):
             If vectorize is not a boolean.
         """
         super().__init__(problem, name, vectorize)
-        self.algorithm = algorithm
+        self.algorithm = optimizer
         self.budget = budget
         self.batch_size = batch_size
         self.seed = seed

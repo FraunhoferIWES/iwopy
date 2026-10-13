@@ -58,13 +58,13 @@ def make_problem(maximize=False, initialize=True, **kwargs):
     return problem
 
 
-def make_solver(problem=None, **cma_pars):
+def make_solver(problem=None, **kwargs):
     options = {"seed": 42, "popsize": 8, "ftarget": 1e-9, "maxiter": 200}
-    options.update(cma_pars)
+    options.update(kwargs)
     solver = Optimizer_cma(
-        make_problem() if problem is None else problem,
+        problem=make_problem() if problem is None else problem,
         sigma0=0.8,
-        cma_pars=options,
+        **options,
     )
     solver.initialize(verbosity=0)
     return solver
@@ -88,9 +88,12 @@ def test_cma_minimizes_with_population_evaluation_only(monkeypatch):
     monkeypatch.setattr(problem, "evaluate_population", record_population)
     monkeypatch.setattr(problem, "evaluate_individual", unexpected_individual)
     solver = Optimizer_cma(
-        problem,
+        problem=problem,
         sigma0=0.8,
-        cma_pars={"seed": 42, "popsize": 8, "ftarget": 1e-9, "maxiter": 200},
+        seed=42,
+        pop_size=8,
+        ftarget=1e-9,
+        maxiter=200,
     )
     solver.initialize(verbosity=0)
 
@@ -436,7 +439,10 @@ def test_cma_zero_generation_constrained_result_is_unsuccessful():
 
 @pytest.mark.parametrize("sigma0", [0.0, -1.0, np.nan, np.inf])
 def test_cma_rejects_invalid_sigma(sigma0):
-    solver = Optimizer_cma(make_problem(), sigma0=sigma0)
+    solver = Optimizer_cma(
+        problem=make_problem(),
+        sigma0=sigma0,
+    )
 
     with pytest.raises(ValueError, match="sigma0 must be positive and finite"):
         solver.initialize(verbosity=0)
@@ -457,9 +463,13 @@ def test_cma_rejects_invalid_sigma(sigma0):
     ],
 )
 def test_cma_rejects_managed_backend_options(name):
-    solver = Optimizer_cma(make_problem(), sigma0=0.5, cma_pars={name: None})
+    solver = Optimizer_cma(
+        problem=make_problem(),
+        sigma0=0.5,
+        **{name: None},
+    )
 
-    with pytest.raises(ValueError, match="Internally managed cma_pars"):
+    with pytest.raises(ValueError, match="Internally managed native options"):
         solver.initialize(verbosity=0)
 
 
@@ -475,7 +485,10 @@ def test_cma_rejects_integer_or_empty_variables(variables):
     problem = make_problem(**variables)
 
     with pytest.raises(ValueError, match="floating variables and no integer"):
-        Optimizer_cma(problem, sigma0=0.5).initialize(verbosity=0)
+        Optimizer_cma(
+            problem=problem,
+            sigma0=0.5,
+        ).initialize(verbosity=0)
 
 
 def test_cma_rejects_multiple_objectives():
@@ -484,12 +497,18 @@ def test_cma_rejects_multiple_objectives():
     problem.initialize(verbosity=0)
 
     with pytest.raises(ValueError, match="exactly one objective"):
-        Optimizer_cma(problem, sigma0=0.5).initialize(verbosity=0)
+        Optimizer_cma(
+            problem=problem,
+            sigma0=0.5,
+        ).initialize(verbosity=0)
 
 
 def test_cma_requires_problem_and_optimizer_initialization():
     problem = make_problem(initialize=False)
-    solver = Optimizer_cma(problem, sigma0=0.5)
+    solver = Optimizer_cma(
+        problem=problem,
+        sigma0=0.5,
+    )
 
     with pytest.raises(ValueError, match="Initialize the problem first"):
         solver.initialize(verbosity=0)
@@ -515,7 +534,10 @@ def test_cma_requires_problem_and_optimizer_initialization():
 )
 def test_cma_rejects_invalid_variable_bounds_or_initial_values(parameters, match):
     with pytest.raises(ValueError, match=match):
-        Optimizer_cma(make_problem(**parameters), sigma0=0.5).initialize(verbosity=0)
+        Optimizer_cma(
+            problem=make_problem(**parameters),
+            sigma0=0.5,
+        ).initialize(verbosity=0)
 
 
 @pytest.mark.parametrize(
@@ -536,7 +558,10 @@ def test_cma_rejects_invalid_constraint_bounds_or_tolerances(parameters, match):
     problem.initialize(verbosity=0)
 
     with pytest.raises(ValueError, match=match):
-        Optimizer_cma(problem, sigma0=0.5).initialize(verbosity=0)
+        Optimizer_cma(
+            problem=problem,
+            sigma0=0.5,
+        ).initialize(verbosity=0)
 
 
 @pytest.mark.parametrize(
@@ -582,4 +607,7 @@ def test_cma_missing_dependency_has_installation_guidance(monkeypatch):
     monkeypatch.setattr("iwopy.interfaces.cma.optimizer.import_module", unavailable)
 
     with pytest.raises(ModuleNotFoundError, match="uv sync --extra cma"):
-        Optimizer_cma(make_problem(), sigma0=0.5).initialize(verbosity=0)
+        Optimizer_cma(
+            problem=make_problem(),
+            sigma0=0.5,
+        ).initialize(verbosity=0)

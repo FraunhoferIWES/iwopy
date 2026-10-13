@@ -69,7 +69,8 @@ compatibility-sensitive.
 - Prefix non-public implementation details with one underscore. Do not export a
 	private helper through a package `__init__.py`.
 - Keep the root public API curated. Import lower-level optimizer and result
-	contracts through `iwopy.core`; do not widen root exports incidentally.
+	contracts through `iwopy.core`; the user-facing `create_optimizer` function
+	is explicitly re-exported from `iwopy`. Do not widen root exports incidentally.
 - Package and source directories use lowercase names. Example directories use
 	descriptive `snake_case`. Tests use `test_<subject>.py` and
 	`test_<behavior>()` or an equally explicit observable behavior name.
@@ -88,7 +89,7 @@ otherwise.
 | Name | Usual type | Notes |
 |---|---|---|
 | `problem` | `iwopy.core.Problem` | Application problem, not a backend adapter |
-| `optimizer` | `iwopy.core.Optimizer` | Initialized against a problem before solving |
+| `optimizer` | `iwopy.core.Optimizer` or a backend selector | Object in execution code; algorithm name, SciPy callable, or SciPy `None` in construction signatures |
 | `objective` | `iwopy.core.Objective` | May expose multiple scalar components |
 | `constraint` | `iwopy.core.Constraint` | Bounds and tolerance are component-wise |
 | `func` | `iwopy.core.OptFunction` | Use a narrower objective/constraint type where required |
@@ -175,37 +176,50 @@ them to attributes without a deliberate contract change.
 	vectors use objectives before constraints.
 - pymoo representations may be integer, floating, or mixed. Do not describe the
 	adapter as floating-only or non-mixed.
-- Factory `new()` methods resolve established class or algorithm names. Check
-	examples, tests, and backend availability messages before renaming a selector.
+- `create_optimizer` is the standalone public construction function imported
+	from `iwopy`, implemented by core's `optimizer_factory.py` and also exported
+	from `iwopy.core`. `family` selects the
+	case-sensitive backend family; `optimizer` selects its native algorithm or
+	Optuna sampler. `iwopy` selects GG/SLSQP, `cma` selects CMAES, and `nlopt`
+	selects native leaf solvers through PyGMO. There is no `Optimizer.new` alias.
+	Backend-internal factory methods keep their existing names.
 - Optional backend imports remain lazy and name the corresponding package extra
 	in errors and documentation.
 - The external project is pycma; its distribution, import, iwopy interface
 	package, and optional extra are named `cma`. The public adapter is
-	`Optimizer_cma`, its backend options are `cma_pars`, and its initial search
-	standard deviation is `sigma0`. `stop_conditions` records backend termination
+	`Optimizer_cma`, its additional backend options are flat keywords, and its initial
+	search standard deviation is `sigma0`. `stop_conditions` records backend termination
 	reasons. pycma inequality residuals group finite lower bounds before finite
 	upper bounds, preserving iwopy component order within each group.
 - The vectorized SciPy differential-evolution adapter is `Optimizer_scipy_de`,
-	with native options in `scipy_pars` and its native result in `scipy_results`.
+	with explicit controls and flat native keywords, and its native result in `scipy_results`.
 	Distinguish search-population vectorization from `Optimizer_scipy` gradient batching.
 - The distribution, import, interface package, and extra names are `nevergrad`,
 	`optuna`, and `deap`; public classes are `Optimizer_nevergrad`, `Optimizer_optuna`,
-	and `Optimizer_deap`. Preserve native `algorithm`/`sampler` selector spellings.
+	and `Optimizer_deap`. Select algorithms/samplers using `optimizer` and preserve
+	their native selector spellings.
 - `budget` counts candidate evaluations, not function calls or generations;
 	`batch_size` is the outstanding-ask or offspring count. `n_evaluations` excludes
-	selected-point finalization. Native settings are `optimizer_pars` for Nevergrad
-	and `sampler_pars` for Optuna; native state is `optimizer` or `study`, respectively.
+	selected-point finalization. Additional Nevergrad optimizer and Optuna sampler
+	settings are flat keywords; native state remains `optimizer` or `study`, respectively.
 - Optuna distribution identifiers are `float_<index>` followed by `int_<index>`
 	in family order. Trial constraint identifiers are `constraint_<index>` in the
 	finite-lower-then-finite-upper residual ordering shared by the new adapters.
 - Catalog scripts use `<backend>_<optimizer>.py`, lowercase snake_case, with
-	fully explicit constructors in a `__main__` guard. `iwopy.benchmarks.quadratic`
+	explicit `create_optimizer` calls in a `__main__` guard. `iwopy.benchmarks.quadratic`
 	owns the synthetic `QuadraticProblem`, `ParetoProblem`, and `MixedProblem` classes,
 	curated through `iwopy.benchmarks`; do not use example-local helpers or path injection.
-- SciPy DE, Nevergrad, Optuna, and DEAP use the optimizer-level `vectorize` flag,
-	defaulting to true, for population versus ordered individual evaluation of native
-	batches. Distinguish this from SciPy minimization's `vectorized` gradient option,
-	pymoo's problem-level `vectorize`, and PyGMO's problem-level `pop` batch-fitness flag.
+- `vectorize` is the optimizer-level iwopy evaluation flag. It controls native
+	batch evaluation for SciPy DE, Nevergrad, Optuna, and DEAP, gradient batching
+	for GG/SLSQP/SciPy minimization, pymoo population evaluation, and PyGMO batch
+	fitness. PyGMO defaults to false; the other selectable flags default to true.
+	pycma always evaluates populations. Backend-internal `pop` or `vectorized`
+	spellings are translation details, not public optimizer parameter names.
+- `pop_size` denotes absolute population size where offered; SciPy DE's native
+	`popsize` is a multiplier per free dimension. `memory_size` denotes visited-point
+	capacity for GG and evaluation-cache capacity elsewhere. No common parameter
+	dictionaries are accepted.
+	See [ADR-0013](adr/0013-optimizer-creation.md).
 - Documentation styles are `iwes-tokens.css` and `iwes.css`. The adapter maps
 	authoritative token paths to `--iwes-` prefixed kebab-case CSS variables;
 	`tests/test_documentation.py` verifies every resolved value and reference.

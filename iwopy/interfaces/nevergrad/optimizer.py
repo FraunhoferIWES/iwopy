@@ -30,30 +30,31 @@ class Optimizer_nevergrad(_PopulationOptimizer):
     def __init__(
         self,
         problem: Problem,
-        algorithm: str = "NGOpt",
+        optimizer: str = "NGOpt",
+        *,
         budget: int = 100,
         batch_size: int = 8,
         seed: int | None = None,
-        optimizer_pars: dict[str, Any] | None = None,
-        name: str = "Optimizer_nevergrad",
         vectorize: bool = True,
+        name: str = "Optimizer_nevergrad",
+        **kwargs: Any,
     ) -> None:
         """
         Parameters
         ----------
         problem
             Initialized single-objective problem with finite, strictly ordered bounds.
-        algorithm
+        optimizer
             One of :attr:`algorithms`; only these batching-safe selectors are exposed.
-        budget
-            Positive candidate evaluation budget, including the final partial batch.
-        batch_size
-            Positive number of outstanding asks and native workers. No threads are used.
-        seed
-            Optional seed for a fresh parameterization on each solve.
-        optimizer_pars
-            Copied native constructor options. Parameterization, budget, and workers
+        kwargs
+            Flat native constructor options. Parameterization, budget, and workers
             are internally managed.
+        batch_size
+            Positive outstanding-ask/native-worker count. No threads are used.
+        seed
+            Seed for a fresh parameterization each solve.
+        budget
+            Positive candidate evaluation limit including the final partial batch.
         name
             Optimizer name.
         vectorize
@@ -67,11 +68,12 @@ class Optimizer_nevergrad(_PopulationOptimizer):
             If vectorize is not a boolean.
         """
         super().__init__(problem, name, vectorize)
-        self.algorithm = algorithm
+        self._validate_kwargs(kwargs)
+        self.algorithm = optimizer
         self.budget = budget
         self.batch_size = batch_size
         self.seed = seed
-        self.optimizer_pars = dict(optimizer_pars or {})
+        self._optimizer_kwargs = dict(kwargs)
         self.optimizer: Any = None
 
     def initialize(self, verbosity: int = 1) -> None:
@@ -99,11 +101,11 @@ class Optimizer_nevergrad(_PopulationOptimizer):
             if isinstance(value, bool) or not isinstance(value, Integral) or value < 1:
                 raise ValueError(f"{label} must be a positive integer")
         conflicts = {"parametrization", "budget", "num_workers"}.intersection(
-            self.optimizer_pars
+            self._optimizer_kwargs
         )
         if conflicts:
             raise ValueError(
-                f"Internally managed optimizer_pars: {', '.join(sorted(conflicts))}"
+                f"Internally managed native options: {', '.join(sorted(conflicts))}"
             )
         self._ng = import_module("nevergrad", hint="uv sync --extra nevergrad")
         super().initialize(verbosity)
@@ -124,7 +126,7 @@ class Optimizer_nevergrad(_PopulationOptimizer):
             parametrization=parametrization,
             budget=self.budget,
             num_workers=self.batch_size,
-            **self.optimizer_pars,
+            **self._optimizer_kwargs,
         )
         if optimizer.no_parallelization and self.batch_size > 1:
             raise ValueError(

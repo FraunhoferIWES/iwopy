@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 import iwopy
 from iwopy.benchmarks.branin import BraninProblem
-from iwopy.optimizers import SLSQP
+from iwopy import create_optimizer
 
 
 class IterationOutput(iwopy.OptimizerCallback):
@@ -39,7 +39,12 @@ def main(output_dir: Path | None = None) -> Path:
     problem = BraninProblem(initial_values=(1.0, 1.0), ana_deriv=True)
     problem.initialize(verbosity=0)
 
-    solver = SLSQP(problem, scipy_pars={"tol": 1e-9})
+    solver = create_optimizer(
+        family="iwopy",  # Optimizer family
+        optimizer="SLSQP",  # Algorithm to use
+        problem=problem,
+        tol=1e-9,
+    )
     solver.initialize(verbosity=0)
     history = iwopy.OptimizationHistory()
     results = solver.solve(

@@ -5,7 +5,7 @@ import numpy as np
 from model import ChargesProblem
 
 from iwopy import LocalFD
-from iwopy.optimizers import GG
+from iwopy import create_optimizer
 
 if __name__ == "__main__":
     # np.random.seed(42)
@@ -43,12 +43,14 @@ if __name__ == "__main__":
     gproblem = LocalFD(problem, deltas=1e-2, fd_order=args.order)
     gproblem.initialize()
 
-    solver = GG(
-        gproblem,
+    solver = create_optimizer(
+        family="iwopy",  # Optimizer family
+        optimizer="GG",  # Algorithm to use
+        problem=gproblem,
         step_max=0.1,
         step_min=1e-6,
+        vectorize=not args.no_pop,
         f_tol=1e-4,
-        vectorized=not args.no_pop,
     )
     solver.initialize()
 

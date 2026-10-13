@@ -19,9 +19,15 @@ class Optimizer_scipy_de(_PopulationOptimizer):
     def __init__(
         self,
         problem: Problem,
-        scipy_pars: dict[str, Any] | None = None,
-        name: str = "Optimizer_scipy_de",
+        *,
+        maxiter: int = 1000,
+        popsize: int = 15,
+        seed: int | None = None,
+        tol: float = 0.01,
+        atol: float = 0.0,
         vectorize: bool = True,
+        name: str = "Optimizer_scipy_de",
+        **kwargs: Any,
     ) -> None:
         """
         Parameters
@@ -29,11 +35,15 @@ class Optimizer_scipy_de(_PopulationOptimizer):
         problem
             Initialized single-objective problem with finite, strictly ordered
             bounds. Constraint bounds include each function's tolerance.
-        scipy_pars
-            Native differential-evolution options, copied. Bounds, integrality,
-            constraints, callback, vectorization, workers, updating, polishing,
-            initial point, function, function arguments, and display are managed
-            by iwopy and cannot be set.
+        maxiter
+            Maximum number of generations.
+        popsize
+            Native population multiplier per free variable, not an absolute size.
+        seed
+            Native random seed; None keeps SciPy's default. A native rng can
+            instead be supplied through kwargs.
+        tol, atol
+            Relative and absolute native population-convergence tolerances.
         name
             Optimizer name.
         vectorize
@@ -41,6 +51,10 @@ class Optimizer_scipy_de(_PopulationOptimizer):
             If false, call ``evaluate_individual`` for each candidate in order.
             SciPy's native deferred batch mode remains enabled; this flag does
             not change generation sizes, caching, callbacks, or candidate counts.
+        kwargs
+            Flat native differential-evolution options, such as strategy,
+            mutation and recombination. Bounds, integrality, constraints,
+            callbacks, workers, updating, polishing, x0 and display are managed.
 
         Raises
         ------
@@ -48,7 +62,12 @@ class Optimizer_scipy_de(_PopulationOptimizer):
             If vectorize is not a boolean.
         """
         super().__init__(problem, name, vectorize)
-        self.scipy_pars = dict(scipy_pars or {})
+        self._validate_kwargs(kwargs)
+        self._native_pars = dict(
+            kwargs, maxiter=maxiter, popsize=popsize, tol=tol, atol=atol
+        )
+        if seed is not None:
+            self._native_pars["seed"] = seed
         self.scipy_results: Any = None
         self._cached_rows: dict[tuple[float, ...], tuple[np.ndarray, np.ndarray]] = {}
         self._evaluation_error: Exception | None = None
@@ -83,10 +102,10 @@ class Optimizer_scipy_de(_PopulationOptimizer):
             "x0",
             "disp",
         }
-        conflicts = managed.intersection(self.scipy_pars)
+        conflicts = managed.intersection(self._native_pars)
         if conflicts:
             raise ValueError(
-                f"Internally managed scipy_pars: {', '.join(sorted(conflicts))}"
+                f"Internally managed native options: {', '.join(sorted(conflicts))}"
             )
         super().initialize(verbosity)
 
@@ -181,7 +200,7 @@ class Optimizer_scipy_de(_PopulationOptimizer):
                 x0=self._initial,
                 callback=self._callback,
                 disp=bool(verbosity),
-                **self.scipy_pars,
+                **self._native_pars,
             )
         except RuntimeError as error:
             if (

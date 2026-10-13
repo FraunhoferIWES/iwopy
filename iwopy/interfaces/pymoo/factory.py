@@ -278,20 +278,19 @@ class Factory:
 
     def get_termination(
         self,
-        term_pars: dict[str, Any] | tuple[Any, ...] | list[Any],
+        term_pars: dict[str, Any],
     ) -> Any:
         """Termination factory function"""
-
-        if isinstance(term_pars, tuple):
-            return term_pars
-        elif isinstance(term_pars, list):
-            return tuple(term_pars)
 
         term_pars = term_pars.copy()
         typ = term_pars.pop("type", "iwopy")
         if not isinstance(typ, str):
             self.print(f"Selecting termination: {type(typ).__name__}")
             return typ
+        elif typ == "n_gen":
+            out = imports.MaximumGenerationTermination(**term_pars)
+        elif typ == "n_eval":
+            out = imports.MaximumFunctionCallTermination(**term_pars)
         elif typ == "iwopy":
             term_pars.setdefault("n_max_evals", np.inf)
             if self.pymoo_problem.problem.n_objectives > 1:
@@ -323,7 +322,7 @@ class Factory:
                 out = imports.DefaultSingleObjectiveTermination(**term_pars)
         else:
             raise KeyError(
-                f"Unknown termination '{type}', please choose: iwopy, default"
+                f"Unknown termination '{typ}', please choose: iwopy, default, n_gen, n_eval"
             )
 
         self.print(f"Selecting termination: {typ} ({type(out).__name__})")

@@ -1,6 +1,7 @@
 import ast
 import importlib
 import csv
+import json
 import re
 import runpy
 import tokenize
@@ -248,31 +249,21 @@ def _factory_selectors(relative_path, variable):
     return selectors
 
 
-def _script_selectors(optimizer_class, selector, dictionary=None):
+def _script_selectors(family):
     selectors = set()
     for path in SCRIPTS:
         for node in ast.walk(ast.parse(path.read_text())):
             if (
                 not isinstance(node, ast.Call)
                 or not isinstance(node.func, ast.Name)
-                or node.func.id != optimizer_class
+                or node.func.id != "create_optimizer"
             ):
                 continue
-            for keyword in node.keywords:
-                if (
-                    dictionary is None
-                    and keyword.arg == selector
-                    and isinstance(keyword.value, ast.Constant)
-                ):
-                    selectors.add(keyword.value.value)
-                elif keyword.arg == dictionary and isinstance(keyword.value, ast.Dict):
-                    for key, value in zip(keyword.value.keys, keyword.value.values):
-                        if (
-                            isinstance(key, ast.Constant)
-                            and key.value == selector
-                            and isinstance(value, ast.Constant)
-                        ):
-                            selectors.add(value.value)
+            keywords = {keyword.arg: keyword.value for keyword in node.keywords}
+            if ast.literal_eval(keywords["family"]) == family and isinstance(
+                keywords["optimizer"], ast.Constant
+            ):
+                selectors.add(keywords["optimizer"].value)
     return selectors
 
 
@@ -305,13 +296,10 @@ def test_every_script_has_an_explicit_constructor_in_main_guard():
         assert isinstance(constructor, ast.Call) and isinstance(
             constructor.func, ast.Name
         ), path
-        assert constructor.func.id.startswith("Optimizer_") or constructor.func.id in {
-            "GG",
-            "SLSQP",
+        assert constructor.func.id == "create_optimizer", path
+        assert {"family", "optimizer", "problem"} <= {
+            keyword.arg for keyword in constructor.keywords
         }, path
-        assert not any(
-            isinstance(keyword.value, ast.Call) for keyword in constructor.keywords
-        ), path
         if path.stem != "scipy_callable":
             assert not any(isinstance(node, ast.FunctionDef) for node in tree.body), (
                 path
@@ -340,7 +328,11 @@ def _setup_entries(source):
             for target in node.targets
         )
     )
-    pending = [(keyword.arg, keyword.value) for keyword in constructor.keywords]
+    pending = [
+        (keyword.arg, keyword.value)
+        for keyword in constructor.keywords
+        if keyword.arg != "problem"
+    ]
     entries = []
     while pending:
         name, value = pending.pop()
@@ -444,38 +436,33 @@ def test_catalog_covers_all_public_selectors(package):
 
         assert set(MINIMIZE_METHODS) <= {
             method.lower()
-            for method in _script_selectors("Optimizer_scipy", "method", "scipy_pars")
+            for method in _script_selectors("scipy")
+            if isinstance(method, str)
         }
     elif package == "pymoo":
         assert _factory_selectors("iwopy/interfaces/pymoo/factory.py", "typ") - {
             "iwopy",
             "default",
-        } == _script_selectors("Optimizer_pymoo", "type", "algo_pars")
+            "n_gen",
+            "n_eval",
+        } == _script_selectors("pymoo")
     elif package == "pygmo":
-        assert _factory_selectors(
-            "iwopy/interfaces/pygmo/algos.py", "type"
-        ) == _script_selectors("Optimizer_pygmo", "type", "algo_pars")
+        assert _factory_selectors("iwopy/interfaces/pygmo/algos.py", "type") - {
+            "nlopt"
+        } == _script_selectors("pygmo")
         if not hasattr(backend, "nlopt"):
             pytest.skip("This PyGMO build does not include NLopt")
         nlopt_selectors = set(
             re.findall(r'^``"(\w+)"``\s+``NLOPT_', backend.nlopt.__doc__, re.MULTILINE)
         )
         assert nlopt_selectors
-        assert nlopt_selectors == _script_selectors(
-            "Optimizer_pygmo", "optimizer", "algo_pars"
-        )
+        assert nlopt_selectors == _script_selectors("nlopt")
     elif package == "nevergrad":
-        assert set(Optimizer_nevergrad.algorithms) == _script_selectors(
-            "Optimizer_nevergrad", "algorithm"
-        )
+        assert set(Optimizer_nevergrad.algorithms) == _script_selectors("nevergrad")
     elif package == "optuna":
-        assert set(Optimizer_optuna.samplers) == _script_selectors(
-            "Optimizer_optuna", "sampler"
-        )
+        assert set(Optimizer_optuna.samplers) == _script_selectors("optuna")
     else:
-        assert set(Optimizer_deap.algorithms) == _script_selectors(
-            "Optimizer_deap", "algorithm"
-        )
+        assert set(Optimizer_deap.algorithms) == _script_selectors("deap")
 
 
 @pytest.mark.parametrize(
@@ -501,3 +488,51 @@ def test_missing_backend_skips_only_its_cases(case, package, monkeypatch):
     with pytest.raises(pytest.skip.Exception, match=package):
         _require_backend(ROOT / f"examples/optimizers/{case}.py")
     _require_backend(ROOT / "examples/optimizers/scipy_de.py")
+
+
+def _assert_factory_calls(source, path):
+    tree = ast.parse(source)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and any(
+            alias.name == "create_optimizer" for alias in node.names
+        ):
+            assert node.module == "iwopy", path
+        if not isinstance(node, ast.Call):
+            continue
+        name = ast.unparse(node.func).split(".")[-1]
+        assert not name.startswith("Optimizer_") and name not in {"GG", "SLSQP"}, path
+        assert not ast.unparse(node.func).endswith("Optimizer.new"), path
+        if name == "create_optimizer":
+            assert not {
+                "algo_pars",
+                "problem_pars",
+                "setup_pars",
+                "term_pars",
+            }.intersection(keyword.arg for keyword in node.keywords), path
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "from iwopy.core import create_optimizer",
+        "solver = Optimizer_scipy(problem)",
+        "solver = Optimizer.new(problem)",
+        "solver = create_optimizer(family='scipy', optimizer='SLSQP', problem=problem, algo_pars={})",
+    ],
+)
+def test_factory_source_guard_rejects_obsolete_creation(source):
+    with pytest.raises(AssertionError):
+        _assert_factory_calls(source, "synthetic.py")
+
+
+def test_all_examples_use_factory_with_explicit_parameters():
+    for path in (ROOT / "examples").rglob("*.py"):
+        _assert_factory_calls(path.read_text(), path)
+
+
+def test_all_notebooks_use_factory_with_explicit_parameters():
+    for path in (ROOT / "notebooks").glob("*.ipynb"):
+        notebook = json.loads(path.read_text())
+        for cell in notebook["cells"]:
+            if cell["cell_type"] == "code":
+                _assert_factory_calls("".join(cell["source"]), path)

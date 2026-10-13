@@ -25,7 +25,7 @@ Example
 .. code-block:: python
 
     import iwopy
-    from iwopy.interfaces.cma import Optimizer_cma
+    from iwopy import create_optimizer
 
 
     class Quadratic(iwopy.SimpleObjective):
@@ -42,10 +42,15 @@ Example
     problem.add_objective(Quadratic(problem))
     problem.initialize(verbosity=0)
 
-    solver = Optimizer_cma(
-        problem,
+    solver = create_optimizer(
+        family="cma",
+        optimizer="CMAES",
+        problem=problem,
         sigma0=0.8,
-        cma_pars={"seed": 42, "popsize": 8, "maxiter": 200, "ftarget": 1e-9},
+        seed=42,
+        pop_size=8,
+        maxiter=200,
+        ftarget=1e-9,
     )
     solver.initialize(verbosity=0)
     history = iwopy.OptimizationHistory()
@@ -56,12 +61,13 @@ Options And Constraints
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 ``sigma0`` is a positive finite initial standard deviation in variable units;
-scale variables so one shared step size is meaningful. ``cma_pars`` contains
-trusted native pycma options, including population size, seed, stopping budgets,
-and convergence tolerances. The adapter manages ``bounds``, ``BoundaryHandler``,
+scale variables so one shared step size is meaningful. ``pop_size``, ``seed``,
+and ``maxiter`` are explicit controls; additional trusted native pycma options
+such as ``ftarget``, ``tolfun``, and ``tolx`` are flat keywords.
+The adapter manages ``bounds``, ``BoundaryHandler``,
 ``integer_variables``, ``fixed_variables``, ``transformation``,
 ``termination_callback``, ``verbose``, ``verb_disp``, and ``verb_log``. Those
-options cannot be supplied in ``cma_pars``.
+options cannot be supplied by callers.
 
 Maximization objectives are negated only for pycma. ``ftarget`` is expressed in
 this minimization space; callbacks and final results retain the original signs.

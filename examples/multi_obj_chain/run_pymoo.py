@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from model import ChainPopulation, ChainProblem, MaxStretch, NoCrossing
 
-from iwopy.interfaces.pymoo import Optimizer_pymoo
+from iwopy import create_optimizer
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -41,23 +41,16 @@ if __name__ == "__main__":
     )
     problem.initialize()
 
-    solver = Optimizer_pymoo(
-        problem,
-        problem_pars={
-            "vectorize": not args.no_pop,
-        },
-        algo_pars={
-            "type": args.algo,
-            "pop_size": args.n_pop,
-            # seed=args.seed,
-        },
-        setup_pars={},
-        term_pars={
-            "type": "default",
-            "n_max_gen": args.n_gen,
-            "ftol": 0,
-            "xtol": 0,
-        },
+    solver = create_optimizer(
+        family="pymoo",  # Optimizer family
+        optimizer=args.algo,  # Algorithm to use
+        problem=problem,
+        vectorize=not args.no_pop,
+        pop_size=args.n_pop,
+        termination="default",
+        n_max_gen=args.n_gen,
+        ftol=0,
+        xtol=0,
     )
     solver.initialize()
 

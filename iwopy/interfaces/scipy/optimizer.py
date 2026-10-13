@@ -11,6 +11,7 @@ from iwopy.core import (
     Problem,
     SingleObjOptResults,
 )
+from ._options import minimize_options
 
 
 _GRADIENT_METHODS = frozenset(
@@ -42,9 +43,14 @@ class Optimizer_scipy(Optimizer):
     def __init__(
         self,
         problem: Problem,
-        scipy_pars: dict[str, Any] | None = None,
-        mem_size: int = 100,
-        vectorized: bool = True,
+        optimizer: str | Callable[..., Any] | None = None,
+        *,
+        tol: float | None = None,
+        hess: Any = None,
+        hessp: Any = None,
+        memory_size: int = 100,
+        vectorize: bool = True,
+        name: str = "Optimizer_scipy",
         **kwargs: Any,
     ) -> None:
         """
@@ -52,25 +58,36 @@ class Optimizer_scipy(Optimizer):
         ----------
         problem
             The problem to optimize
-        scipy_pars
-            Additional parameters for :func:`scipy.optimize.minimize`.
-            The parameters ``bounds``, ``callback``, ``constraints``, and
-            ``jac`` are managed by this optimizer.
-        mem_size
-            The memory size, number of
-            stored obj, cons evaluations
-        vectorized
-            Whether gradients use population-based function evaluation.
-            This has no effect on derivative-free SciPy methods.
+        optimizer
+            SciPy minimize method name, callable, or None for native selection.
+        tol
+            Native aggregate stopping tolerance; None uses SciPy defaults.
+        hess, hessp
+            Native Hessian and Hessian-vector product specifications.
+        memory_size
+            Positive evaluation-cache capacity.
+        vectorize
+            Population-based gradient evaluation; derivative-free methods
+            are unaffected.
+        name
+            Optimizer name.
         kwargs
-            Additional parameters for base class
+            Flat native method options, such as maxiter, ftol, gtol and eps.
+            Bounds, callback, constraints, method and Jacobians are managed.
         """
-        if scipy_pars is None:
-            scipy_pars = {}
-        super().__init__(problem, **kwargs)
-        self.scipy_pars: dict[str, Any] = scipy_pars.copy()
-        self.mem_size = mem_size
-        self.vectorized = vectorized
+        super().__init__(problem, name)
+        self._validate_kwargs(kwargs)
+        self.optimizer = optimizer
+        self._native_pars = minimize_options(kwargs, tol)
+        if "method" in self._native_pars:
+            raise ValueError("SciPy: select the method with optimizer")
+        self._native_pars["method"] = optimizer
+        if hess is not None:
+            self._native_pars["hess"] = hess
+        if hessp is not None:
+            self._native_pars["hessp"] = hessp
+        self.memory_size = memory_size
+        self.vectorize = vectorize
         self._mem: (
             dict[tuple[object, ...], tuple[np.ndarray, np.ndarray, object | None]]
             | None
@@ -81,7 +98,7 @@ class Optimizer_scipy(Optimizer):
 
     def _uses_gradients(self) -> bool:
         """Return whether the selected SciPy method accepts a Jacobian."""
-        method = self.scipy_pars.get("method")
+        method = self._native_pars.get("method")
         return (
             method is None
             or callable(method)
@@ -92,10 +109,10 @@ class Optimizer_scipy(Optimizer):
         """Print solver info, called before solving"""
         super().print_info()
 
-        if len(self.scipy_pars):
+        if len(self._native_pars):
             print("\nScipy parameters:")
             print("-----------------")
-            for k, v in self.scipy_pars.items():
+            for k, v in self._native_pars.items():
                 if isinstance(v, (int, float, str)):
                     print(f"  {k}: {v}")
 
@@ -125,16 +142,16 @@ class Optimizer_scipy(Optimizer):
                 f"Optimizer '{self.name}': At least one float variable is required."
             )
         if (
-            isinstance(self.mem_size, (bool, np.bool_))
-            or not isinstance(self.mem_size, (int, np.integer))
-            or self.mem_size < 1
+            isinstance(self.memory_size, (bool, np.bool_))
+            or not isinstance(self.memory_size, (int, np.integer))
+            or self.memory_size < 1
         ):
             raise ValueError(
-                f"Optimizer '{self.name}': mem_size must be a positive integer."
+                f"Optimizer '{self.name}': memory_size must be a positive integer."
             )
 
         reserved = {"bounds", "callback", "constraints", "jac"}
-        conflicts = reserved.intersection(self.scipy_pars)
+        conflicts = reserved.intersection(self._native_pars)
         if conflicts:
             names = ", ".join(sorted(conflicts))
             raise ValueError(
@@ -145,7 +162,7 @@ class Optimizer_scipy(Optimizer):
         self._constraints_scipy = self._make_constraints()
 
         if verbosity:
-            print(f"Using optimizer memory, size: {self.mem_size}")
+            print(f"Using optimizer memory, size: {self.memory_size}")
         self._mem = {}
         self._gradient_mem = {}
 
@@ -181,7 +198,7 @@ class Optimizer_scipy(Optimizer):
                 ret_prob_res=True,
             )
 
-            if len(memory) >= self.mem_size and memory:
+            if len(memory) >= self.memory_size and memory:
                 key0 = next(iter(memory))
                 del memory[key0]
 
@@ -201,7 +218,7 @@ class Optimizer_scipy(Optimizer):
                     np.array([], dtype=np.int32),
                     np.asarray(x, dtype=np.float64),
                     func_values=np.r_[objs, cons],
-                    pop=self.vectorized,
+                    pop=self.vectorize,
                 )
             except ValueError as error:
                 raise ValueError(
@@ -222,7 +239,7 @@ class Optimizer_scipy(Optimizer):
                     f"Optimizer '{self.name}': Non-finite objective or constraint "
                     "gradient."
                 )
-            if len(memory) >= self.mem_size and memory:
+            if len(memory) >= self.memory_size and memory:
                 del memory[next(iter(memory))]
             memory[key] = gradients
         return memory[key]
@@ -369,7 +386,7 @@ class Optimizer_scipy(Optimizer):
 
     def _scipy_callback(self) -> Callable[..., None]:
         """Select the callback signature required by the SciPy method."""
-        method = self.scipy_pars.get("method")
+        method = self._native_pars.get("method")
         if callable(method):
             return self._callback_xk
         method_name = "" if method is None else str(method).lower()
@@ -413,7 +430,7 @@ class Optimizer_scipy(Optimizer):
         bounds = [(minf[i], maxf[i]) for i in range(len(minf))]
 
         # Run minimization:
-        scipy_pars = self.scipy_pars.copy()
+        scipy_pars = self._native_pars.copy()
         constraints_scipy = self._constraints_scipy
         assert constraints_scipy is not None
         scipy_pars["constraints"] = constraints_scipy

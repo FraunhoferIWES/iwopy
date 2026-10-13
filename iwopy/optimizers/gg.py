@@ -27,48 +27,44 @@ class GG(Optimizer):
         problem: Problem,
         step_max: float | list[float] | np.ndarray | dict[str, float],
         step_min: float | list[float] | np.ndarray | dict[str, float],
+        *,
         step_div_factor: float = 2.0,
         f_tol: float | None = 1e-8,
-        vectorized: bool = True,
+        vectorize: bool = True,
         n_max_steps: int = 100,
         memory_size: int = 100,
-        name: str = "GG",
         max_iterations: int | None = None,
+        name: str = "GG",
     ) -> None:
         """
         Parameters
         ----------
         problem
             The problem to optimize
-        step_max
-            The maximal steps. Either uniform float value
-            or list of floats for each problem variable,
-            or dict with entry for each variable
-        step_min
-            The minimal steps. Either uniform float value
-            or list of floats for each problem variable,
-            or dict with entry for each variable
+        step_max, step_min
+            Maximal and minimal step sizes, as uniform values, per-variable
+            arrays, or variable-name dictionaries.
         step_div_factor
-            Step size division factor until step_min is reached
+            Step reduction factor.
         f_tol
-            The objective function tolerance
-        vectorized
-            Flag for running in vectorized mode
+            Objective tolerance; None disables it.
+        vectorize
+            Whether trial evaluation uses populations.
         n_max_steps
-            The maximal number of steps without fresh gradient
+            Maximum number of trials without a fresh gradient.
         memory_size
-            The number of memorized visited points
+            Number of memorized visited points.
+        max_iterations
+            Iteration limit; None leaves iterations unlimited.
         name
             The name
-        max_iterations
-            Exit criteria based on number of iterations, None for no limit
         """
         super().__init__(problem, name)
         self.step_max = step_max
         self.step_min = step_min
         self.step_div_factor = step_div_factor
         self.f_tol = f_tol if f_tol is not None else 0.0
-        self.vectorized = vectorized
+        self.vectorize = vectorize
         self.n_max_steps = n_max_steps
         self.memory_size = memory_size
         self.memory: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray] | None = None
@@ -374,7 +370,7 @@ class GG(Optimizer):
                 level += 1
             else:
                 # fresh calculation:
-                grads = self.problem.get_gradients(inone, x, pop=self.vectorized)
+                grads = self.problem.get_gradients(inone, x, pop=self.vectorize)
                 if not np.all(np.isfinite(grads)):
                     raise ValueError(
                         f"Optimizer '{self.name}': Non-finite objective or constraint gradient at current point."
@@ -461,7 +457,7 @@ class GG(Optimizer):
             plt.close(fig)
             """
 
-            if self.vectorized:
+            if self.vectorize:
                 # calculate population:
                 inonep = np.zeros((len(newx), 0), dtype=np.int32)
                 obsp, consp = self.problem.evaluate_population(inonep, newx)

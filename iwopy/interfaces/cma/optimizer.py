@@ -31,8 +31,12 @@ class Optimizer_cma(Optimizer):
         self,
         problem: Problem,
         sigma0: float,
-        cma_pars: dict[str, Any] | None = None,
+        *,
+        pop_size: int | None = None,
+        seed: int | None = None,
+        maxiter: int | None = None,
         name: str = "Optimizer_cma",
+        **kwargs: Any,
     ) -> None:
         """
         Parameters
@@ -40,20 +44,30 @@ class Optimizer_cma(Optimizer):
         problem
             Initialized single-objective problem with floating variables.
         sigma0
-            Positive finite initial standard deviation in variable units.
-            Scale the variables so one standard deviation is meaningful.
-        cma_pars
-            Trusted pycma options, such as ``seed``, ``popsize``, ``maxiter``,
-            and ``ftarget``. Fitness targets use minimization-space values,
-            including negation for maximization. Bounds, variable
-            representation, termination callbacks, verbosity, and logging
-            are managed by iwopy and cannot be overridden.
+            Positive finite initial standard deviation in variable units;
+            scale variables accordingly.
+        pop_size
+            Absolute population size; None uses pycma's dimension-based default.
+        seed
+            Native random seed; None uses the backend default.
+        maxiter
+            Generation limit; None uses the backend default.
         name
             The optimizer name.
+        kwargs
+            Flat native pycma options, such as ftarget, tolfun and tolx. Fitness
+            targets use minimization-space values, including negation for
+            maximization. Bounds, representation, callbacks and logging are managed.
         """
         super().__init__(problem, name)
+        self._validate_kwargs(kwargs)
         self.sigma0 = sigma0
-        self.cma_pars = dict(cma_pars) if cma_pars is not None else {}
+        self._native_pars = dict(kwargs)
+        for key, value in (("popsize", pop_size), ("seed", seed), ("maxiter", maxiter)):
+            if value is not None:
+                if key in self._native_pars:
+                    raise ValueError(f"CMAES: conflicting native option '{key}'")
+                self._native_pars[key] = value
         self.stop_conditions: dict[str, Any] = {}
         self._cma: ModuleType | None = None
         self._cons_lower = np.empty(0, dtype=np.float64)
@@ -130,10 +144,10 @@ class Optimizer_cma(Optimizer):
             "verb_disp",
             "verb_log",
         }
-        conflicts = managed.intersection(self.cma_pars)
+        conflicts = managed.intersection(self._native_pars)
         if conflicts:
             raise ValueError(
-                f"Optimizer '{self.name}': Internally managed cma_pars: {', '.join(sorted(conflicts))}"
+                f"Optimizer '{self.name}': Internally managed native options: {', '.join(sorted(conflicts))}"
             )
 
     def _set_constraint_bounds(self) -> None:
@@ -186,7 +200,7 @@ class Optimizer_cma(Optimizer):
     def _new_strategy(self, verbosity: int) -> Any:
         if self._cma is None:
             raise RuntimeError(f"Optimizer '{self.name}' has not loaded pycma")
-        options = dict(self.cma_pars)
+        options = dict(self._native_pars)
         options.update(
             bounds=[self.problem.min_values_float(), self.problem.max_values_float()],
             verbose=-9,

@@ -16,7 +16,8 @@ Interfaces to external optimization packages
    ":doc:`DEAP interface <_autoapi/iwopy/interfaces/deap/index>`", "Three bounded population evolution schemes"
 
 See the :doc:`optimizer_catalog` for every user-selectable optimizer and a
-direct, runnable Python constructor example for each one.
+runnable Python factory-call example for each one. See :doc:`api_core` for
+family selection and explicit keyword configuration.
 
 .. toctree::
    :hidden:

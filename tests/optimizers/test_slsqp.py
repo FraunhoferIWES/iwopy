@@ -90,7 +90,10 @@ def make_problem(initial=0.0, target=0.0, ana_deriv=True, **kwargs):
 def test_slsqp_solves_analytical_quadratic():
     problem = make_problem(initial=3.0, target=1.0)
     problem.initialize()
-    solver = SLSQP(problem, scipy_pars={"tol": 1e-10})
+    solver = SLSQP(
+        problem=problem,
+        tol=1e-10,
+    )
     solver.initialize(verbosity=0)
 
     result = solver.solve(verbosity=0)
@@ -103,7 +106,10 @@ def test_slsqp_solves_analytical_quadratic():
 def test_slsqp_skips_callback_data_without_callbacks(monkeypatch):
     problem = make_problem(initial=3.0, target=1.0)
     problem.initialize(verbosity=0)
-    solver = SLSQP(problem, scipy_pars={"tol": 1e-10})
+    solver = SLSQP(
+        problem=problem,
+        tol=1e-10,
+    )
     solver.initialize(verbosity=0)
 
     def unexpected_callback_data(*args, **kwargs):
@@ -120,7 +126,7 @@ def test_slsqp_skips_callback_data_without_callbacks(monkeypatch):
 def test_slsqp_is_available_from_optimizer_factory():
     problem = make_problem()
 
-    solver = iwopy.core.Optimizer.new("SLSQP", problem)
+    solver = iwopy.core.create_optimizer("iwopy", "SLSQP", problem)
 
     assert isinstance(solver, SLSQP)
 
@@ -128,7 +134,10 @@ def test_slsqp_is_available_from_optimizer_factory():
 def test_slsqp_print_info_includes_problem_name(capsys):
     problem = make_problem()
     problem.initialize(verbosity=0)
-    solver = SLSQP(problem, scipy_pars={"tol": 1e-10})
+    solver = SLSQP(
+        problem=problem,
+        tol=1e-10,
+    )
     solver.initialize(verbosity=0)
 
     solver.print_info()
@@ -163,7 +172,10 @@ def test_problem_initialize_does_not_print_optimizer_summary(capsys):
 def test_slsqp_reports_progress_without_extra_evaluations(capsys, monkeypatch):
     problem = make_problem(initial=3.0, target=1.0)
     problem.initialize()
-    solver = SLSQP(problem, scipy_pars={"tol": 1e-10})
+    solver = SLSQP(
+        problem=problem,
+        tol=1e-10,
+    )
     solver.initialize(verbosity=0)
     evaluations = 0
     original = problem.evaluate_individual
@@ -196,7 +208,9 @@ def test_slsqp_reports_progress_without_extra_evaluations(capsys, monkeypatch):
 def test_slsqp_reports_returned_point_as_last_iteration(monkeypatch):
     problem = make_problem(initial=0.0, target=1.0)
     problem.initialize(verbosity=0)
-    solver = SLSQP(problem)
+    solver = SLSQP(
+        problem=problem,
+    )
     solver.initialize(verbosity=0)
 
     def return_newer_point(fun, x0, callback, **kwargs):
@@ -229,7 +243,9 @@ def test_slsqp_reports_returned_point_as_last_iteration(monkeypatch):
 def test_slsqp_progress_is_silent_at_zero_verbosity(capsys):
     problem = make_problem(initial=3.0, target=1.0)
     problem.initialize(verbosity=0)
-    solver = SLSQP(problem)
+    solver = SLSQP(
+        problem=problem,
+    )
     solver.initialize(verbosity=0)
 
     history = iwopy.OptimizationHistory()
@@ -249,7 +265,9 @@ def test_slsqp_scales_large_physical_variable_ranges():
     )
     problem.add_objective(SmallGradientQuadratic(problem))
     problem.initialize()
-    solver = SLSQP(problem)
+    solver = SLSQP(
+        problem=problem,
+    )
     solver.initialize(verbosity=0)
 
     result = solver.solve(verbosity=0)
@@ -274,7 +292,10 @@ def test_slsqp_supports_constraint_bounds(minimum, maximum, expected):
     constraint.tol = 0.0
     problem.add_constraint(constraint)
     problem.initialize()
-    solver = SLSQP(problem, scipy_pars={"tol": 1e-10})
+    solver = SLSQP(
+        problem=problem,
+        tol=1e-10,
+    )
     solver.initialize(verbosity=0)
 
     result = solver.solve(verbosity=0)
@@ -290,7 +311,10 @@ def test_slsqp_honors_constraint_tolerance():
     problem.add_constraint(constraint)
     constraint.tol = 0.2
     problem.initialize()
-    solver = SLSQP(problem, scipy_pars={"tol": 1e-10})
+    solver = SLSQP(
+        problem=problem,
+        tol=1e-10,
+    )
     solver.initialize(verbosity=0)
 
     result = solver.solve(verbosity=0)
@@ -310,7 +334,9 @@ def test_slsqp_supports_maximization_and_variable_bounds():
     )
     problem.add_objective(Quadratic(problem, target=0.0, maximize=True))
     problem.initialize()
-    solver = SLSQP(problem)
+    solver = SLSQP(
+        problem=problem,
+    )
     solver.initialize(verbosity=0)
 
     result = solver.solve(verbosity=0)
@@ -351,7 +377,10 @@ def test_slsqp_uses_population_for_local_fd_gradients(monkeypatch):
 
     monkeypatch.setattr(problem, "apply_population", count_population)
     monkeypatch.setattr(problem, "get_gradients", record_gradient_mode)
-    solver = SLSQP(problem, scipy_pars={"tol": 1e-8})
+    solver = SLSQP(
+        problem=problem,
+        tol=1e-8,
+    )
     solver.initialize(verbosity=0)
 
     result = solver.solve(verbosity=0)
@@ -520,7 +549,10 @@ def test_slsqp_can_disable_population_gradients(monkeypatch):
         return original_gradients(*args, **kwargs)
 
     monkeypatch.setattr(problem, "get_gradients", record_gradient_mode)
-    solver = SLSQP(problem, vectorized=False)
+    solver = SLSQP(
+        problem=problem,
+        vectorize=False,
+    )
     solver.initialize(verbosity=0)
 
     result = solver.solve(verbosity=0)
@@ -564,7 +596,10 @@ def test_local_fd_pop_true_is_faster_than_serial_gradient_evaluation():
 def test_slsqp_returns_candidate_after_iteration_limit():
     problem = make_problem(initial=3.0, target=1.0)
     problem.initialize()
-    solver = SLSQP(problem, scipy_pars={"options": {"maxiter": 1}})
+    solver = SLSQP(
+        problem=problem,
+        maxiter=1,
+    )
     solver.initialize(verbosity=0)
 
     result = solver.solve(verbosity=0)
@@ -575,13 +610,16 @@ def test_slsqp_returns_candidate_after_iteration_limit():
     assert solver.scipy_results.status != 0
 
 
-@pytest.mark.parametrize("mem_size", [0, -1, 1.5, True])
-def test_slsqp_rejects_invalid_memory_size(mem_size):
+@pytest.mark.parametrize("memory_size", [0, -1, 1.5, True])
+def test_slsqp_rejects_invalid_memory_size(memory_size):
     problem = make_problem()
     problem.initialize()
-    solver = SLSQP(problem, mem_size=mem_size)
+    solver = SLSQP(
+        problem=problem,
+        memory_size=memory_size,
+    )
 
-    with pytest.raises(ValueError, match="mem_size"):
+    with pytest.raises(ValueError, match="memory_size"):
         solver.initialize(verbosity=0)
 
 
@@ -589,7 +627,9 @@ def test_slsqp_rejects_multiple_objectives():
     problem = make_problem()
     problem.add_objective(Quadratic(problem, name="f2"))
     problem.initialize()
-    solver = SLSQP(problem)
+    solver = SLSQP(
+        problem=problem,
+    )
 
     with pytest.raises(ValueError, match="Exactly one objective"):
         solver.initialize(verbosity=0)
@@ -605,7 +645,9 @@ def test_slsqp_rejects_integer_variables():
     )
     problem.add_objective(Quadratic(problem))
     problem.initialize()
-    solver = SLSQP(problem)
+    solver = SLSQP(
+        problem=problem,
+    )
 
     with pytest.raises(ValueError, match="Integer variables"):
         solver.initialize(verbosity=0)
@@ -619,7 +661,9 @@ def test_slsqp_rejects_nonfinite_gradients():
     )
     problem.add_objective(NonFiniteQuadratic(problem))
     problem.initialize()
-    solver = SLSQP(problem)
+    solver = SLSQP(
+        problem=problem,
+    )
     solver.initialize(verbosity=0)
 
     with pytest.raises(ValueError, match="finite.*Jacobian"):
@@ -629,7 +673,10 @@ def test_slsqp_rejects_nonfinite_gradients():
 def test_slsqp_rejects_reserved_scipy_parameters():
     problem = make_problem()
     problem.initialize()
-    solver = SLSQP(problem, scipy_pars={"jac": "2-point"})
+    solver = SLSQP(
+        problem=problem,
+        jac="2-point",
+    )
 
     with pytest.raises(ValueError, match="managed internally: jac"):
         solver.initialize(verbosity=0)

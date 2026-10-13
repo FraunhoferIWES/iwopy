@@ -236,6 +236,10 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 - Python versions:
   - Added support for Python 3.14
 - Core:
+  - Added standalone `iwopy.create_optimizer` selection by backend family
+    and algorithm, including a PyGMO-backed `nlopt` family. All maintained
+    examples and notebooks import it from the root; core owns the same function,
+    and public optimizer class names are unchanged.
   - Added restart result seeding for selected pipeline stage ranges and ensured
     stage-reported failures clear running state before finalization.
 - Benchmarks:
@@ -243,6 +247,11 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
     `iwopy.benchmarks`, replacing the optimizer examples' local shared-case module.
     All catalog scripts now use installed-package imports without path setup.
 - Interfaces:
+  - Replaced optimizer parameter dictionaries with explicit per-class controls
+    and flat native keyword forwarding. Aligned `optimizer`, `vectorize`,
+    `memory_size`, and absolute `pop_size` where applicable; SciPy DE preserves
+    its native per-dimension `popsize`. Removed the class factory entry point
+    and old signatures without compatibility paths.
   - Added population-vectorized SciPy differential evolution with mixed integer/
     float variables, cached nonlinear constraint evaluations, and callbacks.
   - Added lazy optional Nevergrad, Optuna, and DEAP interfaces with bounded
@@ -283,7 +292,7 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
     explicit in regular and release CI across Python 3.10 through 3.14, with
     required-backend preflight, full-suite coverage, safe manual dispatch, and
     corrected development-extra setup. Added workflow contract tests.
-  - Added a complete optimizer catalog with 79 direct, main-guarded constructor
+  - Added a complete optimizer catalog with 79 main-guarded factory-call
     scripts, package-aware execution/import tests, and selector/link coverage.
     Each row now includes capability classifications and a practical recommendation;
     detailed class references link to the API rather than being embedded.
