@@ -20,7 +20,7 @@ a shared Python interface. Available external integrations include:
 - [Optuna](https://optuna.org/)
 - [DEAP](https://deap.readthedocs.io/)
 
-Native `GG` and `SLSQP` optimizers are included. `LocalFD` supplies finite-difference
+iwopy's `GG` and `SLSQP` optimizers are included. `LocalFD` supplies finite-difference
 derivatives; `DiscretizeRegGrid` is the regular-grid problem wrapper. Population
 evaluation batches candidates or derivative points when the chosen backend supports it.
 

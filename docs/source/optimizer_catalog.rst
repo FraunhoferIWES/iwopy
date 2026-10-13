@@ -27,6 +27,15 @@ they are configuration examples, not performance comparisons or convergence
 guarantees. Single-objective examples minimize; Pareto examples use two objectives.
 Only ``pymoo_mixed_variable_ga`` requires the example's integer/float problem.
 
+Important parameter values each have an inline explanation. Comments beside
+the short run limits and small populations suggest production starting values,
+not universally optimal settings. Adapt them to dimension, evaluation cost,
+constraint difficulty, and noise. Scale variables and objectives before choosing
+tolerances, and keep tolerances above numerical noise. The explicit Hessians in
+the dogleg and trust-exact examples belong to the benchmark objective and must
+be replaced for a different problem. ``iwopy`` identifies the GG/SLSQP source;
+``native`` elsewhere describes an external backend's own behavior or results.
+
 Available Optimizers
 --------------------
 
@@ -102,8 +111,8 @@ Single-Objective, Constrained, Local
    :widths: 20, 19, 23, 23, 15
    :class: optimizer-catalog
 
-   "Native / GG", "Single; constraints; gradients", "Local greedy-gradient search with batched trial steps", "Cheap gradients and constrained local refinement", ":ref:`native_gg <case-native-gg>`"
-   "Native / SLSQP", "Single; constraints; gradients", "Scaled local SLSQP with population Jacobians", "Smooth constrained problems needing local refinement", ":ref:`native_slsqp <case-native-slsqp>`"
+   "iwopy / GG", "Single; constraints; gradients", "Local greedy-gradient search with batched trial steps", "Cheap gradients and constrained local refinement", ":ref:`iwopy_gg <case-iwopy-gg>`"
+   "iwopy / SLSQP", "Single; constraints; gradients", "Scaled local SLSQP with population Jacobians", "Smooth constrained problems needing local refinement", ":ref:`iwopy_slsqp <case-iwopy-slsqp>`"
    "SciPy / default", "Single; method-dependent", "Local method chosen from bounds and constraints", "A first local solver for smooth problems", ":ref:`scipy_default <case-scipy-default>`"
    "SciPy / COBYLA", "Single; inequalities; derivative-free", "Local linear approximation", "Nonlinear inequalities without derivatives", ":ref:`scipy_cobyla <case-scipy-cobyla>`"
    "SciPy / COBYQA", "Single; constraints; derivative-free", "Local quadratic approximation; SciPy >=1.14", "Smooth constrained problems without gradients", ":ref:`scipy_cobyqa <case-scipy-cobyqa>`"
@@ -349,20 +358,20 @@ for all three definitions, bounds, objective formulas, and lifecycle.
 Minimal Setups
 --------------
 
-.. _case-native-gg:
+.. _case-iwopy-gg:
 
-Native GG
+iwopy GG
 ~~~~~~~~~
 
-.. literalinclude:: ../../examples/optimizers/native_gg.py
+.. literalinclude:: ../../examples/optimizers/iwopy_gg.py
    :language: python
 
-.. _case-native-slsqp:
+.. _case-iwopy-slsqp:
 
-Native SLSQP
+iwopy SLSQP
 ~~~~~~~~~~~~
 
-.. literalinclude:: ../../examples/optimizers/native_slsqp.py
+.. literalinclude:: ../../examples/optimizers/iwopy_slsqp.py
    :language: python
 
 .. _case-scipy-default:

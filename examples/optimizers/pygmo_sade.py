@@ -5,8 +5,17 @@ if __name__ == "__main__":
     problem = QuadraticProblem()
     solver = Optimizer_pygmo(
         problem,
-        algo_pars={"type": "sade", "gen": 3, "seed": 42},
-        setup_pars={"pop_size": 20, "seed": 42, "verbosity": 0},
+        algo_pars={
+            "type": "sade",  # Self-adaptive differential evolution
+            "gen": 10,  # Demo generations; production start: 1000
+            "ftol": 1e-6,  # Population objective-spread stopping tolerance
+            "xtol": 1e-6,  # Population variable-spread stopping tolerance
+            "seed": 42,  # Reproducible evolution
+        },
+        setup_pars={
+            "pop_size": 20,  # Demo population; production start: 100
+            "seed": 42,  # Reproducible initial population
+        },
     )
     solver.initialize(verbosity=0)
     result = solver.solve(verbosity=0)

@@ -3,6 +3,8 @@ import importlib
 import csv
 import re
 import runpy
+import tokenize
+from io import StringIO
 from pathlib import Path
 
 import numpy as np
@@ -12,7 +14,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS = sorted((ROOT / "examples/optimizers").glob("*.py"))
 BACKENDS = {
-    "native": "scipy",
+    "iwopy": "scipy",
     "scipy": "scipy",
     "cma": "cma",
     "pymoo": "pymoo",
@@ -21,6 +23,21 @@ BACKENDS = {
     "nevergrad": "nevergrad",
     "optuna": "optuna",
     "deap": "deap",
+}
+DEMO_LIMITS = {
+    "budget": 400,
+    "batch_size": 20,
+    "maxiter": 500,
+    "max_iter": 100,
+    "maxfun": 500,
+    "maxfev": 500,
+    "max_fevals": 200,
+    "maxeval": 500,
+    "max_iterations": 100,
+    "gen": 100,
+    "n_max_gen": 10,
+    "pop_size": 20,
+    "popsize": 5,
 }
 
 
@@ -55,6 +72,12 @@ def test_direct_script_executes(path, tmp_path, monkeypatch):
     else:
         assert np.all(np.isfinite(result.objs))
         assert np.all(np.isfinite(result.vars_float))
+    if path.stem in {"pygmo_ipopt", "pygmo_nlopt"} or path.stem.startswith("nlopt_"):
+        assert len(namespace["solver"].pop) == 1
+        np.testing.assert_array_equal(
+            namespace["solver"].pop.get_x()[0],
+            namespace["problem"].initial_values_float(),
+        )
     if path.stem.startswith("pymoo_nsga"):
         assert result.objs.ndim == 2 and result.objs.shape[1] == 2
         assert len(result.objs) > 0
@@ -192,7 +215,7 @@ def test_catalog_tables_group_every_optimizer_once_and_omit_empty_categories():
             )
             assert constrained == (heading.group(2) == "Constrained"), name
             local = (
-                name.startswith(("Native /", "NLopt /"))
+                name.startswith(("iwopy /", "NLopt /"))
                 or (
                     name.startswith("SciPy /")
                     and name != "SciPy / differential_evolution"
@@ -304,6 +327,107 @@ def test_public_benchmarks_have_no_import_time_initialization(monkeypatch):
     monkeypatch.setattr(iwopy.SimpleProblem, "initialize", forbidden)
     runpy.run_path(str(ROOT / "iwopy/benchmarks/quadratic.py"))
     assert not (ROOT / "examples/optimizers/case_problems.py").exists()
+
+
+def _setup_entries(source):
+    tree = ast.parse(source)
+    constructor = next(
+        node.value
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Assign)
+        and any(
+            isinstance(target, ast.Name) and target.id == "solver"
+            for target in node.targets
+        )
+    )
+    pending = [(keyword.arg, keyword.value) for keyword in constructor.keywords]
+    entries = []
+    while pending:
+        name, value = pending.pop()
+        if isinstance(value, ast.Dict):
+            pending.extend(
+                (key.value, entry) for key, entry in zip(value.keys, value.values)
+            )
+        else:
+            entries.append((name, value))
+    return constructor, entries
+
+
+@pytest.mark.parametrize("path", SCRIPTS, ids=lambda path: path.stem)
+def test_setup_comments_only_annotate_individual_values(path):
+    source = path.read_text()
+    constructor, entries = _setup_entries(source)
+    comments = {
+        token.start[0]: token.string
+        for token in tokenize.generate_tokens(StringIO(source).readline)
+        if token.type == tokenize.COMMENT
+    }
+    value_lines = {value.lineno for _, value in entries}
+    for name, value in entries:
+        assert value.lineno == value.end_lineno, path
+        assert comments.get(value.lineno, "").strip("# "), path
+        if name in DEMO_LIMITS and name not in {"batch_size", "popsize", "pop_size"}:
+            assert "production" in comments[value.lineno].lower(), path
+    for line in range(constructor.lineno, constructor.end_lineno + 1):
+        if line not in value_lines:
+            assert line not in comments, (path, line)
+
+
+def _check_demo_limits(entries):
+    limits_found = set()
+    for name, value in entries:
+        if name in DEMO_LIMITS:
+            assert isinstance(value, ast.Constant), name
+            assert type(value.value) is int, name
+            assert 0 < value.value <= DEMO_LIMITS[name], name
+            if name not in {"pop_size", "popsize", "batch_size"}:
+                limits_found.add(name)
+    assert limits_found, "Each example needs an explicit short run limit"
+
+
+@pytest.mark.parametrize("path", SCRIPTS, ids=lambda path: path.stem)
+def test_every_example_has_short_explicit_run_limits(path):
+    _, entries = _setup_entries(path.read_text())
+    _check_demo_limits(entries)
+
+
+@pytest.mark.parametrize("budget", [0, -1, 10000, True])
+def test_demo_limits_reject_invalid_or_long_budgets(budget):
+    _, entries = _setup_entries(f"solver = Optimizer_demo(budget={budget})")
+    with pytest.raises(AssertionError, match="budget"):
+        _check_demo_limits(entries)
+
+
+def test_demo_limits_require_a_stopping_condition():
+    _, entries = _setup_entries("solver = Optimizer_demo(seed=42)")
+    with pytest.raises(AssertionError, match="explicit short run limit"):
+        _check_demo_limits(entries)
+
+
+def test_iwopy_source_labels_replace_native_example_labels():
+    names = {path.stem for path in SCRIPTS}
+    assert {"iwopy_gg", "iwopy_slsqp"} <= names
+    assert not {"native_gg", "native_slsqp"}.intersection(names)
+    catalog = (ROOT / "docs/source/optimizer_catalog.rst").read_text()
+    assert '"iwopy / GG"' in catalog and '"iwopy / SLSQP"' in catalog
+    assert '"Native /' not in catalog
+
+
+def test_callable_method_forwards_visible_stopping_controls(monkeypatch):
+    namespace = runpy.run_path(str(ROOT / "examples/optimizers/scipy_callable.py"))
+    method = namespace["custom_method"]
+    observed = {}
+    expected = object()
+
+    def capture(*args, **kwargs):
+        observed.update(kwargs)
+        return expected
+
+    monkeypatch.setitem(method.__globals__, "minimize", capture)
+    assert method(lambda point: 0.0, np.zeros(2), maxiter=7, gtol=1e-5) is expected
+    assert observed["options"] == {"maxiter": 7, "gtol": 1e-5}
+    method(lambda point: 0.0, np.zeros(2))
+    assert observed["options"] == {"maxiter": 100, "gtol": 1e-6}
 
 
 @pytest.mark.parametrize(

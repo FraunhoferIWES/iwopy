@@ -6,11 +6,15 @@ if __name__ == "__main__":
     solver = Optimizer_pygmo(
         problem,
         algo_pars={
-            "type": "nlopt",
-            "optimizer": "tnewton_precond_restart",
-            "maxeval": 100,
+            "type": "nlopt",  # Select the NLopt backend
+            "optimizer": "tnewton_precond_restart",  # Preconditioning and restarts
+            "maxeval": 500,  # Demo evaluations; production start: 10000
+            "xtol_rel": 1e-6,  # Relative variable convergence tolerance
+            "ftol_rel": 1e-8,  # Relative objective convergence tolerance
         },
-        setup_pars={"pop_size": 20, "seed": 42, "verbosity": 0},
+        setup_pars={
+            "pop_size": 1,  # One problem-defined starting point
+        },
     )
     solver.initialize(verbosity=0)
     result = solver.solve(verbosity=0)

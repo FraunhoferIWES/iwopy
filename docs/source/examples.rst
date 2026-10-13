@@ -2,7 +2,7 @@ Examples
 --------
 Start with the :doc:`optimizer_catalog` for a short, runnable setup for each
 optimizer. Install only the extra required by your chosen backend; SciPy and
-the native optimizers are included in the base package.
+the iwopy optimizers are included in the base package.
 
 Pareto flows
 ^^^^^^^^^^^^

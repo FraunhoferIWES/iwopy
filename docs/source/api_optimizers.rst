@@ -40,7 +40,7 @@ evaluations. Set ``verbosity=0`` for silent operation. User callbacks remain
 active at every verbosity level and receive the same cached iteration state.
 
 ``GG`` reports the retained current point after every counted iteration.
-Callbacks for both native optimizers and all external interfaces use the common
+Callbacks for both iwopy optimizers and all external interfaces use the common
 iwopy callback API described in :doc:`callbacks`.
 
 A complete derivative-free constrained example using ``LocalFD`` is available

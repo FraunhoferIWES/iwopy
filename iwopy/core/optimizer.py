@@ -178,17 +178,19 @@ class Optimizer(Base, metaclass=ABCMeta):
                         i0 = i1
 
     @classmethod
-    def new(cls, optimizer_type: str, *args: object, **kwargs: object) -> "Optimizer":
+    def new(cls, package: str, optimizer: str, *args: object, **kwargs: object) -> "Optimizer":
         """
         Run-time optimizer factory.
 
         Parameters
         ----------
-        optimizer_type
+        package
+            The package containing the optimizer
+        optimizer
             The selected derived class name
         args
             Additional parameters for constructor
         kwargs
             Additional parameters for constructor
         """
-        return new_instance(cls, optimizer_type, *args, **kwargs)
+        #return new_instance(cls, optimizer_type, *args, **kwargs)

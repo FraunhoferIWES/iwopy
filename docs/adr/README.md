@@ -23,6 +23,7 @@ all of them.
 | [0009](0009-restored-logo-and-catalog-guidance.md) | Accepted | Restore supplied logos, classify/recommend every catalog optimizer, and link class details to the API with readable responsive rows. |
 | [0010](0010-public-quadratic-benchmarks.md) | Accepted | Publish reusable quadratic catalog cases through iwopy.benchmarks and remove example-local dependencies. |
 | [0011](0011-selectable-interface-vectorization.md) | Accepted | Default all four population adapters to vectorize=True while supporting ordered individual evaluation without changing native search. |
+| [0012](0012-optimizer-example-guidance.md) | Accepted | Annotate important optimizer values, keep published demo runs short with production suggestions, and label GG/SLSQP's source iwopy. |
 
 ## When To Add An ADR
 

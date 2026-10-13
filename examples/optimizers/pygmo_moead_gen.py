@@ -5,8 +5,17 @@ if __name__ == "__main__":
     problem = ParetoProblem()
     solver = Optimizer_pygmo(
         problem,
-        algo_pars={"type": "moead_gen", "gen": 3, "seed": 42, "neighbours": 5},
-        setup_pars={"pop_size": 20, "seed": 42, "verbosity": 0},
+        algo_pars={
+            "type": "moead_gen",  # Generational multi-objective decomposition
+            "gen": 10,  # Demo generations; production start: 1000
+            "neighbours": 5,  # Production: 20 neighbours with a larger population
+            "decomposition": "tchebycheff",  # Scalar subproblem formulation
+            "seed": 42,  # Reproducible evolution
+        },
+        setup_pars={
+            "pop_size": 20,  # Demo Pareto population; production start: 100+
+            "seed": 42,  # Reproducible initial population
+        },
     )
     solver.initialize(verbosity=0)
     solver.algo.set_verbosity(0)

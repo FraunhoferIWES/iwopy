@@ -292,6 +292,10 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
     bringing the catalog to 81 runnable scripts.
     The Vectorized Interfaces overview now covers all adapters with equal API-linked
     descriptions and distinguishes search, gradient, and batch-fitness vectorization.
+  - Reworked every optimizer setup with important controls on individually annotated
+    value lines. Kept demo runs short and added production starting suggestions,
+    protected by format/budget regressions. Local PyGMO solvers use one starting
+    point; GG/SLSQP examples and documentation now identify their source as iwopy.
   - Reviewed documentation for users and developers, removed duplicated/stale
     setup and vectorization claims, and added Fraunhofer token-backed readable
     Sphinx styling with consistency tests. NumPy-style documentation now uses

@@ -1,0 +1,17 @@
+from iwopy.benchmarks import QuadraticProblem
+from iwopy.optimizers import SLSQP
+
+if __name__ == "__main__":
+    problem = QuadraticProblem()
+    solver = SLSQP(
+        problem,
+        scipy_pars={
+            "options": {
+                "maxiter": 100,  # Demo iterations; production start: 1000
+                "ftol": 1e-8,  # Objective and optimality stopping tolerance
+            },
+        },
+    )
+    solver.initialize(verbosity=0)
+    result = solver.solve(verbosity=0)
+    print(result)

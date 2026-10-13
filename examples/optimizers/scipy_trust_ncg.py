@@ -1,5 +1,3 @@
-import numpy as np
-
 from iwopy.benchmarks import QuadraticProblem
 from iwopy.interfaces.scipy import Optimizer_scipy
 
@@ -8,9 +6,12 @@ if __name__ == "__main__":
     solver = Optimizer_scipy(
         problem,
         scipy_pars={
-            "method": "trust-ncg",
-            "options": {"maxiter": 150},
-            "hess": lambda variables: 2.0 * np.eye(len(variables)),
+            "method": "trust-ncg",  # Trust-region Newton-CG optimization
+            "hess": "2-point",  # Estimate the Hessian from objective gradients
+            "options": {
+                "maxiter": 100,  # Demo iterations; production start: 1000
+                "gtol": 1e-6,  # Gradient convergence tolerance
+            },
         },
     )
     solver.initialize(verbosity=0)

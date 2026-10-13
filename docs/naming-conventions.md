@@ -49,7 +49,7 @@ compatibility-sensitive.
 | component | One scalar output of a function | Function object or optimization variable |
 | feasible / valid | Satisfies all constraint component bounds within tolerance | Merely finite or successfully evaluated |
 | optimizer | Object that solves an initialized problem | Problem, objective, or backend problem adapter |
-| backend interface | Translation between iwopy and SciPy, pycma, pymoo, PyGMO, Nevergrad, Optuna, or DEAP | Native optimizer implementation |
+| backend interface | Translation between iwopy and SciPy, pycma, pymoo, PyGMO, Nevergrad, Optuna, or DEAP | iwopy optimizer implementation |
 | champion | Single solution selected by a backend such as PyGMO | Pareto population |
 | Pareto front | Non-dominated objective values for a multi-objective result | All evaluated population values |
 | wrapper | Adapter around a problem or function contract | Independent deep copy |
@@ -168,7 +168,7 @@ them to attributes without a deliberate contract change.
 
 ## Optimizers, Interfaces, And Factories
 
-- Native optimizer classes belong in `iwopy.optimizers`; external translations
+- iwopy optimizer classes belong in `iwopy.optimizers`; external translations
 	belong in `iwopy.interfaces.<backend>`.
 - Preserve external backend algorithm spellings at selection boundaries.
 - PyGMO decision vectors use floating variables before integers and fitness
@@ -218,6 +218,12 @@ them to attributes without a deliberate contract change.
 	`Local`/`Global` search strategy. Omit empty categories. Explicit Pareto workflows
 	use `_constrained` script suffixes and `selected_index` for a weighted front choice;
 	keep native PyGMO populations distinct from iwopy Pareto result workflows.
+- Name GG/SLSQP's source `iwopy`, with `iwopy_gg.py` and `iwopy_slsqp.py` example
+	filenames. Reserve `native` for an external backend's own behavior or results.
+	Catalog setup parameters use one value per line, explaining values rather than
+	commenting `problem` or parameter dictionaries. Short demo limits and populations
+	include production starting suggestions. See
+	[ADR-0012](adr/0012-optimizer-example-guidance.md).
 
 ## Wrappers, Pipelines, And Callbacks
 
@@ -254,7 +260,7 @@ authoritative for names used inside those docstrings.
 Test directories retain their package ownership:
 
 - `tests/core/`: lifecycle, mappings, derivatives, memory, callbacks, and grids;
-- `tests/optimizers/`: native optimizer behavior;
+- `tests/optimizers/`: iwopy optimizer behavior;
 - `tests/scipy/`, `tests/cma/`, `tests/pymoo/`, and `tests/pygmo/`: backend translation;
 - `tests/interfaces/`: shared new population-adapter contracts and complete,
 	package-guarded catalog execution, import safety, and selector/link coverage;

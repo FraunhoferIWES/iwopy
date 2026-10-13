@@ -32,7 +32,7 @@ the conflict and update the record in the same change.
 ## System Context
 
 iwopy serves developers, researchers, and engineers who need one problem model
-across native optimizers and external solver libraries. A caller defines a
+across iwopy optimizers and external solver libraries. A caller defines a
 `Problem`, adds objective and constraint functions, selects an `Optimizer`, and
 receives an iwopy result container. Interfaces translate the same problem into
 SciPy, pycma, pymoo, PyGMO, Nevergrad, Optuna, or DEAP contracts.
@@ -42,7 +42,7 @@ flowchart LR
     Caller[Problem variables and application data] --> Problem
     Functions[Objectives and constraints] --> Problem
     Problem --> Optimizer
-    Optimizer --> Native[GG or SLSQP]
+	Optimizer --> Iwopy[GG or SLSQP]
 	Optimizer --> Interfaces[SciPy, pycma, pymoo, PyGMO, Nevergrad, Optuna, or DEAP]
     Native --> Results[Single or multi-objective results]
     Interfaces --> Results
@@ -91,7 +91,7 @@ existing problem. Those paths still use the same core lifecycle.
 | `iwopy.interfaces.deap` | Serial DEAP population evolution | Three variation/replacement schemes, bounded operators, integer repair, and constraint-first fitness |
 | `iwopy.interfaces.pymoo` | Single- and multi-objective pymoo integration | Mixed/integer/float representations, algorithm factories, population evaluation, result conversion |
 | `iwopy.interfaces.pygmo` | Serial PyGMO integration | UDP translation, algorithms, fitness/batch fitness, callbacks, and result conversion |
-| `iwopy.optimizers` | Native iwopy optimizer implementations | `GG` and `SLSQP`; depends on core contracts and SciPy mathematics |
+| `iwopy.optimizers` | iwopy optimizer implementations | `GG` and `SLSQP`; depends on core contracts and SciPy mathematics |
 | `iwopy.benchmarks` | Reusable analytical example problems | Branin, Rosenbrock, and public continuous/Pareto/mixed quadratic problem definitions |
 | `iwopy.utils` | Shared discretization, loading, subclass discovery, and output suppression | `RegularDiscretizationGrid` and focused infrastructure helpers |
 | `examples` and `notebooks` | Executable public workflows | Public APIs and declared optimizer extras |
@@ -173,7 +173,7 @@ feasible one.
 Each `Constraint` is the sole owner of its scalar tolerance. `Problem` does not
 cache a second tolerance vector. Backends that require component-wise values
 expand the registered constraints in function/component order when their
-adapter initializes. Native SLSQP applies those tolerances to its translated
+adapter initializes. iwopy SLSQP applies those tolerances to its translated
 bounds, while zero tolerance requests exact bounds. See
 [ADR-0003](adr/0003-constraint-owned-solver-tolerances.md).
 
@@ -231,7 +231,7 @@ stage-reported failure, or an exception. See
 
 ## Optimizer And Backend Boundaries
 
-### Native Optimizers
+### iwopy Optimizers
 
 `GG` is a constrained local Greedy Gradient optimizer. `SLSQP` uses SciPy with
 iwopy gradients and scaling. Both require continuous, single-objective problems.
@@ -375,6 +375,12 @@ PyGMO features guard their respective runs with explicit skips. PyGMO Pareto
 examples evolve and return the native population instead of invoking unsupported
 champion finalization.
 
+Examples expose important controls one value per line, with inline explanations
+only on value lines. Executable candidate/iteration limits keep the catalog quick;
+comments give production starting suggestions rather than convergence guarantees.
+Tests protect short explicit limits, comment placement, and production guidance.
+GG/SLSQP use the source label and example prefix `iwopy`, not `native`.
+
 The catalog's Vectorized Interfaces section covers every adapter with API links,
 distinguishing population search, gradient batching, and optional batch fitness.
 SciPy DE, Nevergrad, Optuna, and DEAP expose `vectorize=True` by default. False
@@ -462,6 +468,10 @@ is forward-only by default under
 
 ## Cross-Cutting Decisions
 
+- Optimizer catalog examples use annotated value lines and short explicit runs,
+	with production starting suggestions in comments. GG/SLSQP are sourced as
+	`iwopy`; external native behavior keeps its existing terminology. See
+	[ADR-0012](adr/0012-optimizer-example-guidance.md).
 - SciPy DE, Nevergrad, Optuna, and DEAP use true population search with explicit
 	bounded single-objective contracts. The catalog links every public selector to
 	a direct guarded script, tested with package-aware skips. New optional extras

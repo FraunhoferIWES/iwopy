@@ -5,10 +5,20 @@ if __name__ == "__main__":
     problem = ParetoProblem()
     solver = Optimizer_pymoo(
         problem,
-        problem_pars={"vectorize": True},
-        algo_pars={"type": "NSGA3", "pop_size": 20, "n_partitions": 12},
-        setup_pars={"seed": 42},
-        term_pars=("n_gen", 3),
+        problem_pars={
+            "vectorize": True,  # Evaluate each generation as an iwopy population
+        },
+        algo_pars={
+            "type": "NSGA3",  # Reference-direction non-dominated sorting
+            "n_partitions": 12,  # Production: choose partitions for 100+ directions
+        },
+        setup_pars={
+            "seed": 42,  # Reproducible sampling and variation
+        },
+        term_pars={
+            "n_max_gen": 10,  # Demo generations; production start: 1000
+            "ftol": 1e-6,  # Objective-space convergence tolerance
+        },
     )
     solver.initialize(verbosity=0)
     result = solver.solve(verbosity=0)

@@ -34,7 +34,7 @@ To install the unreleased development branch instead:
 pip install 'iwopy @ git+https://github.com/FraunhoferIWES/iwopy@dev'
 ```
 
-SciPy and the native optimizers are included. Install an optional backend using
+SciPy and the iwopy optimizers are included. Install an optional backend using
 its extra: `cma`, `nevergrad`, `optuna`, `deap`, `pymoo`, or `pygmo`. For example:
 
 ```console

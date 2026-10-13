@@ -5,7 +5,13 @@ if __name__ == "__main__":
     problem = QuadraticProblem()
     solver = Optimizer_scipy(
         problem,
-        scipy_pars={"method": "CG", "options": {"maxiter": 150}},
+        scipy_pars={
+            "method": "CG",  # Nonlinear conjugate-gradient optimization
+            "options": {
+                "maxiter": 100,  # Demo iterations; production start: 1000
+                "gtol": 1e-6,  # Gradient convergence tolerance
+            },
+        },
     )
     solver.initialize(verbosity=0)
     result = solver.solve(verbosity=0)

@@ -8,9 +8,12 @@ if __name__ == "__main__":
     solver = Optimizer_scipy(
         problem,
         scipy_pars={
-            "method": "trust-exact",
-            "options": {"maxiter": 150},
-            "hess": lambda variables: 2.0 * np.eye(len(variables)),
+            "method": "trust-exact",  # Nearly exact trust-region optimization
+            "hess": lambda point: 2.0 * np.eye(len(point)),  # Replace for real problems
+            "options": {
+                "maxiter": 100,  # Demo iterations; production start: 1000
+                "gtol": 1e-6,  # Gradient convergence tolerance
+            },
         },
     )
     solver.initialize(verbosity=0)

@@ -5,7 +5,13 @@ if __name__ == "__main__":
     problem = QuadraticProblem()
     solver = Optimizer_scipy(
         problem,
-        scipy_pars={"method": "TNC", "options": {"maxfun": 100}},
+        scipy_pars={
+            "method": "TNC",  # Bound-constrained truncated Newton optimization
+            "options": {
+                "maxfun": 500,  # Demo evaluations; production start: 10000
+                "gtol": 1e-6,  # Projected-gradient convergence tolerance
+            },
+        },
     )
     solver.initialize(verbosity=0)
     result = solver.solve(verbosity=0)

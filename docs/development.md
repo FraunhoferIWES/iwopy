@@ -98,7 +98,7 @@ and the nearest tests.
 | Catalog benchmark problems | `iwopy/benchmarks/quadratic.py` | Public exports, individual/population values, lifecycle, gradients, and `tests/test_benchmarks.py` |
 | pymoo translation | `iwopy/interfaces/pymoo/` | Factory, representation, results, and `tests/pymoo/` |
 | PyGMO translation | `iwopy/interfaces/pygmo/` | UDP ordering, callbacks/results, and `tests/pygmo/` |
-| Native optimizer | `iwopy/optimizers/` | Core optimizer contract and optimizer tests |
+| iwopy optimizer | `iwopy/optimizers/` | Core optimizer contract and optimizer tests |
 | Public import | Owning package `__init__.py` | Root exports, AutoAPI output, examples, and import tests |
 
 Useful searches include the class or method name, variable/component name,
@@ -225,7 +225,7 @@ The test directories encode package ownership:
 | Area | Purpose |
 |---|---|
 | `tests/core/` | Lifecycle, variable maps, functions, gradients, memory, callbacks, and discretization |
-| `tests/optimizers/` | Native GG and SLSQP behavior |
+| `tests/optimizers/` | iwopy GG and SLSQP behavior |
 | `tests/scipy/` | SciPy adapter values, constraints, gradients, and results |
 | `tests/cma/` | pycma population batching, objective signs, bounds/tolerances, callbacks, lifecycle, and stop/success conversion |
 | `tests/pymoo/` | pymoo variable representations, population evaluation, algorithms, and results |
@@ -324,6 +324,15 @@ directory to `sys.path`. Benchmark tests cover initialized construction, known
 values, individual/population agreement, mixed gradients, constraint boundaries,
 and rejected late registration. The interface overview covers all adapters rather
 than distinguishing new integrations from established ones.
+
+Keep catalog runs short with explicit iteration/evaluation limits and small
+populations. Tests inspect the actual published values; they do not silently
+reduce production-sized settings during execution. AST/token checks protect one
+commented value per line, uncommented argument/dictionary containers, and
+production starting suggestions beside demo limits. Those suggestions are
+heuristics: tune for dimension, scaling, cost, constraints, and numerical noise.
+The GG/SLSQP cases and source labels use `iwopy`, not `native`.
+Use `--durations=10` on the catalog suite when checking observed run times.
 
 For SciPy DE, Nevergrad, Optuna, and DEAP, `vectorize=True` selects population
 evaluation; false evaluates candidates individually in native batch order. Tests

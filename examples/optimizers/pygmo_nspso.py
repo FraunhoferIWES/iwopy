@@ -5,8 +5,17 @@ if __name__ == "__main__":
     problem = ParetoProblem()
     solver = Optimizer_pygmo(
         problem,
-        algo_pars={"type": "nspso", "gen": 3, "seed": 42},
-        setup_pars={"pop_size": 20, "seed": 42, "verbosity": 0},
+        algo_pars={
+            "type": "nspso",  # Non-dominated sorting particle swarm
+            "gen": 10,  # Demo generations; production start: 1000
+            "omega": 0.6,  # Inertia coefficient
+            "diversity_mechanism": "crowding distance",  # Pareto diversity measure
+            "seed": 42,  # Reproducible evolution
+        },
+        setup_pars={
+            "pop_size": 20,  # Demo Pareto swarm; production start: 100+
+            "seed": 42,  # Reproducible initial swarm
+        },
     )
     solver.initialize(verbosity=0)
     solver.algo.set_verbosity(0)

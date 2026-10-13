@@ -5,15 +5,22 @@ if __name__ == "__main__":
     problem = QuadraticProblem()
     solver = Optimizer_pymoo(
         problem,
-        problem_pars={"vectorize": True},
-        algo_pars={
-            "type": "CMAES",
-            "x0": problem.initial_values_float(),
-            "sigma": 0.3,
-            "verb_log": 0,
+        problem_pars={
+            "vectorize": True,  # Evaluate each generation as an iwopy population
         },
-        setup_pars={"seed": 42},
-        term_pars=("n_gen", 3),
+        algo_pars={
+            "type": "CMAES",  # Covariance-matrix adaptation
+            "x0": problem.initial_values_float(),  # Problem-defined starting point
+            "sigma": 0.25,  # Initial scale in normalized variable coordinates
+            "verb_log": 0,  # Disable native file logging
+        },
+        setup_pars={
+            "seed": 42,  # Reproducible sampling
+        },
+        term_pars={
+            "n_max_gen": 10,  # Demo generations; production start: 1000
+            "ftol": 1e-6,  # Objective-space convergence tolerance
+        },
     )
     solver.initialize(verbosity=0)
     result = solver.solve(verbosity=0)

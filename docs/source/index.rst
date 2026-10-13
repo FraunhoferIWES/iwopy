@@ -10,7 +10,7 @@ IWOPY
 
 Fraunhofer IWES optimization tools in Python.
 
-Define an optimization problem once and choose a native or external solver
+Define an optimization problem once and choose an iwopy or external solver
 through a shared Python interface. External integrations include:
 
 * `pymoo <https://pymoo.org/index.html>`_
@@ -21,7 +21,7 @@ through a shared Python interface. External integrations include:
 * `Optuna <https://optuna.org/>`_
 * `DEAP <https://deap.readthedocs.io/>`_
 
-Native ``GG`` and ``SLSQP`` optimizers are included. ``LocalFD`` supplies finite
+iwopy's ``GG`` and ``SLSQP`` optimizers are included. ``LocalFD`` supplies finite
 differences; ``DiscretizeRegGrid`` wraps a problem on a regular grid. Population
 evaluation batches candidates or derivative points when the backend supports it.
 
