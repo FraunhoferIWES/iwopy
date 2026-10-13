@@ -11,8 +11,9 @@ Policy", and establish that policy before the first UI change.
 
 iwopy has no browser application frontend. Sphinx documentation adapts the
 authoritative tokens through `docs/source/_static/iwes-tokens.css` and applies
-them through `docs/source/_static/iwes.css`; `tests/test_documentation.py`
-prevents drift. There is no shared matplotlib token adapter. Do not introduce
+them through `docs/source/_static/iwes.css`; review token parity outside pytest
+under `docs/adr/0016-documentation-independent-tests.md`.
+There is no shared matplotlib token adapter. Do not introduce
 an application stack or another token copy as part of an unrelated scientific
 plot change. For Python plotting code under `iwopy/`, examples, or notebooks,
 read the chart and iwopy-specific guidance in
@@ -26,7 +27,8 @@ visual-design, or brand changes. Token values come from
 approved. Once the project has a token adapter for its technology and has
 recorded it in `docs/architecture.md`, application code reads values from that
 adapter, which is either generated or covered by a test that compares it against
-the token document.
+the token document. Documentation adapters are reviewed directly against that
+document instead; pytest must not depend on files under `docs/`.
 
 Do not duplicate, alter, or bypass the corporate policy in this file. Put
 iwopy-specific visual requirements in the design guide or architecture record.

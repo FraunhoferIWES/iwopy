@@ -579,7 +579,7 @@ is forward-only by default under
 	gate. See [ADR-0001](adr/0001-forward-only-development.md).
 - Regular and version-tag GitHub Actions run the complete test extra on Linux
 	for Python 3.10 through 3.14. A backend-import preflight and explicit
-	optimizer/catalog/benchmark/documentation regression stage precede the full suite.
+	optimizer/catalog/benchmark regression stage precede the full suite.
 	Missing solver packages cannot silently hide coverage; optional PyGMO native
 	features retain documented skips. Manual regular-workflow runs do not publish.
 - `pyproject.toml` is the source of package metadata, supported Python versions,
@@ -587,8 +587,15 @@ is forward-only by default under
 	Runtime and installed distribution versions, the final changelog section, and
 	software `version` in `CITATION.cff` mirror the project version. Sphinx reads it
 	directly. Citation schema and preferred-article metadata remain independent.
+- Builds require wheel >=0.46.2 to exclude known path-traversal and
+	regular-expression denial-of-service vulnerabilities. Direct dependency
+	audit scope and advisory links are recorded in
+	[development](development.md#security-floors).
 - Production Python under `iwopy/` is type checked. Tests, examples, notebooks,
 	and docs are not currently part of the mypy target.
+- Pytest tests do not read or depend on files under `docs/`; documentation
+	builds and review remain separate. See
+	[ADR-0016](adr/0016-documentation-independent-tests.md).
 - Public Python APIs follow [docstring conventions](docstrings.md): NumPy-style
 	docstrings expose optimization, array, lifecycle, and backend contracts while
 	types remain in annotations.
@@ -597,8 +604,8 @@ is forward-only by default under
 	the documentation. The incompatible numpydoc extension is not loaded.
 - iwopy follows Fraunhofer corporate design under
 	[ADR-0002](adr/0002-corporate-design.md). Sphinx adapts authoritative tokens
-	through `docs/source/_static/iwes-tokens.css` and `iwes.css`, checked by
-	`tests/test_documentation.py`. Body, navigation, code, and tables use the 16px
+	through `docs/source/_static/iwes-tokens.css` and `iwes.css`, reviewed outside
+	pytest. Body, navigation, code, and tables use the 16px
 	base scale; the 14px footer is secondary text. No browser application or shared
 	matplotlib token adapter is introduced. The original color logo is restored
 	on the white homepage without artwork changes; README uses the original white

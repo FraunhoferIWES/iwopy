@@ -1,6 +1,5 @@
 import ast
 import importlib
-import csv
 import json
 import re
 import runpy
@@ -92,133 +91,6 @@ def test_direct_script_import_is_inert(path, tmp_path, monkeypatch):
     namespace = runpy.run_path(str(path))
     assert not {"solver", "result", "problem"}.intersection(namespace)
     assert not list(tmp_path.iterdir())
-
-
-def test_catalog_links_every_case_to_real_setup():
-    page = ROOT / "docs/source/optimizer_catalog.rst"
-    text = page.read_text()
-    rows = [
-        next(csv.reader([line.strip()], skipinitialspace=True))
-        for line in text.splitlines()
-        if line.startswith('   "')
-    ]
-    linked = set()
-    for row in rows:
-        assert len(row) == 5
-        assert row[1].startswith(("Single", "Multi")), row
-        assert row[2] and row[3], row
-        match = re.fullmatch(r":ref:`(\w+) <(case-[\w-]+)>`", row[4])
-        assert match, row
-        case, anchor = match.groups()
-        script = ROOT / f"examples/optimizers/{case}.py"
-        assert script in SCRIPTS
-        assert f".. _{anchor}:" in text
-        section = text.split(f".. _{anchor}:", 1)[1].split(".. _case-", 1)[0]
-        assert f".. literalinclude:: ../../examples/optimizers/{case}.py" in section
-        linked.add(case)
-    assert linked == {path.stem for path in SCRIPTS}
-    for include in re.findall(r"\.\. literalinclude:: (.+)", text):
-        assert (page.parent / include).resolve().is_file()
-
-
-def test_catalog_capabilities_are_explicit_about_supported_workflows():
-    text = (ROOT / "docs/source/optimizer_catalog.rst").read_text()
-    rows = {
-        row[0]: row
-        for row in csv.reader(
-            [line.strip() for line in text.splitlines() if line.startswith('   "')],
-            skipinitialspace=True,
-        )
-    }
-    assert "When to Use" in text
-    assert ":class: optimizer-catalog" in text
-    for name in ("pymoo / NSGA2", "pymoo / NSGA3"):
-        assert rows[name][1].startswith("Multi; bounds")
-        assert rows[f"{name} (constrained flow)"][1].startswith(
-            "Multi; one-sided constraints"
-        )
-    for name in (
-        "PyGMO / nsga2",
-        "PyGMO / moead",
-        "PyGMO / moead_gen",
-        "PyGMO / nspso",
-    ):
-        assert "Multi (native)" in rows[name][1]
-        assert "constraints" not in rows[name][1]
-    for name in (
-        "SciPy / differential_evolution",
-        "Optuna / TPESampler",
-        "DEAP / eaSimple",
-    ):
-        assert "mixed" in rows[name][1] and "constraints" in rows[name][1]
-    assert "unconstrained" in rows["SciPy / BFGS"][1]
-    assert "constraints" not in rows["SciPy / BFGS"][1]
-
-
-def test_catalog_tables_group_every_optimizer_once_and_omit_empty_categories():
-    text = (ROOT / "docs/source/optimizer_catalog.rst").read_text()
-    tables = text.split("Availability And Batching", 1)[0]
-    pattern = r"^(Single-Objective|Multi-Objective), (Unconstrained|Constrained), (Local|Global)\n~+\n"
-    headings = list(re.finditer(pattern, tables, re.MULTILINE))
-    assert [match.group(0).splitlines()[0] for match in headings] == [
-        "Single-Objective, Unconstrained, Local",
-        "Single-Objective, Unconstrained, Global",
-        "Single-Objective, Constrained, Local",
-        "Single-Objective, Constrained, Global",
-        "Multi-Objective, Unconstrained, Global",
-        "Multi-Objective, Constrained, Global",
-    ]
-    local_adaptation = {
-        "pycma / CMA-ES",
-        "pymoo / CMAES",
-        "PyGMO / cmaes",
-        "PyGMO / xnes",
-        "PyGMO / sea",
-        "PyGMO / compass_search",
-        "Nevergrad / CMA",
-        "Nevergrad / OnePlusOne",
-        "Nevergrad / TBPSA",
-    }
-    seen = set()
-    for index, heading in enumerate(headings):
-        end = headings[index + 1].start() if index + 1 < len(headings) else len(tables)
-        section = tables[heading.end() : end]
-        assert section.count(".. csv-table::") == 1
-        rows = list(
-            csv.reader(
-                [
-                    line.strip()
-                    for line in section.splitlines()
-                    if line.startswith('   "')
-                ],
-                skipinitialspace=True,
-            )
-        )
-        assert rows
-        for row in rows:
-            name, capabilities = row[:2]
-            assert name not in seen
-            seen.add(name)
-            assert capabilities.startswith("Multi") == (
-                heading.group(1) == "Multi-Objective"
-            )
-            constrained = (
-                "constraints" in capabilities
-                or "inequalities" in capabilities
-                or name in {"SciPy / default", "PyGMO / nlopt"}
-            )
-            assert constrained == (heading.group(2) == "Constrained"), name
-            local = (
-                name.startswith(("iwopy /", "NLopt /"))
-                or (
-                    name.startswith("SciPy /")
-                    and name != "SciPy / differential_evolution"
-                )
-                or name in local_adaptation
-                or name in {"PyGMO / nlopt", "PyGMO / ipopt"}
-            )
-            assert local == (heading.group(3) == "Local"), name
-    assert len(seen) == len(SCRIPTS)
 
 
 def _factory_selectors(relative_path, variable):
@@ -393,13 +265,10 @@ def test_demo_limits_require_a_stopping_condition():
         _check_demo_limits(entries)
 
 
-def test_iwopy_source_labels_replace_native_example_labels():
+def test_iwopy_example_labels_replace_native_example_labels():
     names = {path.stem for path in SCRIPTS}
     assert {"iwopy_gg", "iwopy_slsqp"} <= names
     assert not {"native_gg", "native_slsqp"}.intersection(names)
-    catalog = (ROOT / "docs/source/optimizer_catalog.rst").read_text()
-    assert '"iwopy / GG"' in catalog and '"iwopy / SLSQP"' in catalog
-    assert '"Native /' not in catalog
 
 
 def test_callable_method_forwards_visible_stopping_controls(monkeypatch):

@@ -75,7 +75,7 @@ jobs:
       - name: Run optimizer and benchmark regressions
         run: >-
           uv run pytest tests/interfaces tests/scipy/test_de.py
-          tests/test_benchmarks.py tests/test_documentation.py
+          tests/test_benchmarks.py
 
       - name: Run full test suite
         run: uv run pytest tests

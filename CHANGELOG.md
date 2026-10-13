@@ -230,9 +230,6 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 ## v1.0.0
 
-- Release:
-  - Increased the package version to 1.0.0 and synchronized software citation,
-    runtime/distribution metadata, and current-release changelog references.
 - Python versions:
   - Added support for Python 3.14
 - Core:
@@ -290,26 +287,22 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
     SLSQP applies them to translated solver bounds.
 - Bugs:
   - Aligned GG progress rows with the completed iteration state reported to
-    callbacks.
-  - Kept feasible GG iterates when all trial candidates violate constraints,
+    callbacks. Kept feasible GG iterates when all trial candidates violate constraints,
     backtracking instead of accepting an infeasible point with lower quality.
     Preserved recovery from initially infeasible layouts in both evaluation modes.
   - Accounted for floating-point roundoff at constraint feasibility-tolerance
     boundaries.
   - Fixed combined analytical Jacobians for functions with disjoint variable
     dependencies, restored constraint bounds through problem wrappers, and
-    cleared SciPy value and Jacobian caches between solves.
-  - Skipped structurally independent components when assembling analytical
-    Jacobians.
+    cleared SciPy value and Jacobian caches between solves. Skipped structurally independent components when assembling analytical Jacobians.
   - Avoided evaluating analytically differentiated function components during
     vectorized `LocalFD` Jacobians.
+- Dependencies:
+  - Required wheel >=0.46.2 for builds to exclude known path-traversal and
+    regular-expression denial-of-service vulnerabilities.
 - Development:
-  - Made optimizer/catalog, SciPy DE, benchmark, and documentation regressions
-    explicit in regular and release CI across Python 3.10 through 3.14, with
-    required-backend preflight, full-suite coverage, safe manual dispatch, and
-    corrected development-extra setup. Added workflow contract tests.
   - Added a complete optimizer catalog with 79 main-guarded factory-call
-    scripts, package-aware execution/import tests, and selector/link coverage.
+    scripts, package-aware execution/import tests, and selector coverage.
     Each row now includes capability classifications and a practical recommendation;
     detailed class references link to the API rather than being embedded.
     Split rows into non-empty objective/constraint/local-global categories and
@@ -321,14 +314,6 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
     value lines. Kept demo runs short and added production starting suggestions,
     protected by format/budget regressions. Local PyGMO solvers use one starting
     point; GG/SLSQP examples and documentation now identify their source as iwopy.
-  - Reviewed documentation for users and developers, removed duplicated/stale
-    setup and vectorization claims, and added Fraunhofer token-backed readable
-    Sphinx styling with consistency tests. NumPy-style documentation now uses
-    Napoleon rather than the theme-incompatible numpydoc extension.
-    Restored the supplied logo on the homepage and README without artwork changes
-    and corrected the pymoo template's stale mixed-variable documentation.
-    The README and homepage logos now span their content line width while preserving
-    aspect ratio, alternative text, and the supplied dark-mode variant.
   - Added iwopy-specific agentic coding policy, architecture, naming,
     development, docstring, data-classification, decision, and Fraunhofer IWES
     visual-design guidance.

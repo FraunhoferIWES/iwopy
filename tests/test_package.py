@@ -131,7 +131,6 @@ def test_ci_workflows_run_all_optimizer_and_catalog_regressions(filename):
         "tests/interfaces",
         "tests/scipy/test_de.py",
         "tests/test_benchmarks.py",
-        "tests/test_documentation.py",
     ]
     assert all((ROOT / path).exists() for path in focused[3:])
     assert steps["Run full test suite"] == "uv run pytest tests"

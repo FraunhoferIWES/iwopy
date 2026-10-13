@@ -69,6 +69,21 @@ Put a new dependency in the narrowest justified set. A package imported by base
 belong in its own extra. `uv.lock` is currently ignored and is not a repository
 source of dependency versions.
 
+### Security Floors
+
+The 2026-10-13 audit checked all published, non-yanked stable versions admitted
+by direct build, runtime, and extra requirements against public OSV advisories.
+Builds require wheel >=0.46.2 to exclude
+[GHSA-8rrh-rw8j-w5fx](https://github.com/advisories/GHSA-8rrh-rw8j-w5fx)
+(path traversal) and
+[GHSA-qwmp-2cf2-g9g6](https://github.com/advisories/GHSA-qwmp-2cf2-g9g6)
+(regular-expression denial of service). The existing setuptools >=84.0.0
+requirement remains unchanged. No other external direct requirement admitted a
+release flagged by that audit.
+
+These declarations do not replace an audit of a resolved environment: transitive
+dependencies, native libraries, and later advisories remain outside this check.
+
 Install the repository hooks once per checkout:
 
 ```console
@@ -95,7 +110,7 @@ and the nearest tests.
 | SciPy translation | `iwopy/interfaces/scipy/` | Core Jacobians/results and `tests/scipy/` |
 | pycma translation | `iwopy/interfaces/cma/` | Ask/tell batching, constraint bounds/tolerances, callbacks/results, and `tests/cma/` |
 | Bounded population adapters | `iwopy/interfaces/_population.py` and `scipy/de.py`, `nevergrad/`, `optuna/`, `deap/` | Shared constraints, selection/finalization, diagnostics, and `tests/interfaces/` |
-| Optimizer catalog | `docs/source/optimizer_catalog.rst` and `examples/optimizers/` | Guarded factory calls, package-aware runs, and selector/link coverage |
+| Optimizer catalog | `docs/source/optimizer_catalog.rst` and `examples/optimizers/` | Guarded factory calls, package-aware runs, and selector coverage |
 | Catalog benchmark problems | `iwopy/benchmarks/quadratic.py` | Public exports, individual/population values, lifecycle, Jacobians, and `tests/test_benchmarks.py` |
 | pymoo translation | `iwopy/interfaces/pymoo/` | Factory, representation, results, and `tests/pymoo/` |
 | PyGMO translation | `iwopy/interfaces/pygmo/` | UDP ordering, callbacks/results, and `tests/pygmo/` |
@@ -196,7 +211,7 @@ documentation checks and all other closure gates.
 Both `.github/workflows/test.yml` and `.github/workflows/publish.yml` test Python
 3.10 through 3.14 on Linux with the complete `test` extra. Before the full suite,
 they import every required solver backend and run a named regression stage for
-`tests/interfaces`, SciPy DE, public benchmarks, and authored documentation.
+`tests/interfaces`, SciPy DE, and public benchmarks.
 This makes catalog execution and scalar/vectorized evaluation coverage visible;
 missing backend packages fail preflight instead of silently skipping their cases.
 Optional PyGMO IPOPT/NLopt native features may still receive explicit skips.
@@ -219,8 +234,10 @@ paths, dependency preflight, ordering, extra selection, and manual-run publish g
 
 ## Test Structure
 
-For authored documentation, run `uv run pytest tests/test_documentation.py -q`
-to check token drift, stylesheet references, readable sizing, and include targets.
+Pytest tests must not read or depend on files under `docs/`. Documentation
+validation belongs to separate build and review workflows, not the runtime
+suite. See [ADR-0016](adr/0016-documentation-independent-tests.md).
+
 When reviewing rendered documentation, use a warnings-as-errors build:
 
 ```console
@@ -232,10 +249,8 @@ Sphinx uses AutoAPI and Napoleon for NumPy-style API documentation. Check body,
 navigation, code, and table text at 320, 768, and 1280 CSS pixels; base text is
 16px and content should not overflow the page. Keep entry pages focused on
 users/developers, and implementation details in reference pages or decision records.
-Catalog checks also validate capability/recommendation fields and distinguish
-iwopy Pareto results from native-only PyGMO populations. The documentation
-regressions require the original logo references and API links instead of embedded
-class blocks; inspect the logo's original aspect ratio when checking rendering.
+Review catalog capability/recommendation fields, iwopy Pareto versus native-only
+PyGMO results, logo aspect ratios, and API links when checking documentation.
 
 The test directories encode package ownership:
 
@@ -247,9 +262,8 @@ The test directories encode package ownership:
 | `tests/cma/` | pycma population batching, objective signs, bounds/tolerances, callbacks, lifecycle, and stop/success conversion |
 | `tests/pymoo/` | pymoo variable representations, population evaluation, algorithms, and results |
 | `tests/pygmo/` | PyGMO vector/fitness ordering, algorithms, callbacks, and results |
-| `tests/interfaces/` | New population-adapter contracts plus complete catalog execution, guarded optional installations, inert imports, and selector/link coverage |
+| `tests/interfaces/` | New population-adapter contracts plus complete catalog execution, guarded optional installations, inert imports, and selector coverage |
 | `tests/test_package.py` | Package import and metadata surface |
-| `tests/test_documentation.py` | Corporate token/style consistency and authored documentation include targets |
 | `tests/test_callback_examples.py` | In-process callback example execution and plot output |
 | `notebooks/` | Executable public workflows checked separately with nbmake |
 

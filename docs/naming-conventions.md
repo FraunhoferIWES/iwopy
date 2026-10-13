@@ -240,7 +240,7 @@ them to attributes without a deliberate contract change.
 	[ADR-0015](adr/0015-shared-optimizer-controls.md).
 - Documentation styles are `iwes-tokens.css` and `iwes.css`. The adapter maps
 	authoritative token paths to `--iwes-` prefixed kebab-case CSS variables;
-	`tests/test_documentation.py` verifies every resolved value and reference.
+	resolved values and references are reviewed outside pytest.
 - Catalog capabilities name objective/result workflows: `Single`, `Multi`, and
 	`Multi (native)`. `bounds` means variable boxes, `constraints` means additional
 	restrictions, and `mixed` means integer plus floating variables. Recommendations
@@ -295,7 +295,7 @@ Test directories retain their package ownership:
 - `tests/optimizers/`: iwopy optimizer behavior;
 - `tests/scipy/`, `tests/cma/`, `tests/pymoo/`, and `tests/pygmo/`: backend translation;
 - `tests/interfaces/`: shared new population-adapter contracts and complete,
-	package-guarded catalog execution, import safety, and selector/link coverage;
+	package-guarded catalog execution, import safety, and selector coverage;
 - root tests: package imports and executable callback examples.
 
 Name focused tests after observable behavior. Parametrization identifiers expose
