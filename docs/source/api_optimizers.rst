@@ -7,8 +7,9 @@ Construct ``GG`` or ``SLSQP`` with explicit parameters, or use
 and the corresponding ``SLSQP`` selector. GG requires ``step_max`` and
 ``step_min`` and exposes ``step_div_factor``, ``f_tol``, ``n_max_steps``,
 ``max_iterations``, ``memory_size``, and ``vectorize``. SLSQP exposes ``tol``,
-``memory_size``, and ``vectorize``; flat native method options such as
-``maxiter`` and ``ftol`` are forwarded to SciPy. See :doc:`api_core`.
+``max_iterations``, ``memory_size``, and ``vectorize``; flat native method
+options such as ``ftol`` are forwarded to SciPy. Neither optimizer supports
+``max_evaluations``. See :ref:`optimizer-parameters` and :ref:`optimizer-termination`.
 
 The ``SLSQP`` class solves smooth, continuous, single-objective
 problems with variable bounds and lower, upper, two-sided, or equality

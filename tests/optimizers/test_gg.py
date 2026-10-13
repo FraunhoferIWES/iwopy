@@ -249,12 +249,11 @@ def test_gg_rejects_invalid_configuration(kwargs):
     problem = make_problem()
     parameters = {"step_max": 1.0, "step_min": 0.1}
     parameters.update(kwargs)
-    solver = GG(
-        problem=problem,
-        **parameters,
-    )
-
     with pytest.raises(ValueError):
+        solver = GG(
+            problem=problem,
+            **parameters,
+        )
         solver.initialize()
 
 

@@ -252,6 +252,13 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
     `iwopy.benchmarks`, replacing the optimizer examples' local shared-case module.
     All catalog scripts now use installed-package imports without path setup.
 - Interfaces:
+  - Standardized supported run limits as `max_iterations` and `max_evaluations`,
+    with native counter units, unsupported-limit errors, and no legacy aliases.
+    Kept algorithmic `pop_size`, pending-work `batch_size`, and SciPy DE's
+    `population_multiplier` distinct; DEAP now exposes generation limits.
+    Composed pymoo limits with custom criteria and added scalar pycma evaluation.
+    Published shared-parameter and termination explanation/support tables and
+    migrated maintained iwopy and FOXES Optimization callers.
   - Kept `trust-constr` constraint Jacobians sparse through the SciPy callback,
     defaulting native `sparse_jacobian` to true while preserving explicit options.
     SLSQP retains its required dense callback boundary; PyGMO reads sparse
@@ -259,7 +266,7 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
   - Replaced optimizer parameter dictionaries with explicit per-class controls
     and flat native keyword forwarding. Aligned `optimizer`, `vectorize`,
     `memory_size`, and absolute `pop_size` where applicable; SciPy DE preserves
-    its native per-dimension `popsize`. Removed the class factory entry point
+    a per-dimension `population_multiplier`. Removed the class factory entry point
     and old signatures without compatibility paths.
   - Added population-vectorized SciPy differential evolution with mixed integer/
     float variables, cached nonlinear constraint evaluations, and callbacks.

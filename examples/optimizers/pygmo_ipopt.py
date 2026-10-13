@@ -9,7 +9,7 @@ if __name__ == "__main__":
         problem=problem,
         hessian_approximation="limited-memory",  # Approximate the Hessian
         pop_size=1,  # One starting point, not a population search
-        max_iter=100,  # Demo iterations; production start: 1000
+        max_iterations=100,  # Demo iterations; production start: 1000
         tol=1e-8,  # Scaled convergence tolerance
         constr_viol_tol=1e-6,  # Maximum absolute constraint violation
     )

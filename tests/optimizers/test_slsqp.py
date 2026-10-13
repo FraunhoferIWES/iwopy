@@ -601,7 +601,7 @@ def test_slsqp_returns_candidate_after_iteration_limit():
     problem.initialize()
     solver = SLSQP(
         problem=problem,
-        maxiter=1,
+        max_iterations=1,
     )
     solver.initialize(verbosity=0)
 

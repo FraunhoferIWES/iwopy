@@ -11,7 +11,7 @@ if __name__ == "__main__":
         diversity_mechanism="crowding distance",  # Pareto diversity measure
         seed=42,  # Reproducible evolution
         pop_size=20,  # Demo Pareto swarm; production start: 100+
-        gen=10,  # Demo generations; production start: 1000
+        max_iterations=10,  # Demo generations; production start: 1000
     )
     solver.initialize(verbosity=0)
     solver.algo.set_verbosity(0)

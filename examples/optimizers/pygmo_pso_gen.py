@@ -12,7 +12,7 @@ if __name__ == "__main__":
         eta2=2.05,  # Attraction toward neighbourhood best positions
         seed=42,  # Reproducible evolution
         pop_size=20,  # Demo swarm; production start: 40
-        gen=10,  # Demo generations; production start: 1000
+        max_iterations=10,  # Demo generations; production start: 1000
     )
     solver.initialize(verbosity=0)
     result = solver.solve(verbosity=0)

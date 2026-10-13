@@ -10,7 +10,7 @@ if __name__ == "__main__":
         optimizer="auglag_eq",  # Equality-focused augmented Lagrangian
         problem=problem,
         pop_size=1,  # One problem-defined starting point
-        maxeval=500,  # Demo evaluations; production start: 10000
+        max_evaluations=500,  # Demo evaluations; production start: 10000
         xtol_rel=1e-6,  # Relative variable convergence tolerance
         ftol_rel=1e-8,  # Relative objective convergence tolerance
     )

@@ -8,11 +8,14 @@ Select algorithms with ``optimizer`` or use the ``pymoo`` family of
 algorithm options are flat keywords, not a parameter dictionary.
 
 ``termination="iwopy"`` uses iwopy's convergence criteria;
-``termination="default"`` uses native defaults. ``n_gen`` and ``n_eval``
-select pure limits with ``n_max_gen`` and ``n_max_evals`` respectively.
-Native termination objects can also be supplied. ``ftol``, ``period``, ``xtol``,
+``termination="default"`` uses native defaults. ``"iterations"`` and
+``"evaluations"`` select pure limits with ``max_iterations`` and
+``max_evaluations`` respectively. Both limits may be supplied together.
+Native termination objects can also be supplied; explicit limits compose with
+them using OR semantics. ``ftol``, ``period``, ``xtol``,
 and ``cvtol`` tune applicable convergence criteria; omitted controls keep
-backend defaults. See :doc:`api_core` and :doc:`optimizer_catalog`.
+backend defaults. Evaluation caps are checked at generation boundaries and
+may overshoot. See :ref:`optimizer-termination` and :doc:`optimizer_catalog`.
 
 .. toctree::
     :maxdepth: 2

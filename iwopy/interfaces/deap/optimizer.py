@@ -30,8 +30,9 @@ class Optimizer_deap(_PopulationOptimizer):
         problem: Problem,
         optimizer: str = "eaMuPlusLambda",
         *,
-        budget: int = 100,
-        batch_size: int = 20,
+        max_evaluations: int | None = 100,
+        max_iterations: int | None = None,
+        pop_size: int = 20,
         seed: int | None = None,
         cxpb: float = 0.5,
         mutpb: float = 0.2,
@@ -48,14 +49,19 @@ class Optimizer_deap(_PopulationOptimizer):
         cxpb, mutpb
             Crossover and mutation probabilities in the closed interval zero
             to one; their sum cannot exceed one for mu/lambda schemes.
-        batch_size
+        pop_size
             Population/offspring size, at least two.
         seed
             Fresh-solve seed. Python's global random state is restored even
             after errors; run serially because native operators use it.
-        budget
+        max_evaluations
             Positive candidate evaluation limit, including initialization and
-            reproduction. The final offspring population may be smaller.
+            reproduction. The final offspring population may be smaller. None
+            selects the adapter default of 100.
+        max_iterations
+            Generation limit including the initial population batch. None
+            leaves generations limited only by max_evaluations. Zero still
+            evaluates the initial population.
         name
             Optimizer name.
         vectorize
@@ -66,12 +72,16 @@ class Optimizer_deap(_PopulationOptimizer):
         Raises
         ------
         ValueError
-            If vectorize is not a boolean.
+            If vectorize is not a boolean or an iteration/evaluation limit is invalid.
         """
         super().__init__(problem, name, vectorize)
+        limits = self._limit_kwargs(
+            max_iterations, max_evaluations, "max_iterations", "max_evaluations"
+        )
         self.algorithm = optimizer
-        self.budget = budget
-        self.batch_size = batch_size
+        self.max_evaluations = limits.get("max_evaluations", 100)
+        self.max_iterations = limits.get("max_iterations")
+        self.pop_size = pop_size
         self.seed = seed
         self.cxpb = cxpb
         self.mutpb = mutpb
@@ -96,11 +106,14 @@ class Optimizer_deap(_PopulationOptimizer):
             raise ValueError(
                 f"Unknown DEAP algorithm '{self.algorithm}'; choose {self.algorithms}"
             )
-        for label, value in (("budget", self.budget), ("batch_size", self.batch_size)):
+        for label, value in (
+            ("max_evaluations", self.max_evaluations),
+            ("pop_size", self.pop_size),
+        ):
             if isinstance(value, bool) or not isinstance(value, Integral) or value < 1:
                 raise ValueError(f"{label} must be a positive integer")
-        if self.batch_size < 2:
-            raise ValueError("DEAP batch_size must be at least two")
+        if self.pop_size < 2:
+            raise ValueError("DEAP pop_size must be at least two")
         if any(
             not np.isfinite(value) or not 0 <= value <= 1
             for value in (self.cxpb, self.mutpb)
@@ -160,7 +173,7 @@ class Optimizer_deap(_PopulationOptimizer):
         values = rng.uniform(
             self._lower,
             self._upper,
-            size=(min(self.batch_size, self.budget), len(self._lower)),
+            size=(min(self.pop_size, self.max_evaluations), len(self._lower)),
         )
         values[0] = self._initial
         fitness_type = type(
@@ -170,8 +183,10 @@ class Optimizer_deap(_PopulationOptimizer):
         toolbox = self._toolbox()
         iteration = 1
         self._evaluate_individuals(population, iteration)
-        while self.n_evaluations < self.budget:
-            size = min(self.batch_size, self.budget - self.n_evaluations)
+        while self.n_evaluations < self.max_evaluations and (
+            self.max_iterations is None or iteration < self.max_iterations
+        ):
+            size = min(self.pop_size, self.max_evaluations - self.n_evaluations)
             if self.algorithm == "eaSimple":
                 offspring = self._algorithms.varAnd(
                     toolbox.select(population, size), toolbox, self.cxpb, self.mutpb
@@ -183,10 +198,10 @@ class Optimizer_deap(_PopulationOptimizer):
             iteration += 1
             self._evaluate_individuals(offspring, iteration)
             if self.algorithm == "eaMuPlusLambda":
-                population = toolbox.select(population + offspring, self.batch_size)
+                population = toolbox.select(population + offspring, self.pop_size)
             elif self.algorithm == "eaMuCommaLambda":
                 population = toolbox.select(
-                    offspring, min(self.batch_size, len(offspring))
+                    offspring, min(self.pop_size, len(offspring))
                 )
             else:
                 population = offspring

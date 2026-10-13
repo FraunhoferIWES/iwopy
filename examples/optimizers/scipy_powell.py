@@ -7,8 +7,8 @@ if __name__ == "__main__":
         family="scipy",  # Optimizer family
         optimizer="Powell",  # Derivative-free direction-set search
         problem=problem,
-        maxiter=100,  # Demo iterations; production start: 1000
-        maxfev=500,  # Demo evaluations; production start: 10000
+        max_iterations=100,  # Demo iterations; production start: 1000
+        max_evaluations=500,  # Demo evaluations; production start: 10000
         xtol=1e-6,  # Relative variable convergence tolerance
         ftol=1e-8,  # Relative objective convergence tolerance
     )

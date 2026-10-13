@@ -10,7 +10,7 @@ if __name__ == "__main__":
         problem=problem,
         sigma0=0.25 * min(variable_ranges),  # Initial search scale in variable units
         seed=42,  # Reproducible sampling
-        maxiter=50,  # Demo generations; production start: 1000
+        max_iterations=50,  # Demo generations; production start: 1000
         tolx=1e-6,  # Variable convergence tolerance
     )
     solver.initialize(verbosity=0)

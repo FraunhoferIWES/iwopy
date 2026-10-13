@@ -11,7 +11,7 @@ if __name__ == "__main__":
         force_bounds=True,  # Keep sampled candidates within variable bounds
         seed=42,  # Reproducible evolution
         pop_size=20,  # Production: max(5, 4 + int(3 * log(n_vars)))
-        gen=20,  # Demo generations; production start: 1000
+        max_iterations=20,  # Demo generations; production start: 1000
         ftol=1e-6,  # Population objective-spread stopping tolerance
         xtol=1e-6,  # Search-distribution stopping tolerance
     )

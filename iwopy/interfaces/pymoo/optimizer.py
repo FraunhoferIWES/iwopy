@@ -67,8 +67,8 @@ class Optimizer_pymoo(Optimizer):
         store_prob_res: bool = False,
         save_history: bool = False,
         termination: Any = "iwopy",
-        n_max_gen: int | None = None,
-        n_max_evals: int | float | None = None,
+        max_iterations: int | None = None,
+        max_evaluations: int | None = None,
         ftol: float | None = None,
         period: int | None = None,
         xtol: float | None = None,
@@ -94,23 +94,35 @@ class Optimizer_pymoo(Optimizer):
         save_history
             Retain native per-generation algorithm history.
         termination
-            iwopy or default convergence, n_gen or n_eval limits, or a native
-            pymoo termination object.
-        n_max_gen, n_max_evals
-            Generation and evaluation limits; None keeps backend defaults.
+            iwopy or default convergence, iterations or evaluations limits, or
+            a native pymoo termination object. Any supplied limits are composed
+            with the convergence criterion and stop when either is reached.
+        max_iterations, max_evaluations
+            Native generation and candidate-evaluation limits. Generation
+            boundaries may exceed an evaluation limit. None keeps defaults.
         ftol, period, xtol, cvtol
             Native convergence tolerance/window settings. None keeps defaults.
         name
             Optimizer name.
         kwargs
             Flat native algorithm options, excluding its type selector.
+
+        Raises
+        ------
+        ValueError
+            If limits are invalid, vectorize is not a boolean, or a superseded
+            termination/type selector is supplied.
+        TypeError
+            If a superseded or unsupported shared keyword is supplied.
         """
         super().__init__(problem, name)
         self._validate_kwargs(kwargs)
         if "type" in kwargs:
             raise ValueError("pymoo: select the algorithm with optimizer")
+        if isinstance(termination, str) and termination in {"n_gen", "n_eval"}:
+            raise ValueError("pymoo: use termination='iterations' or 'evaluations'")
         self.optimizer = optimizer
-        self.vectorize = vectorize
+        self.vectorize = self._validate_vectorize(vectorize)
         self.store_prob_res = store_prob_res
         self.seed = seed
         self.save_history = save_history
@@ -118,9 +130,12 @@ class Optimizer_pymoo(Optimizer):
         if pop_size is not None:
             self._algorithm_kwargs["pop_size"] = pop_size
         self._termination_kwargs = {"type": termination}
+        self._termination_kwargs.update(
+            self._limit_kwargs(
+                max_iterations, max_evaluations, "n_max_gen", "n_max_evals"
+            )
+        )
         for key, value in (
-            ("n_max_gen", n_max_gen),
-            ("n_max_evals", n_max_evals),
             ("ftol", ftol),
             ("period", period),
             ("xtol", xtol),
@@ -128,12 +143,6 @@ class Optimizer_pymoo(Optimizer):
         ):
             if value is not None:
                 self._termination_kwargs[key] = value
-        if isinstance(termination, str) and termination in {"n_gen", "n_eval"}:
-            key = "n_max_gen" if termination == "n_gen" else "n_max_evals"
-            self._termination_kwargs = {
-                "type": termination,
-                key: self._termination_kwargs.get(key, 1000),
-            }
         self.pymoo_problem: Any | None = None
         self.algo: Any | None = None
         self.term: Any | None = None

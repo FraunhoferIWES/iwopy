@@ -6,9 +6,7 @@ from iwopy.core import Optimizer, OptimizerCallbackData, Problem, SingleObjOptRe
 class _PopulationOptimizer(Optimizer):
     def __init__(self, problem: Problem, name: str, vectorize: bool = True) -> None:
         super().__init__(problem, name)
-        if not isinstance(vectorize, (bool, np.bool_)):
-            raise ValueError(f"Optimizer '{name}': vectorize must be a boolean")
-        self.vectorize = bool(vectorize)
+        self.vectorize = self._validate_vectorize(vectorize)
         self.n_evaluations = 0
         self._best_values: np.ndarray | None = None
         self._best_rank: tuple[float, ...] = (np.inf,)

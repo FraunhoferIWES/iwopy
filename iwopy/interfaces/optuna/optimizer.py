@@ -23,7 +23,8 @@ class Optimizer_optuna(_PopulationOptimizer):
         problem: Problem,
         optimizer: str = "TPESampler",
         *,
-        budget: int = 100,
+        max_evaluations: int | None = 100,
+        max_iterations: int | None = None,
         batch_size: int = 8,
         seed: int | None = None,
         vectorize: bool = True,
@@ -45,8 +46,12 @@ class Optimizer_optuna(_PopulationOptimizer):
             Positive number of pending trials.
         seed
             Seed for a fresh sampler on each solve.
-        budget
+        max_evaluations
             Positive completed-trial limit including the final partial batch.
+            None selects the adapter default of 100.
+        max_iterations
+            Unsupported: a pending-trial batch is not a native iteration. Must
+            be None.
         name
             Optimizer and study name.
         vectorize
@@ -57,12 +62,18 @@ class Optimizer_optuna(_PopulationOptimizer):
         Raises
         ------
         ValueError
-            If vectorize is not a boolean.
+            If vectorize is not a boolean, an evaluation limit is invalid, or
+            an unsupported iteration limit is requested.
+        TypeError
+            If a superseded or unsupported shared keyword is supplied.
         """
         super().__init__(problem, name, vectorize)
         self._validate_kwargs(kwargs)
+        limits = self._limit_kwargs(
+            max_iterations, max_evaluations, evaluations="max_evaluations"
+        )
         self.sampler = optimizer
-        self.budget = budget
+        self.max_evaluations = limits.get("max_evaluations", 100)
         self.batch_size = batch_size
         self.seed = seed
         self._sampler_kwargs = dict(kwargs)
@@ -89,7 +100,10 @@ class Optimizer_optuna(_PopulationOptimizer):
             raise ValueError(
                 f"Unknown Optuna sampler '{self.sampler}'; choose {self.samplers}"
             )
-        for label, value in (("budget", self.budget), ("batch_size", self.batch_size)):
+        for label, value in (
+            ("max_evaluations", self.max_evaluations),
+            ("batch_size", self.batch_size),
+        ):
             if isinstance(value, bool) or not isinstance(value, Integral) or value < 1:
                 raise ValueError(f"{label} must be a positive integer")
         conflicts = {"seed", "constraints_func"}.intersection(self._sampler_kwargs)
@@ -175,10 +189,12 @@ class Optimizer_optuna(_PopulationOptimizer):
         self.study = self._new_study()
         distributions = self._distributions()
         iteration = 0
-        while self.n_evaluations < self.budget:
+        while self.n_evaluations < self.max_evaluations:
             trials = [
                 self.study.ask(distributions)
-                for _ in range(min(self.batch_size, self.budget - self.n_evaluations))
+                for _ in range(
+                    min(self.batch_size, self.max_evaluations - self.n_evaluations)
+                )
             ]
             iteration += 1
             self._batch(trials, list(distributions), iteration)

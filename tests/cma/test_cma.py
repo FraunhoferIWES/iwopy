@@ -59,7 +59,7 @@ def make_problem(maximize=False, initialize=True, **kwargs):
 
 
 def make_solver(problem=None, **kwargs):
-    options = {"seed": 42, "popsize": 8, "ftarget": 1e-9, "maxiter": 200}
+    options = {"seed": 42, "pop_size": 8, "ftarget": 1e-9, "max_iterations": 200}
     options.update(kwargs)
     solver = Optimizer_cma(
         problem=make_problem() if problem is None else problem,
@@ -93,7 +93,7 @@ def test_cma_minimizes_with_population_evaluation_only(monkeypatch):
         seed=42,
         pop_size=8,
         ftarget=1e-9,
-        maxiter=200,
+        max_iterations=200,
     )
     solver.initialize(verbosity=0)
 
@@ -123,6 +123,36 @@ def test_cma_maximizes_and_preserves_callback_objective_signs():
         assert state.objs[:, 0] == pytest.approx(expected)
 
 
+def test_cma_scalar_route_preserves_population_order_values_and_counters(monkeypatch):
+    problem = make_problem()
+    evaluated = []
+    evaluate_individual = problem.evaluate_individual
+
+    def record(vars_int, vars_float, **kwargs):
+        evaluated.append(vars_float.copy())
+        return evaluate_individual(vars_int, vars_float, **kwargs)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Scalar mode must not evaluate a population")
+
+    monkeypatch.setattr(problem, "evaluate_individual", record)
+    monkeypatch.setattr(problem, "evaluate_population", forbidden)
+    scalar = make_solver(problem, vectorize=False, max_iterations=2)
+    scalar_history = OptimizationHistory()
+    result = scalar.solve(verbosity=0, callbacks=[scalar_history])
+    vector = make_solver(max_iterations=2)
+    vector_history = OptimizationHistory()
+    reference = vector.solve(verbosity=0, callbacks=[vector_history])
+    assert len(evaluated) == 16
+    np.testing.assert_allclose(
+        np.concatenate([state.vars_float for state in scalar_history.states]), evaluated
+    )
+    for scalar_state, vector_state in zip(scalar_history.states, vector_history.states):
+        np.testing.assert_allclose(scalar_state.objs, vector_state.objs)
+        assert scalar_state.n_evaluations == vector_state.n_evaluations
+    np.testing.assert_allclose(result.vars_float, reference.vars_float)
+
+
 def test_cma_solves_general_constraints_in_populations(monkeypatch):
     problem = make_problem(initialize=False)
     problem.add_constraint(GeneralBounds(problem))
@@ -133,7 +163,7 @@ def test_cma_solves_general_constraints_in_populations(monkeypatch):
         raise AssertionError("Constrained CMA-ES must not evaluate individuals")
 
     monkeypatch.setattr(problem, "evaluate_individual", unexpected_individual)
-    solver = make_solver(problem, ftarget=-np.inf, maxiter=400, tolfun=1e-8)
+    solver = make_solver(problem, ftarget=-np.inf, max_iterations=400, tolfun=1e-8)
 
     result = solver.solve(verbosity=0, callbacks=[history])
 
@@ -158,7 +188,7 @@ def test_cma_solves_nonlinear_constraint():
     problem = make_problem(initialize=False)
     problem.add_constraint(SquaredNorm(problem, "norm", maxs=1.0))
     problem.initialize(verbosity=0)
-    solver = make_solver(problem, ftarget=-np.inf, maxiter=400, tolfun=1e-8)
+    solver = make_solver(problem, ftarget=-np.inf, max_iterations=400, tolfun=1e-8)
 
     result = solver.solve(verbosity=0)
 
@@ -251,7 +281,7 @@ def test_cma_tell_receives_matching_fitness_and_constraints(monkeypatch):
         return tell(strategy, solutions, values, constraints_values=constraints_values)
 
     monkeypatch.setattr(cma.CMAEvolutionStrategy, "tell", record_tell)
-    make_solver(problem, maxiter=2).solve(verbosity=0)
+    make_solver(problem, max_iterations=2).solve(verbosity=0)
 
     assert received == [8, 8]
 
@@ -295,7 +325,7 @@ class RecordingCallback(OptimizerCallback):
 
 
 def test_cma_callback_lifecycle_shapes_counts_and_order():
-    solver = make_solver(maxiter=3, ftarget=-np.inf)
+    solver = make_solver(max_iterations=3, ftarget=-np.inf)
     calls = []
     callbacks = [RecordingCallback("first", calls), RecordingCallback("second", calls)]
     history = OptimizationHistory()
@@ -326,7 +356,7 @@ def test_cma_callback_lifecycle_shapes_counts_and_order():
 
 
 def test_cma_skips_callback_snapshots_when_unused(monkeypatch):
-    solver = make_solver(maxiter=1)
+    solver = make_solver(max_iterations=1)
 
     def unexpected_snapshot(*args, **kwargs):
         raise AssertionError("No snapshot should be made without callbacks")
@@ -340,7 +370,7 @@ def test_cma_skips_callback_snapshots_when_unused(monkeypatch):
 
 
 def test_cma_repeated_solves_start_fresh_and_reset_history():
-    solver = make_solver(maxiter=3)
+    solver = make_solver(max_iterations=3)
     history = OptimizationHistory()
 
     first = solver.solve(verbosity=0, callbacks=[history])
@@ -355,9 +385,9 @@ def test_cma_repeated_solves_start_fresh_and_reset_history():
 @pytest.mark.parametrize(
     "options, reason",
     [
-        ({"maxiter": 1}, "maxiter"),
-        ({"maxfevals": 1}, "maxfevals"),
-        ({"maxiter": 0}, "maxiter"),
+        ({"max_iterations": 1}, "maxiter"),
+        ({"max_evaluations": 1}, "maxfevals"),
+        ({"max_iterations": 0}, "maxiter"),
         ({"tolfacupx": 1e-12}, "tolfacupx"),
     ],
 )
@@ -377,7 +407,7 @@ def test_cma_no_feasible_solution_is_unsuccessful():
         BoundedCoordinate(problem, "impossible", mins=10.0, maxs=np.inf)
     )
     problem.initialize(verbosity=0)
-    solver = make_solver(problem, maxiter=3)
+    solver = make_solver(problem, max_iterations=3)
 
     result = solver.solve(verbosity=0)
 
@@ -392,7 +422,7 @@ def test_cma_tolerance_band_equality_is_supported():
         BoundedCoordinate(problem, "equality", mins=2.0, maxs=2.0, tol=0.05)
     )
     problem.initialize(verbosity=0)
-    solver = make_solver(problem, ftarget=-np.inf, maxiter=400, tolfun=1e-8)
+    solver = make_solver(problem, ftarget=-np.inf, max_iterations=400, tolfun=1e-8)
 
     result = solver.solve(verbosity=0)
 
@@ -406,7 +436,7 @@ def test_cma_silent_run_creates_no_backend_files(tmp_path, monkeypatch, capsys):
     problem.add_constraint(GeneralBounds(problem))
     problem.initialize(verbosity=0)
 
-    make_solver(problem, maxiter=2).solve(verbosity=0)
+    make_solver(problem, max_iterations=2).solve(verbosity=0)
 
     assert not capsys.readouterr().out
     assert not any(path.is_file() for path in tmp_path.rglob("*"))
@@ -418,7 +448,7 @@ def test_cma_verbose_run_does_not_enable_constraint_logs(tmp_path, monkeypatch, 
     problem.add_constraint(GeneralBounds(problem))
     problem.initialize(verbosity=0)
 
-    make_solver(problem, maxiter=2).solve(verbosity=1)
+    make_solver(problem, max_iterations=2).solve(verbosity=1)
 
     assert capsys.readouterr().out
     assert not any(path.is_file() for path in tmp_path.rglob("*"))
@@ -428,7 +458,7 @@ def test_cma_zero_generation_constrained_result_is_unsuccessful():
     problem = make_problem(initialize=False)
     problem.add_constraint(GeneralBounds(problem))
     problem.initialize(verbosity=0)
-    solver = make_solver(problem, maxiter=0)
+    solver = make_solver(problem, max_iterations=0)
 
     result = solver.solve(verbosity=0)
 

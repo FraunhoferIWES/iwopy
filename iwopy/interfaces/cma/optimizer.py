@@ -18,7 +18,8 @@ class Optimizer_cma(Optimizer):
     Vectorized single-objective CMA-ES interface to pycma.
 
     Each ask/tell generation evaluates objectives and constraints in one
-    population call. Floating variables, box bounds, and nonlinear constraints
+    population call by default, or in ordered individual calls when
+    ``vectorize=False``. Floating variables, box bounds, and nonlinear constraints
     are supported; integer variables and multiple objectives are not.
     Constraint bounds become nonpositive inequalities with the owning
     constraint's tolerance, handled by pycma's augmented Lagrangian.
@@ -34,7 +35,9 @@ class Optimizer_cma(Optimizer):
         *,
         pop_size: int | None = None,
         seed: int | None = None,
-        maxiter: int | None = None,
+        vectorize: bool = True,
+        max_iterations: int | None = None,
+        max_evaluations: int | None = None,
         name: str = "Optimizer_cma",
         **kwargs: Any,
     ) -> None:
@@ -50,20 +53,37 @@ class Optimizer_cma(Optimizer):
             Absolute population size; None uses pycma's dimension-based default.
         seed
             Native random seed; None uses the backend default.
-        maxiter
+        vectorize
+            Evaluate generations as populations by default, or evaluate their
+            candidates individually in order. This does not enable threads.
+        max_iterations
             Generation limit; None uses the backend default.
+        max_evaluations
+            Native fitness-evaluation limit; checked at generation boundaries,
+            so the last generation can exceed it. None uses the native default.
         name
             The optimizer name.
         kwargs
             Flat native pycma options, such as ftarget, tolfun and tolx. Fitness
             targets use minimization-space values, including negation for
             maximization. Bounds, representation, callbacks and logging are managed.
+
+        Raises
+        ------
+        ValueError
+            If a limit is invalid or vectorize is not a boolean.
+        TypeError
+            If a superseded or unsupported shared keyword is supplied.
         """
         super().__init__(problem, name)
         self._validate_kwargs(kwargs)
         self.sigma0 = sigma0
+        self.vectorize = self._validate_vectorize(vectorize)
         self._native_pars = dict(kwargs)
-        for key, value in (("popsize", pop_size), ("seed", seed), ("maxiter", maxiter)):
+        self._native_pars.update(
+            self._limit_kwargs(max_iterations, max_evaluations, "maxiter", "maxfevals")
+        )
+        for key, value in (("popsize", pop_size), ("seed", seed)):
             if value is not None:
                 if key in self._native_pars:
                     raise ValueError(f"CMAES: conflicting native option '{key}'")
@@ -74,6 +94,20 @@ class Optimizer_cma(Optimizer):
         self._cons_upper = np.empty(0, dtype=np.float64)
         self._lower_mask = np.empty(0, dtype=bool)
         self._upper_mask = np.empty(0, dtype=bool)
+
+    def _evaluate_generation(
+        self, vars_int: np.ndarray, vars_float: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Evaluate one native generation in the selected problem-evaluation mode."""
+        if self.vectorize:
+            return self.problem.evaluate_population(vars_int, vars_float)
+        values = [
+            self.problem.evaluate_individual(integer, floating)
+            for integer, floating in zip(vars_int, vars_float)
+        ]
+        return np.stack([value[0] for value in values]), np.stack(
+            [value[1] for value in values]
+        )
 
     def initialize(self, verbosity: int = 1) -> None:
         """
@@ -219,7 +253,7 @@ class Optimizer_cma(Optimizer):
         callbacks: list[OptimizerCallback] | None = None,
     ) -> SingleObjOptResults:
         """
-        Run a fresh vectorized ask/tell optimization.
+        Run a fresh ask/tell optimization in the configured evaluation mode.
 
         Parameters
         ----------
@@ -253,7 +287,7 @@ class Optimizer_cma(Optimizer):
             solutions = strategy.ask()
             vars_float = np.asarray(solutions, dtype=np.float64)
             vars_int = np.empty((len(solutions), 0), dtype=np.int32)
-            objs, cons = self.problem.evaluate_population(vars_int, vars_float)
+            objs, cons = self._evaluate_generation(vars_int, vars_float)
             self._validate_values(objs, cons, len(solutions))
             fitness = objs[:, 0] * (-1.0 if self.problem.maximize_objs[0] else 1.0)
             inequalities = self._constraint_values(cons)

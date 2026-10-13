@@ -65,7 +65,7 @@ if __name__ == "__main__":
         problem=problem,
         vectorize=not args.no_pop,
         tol=1e-9,
-        maxiter=100,
+        max_iterations=100,
     )
     solver.initialize()
     results = solver.solve()

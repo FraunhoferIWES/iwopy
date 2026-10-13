@@ -7,7 +7,7 @@ if __name__ == "__main__":
         family="scipy",  # Optimizer family
         optimizer="BFGS",  # Quasi-Newton optimization
         problem=problem,
-        maxiter=100,  # Demo iterations; production start: 1000
+        max_iterations=100,  # Demo iterations; production start: 1000
         gtol=1e-6,  # Gradient convergence tolerance
     )
     solver.initialize(verbosity=0)

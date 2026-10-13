@@ -65,6 +65,8 @@ class Optimizer_pygmo(Optimizer):
         pop_size: int = 1,
         seed: int | None = None,
         vectorize: bool = False,
+        max_iterations: int | None = None,
+        max_evaluations: int | None = None,
         norandom_first: bool | None = None,
         c_tol: float = 1e-4,
         problem_verbosity: int = 0,
@@ -86,6 +88,13 @@ class Optimizer_pygmo(Optimizer):
             Seed for both the population and native drivers supporting seed.
         vectorize
             Enable batch fitness where supported by the selected driver.
+        max_iterations
+            IPOPT iteration or evolutionary-driver generation limit. Unsupported
+            for NLopt and compass_search. None preserves the native default.
+        max_evaluations
+            Native driver fitness-call limit for NLopt or compass_search,
+            excluding initial population construction. Unsupported for other
+            drivers. None preserves the native default.
         norandom_first
             Replace the first individual with problem initial values; None
             enables this when pop_size is one.
@@ -99,7 +108,15 @@ class Optimizer_pygmo(Optimizer):
         name
             Optimizer name.
         kwargs
-            Flat native driver options, such as gen, maxeval and max_iter.
+            Flat native driver options, such as print_level and ftol_rel.
+
+        Raises
+        ------
+        ValueError
+            If limits are invalid or unsupported by the selected driver,
+            vectorize is not a boolean, or driver selection is inconsistent.
+        TypeError
+            If a superseded or unsupported shared keyword is supplied.
         """
         super().__init__(problem, name)
         self._validate_kwargs(kwargs)
@@ -108,7 +125,7 @@ class Optimizer_pygmo(Optimizer):
         self.optimizer = optimizer
         self.pop_size = pop_size
         self.seed = seed
-        self.vectorize = vectorize
+        self.vectorize = self._validate_vectorize(vectorize)
         self.norandom_first = (
             pop_size == 1 if norandom_first is None else norandom_first
         )
@@ -116,6 +133,19 @@ class Optimizer_pygmo(Optimizer):
         self.problem_verbosity = problem_verbosity
         self.verbosity = algorithm_verbosity
         self._algorithm_kwargs = dict(kwargs)
+        iteration_key = (
+            "max_iter"
+            if optimizer == "ipopt"
+            else (None if optimizer in {"nlopt", "compass_search"} else "gen")
+        )
+        evaluation_key = {"nlopt": "maxeval", "compass_search": "max_fevals"}.get(
+            optimizer
+        )
+        self._algorithm_kwargs.update(
+            self._limit_kwargs(
+                max_iterations, max_evaluations, iteration_key, evaluation_key
+            )
+        )
         if optimizer == "nlopt":
             if nlopt_optimizer is None:
                 raise ValueError("PyGMO NLopt requires nlopt_optimizer")

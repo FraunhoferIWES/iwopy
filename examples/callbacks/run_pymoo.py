@@ -46,8 +46,8 @@ def main(output_dir: Path | None = None, n_generations: int = 20) -> Path:
         vectorize=True,
         pop_size=30,
         seed=42,
-        termination="n_gen",
-        n_max_gen=n_generations,
+        termination="iterations",
+        max_iterations=n_generations,
     )
     solver.initialize(verbosity=0)
     history = iwopy.OptimizationHistory()

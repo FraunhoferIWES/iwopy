@@ -14,8 +14,9 @@ are rejected. It does not require derivatives. Importing iwopy or the interface
 does not load pycma; optimizer initialization loads the optional backend.
 
 Each generation calls ``ask()``, evaluates the complete ordered population in
-one ``Problem.evaluate_population()`` call, and passes the corresponding fitness
-and constraint rows to ``tell()``. Provide vectorized problem/function
+one ``Problem.evaluate_population()`` call by default, or ordered
+``evaluate_individual()`` calls when ``vectorize=False``, and passes matching
+fitness and constraint rows to ``tell()``. Provide vectorized problem/function
 implementations to benefit from batching. Selected-solution finalization still
 uses the problem's individual finalization contract.
 
@@ -49,7 +50,7 @@ Example
         sigma0=0.8,
         seed=42,
         pop_size=8,
-        maxiter=200,
+        max_iterations=200,
         ftarget=1e-9,
     )
     solver.initialize(verbosity=0)
@@ -62,7 +63,9 @@ Options And Constraints
 
 ``sigma0`` is a positive finite initial standard deviation in variable units;
 scale variables so one shared step size is meaningful. ``pop_size``, ``seed``,
-and ``maxiter`` are explicit controls; additional trusted native pycma options
+``vectorize``, ``max_iterations``, and ``max_evaluations`` are explicit controls;
+evaluation caps are checked at generation boundaries and may overshoot.
+See :ref:`optimizer-termination`. Additional trusted native pycma options
 such as ``ftarget``, ``tolfun``, and ``tolx`` are flat keywords.
 The adapter manages ``bounds``, ``BoundaryHandler``,
 ``integer_variables``, ``fixed_variables``, ``transformation``,

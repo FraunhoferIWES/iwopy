@@ -9,8 +9,8 @@ if __name__ == "__main__":
         problem=problem,
         initial_tr_radius=1.0,  # Initial radius in variable units
         final_tr_radius=1e-6,  # Final trust-region radius
-        maxiter=100,  # Demo iterations; production start: 1000
-        maxfev=500,  # Demo evaluations; production start: 10000
+        max_iterations=100,  # Demo iterations; production start: 1000
+        max_evaluations=500,  # Demo evaluations; production start: 10000
     )
     solver.initialize(verbosity=0)
     result = solver.solve(verbosity=0)

@@ -26,19 +26,12 @@ BACKENDS = {
     "deap": "deap",
 }
 DEMO_LIMITS = {
-    "budget": 400,
     "batch_size": 20,
-    "maxiter": 500,
-    "max_iter": 100,
-    "maxfun": 500,
-    "maxfev": 500,
-    "max_fevals": 200,
-    "maxeval": 500,
-    "max_iterations": 100,
-    "gen": 100,
-    "n_max_gen": 10,
+    "max_iterations": 200,
+    "max_evaluations": 500,
+    "bfgs_iterations": 100,
     "pop_size": 20,
-    "popsize": 5,
+    "population_multiplier": 5,
 }
 
 
@@ -358,7 +351,11 @@ def test_setup_comments_only_annotate_individual_values(path):
     for name, value in entries:
         assert value.lineno == value.end_lineno, path
         assert comments.get(value.lineno, "").strip("# "), path
-        if name in DEMO_LIMITS and name not in {"batch_size", "popsize", "pop_size"}:
+        if name in DEMO_LIMITS and name not in {
+            "batch_size",
+            "population_multiplier",
+            "pop_size",
+        }:
             assert "production" in comments[value.lineno].lower(), path
     for line in range(constructor.lineno, constructor.end_lineno + 1):
         if line not in value_lines:
@@ -372,7 +369,7 @@ def _check_demo_limits(entries):
             assert isinstance(value, ast.Constant), name
             assert type(value.value) is int, name
             assert 0 < value.value <= DEMO_LIMITS[name], name
-            if name not in {"pop_size", "popsize", "batch_size"}:
+            if name not in {"pop_size", "population_multiplier", "batch_size"}:
                 limits_found.add(name)
     assert limits_found, "Each example needs an explicit short run limit"
 
@@ -385,8 +382,8 @@ def test_every_example_has_short_explicit_run_limits(path):
 
 @pytest.mark.parametrize("budget", [0, -1, 10000, True])
 def test_demo_limits_reject_invalid_or_long_budgets(budget):
-    _, entries = _setup_entries(f"solver = Optimizer_demo(budget={budget})")
-    with pytest.raises(AssertionError, match="budget"):
+    _, entries = _setup_entries(f"solver = Optimizer_demo(max_evaluations={budget})")
+    with pytest.raises(AssertionError, match="max_evaluations"):
         _check_demo_limits(entries)
 
 
@@ -416,7 +413,9 @@ def test_callable_method_forwards_visible_stopping_controls(monkeypatch):
         return expected
 
     monkeypatch.setitem(method.__globals__, "minimize", capture)
-    assert method(lambda point: 0.0, np.zeros(2), maxiter=7, gtol=1e-5) is expected
+    assert (
+        method(lambda point: 0.0, np.zeros(2), bfgs_iterations=7, gtol=1e-5) is expected
+    )
     assert observed["options"] == {"maxiter": 7, "gtol": 1e-5}
     method(lambda point: 0.0, np.zeros(2))
     assert observed["options"] == {"maxiter": 100, "gtol": 1e-6}
@@ -443,8 +442,8 @@ def test_catalog_covers_all_public_selectors(package):
         assert _factory_selectors("iwopy/interfaces/pymoo/factory.py", "typ") - {
             "iwopy",
             "default",
-            "n_gen",
-            "n_eval",
+            "iterations",
+            "evaluations",
         } == _script_selectors("pymoo")
     elif package == "pygmo":
         assert _factory_selectors("iwopy/interfaces/pygmo/algos.py", "type") - {
@@ -508,6 +507,15 @@ def _assert_factory_calls(source, path):
                 "problem_pars",
                 "setup_pars",
                 "term_pars",
+                "maxiter",
+                "max_iter",
+                "maxeval",
+                "maxfevals",
+                "n_max_gen",
+                "n_max_evals",
+                "budget",
+                "popsize",
+                "gen",
             }.intersection(keyword.arg for keyword in node.keywords), path
 
 

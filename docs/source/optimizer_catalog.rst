@@ -194,6 +194,8 @@ every upstream capability. Curvature methods also need gradients.
 
 Recommendations are starting points, not performance rankings. Compare suitable
 solvers on your problem and budget; short setup runs do not guarantee convergence.
+See :ref:`optimizer-parameters` for the parameter explanation table and
+:ref:`optimizer-termination` for limit support, counting units, and convergence.
 
 Multi-Objective Flows
 -------------------------
@@ -264,10 +266,11 @@ for constructor parameters and methods.
 pycma
 ~~~~~~~~~~~~~~~~~~~~
 
-``Optimizer_cma`` evaluates each asked generation as an iwopy population.
+``Optimizer_cma`` evaluates each asked generation as an iwopy population by
+default, or ordered individuals when ``vectorize=False``.
 It supports continuous single-objective search, finite bounds, and native
 augmented-Lagrangian constraints using each constraint's tolerance. It has no
-individual-evaluation switch. The ``cma`` extra requires pycma >=4.4.0.
+threaded-evaluation switch. The ``cma`` extra requires pycma >=4.4.0.
 
 See the :doc:`Optimizer_cma API <_autoapi/iwopy/interfaces/cma/optimizer/index>`
 for constructor parameters and methods.

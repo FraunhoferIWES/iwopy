@@ -20,8 +20,9 @@ class Optimizer_scipy_de(_PopulationOptimizer):
         self,
         problem: Problem,
         *,
-        maxiter: int = 1000,
-        popsize: int = 15,
+        max_iterations: int | None = 1000,
+        max_evaluations: int | None = None,
+        population_multiplier: int = 15,
         seed: int | None = None,
         tol: float = 0.01,
         atol: float = 0.0,
@@ -35,9 +36,12 @@ class Optimizer_scipy_de(_PopulationOptimizer):
         problem
             Initialized single-objective problem with finite, strictly ordered
             bounds. Constraint bounds include each function's tolerance.
-        maxiter
-            Maximum number of generations.
-        popsize
+        max_iterations
+            Maximum number of generations after initialization. None uses the
+            native default; zero still evaluates the initial population.
+        max_evaluations
+            Unsupported by native differential evolution; must be None.
+        population_multiplier
             Native population multiplier per free variable, not an absolute size.
         seed
             Native random seed; None keeps SciPy's default. A native rng can
@@ -59,12 +63,18 @@ class Optimizer_scipy_de(_PopulationOptimizer):
         Raises
         ------
         ValueError
-            If vectorize is not a boolean.
+            If vectorize is not a boolean, an iteration limit is invalid, or
+            an unsupported evaluation limit is requested.
+        TypeError
+            If a superseded or unsupported shared keyword is supplied.
         """
         super().__init__(problem, name, vectorize)
         self._validate_kwargs(kwargs)
         self._native_pars = dict(
-            kwargs, maxiter=maxiter, popsize=popsize, tol=tol, atol=atol
+            kwargs, popsize=population_multiplier, tol=tol, atol=atol
+        )
+        self._native_pars.update(
+            self._limit_kwargs(max_iterations, max_evaluations, "maxiter")
         )
         if seed is not None:
             self._native_pars["seed"] = seed

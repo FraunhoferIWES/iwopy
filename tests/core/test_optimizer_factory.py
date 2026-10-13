@@ -25,11 +25,11 @@ def test_iwopy_dispatch_without_initialization(problem, algorithm, expected):
 
 @pytest.mark.parametrize("algorithm", ["SLSQP", None])
 def test_scipy_selector_is_copied_and_options_forwarded(problem, algorithm):
-    options = {"maxiter": 7}
+    options = {"max_iterations": 7}
     solver = create_optimizer("scipy", algorithm, problem, memory_size=3, **options)
     assert isinstance(solver, Optimizer_scipy)
-    assert solver._native_pars == {"options": options, "method": algorithm}
-    assert options == {"maxiter": 7}
+    assert solver._native_pars == {"options": {"maxiter": 7}, "method": algorithm}
+    assert options == {"max_iterations": 7}
     assert solver.memory_size == 3
 
 
@@ -58,12 +58,12 @@ def test_duplicate_scipy_method_is_rejected_without_mutation(problem):
 def test_nlopt_family_injects_driver_and_solver_without_mutation(problem):
     from iwopy.interfaces.pygmo import Optimizer_pygmo
 
-    options = {"maxeval": 25}
+    options = {"max_evaluations": 25}
     solver = create_optimizer("nlopt", "lbfgs", problem, **options)
     assert isinstance(solver, Optimizer_pygmo)
     assert solver.optimizer == "nlopt"
     assert solver._algorithm_kwargs == {"optimizer": "lbfgs", "maxeval": 25}
-    assert options == {"maxeval": 25}
+    assert options == {"max_evaluations": 25}
     assert not solver.initialized
 
 
@@ -143,9 +143,11 @@ def test_unselected_optional_backends_are_not_imported(problem, monkeypatch):
 @pytest.mark.parametrize("family", ["pymoo", "pygmo"])
 def test_algorithm_keywords_are_copied(problem, family):
     algorithm = "GA" if family == "pymoo" else "de"
-    options = {"pop_size": 20} if family == "pymoo" else {"gen": 3}
+    options = {"pop_size": 20} if family == "pymoo" else {"max_iterations": 3}
     solver = create_optimizer(family, algorithm, problem, **options)
-    assert solver._algorithm_kwargs == options
+    assert solver._algorithm_kwargs == (
+        {"pop_size": 20} if family == "pymoo" else {"gen": 3}
+    )
     assert "type" not in options
 
 
@@ -221,8 +223,8 @@ def test_removed_option_containers_are_rejected(problem, family, algorithm, keyw
     "adapter, options",
     [
         (GG, {"step_max": 1.0, "step_min": 0.01, "max_iterations": 3}),
-        (SLSQP, {"maxiter": 3}),
-        (Optimizer_scipy, {"optimizer": "SLSQP", "maxiter": 3}),
+        (SLSQP, {"max_iterations": 3}),
+        (Optimizer_scipy, {"optimizer": "SLSQP", "max_iterations": 3}),
     ],
 )
 def test_explicit_local_parameters_solve(adapter, options):
@@ -245,11 +247,12 @@ def test_explicit_population_parameters_solve(family):
     )
     options = {"seed": 42}
     if family == "cma":
-        options.update(sigma0=0.5, pop_size=4, maxiter=1)
+        options.update(sigma0=0.5, pop_size=4, max_iterations=1)
     elif family == "scipy_de":
-        options.update(popsize=4, maxiter=1)
+        options.update(population_multiplier=4, max_iterations=1)
     else:
-        options.update(batch_size=2, budget=4)
+        options.update(max_evaluations=4)
+        options["pop_size" if family == "deap" else "batch_size"] = 2
     solver = adapter(QuadraticProblem(), **options)
     solver.initialize(verbosity=0)
     assert solver.solve(verbosity=0) is not None
@@ -258,9 +261,13 @@ def test_explicit_population_parameters_solve(family):
 @pytest.mark.parametrize(
     "family, optimizer, options",
     [
-        ("pymoo", "GA", {"termination": "n_gen", "n_max_gen": 2, "pop_size": 5}),
-        ("pygmo", "de", {"gen": 2, "pop_size": 5, "seed": 42}),
-        ("nlopt", "lbfgs", {"maxeval": 10}),
+        (
+            "pymoo",
+            "GA",
+            {"termination": "iterations", "max_iterations": 2, "pop_size": 5},
+        ),
+        ("pygmo", "de", {"max_iterations": 2, "pop_size": 5, "seed": 42}),
+        ("nlopt", "lbfgs", {"max_evaluations": 10}),
     ],
 )
 def test_explicit_factory_population_routes_solve(family, optimizer, options):
@@ -269,3 +276,156 @@ def test_explicit_factory_population_routes_solve(family, optimizer, options):
     solver = create_optimizer(family, optimizer, QuadraticProblem(), **options)
     solver.initialize(verbosity=0)
     assert solver.solve(verbosity=0) is not None
+
+
+@pytest.mark.parametrize(
+    "method, native_key",
+    [
+        ("Nelder-Mead", "maxfev"),
+        ("Powell", "maxfev"),
+        ("L-BFGS-B", "maxfun"),
+        ("TNC", "maxfun"),
+        ("COBYLA", "maxiter"),
+        ("COBYQA", "maxfev"),
+    ],
+)
+def test_scipy_evaluation_limit_uses_method_units(problem, method, native_key):
+    solver = create_optimizer("scipy", method, problem, max_evaluations=17)
+    assert solver._native_pars["options"] == {native_key: 17}
+
+
+@pytest.mark.parametrize(
+    "family, method, keyword, options",
+    [
+        ("iwopy", "GG", "max_evaluations", {"step_max": 1, "step_min": 0.01}),
+        ("iwopy", "SLSQP", "max_evaluations", {}),
+        ("scipy", "trust-constr", "max_evaluations", {}),
+        ("scipy", "differential_evolution", "max_evaluations", {}),
+        ("scipy", "TNC", "max_iterations", {}),
+        ("scipy", "COBYLA", "max_iterations", {}),
+        ("pygmo", "ipopt", "max_evaluations", {}),
+        ("pygmo", "de", "max_evaluations", {}),
+        ("pygmo", "compass_search", "max_iterations", {}),
+        ("nlopt", "lbfgs", "max_iterations", {}),
+        ("nevergrad", "RandomSearch", "max_iterations", {}),
+        ("optuna", "RandomSampler", "max_iterations", {}),
+    ],
+)
+def test_unsupported_limits_are_rejected_at_construction(
+    problem, family, method, keyword, options
+):
+    with pytest.raises(ValueError, match=f"{keyword} is not supported"):
+        create_optimizer(family, method, problem, **{keyword: 2}, **options)
+
+
+@pytest.mark.parametrize(
+    "family, method, keyword, native_key, attribute, options",
+    [
+        ("cma", "CMAES", "max_iterations", "maxiter", "_native_pars", {"sigma0": 0.5}),
+        (
+            "cma",
+            "CMAES",
+            "max_evaluations",
+            "maxfevals",
+            "_native_pars",
+            {"sigma0": 0.5},
+        ),
+        ("pygmo", "de", "max_iterations", "gen", "_algorithm_kwargs", {}),
+        ("pygmo", "ipopt", "max_iterations", "max_iter", "_algorithm_kwargs", {}),
+        (
+            "pygmo",
+            "compass_search",
+            "max_evaluations",
+            "max_fevals",
+            "_algorithm_kwargs",
+            {},
+        ),
+        ("nlopt", "lbfgs", "max_evaluations", "maxeval", "_algorithm_kwargs", {}),
+        ("pymoo", "GA", "max_iterations", "n_max_gen", "_termination_kwargs", {}),
+        ("pymoo", "GA", "max_evaluations", "n_max_evals", "_termination_kwargs", {}),
+    ],
+)
+def test_native_limits_are_translated_without_mutation(
+    problem, family, method, keyword, native_key, attribute, options
+):
+    import numpy as np
+
+    controls = {keyword: np.int64(3)}
+    solver = create_optimizer(family, method, problem, **controls, **options)
+    assert getattr(solver, attribute)[native_key] == 3
+    assert type(getattr(solver, attribute)[native_key]) is int
+    assert controls == {keyword: 3}
+
+
+@pytest.mark.parametrize(
+    "family, method, options",
+    [
+        ("iwopy", "GG", {"step_max": 1, "step_min": 0.01}),
+        ("iwopy", "SLSQP", {}),
+        ("scipy", "SLSQP", {}),
+        ("scipy", "differential_evolution", {}),
+        ("cma", "CMAES", {"sigma0": 0.5}),
+        ("pymoo", "GA", {}),
+        ("pygmo", "de", {}),
+        ("nevergrad", "RandomSearch", {}),
+        ("optuna", "RandomSampler", {}),
+        ("deap", "eaSimple", {}),
+    ],
+)
+@pytest.mark.parametrize(
+    "controls",
+    [
+        {"max_iterations": True},
+        {"max_iterations": -1},
+        {"max_iterations": 1.5},
+        {"max_evaluations": False},
+        {"max_evaluations": 0},
+        {"max_evaluations": 1.5},
+        {"vectorize": "false"},
+    ],
+)
+def test_common_controls_reject_invalid_values(
+    problem, family, method, options, controls
+):
+    with pytest.raises(ValueError, match=next(iter(controls))):
+        create_optimizer(family, method, problem, **controls, **options)
+
+
+@pytest.mark.parametrize(
+    "keyword",
+    [
+        "maxiter",
+        "max_iter",
+        "maxfevals",
+        "maxeval",
+        "gen",
+        "n_max_gen",
+        "n_max_evals",
+        "budget",
+        "maxfun",
+        "maxfev",
+        "max_fevals",
+        "popsize",
+        "pop_size",
+        "batch_size",
+    ],
+)
+def test_unowned_controls_cannot_escape_to_native_options(problem, keyword):
+    with pytest.raises(TypeError, match=keyword):
+        create_optimizer("scipy", "SLSQP", problem, **{keyword: 3})
+
+
+@pytest.mark.parametrize(
+    "family, method",
+    [("nevergrad", "RandomSearch"), ("optuna", "RandomSampler"), ("deap", "eaSimple")],
+)
+def test_none_evaluation_limit_selects_adapter_default(problem, family, method):
+    solver = create_optimizer(family, method, problem, max_evaluations=None)
+    assert solver.max_evaluations == 100
+
+
+def test_callable_methods_reject_portable_limits(problem):
+    with pytest.raises(ValueError, match="max_iterations is not supported"):
+        create_optimizer(
+            "scipy", lambda *args, **kwargs: None, problem, max_iterations=2
+        )

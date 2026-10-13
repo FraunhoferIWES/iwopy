@@ -262,14 +262,28 @@ selector, without requiring a nested selector from the caller.
 Every optimizer has explicit parameters and, where appropriate, flat native
 algorithm keywords. There are no common parameter dictionaries or class factory
 entry points. `vectorize` governs iwopy population evaluation or Jacobian
-batching; pycma always uses populations. `pop_size` is an absolute count;
-SciPy DE retains native `popsize` as a per-free-dimension multiplier.
+batching, including ordered individual evaluation of pycma generations when
+false. `pop_size` is an absolute search-population count; `batch_size` sizes
+pending Nevergrad asks or Optuna trials, not an algorithmic population.
+SciPy DE uses `population_multiplier` per free dimension.
 `memory_size` controls visited-point memory for GG and evaluation caching for
 SLSQP and SciPy minimization.
 Adapter-private dictionaries translate explicit controls to backend contracts;
 they are not a public grouped-configuration API. Numerical algorithms, callback
 behavior, and dependency-loading timing remain adapter-owned. See
 [ADR-0013](adr/0013-optimizer-creation.md).
+
+`Optimizer` validates canonical `max_iterations` and `max_evaluations` controls;
+adapters translate them only to meaningful native or adapter counters. Unsupported
+limits fail rather than approximating iterations with evaluations. Native
+convergence remains backend-specific; no global problem-evaluation interception
+enforces a universal hard budget. pymoo composes explicit limits with custom
+criteria using OR semantics. DEAP also exposes generation limits. Native
+initialization, generation-boundary overshoot, and finalization counting are
+documented in the public API table. Superseded limit names are rejected rather
+than retained as aliases. This supersedes the pycma population-only and SciPy DE
+native-name portions of ADR-0013; see
+[ADR-0015](adr/0015-shared-optimizer-controls.md).
 
 ### iwopy Optimizers
 
@@ -370,7 +384,8 @@ focused adapter tests against supported pymoo versions.
 
 `Optimizer_cma` requires one objective, no integer variables, and at least one
 floating variable. Each CMA-ES ask/tell generation makes one
-`Problem.evaluate_population()` call for objectives and constraints. The adapter
+`Problem.evaluate_population()` call for objectives and constraints by default,
+or ordered individual calls when `vectorize=False`. The adapter
 negates maximization objectives only at the backend boundary, translates box
 bounds, and passes nonpositive constraint residuals to pycma's native augmented
 Lagrangian. Finite lower bounds precede finite upper bounds, with component
@@ -440,7 +455,7 @@ GG/SLSQP use the source label and example prefix `iwopy`, not `native`.
 
 The catalog's Vectorized Interfaces section covers every adapter with API links,
 distinguishing population search, Jacobian batching, and optional batch fitness.
-SciPy DE, Nevergrad, Optuna, and DEAP expose `vectorize=True` by default. False
+SciPy DE, pycma, Nevergrad, Optuna, and DEAP expose `vectorize=True` by default. False
 routes each ordered batch through individual evaluation without changing native
 batch generation, caches, budgets, callbacks, constraints, or result selection.
 Empty batches invoke neither evaluation path. SciPy's native deferred/vectorized

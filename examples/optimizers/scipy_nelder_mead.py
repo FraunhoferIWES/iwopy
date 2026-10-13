@@ -8,7 +8,7 @@ if __name__ == "__main__":
         optimizer="Nelder-Mead",  # Derivative-free simplex search
         problem=problem,
         adaptive=True,  # Adapt simplex coefficients to dimension
-        maxiter=200,  # Demo iterations; production start: 10000
+        max_iterations=200,  # Demo iterations; production start: 10000
         xatol=1e-6,  # Absolute variable convergence tolerance
         fatol=1e-8,  # Absolute objective convergence tolerance
     )

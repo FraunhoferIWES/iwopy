@@ -10,7 +10,7 @@ if __name__ == "__main__":
         optimizer="trust-exact",  # Nearly exact trust-region optimization
         problem=problem,
         hess=lambda point: 2.0 * np.eye(len(point)),  # Replace for real problems
-        maxiter=100,  # Demo iterations; production start: 1000
+        max_iterations=100,  # Demo iterations; production start: 1000
         gtol=1e-6,  # Gradient convergence tolerance
     )
     solver.initialize(verbosity=0)

@@ -8,9 +8,9 @@ if __name__ == "__main__":
         optimizer="differential_evolution",  # Algorithm to use
         problem=problem,
         vectorize=True,  # Evaluate each generation as an iwopy population
-        popsize=5,  # Demo multiplier per free variable; production: 15
+        population_multiplier=5,  # Demo multiplier per free variable; production: 15
         seed=42,  # Reproducible initialization and variation
-        maxiter=30,  # Demo generations; production start: 1000
+        max_iterations=30,  # Demo generations; production start: 1000
         tol=1e-6,  # Relative population-energy convergence tolerance
     )
     solver.initialize(verbosity=0)

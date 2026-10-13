@@ -32,7 +32,8 @@ class Optimizer_nevergrad(_PopulationOptimizer):
         problem: Problem,
         optimizer: str = "NGOpt",
         *,
-        budget: int = 100,
+        max_evaluations: int | None = 100,
+        max_iterations: int | None = None,
         batch_size: int = 8,
         seed: int | None = None,
         vectorize: bool = True,
@@ -53,8 +54,12 @@ class Optimizer_nevergrad(_PopulationOptimizer):
             Positive outstanding-ask/native-worker count. No threads are used.
         seed
             Seed for a fresh parameterization each solve.
-        budget
+        max_evaluations
             Positive candidate evaluation limit including the final partial batch.
+            None selects the adapter default of 100.
+        max_iterations
+            Unsupported: a pending-ask batch is not a native iteration. Must
+            be None.
         name
             Optimizer name.
         vectorize
@@ -65,12 +70,18 @@ class Optimizer_nevergrad(_PopulationOptimizer):
         Raises
         ------
         ValueError
-            If vectorize is not a boolean.
+            If vectorize is not a boolean, an evaluation limit is invalid, or
+            an unsupported iteration limit is requested.
+        TypeError
+            If a superseded or unsupported shared keyword is supplied.
         """
         super().__init__(problem, name, vectorize)
         self._validate_kwargs(kwargs)
+        limits = self._limit_kwargs(
+            max_iterations, max_evaluations, evaluations="max_evaluations"
+        )
         self.algorithm = optimizer
-        self.budget = budget
+        self.max_evaluations = limits.get("max_evaluations", 100)
         self.batch_size = batch_size
         self.seed = seed
         self._optimizer_kwargs = dict(kwargs)
@@ -97,7 +108,10 @@ class Optimizer_nevergrad(_PopulationOptimizer):
             raise ValueError(
                 f"Unknown Nevergrad algorithm '{self.algorithm}'; choose {self.algorithms}"
             )
-        for label, value in (("budget", self.budget), ("batch_size", self.batch_size)):
+        for label, value in (
+            ("max_evaluations", self.max_evaluations),
+            ("batch_size", self.batch_size),
+        ):
             if isinstance(value, bool) or not isinstance(value, Integral) or value < 1:
                 raise ValueError(f"{label} must be a positive integer")
         conflicts = {"parametrization", "budget", "num_workers"}.intersection(
@@ -124,7 +138,7 @@ class Optimizer_nevergrad(_PopulationOptimizer):
             parametrization.random_state.seed(self.seed)
         optimizer = self._ng.optimizers.registry[self.algorithm](
             parametrization=parametrization,
-            budget=self.budget,
+            budget=self.max_evaluations,
             num_workers=self.batch_size,
             **self._optimizer_kwargs,
         )
@@ -163,10 +177,12 @@ class Optimizer_nevergrad(_PopulationOptimizer):
         self._reset()
         self.optimizer = self._new_optimizer()
         iteration = 0
-        while self.n_evaluations < self.budget:
+        while self.n_evaluations < self.max_evaluations:
             candidates = [
                 self.optimizer.ask()
-                for _ in range(min(self.batch_size, self.budget - self.n_evaluations))
+                for _ in range(
+                    min(self.batch_size, self.max_evaluations - self.n_evaluations)
+                )
             ]
             values = np.asarray(
                 [candidate.value for candidate in candidates], dtype=float

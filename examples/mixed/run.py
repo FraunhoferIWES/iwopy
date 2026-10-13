@@ -46,8 +46,8 @@ if __name__ == "__main__":
         vectorize=args.pop,
         pop_size=args.n_pop,
         seed=args.seed,
-        termination="n_eval",
-        n_max_evals=1000,
+        termination="evaluations",
+        max_evaluations=1000,
     )
     solver.initialize()
 

@@ -8,7 +8,7 @@ if __name__ == "__main__":
         optimizer="Newton-CG",  # Newton optimization with CG inner solves
         problem=problem,
         hess="2-point",  # Estimate the Hessian from objective gradients
-        maxiter=100,  # Demo iterations; production start: 1000
+        max_iterations=100,  # Demo iterations; production start: 1000
         xtol=1e-6,  # Average relative step convergence tolerance
     )
     solver.initialize(verbosity=0)

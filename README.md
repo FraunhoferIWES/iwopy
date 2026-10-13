@@ -83,7 +83,7 @@ solver = create_optimizer(
 	family="iwopy",
 	optimizer="SLSQP",
 	problem=QuadraticProblem(),
-	maxiter=100,
+	max_iterations=100,
 )
 solver.initialize(verbosity=0)
 results = solver.solve(verbosity=0)
@@ -93,6 +93,8 @@ Optimizer classes use explicit parameters and flat native keyword options.
 Existing class names remain available. See the
 [creation API](https://fraunhoferiwes.github.io/iwopy/api_core.html#optimizer-creation)
 for all families, including SciPy methods and PyGMO-backed NLopt solvers.
+The [shared parameter table](https://fraunhoferiwes.github.io/iwopy/api_core.html#optimizer-parameters)
+explains population/batch units and supported native termination limits.
 
 ## Development
 

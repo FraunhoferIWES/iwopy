@@ -9,7 +9,7 @@ if __name__ == "__main__":
         problem=problem,
         seed=42,  # Reproducible evolution
         pop_size=20,  # Demo population; production start: 100
-        gen=10,  # Demo generations; production start: 1000
+        max_iterations=10,  # Demo generations; production start: 1000
         ftol=1e-6,  # Population objective-spread stopping tolerance
         xtol=1e-6,  # Population variable-spread stopping tolerance
     )

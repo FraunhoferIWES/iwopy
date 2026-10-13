@@ -10,9 +10,9 @@ if __name__ == "__main__":
         cxpb=0.5,  # Crossover probability
         mutpb=0.2,  # Mutation probability
         vectorize=True,  # Evaluate offspring as an iwopy population
-        batch_size=20,  # Demo population/offspring; production start: 100
+        pop_size=20,  # Demo population/offspring; production start: 100
         seed=42,  # Reproducible initialization and variation
-        budget=400,  # Demo evaluations; production start: 10000+
+        max_evaluations=400,  # Demo evaluations; production start: 10000+
     )
     solver.initialize(verbosity=0)
     result = solver.solve(verbosity=0)

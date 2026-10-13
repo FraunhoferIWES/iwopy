@@ -207,8 +207,11 @@ them to attributes without a deliberate contract change.
 	`optuna`, and `deap`; public classes are `Optimizer_nevergrad`, `Optimizer_optuna`,
 	and `Optimizer_deap`. Select algorithms/samplers using `optimizer` and preserve
 	their native selector spellings.
-- `budget` counts candidate evaluations, not function calls or generations;
-	`batch_size` is the outstanding-ask or offspring count. `n_evaluations` excludes
+- `max_evaluations` counts native objective/fitness calls or adapter candidates
+	as documented for the selected backend. `max_iterations` counts native or
+	adapter iterations/generations, not a substitute evaluation budget.
+	`batch_size` is the Nevergrad outstanding-ask or Optuna pending-trial count;
+	DEAP's population and offspring setting is `pop_size`. `n_evaluations` excludes
 	selected-point finalization. Additional Nevergrad optimizer and Optuna sampler
 	settings are flat keywords; native state remains `optimizer` or `study`, respectively.
 - Optuna distribution identifiers are `float_<index>` followed by `int_<index>`
@@ -222,13 +225,19 @@ them to attributes without a deliberate contract change.
 	batch evaluation for SciPy DE, Nevergrad, Optuna, and DEAP, Jacobian batching
 	for GG/SLSQP/SciPy minimization, pymoo population evaluation, and PyGMO batch
 	fitness. PyGMO defaults to false; the other selectable flags default to true.
-	pycma always evaluates populations. Backend-internal `pop` or `vectorized`
+	pycma generations use populations by default or ordered individuals when false.
+	Backend-internal `pop` or `vectorized`
 	spellings are translation details, not public optimizer parameter names.
-- `pop_size` denotes absolute population size where offered; SciPy DE's native
-	`popsize` is a multiplier per free dimension. `memory_size` denotes visited-point
+- `pop_size` denotes absolute population size where offered; SciPy DE's
+	`population_multiplier` is per free dimension. `memory_size` denotes visited-point
 	capacity for GG and evaluation-cache capacity elsewhere. No common parameter
 	dictionaries are accepted.
 	See [ADR-0013](adr/0013-optimizer-creation.md).
+- Limit controls use `max_iterations` and `max_evaluations`, not native aliases
+	or `budget`. Native result and stop-condition keys keep backend spellings.
+	Limits reject booleans/nonintegers and unsupported requested units. Convergence
+	tolerances retain native names because their meanings differ. See
+	[ADR-0015](adr/0015-shared-optimizer-controls.md).
 - Documentation styles are `iwes-tokens.css` and `iwes.css`. The adapter maps
 	authoritative token paths to `--iwes-` prefixed kebab-case CSS variables;
 	`tests/test_documentation.py` verifies every resolved value and reference.

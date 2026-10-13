@@ -50,7 +50,7 @@ if __name__ == "__main__":
         pop_size=args.n_pop,
         seed=args.seed,
         termination="default",
-        n_max_gen=args.n_gen,
+        max_iterations=args.n_gen,
         ftol=1e-6,
         xtol=1e-6,
     )

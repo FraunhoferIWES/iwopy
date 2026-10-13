@@ -34,7 +34,7 @@ def test_additional_pygmo_algorithms_are_available(algorithm):
 
     algorithm_options = {}
     if algorithm != "compass_search":
-        algorithm_options.update(gen=1, seed=42)
+        algorithm_options.update(max_iterations=1, seed=42)
     solver = Optimizer_pygmo(
         optimizer=algorithm,
         problem=problem,
@@ -54,7 +54,7 @@ def test_ipopt_parameters_accept_numpy_scalars_and_booleans():
         problem=problem,
         print_timing_statistics=np.bool_(False),
         tol=np.float64(1e-6),
-        max_iter=np.int64(100),
+        max_iterations=np.int64(100),
     )
     solver.initialize(verbosity=0)
 
@@ -84,7 +84,7 @@ def test_ipopt_solves_analytic_rosenbrock():
         optimizer="ipopt",
         problem=problem,
         tol=1e-8,
-        max_iter=100,
+        max_iterations=100,
     )
     solver.initialize(verbosity=0)
     results = solver.solve(verbosity=0)
@@ -99,7 +99,7 @@ def test_ipopt_rejects_callbacks():
     solver = Optimizer_pygmo(
         optimizer="ipopt",
         problem=problem,
-        max_iter=1,
+        max_iterations=1,
     )
     solver.initialize(verbosity=0)
     history = iwopy.OptimizationHistory()
@@ -116,7 +116,7 @@ def test_ipopt_validates_callbacks_before_capability_check():
     solver = Optimizer_pygmo(
         optimizer="ipopt",
         problem=problem,
-        max_iter=1,
+        max_iterations=1,
     )
     solver.initialize(verbosity=0)
 
@@ -246,7 +246,7 @@ def test_pygmo_batch_callback_reports_iwopy_values():
         vectorize=True,
         seed=42,
         pop_size=8,
-        gen=1,
+        max_iterations=1,
     )
     solver.initialize(verbosity=0)
     history = iwopy.OptimizationHistory()
@@ -273,7 +273,7 @@ def test_pygmo_callback_sink_is_removed_after_solve():
         problem=problem,
         seed=42,
         pop_size=8,
-        gen=1,
+        max_iterations=1,
     )
     solver.initialize(verbosity=0)
     history = iwopy.OptimizationHistory()
@@ -295,7 +295,7 @@ def test_pygmo_does_not_create_sink_without_callbacks(monkeypatch):
         problem=problem,
         seed=42,
         pop_size=8,
-        gen=1,
+        max_iterations=1,
     )
     solver.initialize(verbosity=0)
 
@@ -324,7 +324,7 @@ def test_pygmo_callback_errors_propagate():
         problem=problem,
         seed=42,
         pop_size=8,
-        gen=1,
+        max_iterations=1,
     )
     solver.initialize(verbosity=0)
 

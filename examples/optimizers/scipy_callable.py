@@ -18,7 +18,8 @@ def custom_method(fun, initial, args=(), jac=None, **options):
     jac
         Objective gradient callable.
     options
-        SciPy method arguments; maxiter and gtol are forwarded to BFGS.
+        SciPy method arguments; bfgs_iterations and gtol configure the
+        delegated BFGS solver. Callable methods own their stopping semantics.
 
     Returns
     -------
@@ -32,7 +33,7 @@ def custom_method(fun, initial, args=(), jac=None, **options):
         jac=jac,
         method="BFGS",
         options={
-            "maxiter": options.get("maxiter", 100),  # Maximum iterations
+            "maxiter": options.get("bfgs_iterations", 100),  # Maximum BFGS iterations
             "gtol": options.get("gtol", 1e-6),  # Gradient convergence tolerance
         },
     )
@@ -44,7 +45,7 @@ if __name__ == "__main__":
         family="scipy",  # Optimizer family
         optimizer=custom_method,  # User-provided SciPy optimization method
         problem=problem,
-        maxiter=100,  # Demo iterations; production start: 1000
+        bfgs_iterations=100,  # Demo delegated iterations; production start: 1000
         gtol=1e-6,  # Gradient convergence tolerance
     )
     solver.initialize(verbosity=0)

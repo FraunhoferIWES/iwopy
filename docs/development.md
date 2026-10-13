@@ -115,6 +115,14 @@ cover dispatch without initialization, optional loading, and real solves; catalo
 tests enforce factory-only creation throughout all examples and notebook cells.
 See [ADR-0013](adr/0013-optimizer-creation.md).
 
+Use `max_iterations` and `max_evaluations` for supported run limits,
+`pop_size` for absolute algorithmic populations, `batch_size` for pending
+Nevergrad/Optuna work, and `population_multiplier` for SciPy DE. Do not forward
+native limit aliases or equate these units. Canonical-control tests protect
+mapping, invalid values, unsupported limits, and pymoo criterion composition;
+catalog guards enforce the same names in all maintained workflows. See
+[ADR-0015](adr/0015-shared-optimizer-controls.md).
+
 Do not treat `build/lib/iwopy/` as source. The maintained package is `iwopy/`.
 
 ## Focused Validation

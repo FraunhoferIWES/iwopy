@@ -7,7 +7,7 @@ if __name__ == "__main__":
         family="scipy",  # Optimizer family
         optimizer="SLSQP",  # Sequential quadratic programming
         problem=problem,
-        maxiter=100,  # Demo iterations; production start: 1000
+        max_iterations=100,  # Demo iterations; production start: 1000
         ftol=1e-8,  # Objective and optimality stopping tolerance
     )
     solver.initialize(verbosity=0)

@@ -48,12 +48,73 @@ class Optimizer(Base, metaclass=ABCMeta):
             "vectorized",
             "algorithm",
             "sampler",
+            "maxiter",
+            "max_iter",
+            "maxfevals",
+            "maxeval",
+            "maxfun",
+            "maxfev",
+            "max_fevals",
+            "popsize",
+            "gen",
+            "n_max_gen",
+            "n_max_evals",
+            "budget",
+            "max_iterations",
+            "max_evaluations",
+            "pop_size",
+            "batch_size",
+            "population_multiplier",
+            "memory_size",
+            "seed",
+            "vectorize",
         }.intersection(kwargs)
         if unsupported:
             raise TypeError(
                 f"Optimizer '{self.name}' accepts explicit keyword parameters, not "
                 + ", ".join(sorted(unsupported))
             )
+
+    def _limit_kwargs(
+        self,
+        max_iterations: int | None,
+        max_evaluations: int | None,
+        iterations: str | None = None,
+        evaluations: str | None = None,
+    ) -> dict[str, int]:
+        """Validate portable limits and map them to supported native settings.
+
+        Iterations permit zero; evaluation limits must be positive. None leaves
+        the native default unchanged. An unsupported requested limit raises
+        ValueError rather than approximating one unit with another.
+        """
+        limits: dict[str, int] = {}
+        for name, value, native_key, minimum in (
+            ("max_iterations", max_iterations, iterations, 0),
+            ("max_evaluations", max_evaluations, evaluations, 1),
+        ):
+            if value is None:
+                continue
+            if (
+                isinstance(value, (bool, np.bool_))
+                or not isinstance(value, (int, np.integer))
+                or value < minimum
+            ):
+                raise ValueError(
+                    f"{self.name}: {name} must be an integer >= {minimum} or None"
+                )
+            if native_key is None:
+                raise ValueError(
+                    f"{self.name}: {name} is not supported by this optimizer"
+                )
+            limits[native_key] = int(value)
+        return limits
+
+    def _validate_vectorize(self, vectorize: bool) -> bool:
+        """Validate the shared problem-evaluation mode without enabling threads."""
+        if not isinstance(vectorize, (bool, np.bool_)):
+            raise ValueError(f"Optimizer '{self.name}': vectorize must be a boolean")
+        return bool(vectorize)
 
     def print_info(self) -> None:
         """Print solver info, called before solving"""

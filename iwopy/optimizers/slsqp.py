@@ -38,6 +38,8 @@ class SLSQP(Optimizer):
         problem: Problem,
         *,
         tol: float | None = None,
+        max_iterations: int | None = None,
+        max_evaluations: int | None = None,
         memory_size: int = 100,
         vectorize: bool = True,
         name: str = "SLSQP",
@@ -51,6 +53,10 @@ class SLSQP(Optimizer):
             The continuous single-objective problem to optimize.
         tol
             Native aggregate stopping tolerance; None uses SciPy defaults.
+        max_iterations
+            Native SLSQP iteration limit; None uses the native default.
+        max_evaluations
+            Unsupported by native SLSQP; must be None.
         memory_size
             Maximum number of cached value and Jacobian evaluations.
         vectorize
@@ -58,14 +64,23 @@ class SLSQP(Optimizer):
         name
             The optimizer name.
         kwargs
-            Flat native SLSQP options, such as maxiter, ftol and eps. Method,
+            Flat native SLSQP options, such as ftol and eps. Method,
             bounds, constraints, callbacks and Jacobians are managed by iwopy.
+
+        Raises
+        ------
+        ValueError
+            If vectorize is not a boolean, an iteration limit is invalid, or
+            an unsupported evaluation limit is requested.
+        TypeError
+            If a superseded or unsupported shared keyword is supplied.
         """
         super().__init__(problem, name)
         self._validate_kwargs(kwargs)
-        self._native_pars = minimize_options(kwargs, tol)
+        limits = self._limit_kwargs(max_iterations, max_evaluations, "maxiter")
+        self._native_pars = minimize_options(kwargs | limits, tol)
         self.memory_size = memory_size
-        self.vectorize = vectorize
+        self.vectorize = self._validate_vectorize(vectorize)
         self.scipy_results: OptimizeResult | None = None
         self._value_mem: (
             dict[tuple[float, ...], tuple[np.ndarray, np.ndarray]] | None

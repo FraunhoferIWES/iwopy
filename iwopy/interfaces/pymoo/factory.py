@@ -280,17 +280,37 @@ class Factory:
         self,
         term_pars: dict[str, Any],
     ) -> Any:
-        """Termination factory function"""
+        """Construct native pymoo termination from adapter-owned settings.
+
+        Parameters
+        ----------
+        term_pars
+            Mapping with type iwopy, default, iterations, evaluations, or a
+            native termination object. Native n_max_gen/n_max_evals settings
+            carry the adapter's canonical limits; convergence settings apply
+            only to the default criteria.
+
+        Returns
+        -------
+        termination
+            Native stopping criterion. Supplied limits compose with a custom
+            criterion using OR semantics.
+
+        Raises
+        ------
+        KeyError
+            If the selector or its settings are unsupported.
+        """
 
         term_pars = term_pars.copy()
         typ = term_pars.pop("type", "iwopy")
         if not isinstance(typ, str):
             self.print(f"Selecting termination: {type(typ).__name__}")
-            return typ
-        elif typ == "n_gen":
-            out = imports.MaximumGenerationTermination(**term_pars)
-        elif typ == "n_eval":
-            out = imports.MaximumFunctionCallTermination(**term_pars)
+            return self._limit_termination(term_pars, typ)
+        elif typ in {"iterations", "evaluations"}:
+            key = "n_max_gen" if typ == "iterations" else "n_max_evals"
+            term_pars.setdefault(key, 1000)
+            out = self._limit_termination(term_pars)
         elif typ == "iwopy":
             term_pars.setdefault("n_max_evals", np.inf)
             if self.pymoo_problem.problem.n_objectives > 1:
@@ -322,9 +342,26 @@ class Factory:
                 out = imports.DefaultSingleObjectiveTermination(**term_pars)
         else:
             raise KeyError(
-                f"Unknown termination '{typ}', please choose: iwopy, default, n_gen, n_eval"
+                f"Unknown termination '{typ}', please choose: iwopy, default, iterations, evaluations"
             )
 
         self.print(f"Selecting termination: {typ} ({type(out).__name__})")
 
         return out
+
+    def _limit_termination(
+        self, parameters: dict[str, Any], criterion: Any = None
+    ) -> Any:
+        """Compose native limits with a criterion without discarding either cap."""
+        terms = [] if criterion is None else [criterion]
+        for key, constructor in (
+            ("n_max_gen", imports.MaximumGenerationTermination),
+            ("n_max_evals", imports.MaximumFunctionCallTermination),
+        ):
+            if key in parameters:
+                terms.append(constructor(parameters.pop(key)))
+        if parameters:
+            raise KeyError(
+                f"Unsupported settings for limit/custom termination: {sorted(parameters)}"
+            )
+        return terms[0] if len(terms) == 1 else imports.TerminationCollection(*terms)

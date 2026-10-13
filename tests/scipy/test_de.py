@@ -46,8 +46,8 @@ def test_de_evaluates_mixed_populations_without_scalar_calls(monkeypatch):
     solver = Optimizer_scipy_de(
         problem=problem,
         seed=42,
-        popsize=5,
-        maxiter=150,
+        population_multiplier=5,
+        max_iterations=150,
     )
     solver.initialize(verbosity=0)
     history = OptimizationHistory()

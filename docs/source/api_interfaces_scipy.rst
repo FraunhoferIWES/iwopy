@@ -32,8 +32,10 @@ Hessian-vector product still need explicit ``hess`` or ``hessp`` parameters.
 
 Select a method with ``optimizer`` on the class, or with
 ``create_optimizer(family="scipy", optimizer=..., problem=...)``. Supply
-``tol``, ``memory_size``, and ``vectorize`` explicitly; flat native method
-keywords such as ``maxiter`` and ``ftol`` become SciPy's method options.
+``tol``, ``memory_size``, ``vectorize``, and supported ``max_iterations`` /
+``max_evaluations`` explicitly; flat native method keywords such as ``ftol``
+become SciPy's method options. See :ref:`optimizer-termination` for method units
+and unsupported limits. Custom callables own their stopping settings.
 
 ``Nelder-Mead``, ``Powell``, ``COBYLA``, and ``COBYQA`` are derivative-free;
 SciPy offers no population-evaluation hook for their trial points, so no
@@ -48,9 +50,10 @@ managed by the interface. Integer variables are rejected because
 evolution for bounded single-objective floating, integer, and mixed problems.
 It uses deferred updating, one worker, and no scalar polishing. See
 :ref:`api-scipy-de` and its :ref:`explicit setup <case-scipy-de>` in the catalog.
-Its explicit controls include ``maxiter``, ``popsize``, ``seed``, ``tol``,
+Its explicit controls include ``max_iterations``, ``population_multiplier``, ``seed``, ``tol``,
 ``atol``, and ``vectorize``; remaining native options are flat keywords.
-``popsize`` is a multiplier per free dimension, not an absolute population size.
+``population_multiplier`` is per free dimension, not an absolute population
+size. DE has no portable native evaluation cap, so max_evaluations must be None.
 
 .. toctree::
     :maxdepth: 2

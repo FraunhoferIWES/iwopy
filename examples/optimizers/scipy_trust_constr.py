@@ -7,7 +7,7 @@ if __name__ == "__main__":
         family="scipy",  # Optimizer family
         optimizer="trust-constr",  # Constrained trust-region optimization
         problem=problem,
-        maxiter=100,  # Demo iterations; production start: 1000
+        max_iterations=100,  # Demo iterations; production start: 1000
         gtol=1e-6,  # Lagrangian gradient and feasibility tolerance
         xtol=1e-8,  # Minimum trust-region radius
         barrier_tol=1e-8,  # Inequality barrier stopping tolerance

@@ -73,8 +73,8 @@ def test_integer_ga_keeps_integer_variables(vectorize):
         vectorize=vectorize,
         pop_size=10,
         seed=42,
-        termination="n_gen",
-        n_max_gen=2,
+        termination="iterations",
+        max_iterations=2,
     )
     solver.initialize()
     history = OptimizationHistory()
@@ -131,8 +131,8 @@ def test_pymoo_callback_restores_iwopy_population_values():
         vectorize=True,
         pop_size=8,
         seed=42,
-        termination="n_gen",
-        n_max_gen=2,
+        termination="iterations",
+        max_iterations=2,
     )
     solver.initialize(verbosity=0)
     history = OptimizationHistory()
@@ -177,8 +177,8 @@ def test_pymoo_callback_normalizes_mixed_variables():
         vectorize=True,
         pop_size=8,
         seed=42,
-        termination="n_gen",
-        n_max_gen=2,
+        termination="iterations",
+        max_iterations=2,
     )
     solver.initialize(verbosity=0)
     history = OptimizationHistory()
@@ -206,8 +206,8 @@ def test_factory_does_not_mutate_reused_algorithm_parameters():
             problem=prob,
             **algorithm_options,
             vectorize=True,
-            termination="n_gen",
-            n_max_gen=1,
+            termination="iterations",
+            max_iterations=1,
         )
         solver.initialize()
 
@@ -227,8 +227,8 @@ def test_pymoo_rejects_native_callback_parameter():
         pop_size=8,
         seed=42,
         callback=object(),
-        termination="n_gen",
-        n_max_gen=1,
+        termination="iterations",
+        max_iterations=1,
     )
 
     with pytest.raises(ValueError, match="callback is managed internally"):
@@ -239,7 +239,7 @@ def test_generation_limit_uses_iwopy_default_termination():
     prob = RecordingIntProblem()
     prob.add_objective(IntObjective(prob))
     prob.initialize()
-    stopping_options = {"n_max_gen": 2}
+    stopping_options = {"max_iterations": 2}
 
     solver = Optimizer_pymoo(
         optimizer="GA",
@@ -258,7 +258,42 @@ def test_generation_limit_uses_iwopy_default_termination():
         "MaximumGenerationTermination",
         "MaximumFunctionCallTermination",
     ]
-    assert stopping_options == {"n_max_gen": 2}
+    assert stopping_options == {"max_iterations": 2}
+
+
+@pytest.mark.parametrize("criterion", ["iterations", "evaluations", "custom"])
+def test_pymoo_composes_both_limits_with_criterion(criterion):
+    from iwopy.benchmarks import QuadraticProblem
+    from pymoo.termination.max_gen import MaximumGenerationTermination
+
+    termination = (
+        MaximumGenerationTermination(100) if criterion == "custom" else criterion
+    )
+    solver = Optimizer_pymoo(
+        QuadraticProblem(),
+        optimizer="GA",
+        pop_size=5,
+        seed=1,
+        termination=termination,
+        max_iterations=5,
+        max_evaluations=10,
+    )
+    solver.initialize(verbosity=0)
+    solver.solve(verbosity=0)
+    algorithm = solver.results.algorithm
+    assert 10 <= algorithm.evaluator.n_eval < 15
+    assert algorithm.n_gen <= 6
+    assert len(algorithm.termination.terminations) == (
+        3 if criterion == "custom" else 2
+    )
+
+
+@pytest.mark.parametrize("selector", ["n_gen", "n_eval"])
+def test_pymoo_rejects_superseded_limit_selectors(selector):
+    from iwopy.benchmarks import QuadraticProblem
+
+    with pytest.raises(ValueError, match="use termination"):
+        Optimizer_pymoo(QuadraticProblem(), termination=selector)
 
 
 def test_pymoo_skips_callback_bridge_without_callbacks(monkeypatch):
@@ -270,8 +305,8 @@ def test_pymoo_skips_callback_bridge_without_callbacks(monkeypatch):
         vectorize=True,
         pop_size=8,
         seed=42,
-        termination="n_gen",
-        n_max_gen=1,
+        termination="iterations",
+        max_iterations=1,
     )
     solver.initialize(verbosity=0)
 
@@ -295,8 +330,8 @@ def test_integer_pymoo_algorithms_keep_integer_variables(algorithm):
         vectorize=True,
         pop_size=10,
         seed=42,
-        termination="n_gen",
-        n_max_gen=2,
+        termination="iterations",
+        max_iterations=2,
     )
     solver.initialize()
     results = solver.solve(verbosity=0)
@@ -320,8 +355,8 @@ def test_integer_pymoo_algorithms_reject_incompatible_representation(algorithm):
         vectorize=True,
         pop_size=10,
         seed=42,
-        termination="n_gen",
-        n_max_gen=1,
+        termination="iterations",
+        max_iterations=1,
     )
 
     with pytest.raises(ValueError, match="integer|variable"):
@@ -339,8 +374,8 @@ def test_pso_factory_uses_requested_sampling():
         vectorize=False,
         pop_size=10,
         seed=42,
-        termination="n_gen",
-        n_max_gen=1,
+        termination="iterations",
+        max_iterations=1,
     )
     solver.initialize()
 
@@ -360,8 +395,8 @@ def test_factory_supports_additional_pymoo_algorithms(algorithm):
         vectorize=False,
         pop_size=10,
         seed=42,
-        termination="n_gen",
-        n_max_gen=1,
+        termination="iterations",
+        max_iterations=1,
     )
     solver.initialize()
 
@@ -380,8 +415,8 @@ def run_branin_ga(type, init_vals, ngen, npop, pop):
         vectorize=pop,
         pop_size=npop,
         seed=42,
-        termination="n_gen",
-        n_max_gen=ngen,
+        termination="iterations",
+        max_iterations=ngen,
     )
     solver.initialize()
     solver.print_info()
@@ -435,8 +470,8 @@ def run_rosen0_ga(type, inits, ngen, npop, pop):
         vectorize=pop,
         pop_size=npop,
         seed=42,
-        termination="n_gen",
-        n_max_gen=ngen,
+        termination="iterations",
+        max_iterations=ngen,
     )
     solver.initialize()
     solver.print_info()
@@ -458,8 +493,8 @@ def run_rosen_ga(type, lower, upper, inits, ngen, npop, pop):
         vectorize=pop,
         pop_size=npop,
         seed=42,
-        termination="n_gen",
-        n_max_gen=ngen,
+        termination="iterations",
+        max_iterations=ngen,
     )
     solver.initialize()
     solver.print_info()

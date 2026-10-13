@@ -8,7 +8,7 @@ if __name__ == "__main__":
         optimizer="trust-ncg",  # Trust-region Newton-CG optimization
         problem=problem,
         hess="2-point",  # Estimate the Hessian from objective gradients
-        maxiter=100,  # Demo iterations; production start: 1000
+        max_iterations=100,  # Demo iterations; production start: 1000
         gtol=1e-6,  # Gradient convergence tolerance
     )
     solver.initialize(verbosity=0)

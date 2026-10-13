@@ -10,7 +10,7 @@ if __name__ == "__main__":
         n_partitions=12,  # Production: choose partitions for 100+ directions
         vectorize=True,  # Evaluate each generation as an iwopy population
         seed=42,  # Reproducible sampling and variation
-        n_max_gen=10,  # Demo generations; production start: 1000
+        max_iterations=10,  # Demo generations; production start: 1000
         ftol=1e-6,  # Objective-space convergence tolerance
     )
     solver.initialize(verbosity=0)

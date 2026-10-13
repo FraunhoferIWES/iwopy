@@ -50,6 +50,8 @@ class Optimizer_scipy(Optimizer):
         optimizer: str | Callable[..., Any] | None = None,
         *,
         tol: float | None = None,
+        max_iterations: int | None = None,
+        max_evaluations: int | None = None,
         hess: Any = None,
         hessp: Any = None,
         memory_size: int = 100,
@@ -66,6 +68,13 @@ class Optimizer_scipy(Optimizer):
             SciPy minimize method name, callable, or None for native selection.
         tol
             Native aggregate stopping tolerance; None uses SciPy defaults.
+        max_iterations
+            Native iteration limit. Unsupported for TNC, COBYLA, and callable
+            methods. None leaves the native default unchanged.
+        max_evaluations
+            Native objective-call limit for Nelder-Mead, Powell, L-BFGS-B, TNC,
+            COBYLA, or COBYQA. Numerical derivatives may exceed a native limit.
+            None leaves the native default unchanged.
         hess, hessp
             Native Hessian and Hessian-vector product specifications.
         memory_size
@@ -76,15 +85,38 @@ class Optimizer_scipy(Optimizer):
         name
             Optimizer name.
         kwargs
-            Flat native method options, such as maxiter, ftol, gtol and eps.
+            Flat native method options, such as ftol, gtol and eps.
             Bounds, callback, constraints, method and Jacobians are managed.
             For trust-constr, sparse_jacobian defaults to True; explicit native
             settings are preserved. Use False with dense-only factorizations.
+
+        Raises
+        ------
+        ValueError
+            If a limit is invalid or unsupported by the selected method,
+            vectorize is not a boolean, or the method selector is duplicated.
+        TypeError
+            If a superseded or unsupported shared keyword is supplied.
         """
         super().__init__(problem, name)
         self._validate_kwargs(kwargs)
         self.optimizer = optimizer
-        self._native_pars = minimize_options(kwargs, tol)
+        method = optimizer.lower() if isinstance(optimizer, str) else None
+        iteration_key = (
+            None if callable(optimizer) or method in {"tnc", "cobyla"} else "maxiter"
+        )
+        evaluation_key = {
+            "nelder-mead": "maxfev",
+            "powell": "maxfev",
+            "l-bfgs-b": "maxfun",
+            "tnc": "maxfun",
+            "cobyla": "maxiter",
+            "cobyqa": "maxfev",
+        }.get(method or "")
+        limits = self._limit_kwargs(
+            max_iterations, max_evaluations, iteration_key, evaluation_key
+        )
+        self._native_pars = minimize_options(kwargs | limits, tol)
         if "method" in self._native_pars:
             raise ValueError("SciPy: select the method with optimizer")
         self._native_pars["method"] = optimizer
@@ -95,7 +127,7 @@ class Optimizer_scipy(Optimizer):
         if hessp is not None:
             self._native_pars["hessp"] = hessp
         self.memory_size = memory_size
-        self.vectorize = vectorize
+        self.vectorize = self._validate_vectorize(vectorize)
         self._mem: (
             dict[tuple[object, ...], tuple[np.ndarray, np.ndarray, object | None]]
             | None

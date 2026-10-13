@@ -11,7 +11,7 @@ if __name__ == "__main__":
         m=1.0 / problem.n_vars_float,  # Per-gene mutation probability
         seed=42,  # Reproducible evolution
         pop_size=20,  # Production: 100+ individuals, in multiples of four
-        gen=10,  # Demo generations; production start: 1000
+        max_iterations=10,  # Demo generations; production start: 1000
     )
     solver.initialize(verbosity=0)
     solver.algo.set_verbosity(0)

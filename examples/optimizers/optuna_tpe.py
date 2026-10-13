@@ -11,7 +11,7 @@ if __name__ == "__main__":
         vectorize=True,  # Evaluate each batch as an iwopy population
         batch_size=1,  # Incorporate each trial before proposing the next
         seed=42,  # Reproducible sampling
-        budget=100,  # Demo trials; production start: 1000+, subject to cost
+        max_evaluations=100,  # Demo trials; production start: 1000+, subject to cost
     )
     solver.initialize(verbosity=0)
     result = solver.solve(verbosity=0)

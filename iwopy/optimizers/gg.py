@@ -43,6 +43,7 @@ class GG(Optimizer):
         n_max_steps: int = 100,
         memory_size: int = 100,
         max_iterations: int | None = None,
+        max_evaluations: int | None = None,
         name: str = "GG",
     ) -> None:
         """
@@ -65,15 +66,25 @@ class GG(Optimizer):
             Number of memorized visited points.
         max_iterations
             Iteration limit; None leaves iterations unlimited.
+        max_evaluations
+            Unsupported because analytical and numerical Jacobians have
+            different evaluation costs; must be None.
         name
             The name
+
+        Raises
+        ------
+        ValueError
+            If vectorize is not a boolean, an iteration limit is invalid, or
+            an unsupported evaluation limit is requested.
         """
         super().__init__(problem, name)
+        self._limit_kwargs(max_iterations, max_evaluations, "max_iterations")
         self.step_max = step_max
         self.step_min = step_min
         self.step_div_factor = step_div_factor
         self.f_tol = f_tol if f_tol is not None else 0.0
-        self.vectorize = vectorize
+        self.vectorize = self._validate_vectorize(vectorize)
         self.n_max_steps = n_max_steps
         self.memory_size = memory_size
         self.memory: (

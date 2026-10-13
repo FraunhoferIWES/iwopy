@@ -48,8 +48,28 @@ def make_solver(problem, backend, **kwargs):
         importlib.import_module(f"iwopy.interfaces.{module}"), f"Optimizer_{backend}"
     )
     if backend == "scipy_de":
-        return cls(problem, seed=42, maxiter=200, popsize=5, **kwargs)
-    return cls(problem, budget=17, batch_size=4, seed=42, **kwargs)
+        return cls(
+            problem, seed=42, max_iterations=200, population_multiplier=5, **kwargs
+        )
+    return cls(
+        problem,
+        max_evaluations=17,
+        seed=42,
+        **{"pop_size" if backend == "deap" else "batch_size": 4},
+        **kwargs,
+    )
+
+
+@pytest.mark.parametrize(
+    "iterations, evaluations", [(0, 4), (1, 4), (2, 8), (None, 17)]
+)
+def test_deap_generation_limit_includes_initial_population(iterations, evaluations):
+    solver = make_solver(make_problem(), "deap", max_iterations=iterations)
+    solver.initialize(verbosity=0)
+    history = OptimizationHistory()
+    solver.solve(verbosity=0, callbacks=[history])
+    assert solver.n_evaluations == evaluations
+    assert len(history.states) == (5 if iterations is None else max(1, iterations))
 
 
 @pytest.mark.parametrize("backend", ["scipy_de", "nevergrad", "optuna", "deap"])
@@ -208,11 +228,20 @@ def test_batches_results_callbacks_and_repeated_solves(backend, maximize, monkey
 @pytest.mark.parametrize("backend", ["nevergrad", "optuna", "deap"])
 @pytest.mark.parametrize(
     "option,value",
-    [("budget", 0), ("batch_size", 0), ("budget", True), ("batch_size", 1.5)],
+    [
+        ("max_evaluations", 0),
+        ("batch_size", 0),
+        ("max_evaluations", True),
+        ("batch_size", 1.5),
+    ],
 )
 def test_invalid_budget_options(backend, option, value):
     solver = make_solver(make_problem(), backend)
-    setattr(solver, option, value)
+    setattr(
+        solver,
+        "pop_size" if backend == "deap" and option == "batch_size" else option,
+        value,
+    )
     with pytest.raises(ValueError, match="positive integer"):
         solver.initialize(verbosity=0)
 
@@ -381,7 +410,7 @@ def test_exact_equality_requires_positive_tolerance(backend):
 @pytest.mark.parametrize("backend", ["nevergrad", "optuna", "deap"])
 def test_single_candidate_budget(backend):
     solver = make_solver(make_problem(), backend)
-    solver.budget = 1
+    solver.max_evaluations = 1
     solver.initialize(verbosity=0)
     history = OptimizationHistory()
     assert solver.solve(verbosity=0, callbacks=[history]).success
@@ -471,7 +500,7 @@ def test_pure_integer_population_and_finalization_payload(backend, monkeypatch):
 
 @pytest.mark.parametrize(
     "options",
-    [{"batch_size": 1}, {"cxpb": np.nan}, {"mutpb": -1}, {"cxpb": 0.8, "mutpb": 0.8}],
+    [{"pop_size": 1}, {"cxpb": np.nan}, {"mutpb": -1}, {"cxpb": 0.8, "mutpb": 0.8}],
 )
 def test_invalid_deap_variation_options(options):
     solver = make_solver(make_problem(), "deap")

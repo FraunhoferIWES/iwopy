@@ -7,7 +7,7 @@ if __name__ == "__main__":
         family="scipy",  # Optimizer family
         optimizer="L-BFGS-B",  # Bound-constrained limited-memory optimization
         problem=problem,
-        maxiter=100,  # Demo iterations; production start: 1000
+        max_iterations=100,  # Demo iterations; production start: 1000
         ftol=1e-9,  # Relative objective improvement tolerance
         gtol=1e-6,  # Projected-gradient convergence tolerance
     )

@@ -10,7 +10,7 @@ if __name__ == "__main__":
         vectorize=True,  # Evaluate each batch as an iwopy population
         batch_size=8,  # Outstanding asks per batch; no threads are created
         seed=42,  # Reproducible sampling
-        budget=100,  # Demo budget; production start: 10000+ evaluations
+        max_evaluations=100,  # Demo budget; production start: 10000+ evaluations
     )
     solver.initialize(verbosity=0)
     result = solver.solve(verbosity=0)
