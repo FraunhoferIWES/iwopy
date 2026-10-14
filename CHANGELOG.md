@@ -230,109 +230,67 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 ## v1.0.0
 
-- Added call-local `max_deltas` to the sparse Jacobian API and capped existing
-  fresh GG finite-difference calls without extra backtracking evaluations or
-  mutation of configured deltas; fixed-grid stencils remain unchanged.
-- Added bound-certified constraint component selection and guarded SLSQP
-  row reduction while preserving full evaluations and feasibility checks.
-- SLSQP retains its best fully feasible point separately from convergence,
-  supports inward margins and bounded restoration with explicit positive
-  `restoration_scales`, and starts objective-progress patience only after
-  feasibility. Restoration merit and its Jacobian are normalized consistently.
-- Preserved selected-component cached values and analytical entries during
-  numerical Jacobian completion, including constraint-only restoration.
-- Standardized the default development setup on
-  `uv sync --extra dev --extra test --extra opt --upgrade`.
-
-- Documentation:
-  - Corrected chain constraint counts, callback failure semantics, and the GG
-    architecture link; aligned token-review guidance with the outside-pytest policy
 - Python versions:
-  - Added support for Python 3.14
+  - Added Python 3.14 support; Python 3.10 remains the minimum supported version.
 - Core:
-  - Replaced dense Jacobian assembly and optimizer caches with SciPy CSR storage.
-    Matrix APIs are now `Problem.get_jacobian()` and `calc_jacobian()`;
-    scalar gradients and backend-required native names retain their meaning.
-    Analytical and numerical assembly preserves implicit zeros, missing-derivative
-    diagnostics, mapped variables, and selected component/variable order.
-  - Added standalone `iwopy.create_optimizer` selection by backend family
-    and algorithm, including a PyGMO-backed `nlopt` family. All maintained
-    examples and notebooks import it from the root; core owns the same function,
-    and public optimizer class names are unchanged.
-  - Added restart result seeding for selected pipeline stage ranges and ensured
-    stage-reported failures clear running state before finalization.
+  - Jacobian assembly and optimizer caches now use SciPy CSR
+    matrices instead of dense arrays. Use `Problem.get_jacobian()` and
+    `calc_jacobian()` for matrix derivatives; scalar gradients and
+    backend-required native names retain their meaning.
+  - Added `iwopy.create_optimizer` to select a backend family and algorithm,
+    including a PyGMO-backed `nlopt` family. The root and core exports are the
+    same function; public optimizer class names are unchanged.
+  - Pipelines support restart result seeding for selected stage ranges and clear
+    running state before finalization after stage-reported failures.
+- Wrappers:
+  - `LocalFD` supports bounded vectorized finite-difference batches through
+    `max_population_size` and avoids evaluating analytically differentiated
+    components during numerical Jacobian completion.
+- Optimizers:
+  - `GG` caps fresh finite-difference steps without extra backtracking
+    evaluations, aligns progress output with completed-iteration callbacks,
+    and keeps a feasible iterate when every trial violates constraints.
+  - `SLSQP` retains its best fully feasible point independently of convergence,
+    supports inward margins and bounded restoration with explicit positive
+    `restoration_scales`, and starts objective-progress patience only after
+    feasibility. Restoration merit and derivatives use consistent normalization;
+    bound-certified row reduction preserves full feasibility checks.
+- Interfaces:
+  - Gradient-capable SciPy minimizers use cached, population-vectorized
+    Jacobians and grouped general constraints for continuous variables.
+  - Added SciPy differential evolution with mixed integer/float variables,
+    cached nonlinear constraint evaluations, callbacks, and per-dimension
+    population sizing.
+  - Added lazy optional Nevergrad, Optuna, and DEAP interfaces for bounded
+    single-objective problems, general constraints, and evaluated-candidate
+    results. The evolutionary adapter exposes generation limits.
+  - Added the lazy optional `cma` interface for pycma CMA-ES with native
+    augmented-Lagrangian constraints, callbacks, finalized results, and
+    termination diagnostics; it supports scalar and population evaluation.
+  - pymoo run limits compose with custom termination criteria
+  - pygmo reads sparse fitness-Jacobian entries without densification.
 - Benchmarks:
   - Published `QuadraticProblem`, `ParetoProblem`, and `MixedProblem` through
     `iwopy.benchmarks`, replacing the optimizer examples' local shared-case module.
-    All catalog scripts now use installed-package imports without path setup.
-- Interfaces:
-  - Standardized supported run limits as `max_iterations` and `max_evaluations`,
-    with native counter units, unsupported-limit errors, and no legacy aliases.
-    Kept algorithmic `pop_size`, pending-work `batch_size`, and SciPy DE's
-    `population_multiplier` distinct; DEAP now exposes generation limits.
-    Composed pymoo limits with custom criteria and added scalar pycma evaluation.
-    Published shared-parameter and termination explanation/support tables and
-    migrated maintained iwopy and FOXES Optimization callers.
-  - Kept `trust-constr` constraint Jacobians sparse through the SciPy callback,
-    defaulting native `sparse_jacobian` to true while preserving explicit options.
-    SLSQP retains its required dense callback boundary; PyGMO reads sparse
-    fitness-Jacobian entries without densification.
-  - Replaced optimizer parameter dictionaries with explicit per-class controls
-    and flat native keyword forwarding. Aligned `optimizer`, `vectorize`,
-    `memory_size`, and absolute `pop_size` where applicable; SciPy DE preserves
-    a per-dimension `population_multiplier`. Removed the class factory entry point
-    and old signatures without compatibility paths.
-  - Added population-vectorized SciPy differential evolution with mixed integer/
-    float variables, cached nonlinear constraint evaluations, and callbacks.
-  - Added lazy optional Nevergrad, Optuna, and DEAP interfaces with bounded
-    single-objective population evaluation, general constraints, evaluated-candidate
-    results, and deterministic batching/lifecycle tests. The Nevergrad extra
-    constrains NumPy below 2.4 for upstream metamodel compatibility.
-  - Added default-true `vectorize` flags to SciPy DE, Nevergrad, Optuna, and DEAP.
-    Individual evaluation preserves native batches, budgets, constraints, callbacks,
-    and selection while avoiding population evaluation.
-  - Added the lazy optional `cma` interface with population-vectorized pycma
-    CMA-ES, native augmented-Lagrangian constraints, constraint-owned
-    tolerances, callbacks, finalized results, and termination diagnostics.
-  - Added cached, population-vectorized iwopy Jacobians to every
-    gradient-capable SciPy minimizer, with grouped general constraints and an
-    explicit continuous-variable contract.
-  - Added bounded vectorized finite-difference batches through
-    `LocalFD.max_population_size`.
-  - Constraint objects are now the sole tolerance owners; SLSQP and PyGMO
-    derive component tolerances directly from registered constraints, and
-    SLSQP applies them to translated solver bounds.
-- Bugs:
-  - Aligned GG progress rows with the completed iteration state reported to
-    callbacks. Kept feasible GG iterates when all trial candidates violate constraints,
-    backtracking instead of accepting an infeasible point with lower quality.
-    Preserved recovery from initially infeasible layouts in both evaluation modes.
-  - Accounted for floating-point roundoff at constraint feasibility-tolerance
-    boundaries.
-  - Fixed combined analytical Jacobians for functions with disjoint variable
-    dependencies, restored constraint bounds through problem wrappers, and
-    cleared SciPy value and Jacobian caches between solves. Skipped structurally independent components when assembling analytical Jacobians.
-  - Avoided evaluating analytically differentiated function components during
-    vectorized `LocalFD` Jacobians.
-- Dependencies:
-  - Required wheel >=0.46.2 for builds to exclude known path-traversal and
-    regular-expression denial-of-service vulnerabilities.
-- Development:
-  - Added a complete optimizer catalog with 79 main-guarded factory-call
-    scripts, package-aware execution/import tests, and selector coverage.
-    Each row now includes capability classifications and a practical recommendation;
-    detailed class references link to the API rather than being embedded.
-    Split rows into non-empty objective/constraint/local-global categories and
-    added constrained NSGA2/NSGA3 Pareto flows with explicit weighted selection,
-    bringing the catalog to 81 runnable scripts.
-    The Vectorized Interfaces overview now covers all adapters with equal API-linked
-    descriptions and distinguishes search, Jacobian, and batch-fitness vectorization.
-  - Reworked every optimizer setup with important controls on individually annotated
-    value lines. Kept demo runs short and added production starting suggestions,
-    protected by format/budget regressions. Local PyGMO solvers use one starting
-    point; GG/SLSQP examples and documentation now identify their source as iwopy.
-  - Added iwopy-specific agentic coding policy, architecture, naming,
-    development, docstring, data-classification, decision, and Fraunhofer IWES
-    visual-design guidance.
+- Examples and documentation:
+  - Added an optimizer catalog with 81 runnable, main-guarded factory-call
+    scripts using installed-package imports without path setup. Entries are
+    grouped by objective, constraint, and local/global capabilities, with
+    practical recommendations and links to class APIs.
+  - Added constrained NSGA2/NSGA3 Pareto examples with explicit weighted
+    selection. All maintained examples and notebooks use the root optimizer
+    factory and current constructor and run-limit controls; maintained FOXES
+    Optimization callers were migrated too.
+  - Reworked optimizer setups with individually annotated controls, short demo
+    budgets, and production starting suggestions. Local PyGMO solvers use one
+    starting point; native iwopy optimizers are identified as such.
+  - Expanded the Vectorized Interfaces overview to cover all adapters and
+    distinguish search, Jacobian, and batch-fitness vectorization. Added shared
+    parameter and termination support tables.
+  - Corrected chain constraint counts, callback failure semantics, and the
+    gradient optimizer architecture link; aligned token-review guidance with
+    the policy keeping documentation checks outside pytest.
+  - Consolidated these release notes by area, separating user-facing changes
+    and breaking APIs from contributor workflow details.
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v1.0.0](https://github.com/FraunhoferIWES/iwopy/commits/v1.0.0)
