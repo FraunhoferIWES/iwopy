@@ -8,6 +8,14 @@ IWOPY
     :align: center
     :class: iwopy-logo
 
+.. versionadded:: 1.0.0
+    New integrations of `pycma <https://github.com/CMA-ES/pycma>`_, `Nevergrad <https://facebookresearch.github.io/nevergrad/>`_,
+    `Optuna <https://optuna.org/>`_, and `DEAP <https://deap.readthedocs.io/>`_.
+
+.. versionadded:: 1.0.0
+    One global iwopy optimizer factory `iwopy.create_optimizer`, for easy access of the large list
+    of available choices from the :doc:`optimizer_catalog`.
+
 Fraunhofer IWES optimization tools in Python.
 
 Define an optimization problem once and choose an iwopy or external solver

@@ -37,6 +37,6 @@ initially infeasible point.
 
 ## References
 
-- [Architecture](../architecture.md#native-optimizers)
+- [Architecture](../architecture.md#iwopy-optimizers)
 - [GG implementation](../../iwopy/optimizers/gg.py)
 - [Regression tests](../../tests/optimizers/test_gg.py)

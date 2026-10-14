@@ -230,6 +230,9 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 ## v1.0.0
 
+- Documentation:
+  - Corrected chain constraint counts, callback failure semantics, and the GG
+    architecture link; aligned token-review guidance with the outside-pytest policy
 - Python versions:
   - Added support for Python 3.14
 - Core:

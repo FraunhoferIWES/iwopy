@@ -40,10 +40,11 @@ Reusing a callback in a later solve starts a new lifecycle;
 ``OptimizationHistory`` clears its recorded states during initialization.
 
 Callbacks run in list order. Exceptions raised by callbacks propagate to the
-caller and abort the solve. If backend execution or a callback raises,
-``finalize`` is not called because no completed iwopy result exists. Callbacks
-that acquire resources must therefore release them within their own exception
-handling. There is no implicit cancellation return value.
+caller. If initialization, notification, or backend execution fails before
+result creation, ``finalize`` is not called. Exceptions in ``finalize`` also
+propagate, but the completed result has already been created. Callbacks that
+acquire resources must release them within their own exception handling.
+There is no implicit cancellation return value.
 
 Backend-native callback parameters are managed by iwopy and rejected during
 optimizer initialization. Register callbacks only through
