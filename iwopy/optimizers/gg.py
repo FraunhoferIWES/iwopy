@@ -311,6 +311,12 @@ class GG(Optimizer):
         the step on the next iteration. Recovery steps may remain
         infeasible only until the first feasible point is reached.
 
+        At existing fresh-gradient calls, LocalFD displacements are capped
+        by the current per-variable step before the step resets to its
+        maximum. Cached-gradient backtracking does not recalculate
+        derivatives. Analytical derivatives and fixed-grid stencils
+        are unchanged.
+
         Parameters
         ----------
         verbosity
@@ -391,7 +397,9 @@ class GG(Optimizer):
                 level += 1
             else:
                 # fresh calculation:
-                jacobian = self.problem.get_jacobian(inone, x, pop=self.vectorize)
+                jacobian = self.problem.get_jacobian(
+                    inone, x, pop=self.vectorize, max_deltas=step
+                )
                 if not np.all(np.isfinite(jacobian.data)):
                     raise ValueError(
                         f"Optimizer '{self.name}': Non-finite objective or constraint Jacobian entry at current point."

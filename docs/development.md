@@ -40,7 +40,7 @@ iwopy supports Python 3.10 through 3.14. Keep production syntax compatible with
 Use `uv` for local Python workflows:
 
 ```console
-uv sync --extra dev --extra test --upgrade
+uv sync --extra dev --extra test --extra opt --upgrade
 uv run pre-commit run --all-files
 uv run pytest tests
 ```
@@ -307,6 +307,12 @@ For analytical derivatives:
 - verify unresolved derivatives raise with useful context; and
 - compare `LocalFD` with analytical expectations for supported step modes and
 	population batch sizes.
+- cover partially missing derivatives, selected components and reordered
+	variables, selected-component cached values, and SLSQP constraint-only
+	restoration in individual and population modes;
+- test per-call `max_deltas` caps independently of configured deltas, including
+	variable-name ordering, invalid caps, unchanged analytical and fixed-grid
+	derivatives, and cached GG backtracking without extra gradient calls.
 
 A derivative unit test does not replace an optimizer integration test when the
 change affects backend Jacobian assembly.
@@ -325,6 +331,21 @@ Backend tests assert compatibility validation, variable/fitness ordering,
 constraint translation, callback events, success/feasibility conversion, and
 iwopy result containers. Test all affected representations: integer, floating,
 mixed, individual, population, single-objective, or multi-objective as relevant.
+
+For SLSQP feasible controls, distinguish the best feasible returned point from
+raw convergence, and cover infeasible starts/endpoints, bounded restoration,
+cumulative progress in both objective directions, and disabled defaults.
+Verify that infeasible starts do not consume feasible-objective patience and
+that native iteration budgets still apply before feasibility. Restoration tests
+cover required positive scales, differently scaled constraint units, the merit
+Jacobian chain rule, exact equalities, and selected numerical rows in both modes.
+Guarded reduction tests must preserve full feasibility checks and stable
+component identities, including noncontiguous numerical Jacobian rows. Repeated
+solves rebuild the guard and clear caches. The cohesive SLSQP module exceeds the
+700-line guideline because it owns these solver phases, scaling, caching,
+callbacks, and their public contracts; no independent domain logic lives there.
+The already oversized core problem module remains the owner of mapped component
+selection; splitting that existing public abstraction is outside this change.
 
 Optional-backend tests use the declared `test` extra. Keep tests deterministic
 and small; do not depend on backend default randomness without an explicit seed.

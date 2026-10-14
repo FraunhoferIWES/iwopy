@@ -2,7 +2,7 @@ from time import perf_counter, sleep
 
 import numpy as np
 import pytest
-from scipy.optimize import OptimizeResult
+from scipy.optimize import OptimizeResult, minimize
 from scipy.sparse import isspmatrix_csr
 
 import iwopy
@@ -52,6 +52,38 @@ class CountingLinearConstraint(LinearConstraint):
         return super().calc_population(*args, **kwargs)
 
 
+class GuardedLinearConstraint(LinearConstraint):
+    def active_components(self, vars_float, lower, upper):
+        del vars_float, lower
+        _, maximum = self.get_bounds()
+        return (
+            np.array([0], dtype=int)
+            if upper[0] > maximum[0]
+            else np.array([], dtype=int)
+        )
+
+
+class UnitScaledLimit(LinearConstraint):
+    def __init__(self, problem, name, factor, maximum):
+        super().__init__(problem, name, maxs=factor * maximum)
+        self.factor = factor
+        self.tol = 0.0
+
+    def f(self, coordinate):
+        return self.factor * coordinate
+
+    def g(self, var, coordinate, components):
+        return self.factor
+
+
+class NumericalYLimit(iwopy.SimpleConstraint):
+    def f(self, horizontal, vertical):
+        return vertical
+
+    def vardeps_float(self):
+        return np.array([[False, True]])
+
+
 class NonFiniteQuadratic(Quadratic):
     def g(self, var, x, components):
         return np.nan
@@ -77,14 +109,16 @@ class SmallGradientQuadratic(iwopy.SimpleObjective):
         return 2e-8 * (x - 500.0)
 
 
-def make_problem(initial=0.0, target=0.0, ana_deriv=True, **kwargs):
+def make_problem(initial=0.0, target=0.0, ana_deriv=True, maximize=False, **kwargs):
     problem = iwopy.SimpleProblem(
         "quadratic",
         float_vars=["x"],
         init_values_float=[initial],
         **kwargs,
     )
-    problem.add_objective(Quadratic(problem, target=target, ana_deriv=ana_deriv))
+    problem.add_objective(
+        Quadratic(problem, target=target, ana_deriv=ana_deriv, maximize=maximize)
+    )
     return problem
 
 
@@ -243,6 +277,38 @@ def test_slsqp_reports_returned_point_as_last_iteration(monkeypatch):
     assert history.states[0].objs[0] == pytest.approx(result.objs)
 
 
+def test_slsqp_keeps_best_feasible_iterate_on_infeasible_exit(monkeypatch):
+    problem = make_problem(initial=0.0, target=2.0)
+    constraint = LinearConstraint(problem, "bounded", maxs=1.0)
+    constraint.tol = 0.0
+    problem.add_constraint(constraint)
+    problem.initialize(verbosity=0)
+    solver = SLSQP(problem)
+    solver.initialize(verbosity=0)
+
+    def infeasible_exit(fun, initial, callback, **parameters):
+        del initial, parameters
+        feasible = np.array([0.5])
+        fun(feasible)
+        callback(feasible)
+        endpoint = np.array([2.0])
+        return OptimizeResult(
+            x=endpoint, fun=fun(endpoint), success=False, status=9, nit=1, nfev=2
+        )
+
+    monkeypatch.setattr("iwopy.optimizers.slsqp.minimize", infeasible_exit)
+    history = iwopy.OptimizationHistory()
+
+    result = solver.solve(verbosity=0, callbacks=[history])
+
+    assert not result.success
+    assert result.vars_float == pytest.approx([0.5])
+    assert result.objs == pytest.approx([2.25])
+    assert np.all(problem.check_constraints_individual(result.cons))
+    assert solver.scipy_results.x == pytest.approx([2.0])
+    assert history.states[-1].vars_float[0] == pytest.approx([0.5])
+
+
 def test_slsqp_progress_is_silent_at_zero_verbosity(capsys):
     problem = make_problem(initial=3.0, target=1.0)
     problem.initialize(verbosity=0)
@@ -256,6 +322,454 @@ def test_slsqp_progress_is_silent_at_zero_verbosity(capsys):
 
     assert capsys.readouterr().out == ""
     assert len(history.states) == solver.scipy_results.nit
+
+
+def test_slsqp_inward_margin_preserves_public_tolerance():
+    problem = make_problem(initial=0.0)
+    constraint = LinearConstraint(problem, "lower", mins=1.0, maxs=np.inf)
+    constraint.tol = 0.5
+    problem.add_constraint(constraint)
+    problem.initialize(verbosity=0)
+    solver = SLSQP(problem, feasibility_margin=0.01)
+    solver.initialize(verbosity=0)
+
+    result = solver.solve(verbosity=0)
+
+    assert result.success
+    assert result.vars_float == pytest.approx([0.51])
+    assert constraint.tol == 0.5
+
+
+@pytest.mark.parametrize("maximize", [False, True])
+def test_slsqp_stops_without_feasible_progress(maximize, monkeypatch):
+    problem = make_problem(initial=0.0, target=2.0, maximize=maximize)
+    constraint = LinearConstraint(problem, "lower", maxs=0.0)
+    constraint.tol = 0.0
+    problem.add_constraint(constraint)
+    problem.initialize(verbosity=0)
+    solver = SLSQP(problem, stall_iterations=2)
+    solver.initialize(verbosity=0)
+
+    def stalled(fun, initial, callback, **parameters):
+        del initial, parameters
+        for iteration in range(10):
+            point = np.array([1.0 + iteration * 0.01])
+            fun(point)
+            callback(point)
+        raise AssertionError("stagnation did not stop the solver")
+
+    monkeypatch.setattr("iwopy.optimizers.slsqp.minimize", stalled)
+    result = solver.solve(verbosity=0)
+
+    assert not result.success
+    assert solver.termination_reason == "feasible_stagnation"
+    assert solver.n_iterations == 2
+    assert result.vars_float == pytest.approx([0.0])
+
+
+def test_slsqp_restores_infeasible_endpoint(monkeypatch):
+    problem = make_problem(initial=0.0, target=2.0)
+    constraint = LinearConstraint(problem, "upper", maxs=1.0)
+    constraint.tol = 0.0
+    problem.add_constraint(constraint)
+    problem.initialize(verbosity=0)
+    solver = SLSQP(problem, restoration_iterations=5, restoration_scales=1.0)
+    solver.initialize(verbosity=0)
+    original = __import__("scipy.optimize", fromlist=["minimize"]).minimize
+
+    def failed_primary(fun, initial, **parameters):
+        if fun.__name__ == "_restoration_objective":
+            return original(fun, initial, **parameters)
+        point = np.array([2.0])
+        return OptimizeResult(x=point, fun=fun(point), success=False, nit=0)
+
+    monkeypatch.setattr("iwopy.optimizers.slsqp.minimize", failed_primary)
+    result = solver.solve(verbosity=0)
+
+    assert not result.success
+    assert result.vars_float == pytest.approx([1.0])
+    assert np.all(problem.check_constraints_individual(result.cons))
+    assert solver.restoration_results is not None
+
+
+@pytest.mark.parametrize("fd_order", [1, 2])
+def test_slsqp_reduces_jacobian_with_full_feasibility_checks(fd_order):
+    problem = make_problem(initial=0.0, target=1.0, ana_deriv=False)
+    for name, maximum in (("far", 5.0), ("near", 0.25)):
+        constraint = GuardedLinearConstraint(problem, name, maxs=maximum)
+        constraint.tol = 0.0
+        problem.add_constraint(constraint)
+    problem = LocalFD(problem, deltas=1e-5, fd_order=fd_order)
+    problem.initialize(verbosity=0)
+    solver = SLSQP(problem, reduce_constraints=True, move_limit=0.5)
+    solver.initialize(verbosity=0)
+
+    result = solver.solve(verbosity=0)
+
+    assert result.success
+    assert result.vars_float == pytest.approx([0.25])
+    assert result.cons.shape == (2,)
+    assert solver.active_constraint_components.tolist() == [1]
+    assert solver._get_jacobian(result.vars_float).shape == (2, 1)
+    assert np.all(problem.check_constraints_individual(result.cons))
+
+
+@pytest.mark.parametrize("maximize", [False, True])
+def test_slsqp_accumulates_small_feasible_improvements(maximize, monkeypatch):
+    problem = make_problem(initial=2.0, maximize=maximize)
+    problem.initialize(verbosity=0)
+    solver = SLSQP(problem, stall_iterations=3, progress_tol=0.3)
+    solver.initialize(verbosity=0)
+
+    def improving(fun, initial, callback, **parameters):
+        del initial, parameters
+        direction = 1.0 if maximize else -1.0
+        for iteration in range(1, 5):
+            point = solver._to_scaled_vars([np.sqrt(4.0 + direction * 0.2 * iteration)])
+            value = fun(point)
+            callback(point)
+        return OptimizeResult(x=point, fun=value, success=True, nit=4)
+
+    monkeypatch.setattr("iwopy.optimizers.slsqp.minimize", improving)
+    result = solver.solve(verbosity=0)
+    assert result.success
+    assert solver.n_iterations == 4
+    assert solver.termination_reason == "converged"
+    assert result.objs == pytest.approx([4.8 if maximize else 3.2])
+
+
+def test_slsqp_restores_infeasible_start():
+    problem = make_problem(initial=2.0)
+    constraint = LinearConstraint(problem, "upper", maxs=1.0)
+    constraint.tol = 0.0
+    problem.add_constraint(constraint)
+    problem.initialize(verbosity=0)
+    solver = SLSQP(problem, restoration_iterations=5, restoration_scales=1.0)
+    solver.initialize(verbosity=0)
+
+    result = solver.solve(verbosity=0)
+
+    assert result.success
+    assert result.vars_float == pytest.approx([0.0])
+    assert solver.restoration_results is not None
+    assert solver.restoration_results.x[0] <= 1.0
+    assert solver.n_iterations > solver.scipy_results.nit
+
+
+def test_slsqp_restoration_failure_stays_infeasible_and_bounded():
+    problem = make_problem(initial=2.0, min_values_float=[2.0], max_values_float=[3.0])
+    constraint = LinearConstraint(problem, "impossible", maxs=1.0)
+    constraint.tol = 0.0
+    problem.add_constraint(constraint)
+    problem.initialize(verbosity=0)
+    solver = SLSQP(
+        problem, restoration_iterations=1, restoration_scales=1.0, max_iterations=2
+    )
+    solver.initialize(verbosity=0)
+
+    result = solver.solve(verbosity=0)
+
+    assert not result.success
+    assert solver.best_feasible is None
+    assert not np.all(problem.check_constraints_individual(result.cons))
+    assert solver.n_iterations <= 4
+    assert solver.restoration_results is not None
+
+
+@pytest.mark.parametrize(
+    "parameters",
+    [
+        {"feasibility_margin": -1.0},
+        {"feasibility_margin": np.nan},
+        {"progress_tol": np.inf},
+        {"stall_iterations": 0},
+        {"stall_iterations": True},
+        {"restoration_iterations": -1},
+        {"restoration_iterations": 0.5},
+        {"move_limit": 0.0},
+        {"move_limit": np.inf},
+        {"move_limit": [1.0, 2.0]},
+    ],
+)
+def test_slsqp_rejects_invalid_feasible_controls(parameters):
+    problem = make_problem()
+    problem.initialize(verbosity=0)
+    solver = SLSQP(problem, **parameters)
+    with pytest.raises(ValueError):
+        solver.initialize(verbosity=0)
+
+
+@pytest.mark.parametrize(
+    "components", [np.array([0, 0]), np.array([-1]), np.array([1]), np.array([0.0])]
+)
+def test_slsqp_rejects_invalid_component_selection(components, monkeypatch):
+    problem = make_problem()
+    constraint = LinearConstraint(problem, "bounded")
+    problem.add_constraint(constraint)
+    problem.initialize(verbosity=0)
+    monkeypatch.setattr(constraint, "active_components", lambda *args: components)
+    solver = SLSQP(problem, reduce_constraints=True)
+    with pytest.raises(ValueError, match="Invalid active components"):
+        solver.initialize(verbosity=0)
+
+
+@pytest.mark.parametrize("progress_tol", [1e-8, 1e3])
+def test_slsqp_restoration_is_independent_of_objective_progress_units(
+    progress_tol, monkeypatch
+):
+    problem = make_problem(initial=2.0)
+    constraint = LinearConstraint(problem, "upper", maxs=1.0)
+    constraint.tol = 0.0
+    problem.add_constraint(constraint)
+    problem.initialize(verbosity=0)
+    solver = SLSQP(
+        problem,
+        restoration_iterations=5,
+        restoration_scales=1.0,
+        progress_tol=progress_tol,
+    )
+    solver.initialize(verbosity=0)
+    tolerances = []
+
+    def record_restoration(fun, initial, **parameters):
+        if fun.__name__ == "_restoration_objective":
+            tolerances.append(parameters["options"]["ftol"])
+        return minimize(fun, initial, **parameters)
+
+    monkeypatch.setattr("iwopy.optimizers.slsqp.minimize", record_restoration)
+    result = solver.solve(verbosity=0)
+
+    assert result.success
+    assert tolerances == [1e-12]
+    assert solver.restoration_results.x[0] <= 1.0
+
+
+def test_slsqp_full_checks_reject_an_incorrect_omission(monkeypatch):
+    problem = make_problem(initial=0.0, target=2.0)
+    constraint = LinearConstraint(problem, "bounded", maxs=1.0)
+    constraint.tol = 0.0
+    problem.add_constraint(constraint)
+    problem.initialize(verbosity=0)
+    monkeypatch.setattr(
+        constraint, "active_components", lambda *args: np.array([], dtype=int)
+    )
+    solver = SLSQP(problem, reduce_constraints=True, move_limit=3.0)
+    solver.initialize(verbosity=0)
+
+    def invalid_endpoint(fun, initial, **parameters):
+        del initial, parameters
+        point = solver._to_scaled_vars([2.0])
+        return OptimizeResult(x=point, fun=fun(point), success=True, nit=1)
+
+    monkeypatch.setattr("iwopy.optimizers.slsqp.minimize", invalid_endpoint)
+    result = solver.solve(verbosity=0)
+
+    assert solver.scipy_results.success
+    assert not result.success
+    assert result.vars_float == pytest.approx([0.0])
+    assert np.all(problem.check_constraints_individual(result.cons))
+
+
+def test_slsqp_repeated_solve_refreshes_guard_and_best_point(monkeypatch):
+    problem = make_problem(initial=0.0, target=1.0)
+    constraint = GuardedLinearConstraint(problem, "bounded", maxs=5.0)
+    constraint.tol = 0.0
+    problem.add_constraint(constraint)
+    problem.initialize(verbosity=0)
+    solver = SLSQP(problem, reduce_constraints=True, move_limit=0.5)
+    solver.initialize(verbosity=0)
+
+    first = solver.solve(verbosity=0)
+    assert first.success
+    assert first.vars_float == pytest.approx([0.5])
+    assert solver.active_constraint_components.size == 0
+    snapshot = solver.best_feasible
+    snapshot[0][:] = 99.0
+    assert solver.best_feasible[0] == pytest.approx([0.5])
+
+    monkeypatch.setattr(problem, "initial_values_float", lambda: np.array([4.75]))
+    second = solver.solve(verbosity=0)
+
+    assert second.success
+    assert second.vars_float == pytest.approx([4.25])
+    assert solver.active_constraint_components.tolist() == [0]
+    assert solver.best_feasible[0] == pytest.approx(second.vars_float)
+
+
+@pytest.mark.parametrize("initialize_problem", [False, True])
+def test_slsqp_preserves_initialization_errors(initialize_problem):
+    problem = make_problem()
+    if initialize_problem:
+        problem.initialize(verbosity=0)
+    solver = SLSQP(problem)
+    with pytest.raises(ValueError, match="before .* initialization"):
+        solver.solve(verbosity=0)
+
+
+def test_slsqp_stagnation_counts_only_primary_iterations(monkeypatch):
+    problem = make_problem(initial=2.0, target=2.0)
+    constraint = LinearConstraint(problem, "upper", maxs=1.0)
+    constraint.tol = 0.0
+    problem.add_constraint(constraint)
+    problem.initialize(verbosity=0)
+    solver = SLSQP(
+        problem, restoration_iterations=5, restoration_scales=1.0, stall_iterations=1
+    )
+    solver.initialize(verbosity=0)
+
+    def stalled_primary(fun, initial, **parameters):
+        if fun.__name__ == "_restoration_objective":
+            return minimize(fun, initial, **parameters)
+        point = solver._to_scaled_vars([1.0])
+        for _ in range(2):
+            fun(point)
+            parameters["callback"](point)
+        raise AssertionError("stagnation did not stop the primary phase")
+
+    monkeypatch.setattr("iwopy.optimizers.slsqp.minimize", stalled_primary)
+    result = solver.solve(verbosity=0)
+
+    assert not result.success
+    assert solver.termination_reason == "feasible_stagnation"
+    assert solver.scipy_results.nit == 2
+    assert solver.n_iterations > solver.scipy_results.nit
+    assert solver.restoration_results is not None
+
+
+def test_slsqp_patience_begins_after_first_feasible_point(monkeypatch):
+    problem = make_problem(initial=2.0)
+    problem.add_constraint(UnitScaledLimit(problem, "upper", 1.0, 1.0))
+    problem.initialize(verbosity=0)
+    solver = SLSQP(problem, stall_iterations=1)
+    solver.initialize(verbosity=0)
+
+    def improving_feasibility(fun, initial, callback, **parameters):
+        for physical in (1.5, 1.25, 0.5, 0.5):
+            point = solver._to_scaled_vars([physical])
+            fun(point)
+            callback(point)
+        raise AssertionError("feasible stagnation did not stop the solver")
+
+    monkeypatch.setattr("iwopy.optimizers.slsqp.minimize", improving_feasibility)
+    result = solver.solve(verbosity=0)
+
+    assert not result.success
+    assert solver.termination_reason == "feasible_stagnation"
+    assert solver.n_iterations == 4
+    assert result.vars_float == pytest.approx([0.5])
+
+
+def test_slsqp_no_feasible_point_leaves_stopping_to_native_budget(monkeypatch):
+    problem = make_problem(initial=2.0)
+    problem.add_constraint(UnitScaledLimit(problem, "upper", 1.0, 1.0))
+    problem.initialize(verbosity=0)
+    solver = SLSQP(problem, stall_iterations=1, max_iterations=3)
+    solver.initialize(verbosity=0)
+
+    def infeasible_progress(fun, initial, callback, **parameters):
+        assert parameters["options"]["maxiter"] == 3
+        for physical in (1.8, 1.6, 1.4):
+            point = solver._to_scaled_vars([physical])
+            value = fun(point)
+            callback(point)
+        return OptimizeResult(x=point, fun=value, success=False, status=9, nit=3)
+
+    monkeypatch.setattr("iwopy.optimizers.slsqp.minimize", infeasible_progress)
+    result = solver.solve(verbosity=0)
+
+    assert not result.success
+    assert solver.best_feasible is None
+    assert solver.termination_reason == "scipy_failure"
+    assert solver.n_iterations == 3
+
+
+@pytest.mark.parametrize("factor", [1e-6, 1.0, 1e6])
+def test_slsqp_restoration_is_invariant_to_constraint_units(factor):
+    problem = make_problem(initial=2.0, target=-0.5)
+    problem.add_constraint(UnitScaledLimit(problem, "first", factor, 1.0))
+    problem.add_constraint(UnitScaledLimit(problem, "second", 1.0, 0.0))
+    problem.initialize(verbosity=0)
+    solver = SLSQP(
+        problem, restoration_iterations=5, restoration_scales=np.array([factor, 1.0])
+    )
+    solver.initialize(verbosity=0)
+    initial = solver._to_scaled_vars([2.0])
+
+    assert solver._restoration_objective(initial) == pytest.approx(2.5)
+    assert solver._restoration_jac(initial) == pytest.approx([6.0])
+    step = 1e-6
+    numerical = (
+        solver._restoration_objective(initial + step)
+        - solver._restoration_objective(initial - step)
+    ) / (2.0 * step)
+    assert solver._restoration_jac(initial)[0] == pytest.approx(numerical)
+
+    result = solver.solve(verbosity=0)
+    assert result.success
+    assert result.vars_float == pytest.approx([-0.5], abs=1e-7)
+    assert np.all(problem.check_constraints_individual(result.cons))
+
+
+@pytest.mark.parametrize(
+    "scales", [None, 0.0, -1.0, np.inf, np.nan, [1.0, 2.0], [[1.0]]]
+)
+def test_slsqp_rejects_missing_or_invalid_restoration_scales(scales):
+    problem = make_problem(initial=2.0)
+    problem.add_constraint(UnitScaledLimit(problem, "upper", 1.0, 1.0))
+    problem.initialize(verbosity=0)
+    solver = SLSQP(problem, restoration_iterations=5, restoration_scales=scales)
+
+    with pytest.raises(ValueError, match="restoration_scales"):
+        solver.initialize(verbosity=0)
+
+
+def test_slsqp_restoration_preserves_exact_equality():
+    problem = make_problem(initial=2.0, target=1.0)
+    constraint = LinearConstraint(problem, "equality", mins=1.0, maxs=1.0)
+    constraint.tol = 0.0
+    problem.add_constraint(constraint)
+    problem.initialize(verbosity=0)
+    solver = SLSQP(problem, restoration_iterations=5, restoration_scales=10.0)
+    solver.initialize(verbosity=0)
+
+    result = solver.solve(verbosity=0)
+
+    assert result.success
+    assert result.vars_float == pytest.approx([1.0])
+    assert np.all(problem.check_constraints_individual(result.cons))
+
+
+@pytest.mark.parametrize("vectorize", [False, True])
+def test_slsqp_scaled_restoration_with_selected_numerical_constraint(vectorize):
+    base = iwopy.SimpleProblem(
+        "subset_restoration",
+        float_vars=["x", "y"],
+        init_values_float=[3.0, 2.0],
+        min_values_float=[-5.0, -5.0],
+        max_values_float=[5.0, 5.0],
+    )
+    base.add_objective(SlowQuadratic(base, delay=0.0))
+    base.add_constraint(NumericalYLimit(base, "limit", has_ana_derivs=False, maxs=1.0))
+    problem = LocalFD(base, deltas=1e-5, fd_order=2)
+    problem.initialize(verbosity=0)
+    solver = SLSQP(
+        problem,
+        vectorize=vectorize,
+        restoration_iterations=5,
+        restoration_scales=2.0,
+        tol=1e-10,
+    )
+    solver.initialize(verbosity=0)
+
+    result = solver.solve(verbosity=0)
+
+    assert result.success
+    assert result.vars_float == pytest.approx([0.0, 0.0], abs=1e-7)
+    assert solver.restoration_results is not None
+    _, restored = problem.evaluate_individual(
+        np.array([], dtype=np.int32), solver.restoration_results.x
+    )
+    assert np.all(problem.check_constraints_individual(restored))
 
 
 def test_slsqp_scales_large_physical_variable_ranges():

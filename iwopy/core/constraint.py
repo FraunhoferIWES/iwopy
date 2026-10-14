@@ -48,6 +48,29 @@ class Constraint(OptFunction):
             np.zeros(self.n_components(), dtype=np.float64),
         )
 
+    def active_components(
+        self, vars_float: np.ndarray, lower: np.ndarray, upper: np.ndarray
+    ) -> np.ndarray:
+        """Select components that can bind within a guarded variable box.
+
+        Parameters
+        ----------
+        vars_float
+            Initial values in this function's float-variable order.
+        lower, upper
+            Enforced variable bounds in the same order. Infinite bounds
+            must be treated conservatively.
+
+        Returns
+        -------
+        components
+            Unique local component indices. The default retains all.
+            Overrides may omit a component only when it is guaranteed
+            feasible throughout the box, not merely at the initial point.
+            Full evaluation and feasibility contracts remain unchanged.
+        """
+        return np.arange(self.n_components(), dtype=int)
+
     def _feasibility_bounds(self) -> tuple[np.ndarray, np.ndarray]:
         """Return bounds expanded by feasibility tolerance and roundoff."""
         minimum, maximum = self.get_bounds()

@@ -14,6 +14,9 @@ class DiscretizeRegGrid(LocalFD):
     A wrapper that provides finite distance
     differentiation on a regular grid for
     selected or all problem float variables.
+
+    Per-call ``max_deltas`` caps do not change the fixed grid spacing
+    or its gradient stencils.
     """
 
     def __init__(
@@ -126,6 +129,7 @@ class DiscretizeRegGrid(LocalFD):
         gvars: Sequence[int] | np.ndarray,
         order: np.ndarray,
         orderb: np.ndarray,
+        max_deltas: np.ndarray | None = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         """Provide regular-grid stencil points and derivative weights."""
         grid = self.grid

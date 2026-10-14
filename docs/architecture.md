@@ -52,6 +52,9 @@ flowchart LR
 - Runtime: Python 3.10 through 3.14 on operating-system-independent Python
 	environments.
 - Required scientific stack: NumPy, SciPy, and matplotlib.
+- Default local development setup uses
+	`uv sync --extra dev --extra test --extra opt --upgrade`, selecting contributor,
+	test, and all optimizer integrations explicitly.
 - Optional optimizer integrations: pycma, pymoo, PyGMO, Nevergrad, Optuna, and DEAP, selected through package
 	extras. The `opt` and `test` extras aggregate supported solver integrations.
 - iwopy is an in-process library. It has no application server, authentication
@@ -178,6 +181,12 @@ adapter initializes. iwopy SLSQP applies those tolerances to its translated
 bounds, while zero tolerance requests exact bounds. See
 [ADR-0003](adr/0003-constraint-owned-solver-tolerances.md).
 
+`Constraint.active_components()` may certify components as feasible throughout
+enforced floating-variable bounds. `Problem.get_active_constraint_components()`
+maps these selections to sorted global indices and rejects invalid selections.
+The default retains all components. Selection never changes registered counts,
+names, full evaluation, or public feasibility checks.
+
 Simple objectives and constraints expose `f(*x)` and optional analytical
 partial derivatives through `g(var, *x, components)`. Integer function arguments
 precede floating arguments. Keep the
@@ -209,6 +218,15 @@ finite-difference population batches where configured. Numerical wrapping must
 preserve the original component and variable order. It fills only unresolved
 stored entries, preserving analytical derivatives and structural zeros, and
 reuses center values in selected-component order.
+
+`Problem.get_jacobian(max_deltas=...)` accepts positive finite caps in complete
+problem float-variable order. `LocalFD` uses the smaller of its configured delta
+and the cap for that call without mutating configuration. Analytical and
+fixed-grid derivatives are unchanged. A second-order one-sided stencil can
+sample at twice the capped delta. GG supplies its current per-variable step at
+existing fresh-Jacobian calls before resetting the step; cached backtracking
+does not add Jacobian evaluations. See
+[ADR-0017](adr/0017-gg-call-local-fd-caps.md).
 
 ### Results And Callbacks
 
@@ -292,6 +310,32 @@ iwopy Jacobians and scaling. Both require continuous, single-objective problems.
 SLSQP derives and applies component tolerances from the registered constraint
 objects. They own optimizer-specific convergence and step behavior, not problem
 application semantics.
+
+SLSQP retains the best finite, fully feasible evaluated point independently of
+the raw primary SciPy endpoint. Returning that point does not turn failure into
+convergence. Optional `feasibility_margin` reduces positive solver tolerances;
+`restoration_iterations` bounds each pre/post restoration phase; and
+`stall_iterations` stops repeated negligible cumulative best-feasible progress
+using `progress_tol`, starting only after the first feasible point. Before
+feasibility, native stopping criteria and iteration limits remain responsible.
+Restoration minimizes full squared violations divided by explicit positive
+`restoration_scales`, required when enabled for constrained problems. Scales
+follow full constraint order and have each component's units; they must change
+with constraint units. Restoration requests only violated-constraint Jacobian
+rows, not objective derivatives.
+
+The controls use the standard objective direction and evaluation contracts,
+including for future scalar objectives. Progress tolerance is in evaluated
+objective units; restoration uses an objective-independent constraint-merit
+tolerance. Finalization may rescale returned function values.
+
+With `reduce_constraints=True`, SLSQP assembles only bound-certified active rows
+of the objective/constraint Jacobian and SciPy constraints. `move_limit` defines
+a coordinate box around the initial point for the whole solve. The box and
+selected rows are rebuilt between solves and stay fixed during each SciPy call.
+All original constraints remain evaluated and checked. This is a local solve,
+not an adaptive in-solve active-set method. See
+[ADR-0018](adr/0018-slsqp-feasible-progress-and-guarded-components.md).
 
 GG keeps feasible iterates feasible and accepts only improving feasible trials
 after feasibility is reached. A batch without feasible candidates leaves the

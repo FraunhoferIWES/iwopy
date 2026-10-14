@@ -26,7 +26,10 @@ all of them.
 | [0012](0012-optimizer-example-guidance.md) | Accepted; direct construction superseded by 0013 | Annotate important optimizer values, keep published demo runs short with production suggestions, and label GG/SLSQP's source iwopy. |
 | [0013](0013-optimizer-creation.md) | Accepted | Use a standalone family/algorithm factory and explicit optimizer keywords without legacy signatures; retain public class names and native execution semantics. |
 | [0014](0014-sparse-jacobians.md) | Accepted | Use singular Jacobian matrix APIs and CSR assembly/caches, retain native gradient protocols, and pass sparse constraints to SciPy trust-constr. |
+| [0015](0015-shared-optimizer-controls.md) | Accepted | Translate canonical iteration and evaluation controls to supported native limits without approximations or legacy aliases. |
 | [0016](0016-documentation-independent-tests.md) | Accepted | Keep pytest independent of documentation files and review documentation separately. |
+| [0017](0017-gg-call-local-fd-caps.md) | Accepted | Cap existing fresh GG finite-difference calls without mutating configured deltas or adding backtracking Jacobian evaluations. |
+| [0018](0018-slsqp-feasible-progress-and-guarded-components.md) | Accepted | Retain feasible SLSQP points, use scaled restoration and feasibility-aware patience, and reduce constraint rows only within certified bounds. |
 
 ## When To Add An ADR
 

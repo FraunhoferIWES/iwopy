@@ -105,7 +105,7 @@ configuration. Use `uv` for local Python workflows. The default development
 setup is:
 
 ```console
-uv sync --extra dev --extra test --upgrade
+uv sync --extra dev --extra test --extra opt --upgrade
 ```
 
 Read `docs/architecture.md` for package boundaries, runtime contracts, and

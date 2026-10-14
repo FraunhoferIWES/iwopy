@@ -93,6 +93,35 @@ class SparseObjective(iwopy.Objective):
         return np.full(len(selected), 1.0 if var == 0 else 2.0)
 
 
+class NumericalCubic(iwopy.SimpleObjective):
+    def f(self, coordinate):
+        return coordinate**3
+
+
+class PartlyNumericalObjective(SparseObjective):
+    def calc_individual(self, vars_int, vars_float, problem_results, components=None):
+        values = super().calc_individual(vars_int, vars_float, problem_results)
+        return values if components is None else values[components]
+
+    def calc_population(self, vars_int, vars_float, problem_results, components=None):
+        values = super().calc_population(vars_int, vars_float, problem_results)
+        return values if components is None else values[:, components]
+
+    def ana_deriv(self, vars_int, vars_float, var, components=None):
+        derivative = super().ana_deriv(vars_int, vars_float, var, components)
+        return np.full_like(derivative, np.nan) if var == 1 else derivative
+
+
+def make_cubic_problem(fd_order=2):
+    base = iwopy.SimpleProblem(
+        "cubic", float_vars=["coordinate"], init_values_float=[1.0]
+    )
+    base.add_objective(NumericalCubic(base))
+    problem = iwopy.LocalFD(base, deltas=2.0, fd_order=fd_order)
+    problem.initialize(verbosity=0)
+    return problem
+
+
 def _calc(p, f, p0, o, lim, pop):
     print("p0 =", p0)
 
@@ -403,6 +432,63 @@ def test_sparse_finite_differences_preserve_analytical_and_independent_entries(
     np.testing.assert_allclose(
         jacobian.toarray(), [[1.0, 0.0], [0.0, 2.0], [0.0, 0.0]], atol=1e-8
     )
+
+
+@pytest.mark.parametrize("pop", [False, True])
+@pytest.mark.parametrize("fd_order, linear", [(1, 3.0), (-1, -3.0), (2, 0.0)])
+def test_local_fd_caps_are_call_local(pop, fd_order, linear):
+    problem = make_cubic_problem(fd_order)
+    variables_int = np.array([], dtype=np.int32)
+    variables_float = np.array([1.0])
+    caps = np.array([0.25])
+
+    original = problem.get_jacobian(variables_int, variables_float, pop=pop).toarray()
+    capped = problem.get_jacobian(
+        variables_int, variables_float, pop=pop, max_deltas=caps
+    ).toarray()
+    restored = problem.get_jacobian(variables_int, variables_float, pop=pop).toarray()
+
+    np.testing.assert_allclose(original, [[3.0 + linear * 2.0 + 2.0**2]])
+    np.testing.assert_allclose(capped, [[3.0 + linear * 0.25 + 0.25**2]])
+    np.testing.assert_array_equal(restored, original)
+    np.testing.assert_array_equal(problem._d, [2.0])
+    np.testing.assert_array_equal(caps, [0.25])
+
+
+@pytest.mark.parametrize(
+    "caps", [[], [[0.1]], [0.1, 0.2], [0.0], [-1.0], [np.nan], [np.inf]]
+)
+def test_jacobian_rejects_invalid_displacement_caps(caps):
+    problem = make_cubic_problem()
+
+    with pytest.raises(ValueError, match="max_deltas.*positive finite"):
+        problem.get_jacobian(
+            np.array([], dtype=np.int32), np.array([1.0]), max_deltas=np.asarray(caps)
+        )
+    np.testing.assert_array_equal(problem._d, [2.0])
+
+
+@pytest.mark.parametrize("pop", [False, True])
+def test_displacement_caps_preserve_analytical_jacobian(pop, monkeypatch):
+    base = iwopy.SimpleProblem(
+        "sparse", float_vars=["x", "y"], init_values_float=[0.0, 0.0]
+    )
+    base.add_objective(SparseObjective(base))
+    problem = iwopy.LocalFD(base, deltas=1.0)
+    problem.initialize(verbosity=0)
+
+    def unexpected_fd(*arguments, **parameters):
+        raise AssertionError("analytical derivatives triggered finite differences")
+
+    monkeypatch.setattr(problem, "_grad_coeffs", unexpected_fd)
+    jacobian = problem.get_jacobian(
+        np.array([], dtype=np.int32),
+        np.array([3.0, 4.0]),
+        pop=pop,
+        max_deltas=np.array([0.01, 0.02]),
+    )
+
+    np.testing.assert_allclose(jacobian.toarray(), [[1.0, 0.0], [0.0, 2.0], [0.0, 0.0]])
 
 
 if __name__ == "__main__":

@@ -426,6 +426,7 @@ class Problem(Base, metaclass=ABCMeta):
         pop: bool = False,
         verbosity: int = 0,
         func_values: np.ndarray | None = None,
+        max_deltas: np.ndarray | None = None,
     ) -> csr_matrix:
         """
         Assemble a CSR Jacobian from analytical partial derivatives.
@@ -453,6 +454,9 @@ class Problem(Base, metaclass=ABCMeta):
         func_values
             Previously calculated values for the selected components, with
             shape ``(n_components,)``. The analytical implementation ignores them.
+        max_deltas
+            Positive finite call-local displacement caps in complete problem
+            float-variable order, shape (n_vars_float,). Ignored analytically.
         pop
             Flag for vectorizing calculations via population
         verbosity
@@ -520,6 +524,7 @@ class Problem(Base, metaclass=ABCMeta):
         pop: bool = False,
         verbosity: int = 0,
         func_values: np.ndarray | None = None,
+        max_deltas: np.ndarray | None = None,
     ) -> csr_matrix:
         """
         Obtain a CSR Jacobian for a function linked to this problem.
@@ -550,6 +555,11 @@ class Problem(Base, metaclass=ABCMeta):
         func_values
             Previously calculated values in the selected component order,
             with shape ``(n_components,)``. Numerical wrappers can reuse them.
+        max_deltas
+            Positive finite call-local displacement caps in complete problem
+            float-variable order, shape (n_vars_float,). LocalFD uses the
+            smaller of its configured delta and this cap. Analytical and
+            fixed-grid derivatives are unchanged.
         verbosity
             The verbosity level, 0 = silent
         pop
@@ -567,10 +577,22 @@ class Problem(Base, metaclass=ABCMeta):
         ------
         ValueError
             If the function belongs to another problem, a selected variable
-            is unavailable, or an analytical derivative remains unresolved.
+            is unavailable, an analytical derivative remains unresolved, or
+            displacement caps have invalid shapes or non-positive/non-finite values.
         TypeError
             If a variable selector is neither a name nor an integer index.
         """
+        if max_deltas is not None:
+            max_deltas = np.asarray(max_deltas, dtype=np.float64)
+            if (
+                max_deltas.shape != (self.n_vars_float,)
+                or not np.all(np.isfinite(max_deltas))
+                or np.any(max_deltas <= 0.0)
+            ):
+                raise ValueError(
+                    f"Problem '{self.name}': max_deltas must contain positive finite "
+                    f"values with shape {(self.n_vars_float,)}."
+                )
         # set and check func:
         if func is None:
             func = ProblemDefaultFunc(self)
@@ -631,6 +653,7 @@ class Problem(Base, metaclass=ABCMeta):
             fvars,
             vrs,
             func_values=func_values,
+            max_deltas=max_deltas,
             pop=pop,
             verbosity=verbosity,
         )
@@ -644,6 +667,73 @@ class Problem(Base, metaclass=ABCMeta):
             )
 
         return jacobian
+
+    def get_active_constraint_components(
+        self, vars_float: np.ndarray, lower: np.ndarray, upper: np.ndarray
+    ) -> np.ndarray:
+        """Obtain bound-certified constraint components in problem order.
+
+        Parameters
+        ----------
+        vars_float
+            Initial float variables, shape: (n_vars_float,).
+        lower, upper
+            Enforced bounds in problem float-variable order, with the same
+            shape. Lower bounds must not exceed upper bounds.
+
+        Returns
+        -------
+        components
+            Sorted global constraint indices. Every omitted component
+            must be certified feasible throughout the box by its owner.
+
+        Raises
+        ------
+        ValueError
+            If bounds have invalid shapes or a selector returns invalid
+            or duplicate component indices.
+        """
+        variables = np.asarray(vars_float, dtype=np.float64)
+        lower = np.asarray(lower, dtype=np.float64)
+        upper = np.asarray(upper, dtype=np.float64)
+        shape = (self.n_vars_float,)
+        if (
+            any(values.shape != shape for values in (variables, lower, upper))
+            or not np.all(np.isfinite(variables))
+            or np.any(np.isnan(lower))
+            or np.any(np.isnan(upper))
+            or np.any(np.isposinf(lower))
+            or np.any(np.isneginf(upper))
+            or np.any(lower > upper)
+        ):
+            raise ValueError(f"Problem '{self.name}': Invalid guarded variable bounds.")
+        selected = []
+        offset = 0
+        for constraint in self.cons.functions:
+            _, indices = self._find_vars(
+                np.zeros(self.n_vars_int, dtype=int),
+                variables,
+                constraint,
+                ret_inds=True,
+            )
+            components = np.asarray(
+                constraint.active_components(
+                    variables[indices], lower[indices], upper[indices]
+                )
+            )
+            if (
+                components.ndim != 1
+                or not np.issubdtype(components.dtype, np.integer)
+                or np.any(components < 0)
+                or np.any(components >= constraint.n_components())
+                or len(np.unique(components)) != len(components)
+            ):
+                raise ValueError(
+                    f"Problem '{self.name}': Invalid active components from '{constraint.name}'."
+                )
+            selected.append(np.sort(components) + offset)
+            offset += constraint.n_components()
+        return np.concatenate(selected) if selected else np.array([], dtype=int)
 
     def initialize(self, verbosity: int = 1) -> None:
         """

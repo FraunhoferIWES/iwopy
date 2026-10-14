@@ -230,6 +230,20 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 ## v1.0.0
 
+- Added call-local `max_deltas` to the sparse Jacobian API and capped existing
+  fresh GG finite-difference calls without extra backtracking evaluations or
+  mutation of configured deltas; fixed-grid stencils remain unchanged.
+- Added bound-certified constraint component selection and guarded SLSQP
+  row reduction while preserving full evaluations and feasibility checks.
+- SLSQP retains its best fully feasible point separately from convergence,
+  supports inward margins and bounded restoration with explicit positive
+  `restoration_scales`, and starts objective-progress patience only after
+  feasibility. Restoration merit and its Jacobian are normalized consistently.
+- Preserved selected-component cached values and analytical entries during
+  numerical Jacobian completion, including constraint-only restoration.
+- Standardized the default development setup on
+  `uv sync --extra dev --extra test --extra opt --upgrade`.
+
 - Documentation:
   - Corrected chain constraint counts, callback failure semantics, and the GG
     architecture link; aligned token-review guidance with the outside-pytest policy

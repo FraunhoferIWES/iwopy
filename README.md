@@ -101,7 +101,7 @@ explains population/batch units and supported native termination limits.
 ```console
 git clone https://github.com/FraunhoferIWES/iwopy.git
 cd iwopy
-uv sync --extra dev --extra test
+uv sync --extra dev --extra test --extra opt --upgrade
 uv run pre-commit install
 uv run pre-commit run --all-files
 uv run pytest tests

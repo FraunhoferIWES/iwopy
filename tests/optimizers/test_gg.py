@@ -51,6 +51,29 @@ class NonFiniteGradient(Quadratic):
         return np.nan
 
 
+class NumericalQuadratic(iwopy.SimpleObjective):
+    def f(self, coordinate):
+        return (coordinate - 0.3) ** 2
+
+
+class NumericalTwoVariableObjective(iwopy.SimpleObjective):
+    def f(self, first, second):
+        return first**2 + second**2
+
+
+def record_fd_steps(problem, monkeypatch):
+    steps = []
+    original = problem._grad_coeffs
+
+    def coefficients(variables, *arguments, **parameters):
+        points, weights = original(variables, *arguments, **parameters)
+        steps.append(np.max(np.abs(points - variables), axis=0))
+        return points, weights
+
+    monkeypatch.setattr(problem, "_grad_coeffs", coefficients)
+    return steps
+
+
 def make_problem(initial=0.0):
     problem = iwopy.SimpleProblem(
         "quadratic",
@@ -374,3 +397,56 @@ def test_gg_stops_on_infeasible_zero_gradient_constraint():
     assert result.vars_float[0] == 0.0
     assert len(history.states) == 1
     assert history.states[0].vars_float[0, 0] == 0.0
+
+
+@pytest.mark.parametrize("vectorized", [False, True])
+def test_gg_caps_existing_fd_calls_at_current_step(vectorized, monkeypatch):
+    base = iwopy.SimpleProblem(
+        "numerical_quadratic", float_vars=["coordinate"], init_values_float=[0.0]
+    )
+    base.add_objective(NumericalQuadratic(base))
+    problem = iwopy.LocalFD(base, deltas=2.0, fd_order=2)
+    problem.initialize(verbosity=0)
+    steps = record_fd_steps(problem, monkeypatch)
+    solver = GG(
+        problem,
+        step_max=1.0,
+        step_min=0.1,
+        n_max_steps=1,
+        max_iterations=3,
+        vectorize=vectorized,
+    )
+    solver.initialize(verbosity=0)
+
+    result = solver.solve(verbosity=0)
+
+    assert result.vars_float == pytest.approx([0.5])
+    np.testing.assert_allclose(steps, [[1.0], [0.5]])
+    assert problem._d == pytest.approx([2.0])
+
+
+@pytest.mark.parametrize("vectorized", [False, True])
+def test_gg_caps_fd_calls_per_variable(vectorized, monkeypatch):
+    base = iwopy.SimpleProblem(
+        "two_variables",
+        float_vars=["first", "second"],
+        init_values_float=[1.0, 1.0],
+    )
+    base.add_objective(NumericalTwoVariableObjective(base))
+    problem = iwopy.LocalFD(base, deltas={"second": 0.1, "first": 2.0}, fd_order=2)
+    problem.initialize(verbosity=0)
+    steps = record_fd_steps(problem, monkeypatch)
+    solver = GG(
+        problem,
+        step_max=[0.4, 0.8],
+        step_min=0.01,
+        n_max_steps=1,
+        max_iterations=1,
+        vectorize=vectorized,
+    )
+    solver.initialize(verbosity=0)
+
+    solver.solve(verbosity=0)
+
+    np.testing.assert_allclose(steps, [[0.4, 0.1]])
+    assert problem._d == pytest.approx([0.1, 2.0])

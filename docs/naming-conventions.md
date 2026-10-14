@@ -54,6 +54,7 @@ compatibility-sensitive.
 | Pareto front | Non-dominated objective values for a multi-objective result | All evaluated population values |
 | wrapper | Adapter around a problem or function contract | Independent deep copy |
 | memory | Optional cache of function values by variable assignment | Application persistence |
+| finite-difference delta | Numerical derivative displacement for one optimization variable | Optimizer trial-step limit or complete stencil extent |
 | callback | Observer of optimizer events | Objective, constraint, or pipeline stage |
 | callback snapshot | Immutable normalized `OptimizerCallbackData` event payload | Mutable live backend state |
 | pipeline | Ordered collection of optimization stages | One optimizer run |
@@ -161,6 +162,11 @@ them to attributes without a deliberate contract change.
 	matrix and its flattened entries as a Jacobian. SciPy's native `jac` objective
 	callback returns a scalar objective's gradient vector.
 	See [ADR-0014](adr/0014-sparse-jacobians.md).
+- `max_deltas` names call-local finite-difference delta caps in complete problem
+	float-variable order, shape `(n_vars_float,)`. A cap is not a complete stencil
+	extent. Analytical derivatives and fixed-grid stencils are unchanged.
+- Cached `func_values` follow selected-component row order, including when
+	requesting only constraint Jacobian rows for restoration.
 
 ## Results And Evaluation Names
 
@@ -178,6 +184,24 @@ them to attributes without a deliberate contract change.
 
 ## Optimizers, Interfaces, And Factories
 
+- `best_feasible` is SLSQP's copied tuple of physical variables, evaluated
+	objectives, and full constraints, not a convergence flag. `scipy_results`
+	retains the primary endpoint/status; `restoration_results` the latest
+	restoration phase; `termination_reason` the primary termination reason.
+- `feasibility_margin` reduces solver tolerance in each constraint's units;
+	`progress_tol` measures cumulative best-feasible improvement in evaluated
+	objective units. `stall_iterations` counts accepted primary iterations without
+	that progress only after a feasible point exists. `n_iterations` includes
+	restoration and primary iterations.
+- `restoration_iterations` bounds each restoration phase. `restoration_scales`
+	are required positive finite characteristic values for enabled constrained
+	restoration, scalar or shape `(n_constraints,)` in full constraint order.
+	Divide violations by these component-unit values to obtain dimensionless
+	merit; rescale them with the constraint units.
+- `move_limit` bounds displacement from the initial point over one solve, not
+	one iteration. `active_components` uses local constraint indices;
+	`get_active_constraint_components` and `active_constraint_components` use
+	global constraint indices, excluding objective rows.
 - iwopy optimizer classes belong in `iwopy.optimizers`; external translations
 	belong in `iwopy.interfaces.<backend>`.
 - Preserve external backend algorithm spellings at selection boundaries.

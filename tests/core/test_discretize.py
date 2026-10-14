@@ -84,5 +84,33 @@ def test_grad():
             assert np.max(d) < lim
 
 
+def test_local_fd_caps_do_not_change_fixed_grid_stencils():
+    base = iwopy.SimpleProblem(
+        "fixed_grid",
+        float_vars=["first", "second"],
+        init_values_float=[1.5, 1.0],
+        min_values_float=[0.0, 0.0],
+        max_values_float=[3.0, 3.0],
+    )
+    base.add_objective(Obj1(base, "objective"))
+    problem = iwopy.DiscretizeRegGrid(
+        base, deltas=0.1, fd_order=2, interpolation="linear"
+    )
+    problem.initialize(verbosity=0)
+    variables_int = np.array([], dtype=np.int32)
+    variables_float = np.array([1.5, 1.0])
+
+    for pop in (False, True):
+        original = problem.get_jacobian(variables_int, variables_float, pop=pop)
+        capped = problem.get_jacobian(
+            variables_int,
+            variables_float,
+            pop=pop,
+            max_deltas=np.array([0.01, 0.02]),
+        )
+
+        np.testing.assert_array_equal(capped.toarray(), original.toarray())
+
+
 if __name__ == "__main__":
     test_grad()

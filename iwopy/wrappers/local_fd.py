@@ -172,6 +172,7 @@ class LocalFD(ProblemWrapper):
         gvars: Sequence[int] | np.ndarray,
         order: np.ndarray,
         orderb: np.ndarray,
+        max_deltas: np.ndarray | None = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         """Provide finite-difference stencil points and derivative weights."""
 
@@ -181,6 +182,8 @@ class LocalFD(ProblemWrapper):
         vmax = np.array(self.max_values_float(), dtype=np.float64)[gvars]
         x0 = varsf
         d = self._d[[self._vinds.index(vi) for vi in gvars]]
+        if max_deltas is not None:
+            d = np.minimum(d, max_deltas[gvars])
 
         xplus = np.zeros((n_vars, n_vars), dtype=np.float64)
         np.fill_diagonal(xplus, d)
@@ -282,6 +285,7 @@ class LocalFD(ProblemWrapper):
         pop: bool = False,
         verbosity: int = 0,
         func_values: np.ndarray | None = None,
+        max_deltas: np.ndarray | None = None,
     ) -> csr_matrix:
         """
         Assemble analytical and finite-difference derivatives in CSR storage.
@@ -310,7 +314,13 @@ class LocalFD(ProblemWrapper):
             derivatives are to be calculated
         func_values
             Previously calculated function values at the given variables,
-            shape: (n_components,)
+            in selected-component order, shape: (n_selected_components,).
+        max_deltas
+            Optional positive finite displacement caps in problem float
+            variable order, shape: (n_vars_float,). Numerical deltas use
+            the smaller of the configured value and its cap; configuration
+            and analytical derivatives remain unchanged. A second-order
+            one-sided boundary stencil can sample at twice this delta.
         pop
             Flag for vectorizing calculations via population
         verbosity
@@ -365,7 +375,9 @@ class LocalFD(ProblemWrapper):
         varsf = vars_float[gvars]
         order = self._order[ivars]
         orderb = self._orderb[ivars]
-        epts, coeffs = self._grad_coeffs(varsf, gvars, order, orderb)
+        epts, coeffs = self._grad_coeffs(
+            varsf, gvars, order, orderb, max_deltas=max_deltas
+        )
 
         center_coeffs = None
         if func_values is not None and len(epts) and np.array_equal(epts[-1], varsf):
