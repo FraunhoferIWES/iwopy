@@ -30,6 +30,7 @@ all of them.
 | [0016](0016-documentation-independent-tests.md) | Accepted | Keep pytest independent of documentation files and review documentation separately. |
 | [0017](0017-gg-call-local-fd-caps.md) | Accepted | Cap existing fresh GG finite-difference calls without mutating configured deltas or adding backtracking Jacobian evaluations. |
 | [0018](0018-slsqp-feasible-progress-and-guarded-components.md) | Accepted | Retain feasible SLSQP points, use scaled restoration and feasibility-aware patience, and reduce constraint rows only within certified bounds. |
+| [0019](0019-test-file-dependency-boundary.md) | Accepted; supersedes the test-input boundary in 0016 | Limit pytest repository-file inputs to package code, examples, notebooks, and tests. |
 
 ## When To Add An ADR
 

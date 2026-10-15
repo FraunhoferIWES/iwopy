@@ -297,4 +297,7 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
 
 ## v1.0.1
 
+- Development: Removed release-metadata and CI-workflow tests; pytest repository
+  inputs are limited to package code, examples, notebooks, and tests.
+
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v1.0.1](https://github.com/FraunhoferIWES/iwopy/commits/v1.0.1)

@@ -229,14 +229,16 @@ uv pip compile pyproject.toml --extra test --python-version 3.14 --python-platfo
 
 Repeat for each matrix version. A successful resolution proves availability of a
 compatible dependency set, not runtime correctness; the actual CI matrix runs
-the regression and full suites. `tests/test_package.py` protects workflow test
-paths, dependency preflight, ordering, extra selection, and manual-run publish guards.
+the regression and full suites. Workflow configuration and release metadata
+are reviewed outside pytest, not asserted by package tests.
 
 ## Test Structure
 
-Pytest tests must not read or depend on files under `docs/`. Documentation
-validation belongs to separate build and review workflows, not the runtime
-suite. See [ADR-0016](adr/0016-documentation-independent-tests.md).
+Repository-file inputs to pytest tests must come only from `iwopy/`,
+`examples/`, `notebooks/`, or `tests/`. Tests may create and read temporary
+outputs. Documentation, release metadata, CI configuration, and other repository
+files are validated separately, not by runtime tests. See
+[ADR-0019](adr/0019-test-file-dependency-boundary.md).
 
 When reviewing rendered documentation, use a warnings-as-errors build:
 
@@ -263,7 +265,7 @@ The test directories encode package ownership:
 | `tests/pymoo/` | pymoo variable representations, population evaluation, algorithms, and results |
 | `tests/pygmo/` | PyGMO vector/fitness ordering, algorithms, callbacks, and results |
 | `tests/interfaces/` | New population-adapter contracts plus complete catalog execution, guarded optional installations, inert imports, and selector coverage |
-| `tests/test_package.py` | Package import and metadata surface |
+| `tests/test_package.py` | Package imports, lazy backends, and root factory export |
 | `tests/test_callback_examples.py` | In-process callback example execution and plot output |
 | `notebooks/` | Executable public workflows checked separately with nbmake |
 

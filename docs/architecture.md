@@ -637,9 +637,10 @@ is forward-only by default under
 	[development](development.md#security-floors).
 - Production Python under `iwopy/` is type checked. Tests, examples, notebooks,
 	and docs are not currently part of the mypy target.
-- Pytest tests do not read or depend on files under `docs/`; documentation
-	builds and review remain separate. See
-	[ADR-0016](adr/0016-documentation-independent-tests.md).
+- Pytest repository-file inputs are limited to `iwopy/`, `examples/`,
+	`notebooks/`, and `tests/`; temporary test outputs remain allowed.
+	Documentation, release metadata, and CI configuration are checked outside
+	pytest. See [ADR-0019](adr/0019-test-file-dependency-boundary.md).
 - Public Python APIs follow [docstring conventions](docstrings.md): NumPy-style
 	docstrings expose optimization, array, lifecycle, and backend contracts while
 	types remain in annotations.
