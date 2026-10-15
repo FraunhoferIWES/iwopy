@@ -294,3 +294,7 @@ Enjoy - we are awaiting comments and issues, thanks for testing.
     and breaking APIs from contributor workflow details.
 
 **Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v1.0.0](https://github.com/FraunhoferIWES/iwopy/commits/v1.0.0)
+
+## v1.0.1
+
+**Full Changelog**: [https://github.com/FraunhoferIWES/iwopy/commits/v1.0.1](https://github.com/FraunhoferIWES/iwopy/commits/v1.0.1)
